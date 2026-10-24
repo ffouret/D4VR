@@ -17,8 +17,9 @@ réglages d'échelle. L'accès à la caméra et au rendu stéréoscopique de Dia
 reste à démontrer.
 
 Le chargement de la scène, son aperçu bureau et les tests de caméra ont été
-vérifiés dans l'environnement de développement. L'affichage réel dans le
-Quest 2 et l'exécution sur Windows restent à tester. Voir les
+vérifiés dans l'environnement de développement et en CI sur Linux et Windows.
+L'affichage réel dans le Quest 2 et l'exécution VR sur les deux systèmes restent
+à tester. Voir les
 [preuves et limites des essais](docs/TESTING.md).
 
 ## Démarrer le laboratoire

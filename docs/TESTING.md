@@ -29,7 +29,7 @@ personnels du diagnostic restent dans les fichiers de travail locaux.
 | Chargement complet de la scène en mode headless | Réussi |
 | Rendu de l'aperçu et capture PNG | Réussis, OpenGL logiciel llvmpipe |
 | Affichage stéréoscopique dans le Quest 2 | Non vérifié |
-| Démarrage sur Windows | Non vérifié localement ; workflow de tests prévu |
+| Tests et chargement headless sur Windows | Réussis en CI, sans casque ni GPU de jeu |
 | Rendu ou interaction avec Diablo IV | Non implémentés |
 
 Le test OpenXR dans le conteneur a échoué au chargement du runtime : SteamVR
@@ -38,9 +38,10 @@ n'est pas exposé dans cet environnement ; l'aperçu utilise llvmpipe. Le test V
 s'est terminé avec le code 2. Aucun résultat de performance du GPU ne peut être
 déduit de cet aperçu logiciel.
 
-La CI vérifie les tests sans casque sur Linux et Windows. Sa présence dans le
-dépôt ne signifie pas que les premiers jobs ont déjà réussi. Même une CI verte
-ne vérifierait pas le casque, les pilotes et la liaison ALVR.
+La [CI Linux et Windows](https://github.com/ffouret/D4VR/actions/runs/40090387527)
+a réussi les tests Python, la préparation vérifiée du moteur, les tests de caméra
+et le chargement complet de la scène au commit `afcfc0538f31066ac68243789bc0ddb7886485e6`.
+Elle ne vérifie pas le casque, les pilotes de jeu et la liaison ALVR.
 
 ## Essai à faire depuis la session Bazzite
 
