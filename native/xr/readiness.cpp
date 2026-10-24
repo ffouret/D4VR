@@ -1,4 +1,5 @@
-// Original D4VR diagnostic. Creates no XR session and submits no images.
+// Original D4VR diagnostic. Default/requirements modes submit no images;
+// --frames runs the separate original native scene.
 #define XR_USE_GRAPHICS_API_VULKAN
 #include <vulkan/vulkan.h>
 #include <openxr/openxr.h>
@@ -33,6 +34,49 @@ template<class T> T function(XrInstance instance, const char* name) {
 }
 uint32_t vulkan_version(XrVersion version) {
     return VK_MAKE_API_VERSION(0, XR_VERSION_MAJOR(version), XR_VERSION_MINOR(version), XR_VERSION_PATCH(version));
+}
+std::string xr_version(XrVersion value) {
+    return std::to_string(XR_VERSION_MAJOR(value)) + "." + std::to_string(XR_VERSION_MINOR(value)) + "." + std::to_string(XR_VERSION_PATCH(value));
+}
+template<class T> std::string extension_list(T query, XrInstance instance, XrSystemId system) {
+    uint32_t size = 0;
+    xr_check(query(instance, system, 0, &size, nullptr), "Vulkan extension list size");
+    if (size > 65536) throw std::runtime_error("Oversized Vulkan extension list");
+    std::vector<char> buffer(std::max(size, 1u), 0);
+    if (size) xr_check(query(instance, system, size, &size, buffer.data()), "Vulkan extension list");
+    if (buffer.back() != 0) throw std::runtime_error("Unterminated Vulkan extension list");
+    std::istringstream input(buffer.data()); std::ostringstream output; output << '[';
+    std::string name; bool first = true;
+    while (input >> name) { output << (first ? "" : ",") << std::quoted(name); first = false; }
+    output << ']'; return output.str();
+}
+std::string legacy_requirements() {
+    // Separate XR instance: query the legacy binding's requirements for an
+    // externally-created Vulkan device. No Vulkan instance/device/session.
+    Resources resources;
+    const char* extension = XR_KHR_VULKAN_ENABLE_EXTENSION_NAME;
+    XrInstanceCreateInfo create{XR_TYPE_INSTANCE_CREATE_INFO};
+    std::strcpy(create.applicationInfo.applicationName, "D4VR binding requirements");
+    create.applicationInfo.apiVersion = XR_MAKE_VERSION(1, 0, 20);
+    create.enabledExtensionCount = 1; create.enabledExtensionNames = &extension;
+    xr_check(xrCreateInstance(&create, &resources.xr), "xrCreateInstance legacy requirements");
+    XrSystemGetInfo info{XR_TYPE_SYSTEM_GET_INFO}; info.formFactor = XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY;
+    XrSystemId system{}; xr_check(xrGetSystem(resources.xr, &info, &system), "xrGetSystem");
+    XrInstanceProperties runtime{XR_TYPE_INSTANCE_PROPERTIES};
+    xr_check(xrGetInstanceProperties(resources.xr, &runtime), "xrGetInstanceProperties");
+    XrGraphicsRequirementsVulkanKHR requirements{XR_TYPE_GRAPHICS_REQUIREMENTS_VULKAN_KHR};
+    auto query = function<PFN_xrGetVulkanGraphicsRequirementsKHR>(resources.xr, "xrGetVulkanGraphicsRequirementsKHR");
+    xr_check(query(resources.xr, system, &requirements), "xrGetVulkanGraphicsRequirementsKHR");
+    auto instance_extensions = function<PFN_xrGetVulkanInstanceExtensionsKHR>(resources.xr, "xrGetVulkanInstanceExtensionsKHR");
+    auto device_extensions = function<PFN_xrGetVulkanDeviceExtensionsKHR>(resources.xr, "xrGetVulkanDeviceExtensionsKHR");
+    std::ostringstream output;
+    output << "{\"runtime\":" << std::quoted(runtime.runtimeName) << ",\"binding\":\"XR_KHR_vulkan_enable\""
+           << ",\"minimum_api\":" << std::quoted(xr_version(requirements.minApiVersionSupported))
+           << ",\"maximum_tested_api\":" << std::quoted(xr_version(requirements.maxApiVersionSupported))
+           << ",\"required_instance_extensions\":" << extension_list(instance_extensions, resources.xr, system)
+           << ",\"required_device_extensions\":" << extension_list(device_extensions, resources.xr, system)
+           << ",\"xr_session_created\":false,\"game_device_binding_proven\":false,\"game_images_submitted\":false}";
+    return output.str();
 }
 std::string readiness(const char* vertex_path, const char* fragment_path, bool& frame_success) {
     uint32_t count = 0;
@@ -114,7 +158,8 @@ std::string readiness(const char* vertex_path, const char* fragment_path, bool& 
 }
 int main(int argc, char** argv) try {
     bool frames = argc == 4 && std::string(argv[1]) == "--frames";
-    if (argc != 1 && !frames) throw std::runtime_error("Usage: xr_readiness [--frames scene.vert.spv scene.frag.spv]");
+    if (argc == 2 && std::string(argv[1]) == "--requirements") { std::cout << legacy_requirements() << '\n'; return 0; }
+    if (argc != 1 && !frames) throw std::runtime_error("Usage: xr_readiness [--requirements | --frames scene.vert.spv scene.frag.spv]");
     bool success = true;
     auto report = readiness(frames ? argv[2] : nullptr, frames ? argv[3] : nullptr, success);
     std::cout << report << '\n'; return success ? 0 : 2;

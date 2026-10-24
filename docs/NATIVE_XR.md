@@ -89,6 +89,11 @@ compilés automatiquement. Le programme accepte leurs chemins explicitement.
 La CI Linux compile ce code et valide les shaders sans ouvrir de session XR ;
 l'essai en casque est effectué séparément sur le PC de référence.
 
+Le mode `--requirements` interroge les extensions nécessaires à la liaison
+Vulkan historique, avec une instance OpenXR séparée. Il ne crée aucun objet
+Vulkan ni session. Son relevé et la comparaison avec le renderer réel sont
+décrits dans [le diagnostic Vulkan](VULKAN_TRACE.md#exigences-de-liaison-steamvr).
+
 ## Sources primaires des interfaces
 
 - [Création d'une instance Vulkan par OpenXR](https://registry.khronos.org/OpenXR/specs/1.1/man/html/xrCreateVulkanInstanceKHR.html)

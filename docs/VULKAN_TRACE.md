@@ -65,6 +65,52 @@ Le programme de contrôle demande Vulkan 1.2.0 et le GPU expose Vulkan 1.4.351.
 Ces versions appartiennent à la fixture ; elles ne préjugent pas de celles de
 Diablo IV. Les contrôles sur le jeu sont enregistrés séparément après la session.
 
+## Relevé en partie du 24 octobre 2026
+
+Le propriétaire confirme avoir joué dans le décor avec une image normale.
+Le lancement se termine avec le code 0 ; Diablo IV et Battle.net sont fermés,
+et les empreintes originales de l'exécutable et de la DLL NVIDIA sont conformes.
+Quatre processus produisent un journal ; un seul crée un périphérique graphique,
+la RTX 5090. Ses 47 enregistrements restent sous le budget.
+
+Le dernier instantané couvre 13 800 appels de présentation, à environ 134,8
+secondes depuis le début du journal. Il contient 34 301 789 commandes de dessin
+indexé, 2 043 178 dessins directs, 1 854 816 dispatchs et 82 788 dispatchs
+indirects. Les 2 287 902 débuts de rendu sont du rendu dynamique. Aucun buffer
+inconnu, aucune liste secondaire tronquée et aucun appel de commandes générées
+EXT/NV ne sont relevés dans ces totaux, malgré l'activation de l'extension EXT.
+Cela décrit cette session ; d'autres scènes peuvent employer d'autres voies.
+
+Le processus ne transmet pas d'événement `vkDestroyDevice` à la couche avant
+sa fermeture. Les nombres sont donc les derniers totaux observés, pas un compte
+final garanti de toute la session. Ils ne mesurent ni le nombre de primitives
+GPU ni le coût du traçage. Aucune image de Diablo n'a été soumise à SteamVR.
+
+## Exigences de liaison SteamVR
+
+Le contrôle natif `--requirements` interroge séparément la liaison
+`XR_KHR_vulkan_enable`, adaptée aux objets Vulkan créés par une application.
+Il crée une instance OpenXR pour lire les exigences, sans instance Vulkan,
+périphérique Vulkan ou session XR. SteamVR annonce Vulkan 1.0 à 1.2 comme plage
+connue, cinq extensions d'instance et huit de périphérique.
+
+Le périphérique du jeu demande déjà les huit noms d'extension requis. Les
+instances Vulkan 1.3 présentes dans le même processus demandent les cinq noms
+d'instance. Le format initial de trace ne relie pas chaque périphérique à une
+instance précise : cette association, le GPU demandé par le runtime et la
+synchronisation de queue restent à vérifier. La version maximale annoncée est
+une version testée ; les versions plus récentes nécessitent une évaluation
+distincte. La comparaison des noms seule ne prouve aucune liaison fonctionnelle.
+
+```sh
+XR_RUNTIME_JSON=/chemin/SteamVR/steamxr_linux64.json work/native-xr/d4vr_xr_readiness --requirements > /travail/exigences.json
+python3 tools/vulkan_trace.py compare-requirements --trace-directory /travail/session --requirements /travail/exigences.json --output /travail/comparaison.json
+```
+
+La soumission Vulkan directe via OpenVR est également documentée par Valve :
+elle accepte une description des textures et des objets Vulkan de l'application.
+C'est une voie d'intégration à évaluer, sans prototype de soumission du jeu à ce stade.
+
 ## Construire et lancer
 
 ```sh
@@ -100,3 +146,5 @@ binaires compilés et relevés du jeu restent hors du dépôt.
 
 - [Interface entre le loader Vulkan et les couches](https://github.com/KhronosGroup/Vulkan-Loader/blob/main/docs/LoaderLayerInterface.md)
 - [Exécution de commandes générées EXT](https://docs.vulkan.org/refpages/latest/refpages/source/vkCmdExecuteGeneratedCommandsEXT.html)
+- [Exigences de version OpenXR/Vulkan](https://registry.khronos.org/OpenXR/specs/1.1/man/html/XrGraphicsRequirementsVulkanKHR.html)
+- [Soumission Vulkan à SteamVR via OpenVR](https://github.com/ValveSoftware/openvr/wiki/Vulkan)

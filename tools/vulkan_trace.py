@@ -61,6 +61,39 @@ def report(directory: Path) -> dict:
             'counts_are_api_commands_not_indirect_gpu_draws': True}
 
 
+def compare_requirements(trace: dict, requirements: dict) -> dict:
+    if requirements.get('binding') != 'XR_KHR_vulkan_enable':
+        raise ValueError('Expected legacy Vulkan binding requirements')
+
+    def major_minor(value):
+        if not re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+', value):
+            raise ValueError('Invalid API version')
+        return tuple(int(part) for part in value.split('.')[:2])
+
+    low, high = (major_minor(requirements[name]) for name in ('minimum_api', 'maximum_tested_api'))
+    required_instance = set(requirements['required_instance_extensions'])
+    required_device = set(requirements['required_device_extensions'])
+    processes = []
+    for process in trace['process_traces']:
+        if not process['devices']:
+            continue
+        # Do not merge names from separate instances. The initial trace format
+        # does not associate each device with one of these instance records.
+        instances = [{'requested_api': instance['requested_api'],
+                      'within_reported_api_range': low <= major_minor(instance['requested_api']) <= high,
+                      'missing_literal_extension_names': sorted(required_instance - set(instance['extensions']))}
+                     for instance in process['instances']]
+        devices = [{'device': device['device'], 'gpu': device['gpu'],
+                    'missing_literal_extension_names': sorted(required_device - set(device['extensions']))}
+                   for device in process['devices']]
+        processes.append({'file': process['file'], 'instances': instances, 'devices': devices})
+    return {'schema_version': 1, 'binding': requirements['binding'],
+            'minimum_api': requirements['minimum_api'], 'maximum_tested_api': requirements['maximum_tested_api'],
+            'processes': processes, 'instance_device_association_known': False,
+            'game_device_binding_proven': False,
+            'interpretation': 'Literal extension-name comparison only; newer API versions need separate evaluation. GPU identity, device creation requirements and queue synchronization remain untested.'}
+
+
 def stage(layer_directory: Path, proof: Path, output: Path) -> dict:
     """Freeze a layer only after its real-GPU/load tests have been recorded."""
     evidence = json.loads(proof.read_text(encoding='utf-8'))
@@ -159,11 +192,18 @@ def main() -> int:
     summarize = sub.add_parser('report')
     summarize.add_argument('directory', type=Path)
     summarize.add_argument('--output', required=True, type=Path)
+    compare = sub.add_parser('compare-requirements')
+    for name in ('trace-directory', 'requirements', 'output'):
+        compare.add_argument('--' + name, required=True, type=Path)
     args = parser.parse_args()
     if args.command == 'stage':
         print(json.dumps(stage(args.layer_dir, args.proof, args.output), indent=2)); return 0
     if args.command == 'run':
         return run(args.game_dir, args.launcher, args.bundle, args.runtime_bundle, args.output)
+    if args.command == 'compare-requirements':
+        requirements = json.loads(args.requirements.read_text(encoding='utf-8'))
+        result = compare_requirements(report(args.trace_directory), requirements)
+        probe.write_json(args.output, result); print(json.dumps(result, indent=2)); return 0
     result = report(args.directory); probe.write_json(args.output, result)
     print(json.dumps(result, indent=2)); return 0
 

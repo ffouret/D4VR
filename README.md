@@ -120,6 +120,9 @@ les versions et extensions utilisées. Elle prend aussi en compte les commandes
 générées sur le GPU et les buffers secondaires réutilisés. Ses tests de relais
 et son chargement dans Steam Runtime passent ; la fixture RTX 5090 conserve ses
 pixels et sa parallaxe. La couche n'ajoute pas de rendu par œil.
+Le relevé en partie retrouve 13 800 présentations, sans buffer inconnu ; le
+propriétaire confirme une image normale. Les extensions requises par la liaison
+Vulkan de SteamVR sont comparées séparément, sans preuve de liaison au jeu.
 Voir [le lancement isolé et les limites du relevé](docs/VULKAN_TRACE.md).
 
 ## Commandes du prototype

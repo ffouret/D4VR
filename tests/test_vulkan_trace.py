@@ -64,6 +64,23 @@ class TraceReports(unittest.TestCase):
             with self.assertRaises(ValueError):
                 vulkan_trace.read_trace(link)
 
+    def test_extension_names_from_different_instances_are_not_combined(self):
+        trace = {'process_traces': [{'file': 'vulkan-1.jsonl',
+                  'instances': [{'requested_api': '1.2.123', 'extensions': ['VK_A']},
+                                {'requested_api': '1.3.0', 'extensions': ['VK_B']}],
+                  'devices': [{'device': 1, 'gpu': 'fixture', 'extensions': ['VK_D']}]}]}
+        requirements = {'binding': 'XR_KHR_vulkan_enable', 'minimum_api': '1.0.0', 'maximum_tested_api': '1.2.0',
+                        'required_instance_extensions': ['VK_A', 'VK_B'], 'required_device_extensions': ['VK_D', 'VK_E']}
+        result = vulkan_trace.compare_requirements(trace, requirements)
+        process = result['processes'][0]
+        self.assertEqual(process['instances'][0]['missing_literal_extension_names'], ['VK_B'])
+        self.assertEqual(process['instances'][1]['missing_literal_extension_names'], ['VK_A'])
+        self.assertTrue(process['instances'][0]['within_reported_api_range'])  # Patch is ignored by this XR contract.
+        self.assertFalse(process['instances'][1]['within_reported_api_range'])
+        self.assertEqual(process['devices'][0]['missing_literal_extension_names'], ['VK_E'])
+        self.assertFalse(result['instance_device_association_known'])
+        self.assertFalse(result['game_device_binding_proven'])
+
 
 if __name__ == '__main__':
     unittest.main()
