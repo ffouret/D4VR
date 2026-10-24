@@ -45,7 +45,7 @@ class ProbeTests(unittest.TestCase):
         (self.game / "Diablo IV.exe").write_bytes(b"test executable identity")
         self.binary = self.root / "probe.dll"
         self.binary.write_bytes(small_pe(True))
-        self.expected = {"game_version": "test", "streamline_version": "test",
+        self.expected = {"game_version": "test", "streamline_version": "test", "installation_allowed": True,
                          "original_sha256": hashlib.sha256(self.original).hexdigest(),
                          "game_exe_sha256": probe.digest(self.game / "Diablo IV.exe"),
                          "exports": [{"name": "slInit", "ordinal": 1}, {"name": "CreateDXGIFactory", "ordinal": 2}]}
@@ -58,6 +58,15 @@ class ProbeTests(unittest.TestCase):
     def test_exports_and_forwarders(self):
         probe.validate_probe(self.binary, self.expected)
         self.assertEqual(PEImage(self.binary).exports()[1]["forwarder"], "d4vr_streamline_original.CreateDXGIFactory")
+
+    def test_known_blocked_profile_cannot_be_installed(self):
+        self.expected.update(installation_allowed=False, deployment_status="blocked_by_game_signature_check")
+        with self.assertRaisesRegex(ValueError, "signature"):
+            self.install()
+        self.assertEqual((self.game / probe.LIBRARY).read_bytes(), self.original)
+        self.assertFalse((self.game / probe.BACKUP).exists())
+        self.assertFalse((self.game / probe.STATE).exists())
+        self.assertFalse(self.log.parent.exists())
 
     def test_truncated_pe_rejected(self):
         self.binary.write_bytes(b"MZ")

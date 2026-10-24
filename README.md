@@ -63,10 +63,21 @@ tags de ressources de NVIDIA Streamline 2.12 fourni avec le jeu. Son relais
 d'appels a été testé sous Wine, avec un programme contrôlé ; le chargement des
 262 exports a aussi été vérifié avec la véritable DLL NVIDIA hors du jeu.
 
-Cette sonde doit établir quelles données Diablo IV transmet réellement. Elle
-ne rend pas encore le jeu en VR. Son installation est limitée par empreinte à
-la version identifiée et inclut la sauvegarde/restauration de la DLL originale.
+Les deux essais réels ont établi un blocage : Battle.net restaure la bibliothèque
+originale et, quand le relais reste en place, Diablo IV refuse sa signature.
+L'original a été restauré et vérifié. L'installation de ce relais est désormais
+désactivée pour ce profil ; ses tests hors du jeu restent disponibles. Le rendu
+VR de Diablo IV reste à implémenter et requiert un autre point d'intégration.
 Voir [l'étude, les tests et la procédure](docs/STREAMLINE_PROBE.md).
+
+## Étape 3 : relevé DirectX 12
+
+Le lancement de diagnostic VKD3D a récupéré 10 249 fichiers DXIL, 10 377 SPIR-V
+et cinq fichiers de signature racine, avec les DLL NVIDIA d'origine. L'analyseur
+portable lit les types de shaders, signatures d'entrée/sortie et ressources
+déclarées. Les 20 626 fichiers de shaders ont été analysés sans erreur ; cela
+ne prouve pas quels programmes dessinent le décor ni quelles données portent
+la caméra. Voir [la capture et ses limites](docs/SHADER_CAPTURE.md).
 
 ## Commandes du prototype
 

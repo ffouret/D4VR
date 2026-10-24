@@ -61,6 +61,8 @@ def audit(game: Path, expected: dict) -> dict:
         "exports_match": exports == expected["exports"],
         "named_exports": len(exports),
         "machine": hex(image.machine),
+        "installation_allowed": expected.get("installation_allowed", False),
+        "deployment_status": expected.get("deployment_status", "not_validated"),
     }
 
 
@@ -117,6 +119,8 @@ def write_json(path: Path, value: dict) -> None:
 
 
 def install(game: Path, binary: Path, output: Path, expected: dict) -> dict:
+    if expected.get("installation_allowed") is not True:
+        raise ValueError("Installation désactivée pour ce profil : " + expected.get("deployment_status", "non validé"))
     game, binary, output = game.resolve(), binary.resolve(), output.resolve()
     if running_game_processes():
         raise ValueError("Fermer Diablo IV avant de modifier son installation")

@@ -1,5 +1,7 @@
 {
   "schema_version": 1,
+  "installation_allowed": false,
+  "deployment_status": "blocked_by_game_signature_check",
   "game_version": "3.2.3.73883",
   "streamline_version": "2.12.0.0",
   "original_sha256": "2a79db6857ae8c75bbd871a9489c48bc6a39f7fcc88b9b02afd53d0376cbec66",

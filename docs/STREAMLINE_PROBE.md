@@ -4,6 +4,11 @@ La sonde 0.2.0 prépare l'intégration au jeu après la validation du laboratoir
 dans le Quest 2. Elle observe des paramètres transmis à NVIDIA Streamline.
 Elle ne produit pas encore de deuxième vue et ne copie pas les pixels GPU.
 
+**Résultat des essais réels : relais refusé par la vérification de signature
+de Diablo IV.** L'original est restauré et vérifié. L'installation du relais est
+désormais désactivée dans ce profil ; les tests et le staging hors du jeu restent
+disponibles.
+
 ## Faits observés sur l'installation
 
 - Diablo IV : `3.2.3.73883`, exécutable Windows x64.
@@ -64,6 +69,24 @@ sécurisé du SDK rendent un refus du relais possible. Un tel refus doit être
 documenté et la bibliothèque originale restaurée ; il ne prouve pas que les
 constantes de caméra sont inaccessibles par toutes les autres voies.
 
+### Premier lancement sur le PC de référence
+
+Au premier essai du 24 octobre 2026, Battle.net a restauré la DLL NVIDIA avant
+de lancer le jeu. Son journal Agent indique `File sl.interposer.dll has invalid
+residency, hashing.` à 12:55:19 UTC ; le fichier original a été rétabli à 12:55:22.
+Le processus de Diablo IV a chargé cette DLL originale, sans charger la copie
+renommée du relais. Aucun événement de la sonde n'a donc été produit pendant
+les déplacements confirmés par le propriétaire.
+
+Au second essai, le relais a été installé après l'ouverture de Battle.net et
+est resté en place au lancement. Le journal du jeu a indiqué `Unable to verify
+Streamline library signature` à 13:04:39 UTC. Le processus n'a chargé aucun
+module Streamline et aucun journal de la sonde n'a été créé.
+
+Après fermeture du jeu, la DLL NVIDIA originale a été restaurée. Les empreintes
+de la DLL et du jeu correspondent au profil ; les fichiers de sauvegarde et de
+configuration de la sonde ont été retirés. Aucune vérification n'a été modifiée.
+
 ## Commandes de développement
 
 Depuis la racine du dépôt, avec le chemin réel du jeu :
@@ -77,10 +100,10 @@ python3 tools/probe.py stage --game-dir "/chemin/Diablo IV" --probe "/chemin/sl.
 dans ce dossier, résout les exports avec la véritable DLL NVIDIA. Il ne crée
 pas de périphérique graphique et ne lance pas Diablo IV.
 
-Pour installer la sonde après les tests, jeu fermé :
+La commande d'installation refuse désormais ce profil incompatible. La commande
+de restauration reste disponible pour une ancienne installation, jeu fermé :
 
 ```sh
-python3 tools/probe.py install --game-dir "/chemin/Diablo IV" --probe "/chemin/sl.interposer.dll" --output "/chemin/absolu/capture.jsonl"
 python3 tools/probe.py report "/chemin/absolu/capture.jsonl"
 python3 tools/probe.py uninstall --game-dir "/chemin/Diablo IV"
 ```
@@ -104,22 +127,23 @@ Elle refuse d'écraser une nouvelle DLL déposée entre-temps par une mise à jo
 - [Contrôles GitHub Actions Linux et Windows](https://github.com/ffouret/D4VR/actions/runs/40095580572) :
   réussis, dont compilation MSVC, tests du relais et vérification des 262 noms,
   ordinaux et forwarders sur la DLL Windows produite.
-- Sonde installée sur le PC de référence, jeu fermé ; empreintes de la DLL
-  installée, de la sauvegarde originale et de la configuration vérifiées.
-- Données émises par Diablo IV pendant une session réelle : pas encore relevées.
+- Deux essais réels : restauration par Battle.net, puis refus de signature par
+  le jeu ; aucune constante capturée.
+- DLL originale restaurée, empreinte vérifiée et fichiers de la sonde retirés.
 - Stéréo géométrique de Diablo IV : pas encore implémentée.
 
 Les bibliothèques de test synthétiques restent dans un dossier séparé. La DLL
 NVIDIA et l'exécutable de Diablo IV ne sont pas distribués dans les livrables.
 
-## Suite selon les observations
+## Suite de l'intégration
 
-Si les constantes sont reçues, examiner le code appelant et vérifier qu'il
-correspond à la caméra de la scène. Si des tags profondeur/couleur sont reçus,
-établir leur synchronisation et la possibilité de les lire correctement sur GPU.
-Ensuite seulement rechercher le point de rendu qui peut être exécuté pour deux
-vues cohérentes. Modifier les constantes envoyées à DLSS ne suffirait pas à
-modifier la caméra qui a déjà servi à dessiner la géométrie.
+La piste suivante est le chemin DirectX 12. Sous Bazzite, VKD3D-Proton dispose
+d'une fonction de relevé des shaders, activée pour un lancement par une variable
+d'environnement. Elle peut aider à identifier les programmes de géométrie et
+les buffers qui portent les transformations. Ce relevé ne fournit pas les valeurs
+de caméra en direct et ne crée pas deux vues. Le point qui permet de dessiner
+la géométrie pour chaque œil doit encore être trouvé ; modifier les constantes
+envoyées à DLSS ne suffirait pas à changer une image déjà dessinée.
 
 ## Sources
 
@@ -127,3 +151,4 @@ modifier la caméra qui a déjà servi à dessiner la géométrie.
 - [Constantes de caméra dans ce SDK](https://github.com/NVIDIA-RTX/Streamline/blob/e8aaa6eaac968711fb62473d4ae8256dde20919b/include/sl_consts.h)
 - [API de constantes et de tags](https://github.com/NVIDIA-RTX/Streamline/blob/e8aaa6eaac968711fb62473d4ae8256dde20919b/include/sl_core_api.h)
 - [Chargement et intégration manuelle](https://github.com/NVIDIA-RTX/Streamline/blob/main/docs/ProgrammingGuideManualHooking.md)
+- [Relevé de shaders VKD3D-Proton](https://github.com/HansKristian-Work/vkd3d-proton#advanced-shader-debugging)
