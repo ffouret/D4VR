@@ -10,11 +10,12 @@ répond pas à cet objectif.
 
 ## État du projet
 
-**Version 0.1.0 : laboratoire 3D autonome, sans intégration à Diablo IV.**
-Le dépôt contient un prototype Godot/OpenXR avec une scène géométrique, un
-personnage déplaçable, un point d'observation surélevé, le suivi de tête et des
-réglages d'échelle. L'accès à la caméra et au rendu stéréoscopique de Diablo IV
-reste à démontrer.
+**État expérimental : déplacement de sommets confirmé dans Diablo IV et scène
+native SteamVR validée séparément en casque. Le jeu n'est pas encore rendu en VR.**
+Le dépôt contient le laboratoire Godot/OpenXR, les outils d'analyse et de
+diagnostic de la géométrie du jeu, un cœur de projection par œil et une chaîne
+native OpenXR/Vulkan. Produire deux vues cohérentes de Diablo IV et les soumettre
+au casque reste à implémenter.
 
 Le chargement de la scène, son aperçu bureau et les tests de caméra ont été
 vérifiés dans l'environnement de développement et en CI sur Linux et Windows.
@@ -111,6 +112,15 @@ originale avec suivi de tête. Le propriétaire confirme l'affichage dans le
 Quest 2 connecté par Steam Link. SteamVR sélectionne la RTX 5090 et recommande
 2 244 × 2 352 pixels par œil. Ce composant reste indépendant de Diablo IV.
 Voir [le relevé natif et sa portée](docs/NATIVE_XR.md).
+
+## Étape 7 : observation du renderer Vulkan
+
+Une couche Vulkan Linux observe les commandes soumises, les passes de rendu,
+les versions et extensions utilisées. Elle prend aussi en compte les commandes
+générées sur le GPU et les buffers secondaires réutilisés. Ses tests de relais
+et son chargement dans Steam Runtime passent ; la fixture RTX 5090 conserve ses
+pixels et sa parallaxe. La couche n'ajoute pas de rendu par œil.
+Voir [le lancement isolé et les limites du relevé](docs/VULKAN_TRACE.md).
 
 ## Commandes du prototype
 
