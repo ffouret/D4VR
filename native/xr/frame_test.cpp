@@ -17,7 +17,8 @@ void xr_ok(XrResult r) { if (XR_FAILED(r)) throw std::runtime_error("OpenXR fram
 void vk_ok(VkResult r) { if (r != VK_SUCCESS) throw std::runtime_error("Vulkan frame error " + std::to_string(r)); }
 template<class T> T xr_fn(XrInstance instance, const char* name) {
     PFN_xrVoidFunction p = nullptr; xr_ok(xrGetInstanceProcAddr(instance, name, &p));
-    if (!p) throw std::runtime_error(name); return reinterpret_cast<T>(p);
+    if (!p) throw std::runtime_error(name);
+    return reinterpret_cast<T>(p);
 }
 d4vr::Matrix4 pose_matrix(const XrPosef& p) {
     double x=p.orientation.x, y=p.orientation.y, z=p.orientation.z, w=p.orientation.w;

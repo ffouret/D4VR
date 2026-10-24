@@ -14,6 +14,9 @@
 #include <unordered_map>
 #include <unistd.h>
 #include <vector>
+#ifdef D4VR_TRACE_XR_BINDING
+#include "xr_binding.hpp"
+#endif
 
 // Older distribution headers predate EXT DGC. We only forward its opaque input;
 // no structure layout, generated tokens, or GPU memory is inspected here.
@@ -79,6 +82,8 @@ struct Instance {
     VkInstance handle{};
     PFN_vkGetInstanceProcAddr get{};
     PFN_GetPhysicalDeviceProcAddr physicalGet{};
+    uint32_t api = VK_API_VERSION_1_0;
+    std::vector<std::string> extensions;
 };
 // Counts are API commands, never a count of actual draws inside an indirect/DGC
 // buffer. Aggregation happens on successful submission, including reused CBs.
@@ -103,7 +108,7 @@ struct Commands {
 };
 // One immutable dispatch table per device avoids proc-address lookup per draw.
 #define D4_DEVICE_FUNCTIONS(X) \
-    X(DestroyDevice) X(AllocateCommandBuffers) X(FreeCommandBuffers) X(BeginCommandBuffer) \
+    X(DestroyDevice) X(GetDeviceQueue) X(GetDeviceQueue2) X(AllocateCommandBuffers) X(FreeCommandBuffers) X(BeginCommandBuffer) \
     X(ResetCommandBuffer) X(ResetCommandPool) X(DestroyCommandPool) X(CmdExecuteCommands) \
     X(CmdDraw) X(CmdDrawIndexed) X(CmdDrawIndirect) X(CmdDrawIndexedIndirect) \
     X(CmdDrawIndirectCount) X(CmdDrawIndexedIndirectCount) X(CmdExecuteGeneratedCommandsEXT) \
@@ -114,6 +119,13 @@ struct Device {
     VkDevice handle{};
     PFN_vkGetDeviceProcAddr get{};
     uint32_t id{};
+    std::shared_ptr<Instance> instance;
+    VkPhysicalDevice physical{};
+    std::vector<std::string> extensions;
+    std::unordered_map<VkQueue, std::pair<uint32_t, uint32_t>> queues;
+    std::vector<VkQueueFamilyProperties> queueFamilies;
+    std::array<uint8_t, VK_UUID_SIZE> deviceUuid{};
+    bool bindingAttempted = false;
 #define D4_FIELD(name) PFN_vk##name name{};
     D4_DEVICE_FUNCTIONS(D4_FIELD)
 #undef D4_FIELD
@@ -159,6 +171,33 @@ void submitted(const std::shared_ptr<Device>& d, const Counts& counts, uint64_t 
     }
     if (!record.empty()) logFile.write(record);
 }
+void maybeAttach(const std::shared_ptr<Device>& d, VkQueue queue) {
+#ifdef D4VR_TRACE_XR_BINDING
+    static thread_local bool active = false;
+    const char* enabled = std::getenv("D4VR_TRACE_XR_BINDING");
+    if (active || !enabled || std::strcmp(enabled, "1") != 0) return;
+    std::pair<uint32_t, uint32_t> location;
+    {
+        std::lock_guard<std::mutex> lock(stateMutex);
+        if (d->bindingAttempted) return;
+        auto found = d->queues.find(queue);
+        if (found == d->queues.end()) return;
+        location = found->second;
+        if (location.first >= d->queueFamilies.size() || !(d->queueFamilies[location.first].queueFlags & VK_QUEUE_GRAPHICS_BIT)) return;
+        d->bindingAttempted = true;
+    }
+    // This runs after device creation, before forwarding the first submission.
+    // The caller's queue synchronization still covers this call. No trace-state
+    // mutex is held while the runtime may re-enter Vulkan through the loader.
+    active = true;
+    auto result = d4vr_probe_borrowed_binding(d->instance->handle, d->physical, d->handle,
+        location.first, location.second, d->instance->api, d->deviceUuid, d->instance->extensions, d->extensions);
+    active = false;
+    logFile.write("\"event\":\"xr_binding\",\"device\":" + std::to_string(d->id) + ",\"binding\":" + result);
+#else
+    (void)d; (void)queue;
+#endif
+}
 
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL d4GetInstanceProcAddr(VkInstance, const char*);
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL d4GetDeviceProcAddr(VkDevice, const char*);
@@ -183,6 +222,8 @@ VKAPI_ATTR VkResult VKAPI_CALL d4CreateInstance(const VkInstanceCreateInfo* info
     state->handle = *result;
     { std::lock_guard<std::mutex> lock(stateMutex); instances[key(*result)] = state; }
     uint32_t api = info->pApplicationInfo && info->pApplicationInfo->apiVersion ? info->pApplicationInfo->apiVersion : VK_API_VERSION_1_0;
+    state->api = api;
+    for (uint32_t i = 0; i < info->enabledExtensionCount; ++i) state->extensions.emplace_back(info->ppEnabledExtensionNames[i]);
     logFile.write("\"event\":\"instance\",\"requested_api\":" + version(api) +
         ",\"extensions\":" + extensions(info->enabledExtensionCount, info->ppEnabledExtensionNames));
     return status;
@@ -211,6 +252,8 @@ VKAPI_ATTR VkResult VKAPI_CALL d4CreateDevice(VkPhysicalDevice physical, const V
     auto status = create(physical, info, allocator, result);
     if (status != VK_SUCCESS) return status;
     d->handle = *result;
+    d->instance = instance; d->physical = physical;
+    for (uint32_t i = 0; i < info->enabledExtensionCount; ++i) d->extensions.emplace_back(info->ppEnabledExtensionNames[i]);
 #define D4_LOAD(name) d->name = reinterpret_cast<PFN_vk##name>(get(*result, "vk" #name));
     D4_DEVICE_FUNCTIONS(D4_LOAD)
 #undef D4_LOAD
@@ -224,6 +267,16 @@ VKAPI_ATTR VkResult VKAPI_CALL d4CreateDevice(VkPhysicalDevice physical, const V
     VkPhysicalDeviceProperties properties{};
     auto getProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties>(instance->get(instance->handle, "vkGetPhysicalDeviceProperties"));
     getProperties(physical, &properties);
+    auto properties2 = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2>(instance->get(instance->handle, "vkGetPhysicalDeviceProperties2"));
+    if (!properties2) properties2 = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2>(instance->get(instance->handle, "vkGetPhysicalDeviceProperties2KHR"));
+    if (properties2) {
+        VkPhysicalDeviceIDProperties id{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES};
+        VkPhysicalDeviceProperties2 p{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2}; p.pNext = &id;
+        properties2(physical, &p); std::copy(id.deviceUUID, id.deviceUUID + VK_UUID_SIZE, d->deviceUuid.begin());
+    }
+    auto getFamilies = reinterpret_cast<PFN_vkGetPhysicalDeviceQueueFamilyProperties>(instance->get(instance->handle, "vkGetPhysicalDeviceQueueFamilyProperties"));
+    uint32_t familyCount = 0; getFamilies(physical, &familyCount, nullptr);
+    d->queueFamilies.resize(familyCount); getFamilies(physical, &familyCount, d->queueFamilies.data());
     std::ostringstream queues; queues << '[';
     for (uint32_t i = 0; i < info->queueCreateInfoCount; ++i) {
         auto& q = info->pQueueCreateInfos[i];
@@ -231,9 +284,18 @@ VKAPI_ATTR VkResult VKAPI_CALL d4CreateDevice(VkPhysicalDevice physical, const V
     }
     queues << ']';
     logFile.write("\"event\":\"device\",\"device\":" + std::to_string(d->id) + ",\"gpu\":" + quoted(properties.deviceName) +
+        ",\"instance_requested_api\":" + version(instance->api) +
         ",\"vendor_id\":" + std::to_string(properties.vendorID) + ",\"supported_api\":" + version(properties.apiVersion) +
         ",\"queues\":" + queues.str() + ",\"extensions\":" + extensions(info->enabledExtensionCount, info->ppEnabledExtensionNames));
     return status;
+}
+VKAPI_ATTR void VKAPI_CALL d4GetDeviceQueue(VkDevice handle, uint32_t family, uint32_t index, VkQueue* queue) {
+    auto d = deviceFor(handle); d->GetDeviceQueue(handle, family, index, queue);
+    if (*queue) { std::lock_guard<std::mutex> lock(stateMutex); d->queues[*queue] = {family, index}; }
+}
+VKAPI_ATTR void VKAPI_CALL d4GetDeviceQueue2(VkDevice handle, const VkDeviceQueueInfo2* info, VkQueue* queue) {
+    auto d = deviceFor(handle); d->GetDeviceQueue2(handle, info, queue);
+    if (*queue) { std::lock_guard<std::mutex> lock(stateMutex); d->queues[*queue] = {info->queueFamilyIndex, info->queueIndex}; }
 }
 VKAPI_ATTR void VKAPI_CALL d4DestroyDevice(VkDevice handle, const VkAllocationCallbacks* allocator) {
     auto d = deviceFor(handle);
@@ -311,11 +373,13 @@ D4_COMMAND(CmdBeginRendering, DynamicRendering, (VkCommandBuffer command, const 
 #undef D4_COMMAND
 VKAPI_ATTR VkResult VKAPI_CALL d4QueueSubmit(VkQueue queue, uint32_t n, const VkSubmitInfo* submits, VkFence fence) {
     auto d = deviceFor(queue); Counts counts{}; uint64_t buffers = 0;
+    maybeAttach(d, queue);
     { std::lock_guard<std::mutex> lock(stateMutex); for (uint32_t i = 0; i < n; ++i) for (uint32_t j = 0; j < submits[i].commandBufferCount; ++j) { ++buffers; collect(*d, submits[i].pCommandBuffers[j], counts); } }
     auto result = d->QueueSubmit(queue, n, submits, fence); submitted(d, counts, buffers, result); return result;
 }
 VKAPI_ATTR VkResult VKAPI_CALL d4QueueSubmit2(VkQueue queue, uint32_t n, const VkSubmitInfo2* submits, VkFence fence) {
     auto d = deviceFor(queue); Counts counts{}; uint64_t buffers = 0;
+    maybeAttach(d, queue);
     { std::lock_guard<std::mutex> lock(stateMutex); for (uint32_t i = 0; i < n; ++i) for (uint32_t j = 0; j < submits[i].commandBufferInfoCount; ++j) { ++buffers; collect(*d, submits[i].pCommandBufferInfos[j].commandBuffer, counts); } }
     auto result = d->QueueSubmit2(queue, n, submits, fence); submitted(d, counts, buffers, result); return result;
 }

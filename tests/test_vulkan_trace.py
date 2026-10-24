@@ -81,6 +81,14 @@ class TraceReports(unittest.TestCase):
         self.assertFalse(result['instance_device_association_known'])
         self.assertFalse(result['game_device_binding_proven'])
 
+    def test_borrowed_binding_probe_does_not_prove_stereo(self):
+        with tempfile.TemporaryDirectory() as directory:
+            self.write(directory, [{'event': 'device', 'device': 1},
+                                   {'event': 'xr_binding', 'device': 1, 'binding': {'success': True, 'swapchain_images': 3, 'frames_submitted': 0}}])
+            result = vulkan_trace.report(Path(directory))
+            self.assertTrue(result['process_traces'][0]['devices'][0]['xr_binding_probe']['success'])
+            self.assertFalse(result['game_stereo_submitted'])
+
 
 if __name__ == '__main__':
     unittest.main()

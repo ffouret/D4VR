@@ -94,6 +94,19 @@ Vulkan historique, avec une instance OpenXR séparée. Il ne crée aucun objet
 Vulkan ni session. Son relevé et la comparaison avec le renderer réel sont
 décrits dans [le diagnostic Vulkan](VULKAN_TRACE.md#exigences-de-liaison-steamvr).
 
+Le mode `--external-binding 1.2` ou `--external-binding 1.3` crée les objets
+Vulkan directement dans l'application avec les extensions demandées, puis
+essaie la liaison historique OpenXR. Il crée une session et une petite swapchain
+64 × 64, énumère ses images puis libère ses ressources. Il ne démarre pas la
+session et ne soumet aucune trame. Les deux versions passent sur le PC de
+référence, avec trois images Vulkan chacune. Le relevé 1.3 signale explicitement
+qu'il dépasse la plage testée annoncée par le runtime : ce succès local ne
+constitue pas une garantie pour d'autres runtimes ou pilotes.
+
+Cette expérience est ensuite adaptée à des objets **empruntés** à une application
+par la couche Vulkan. La fixture indépendante, son exécution dans Steam Runtime
+et le contrôle sur Diablo IV sont décrits dans le document de diagnostic.
+
 ## Sources primaires des interfaces
 
 - [Création d'une instance Vulkan par OpenXR](https://registry.khronos.org/OpenXR/specs/1.1/man/html/xrCreateVulkanInstanceKHR.html)

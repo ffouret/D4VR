@@ -37,13 +37,15 @@ def read_trace(path: Path) -> dict:
             if row['device'] in devices:
                 raise ValueError('Duplicate device identifier')
             devices[row['device']] = dict(row, last_total_commands=None, last_present_call=0, clean_destroy=False)
-        elif event in ('submit', 'submit_error', 'present', 'device_destroy'):
+        elif event in ('submit', 'submit_error', 'present', 'device_destroy', 'xr_binding'):
             device = devices.get(row['device'])
             if device is None:
                 raise ValueError('Command event precedes device creation')
             if event == 'present':
                 device['last_total_commands'] = row['total_commands']
                 device['last_present_call'] = row['present_call']
+            elif event == 'xr_binding':
+                device['xr_binding_probe'] = row['binding']
             elif event == 'device_destroy':
                 device.update(last_total_commands=row['commands'], clean_destroy=True,
                               last_present_call=row['present_calls'], submissions=row['submissions'])
@@ -119,12 +121,20 @@ def stage(layer_directory: Path, proof: Path, output: Path) -> dict:
     return result
 
 
-def run(game: Path, launcher: Path, bundle: Path, runtime_bundle: Path, output: Path) -> int:
+def run(game: Path, launcher: Path, bundle: Path, runtime_bundle: Path, output: Path,
+        xr_binding: bool = False, xr_loader: Path | None = None, xr_runtime: Path | None = None) -> int:
     if sys.platform != 'linux':
         raise ValueError('This Vulkan diagnostic launcher currently requires Linux')
     staged = json.loads((bundle / 'trace-bundle.json').read_text(encoding='utf-8'))
     if staged.get('purpose') != 'vulkan_trace_diagnostic':
         raise ValueError('Unexpected trace bundle')
+    if xr_binding:
+        if staged['validation'].get('borrowed_binding_fixture_passed') is not True:
+            raise ValueError('Validate the borrowed-device fixture before this test')
+        if not xr_loader or not xr_loader.is_file() or not xr_runtime or not xr_runtime.is_file():
+            raise ValueError('Provide the tested native XR loader and SteamVR manifest')
+        if probe.digest(xr_loader) != staged['validation'].get('xr_loader_sha256'):
+            raise ValueError('XR loader differs from the fixture validation')
     for name, field in ((LIBRARY, 'layer_sha256'), (MANIFEST, 'manifest_sha256')):
         if probe.digest(bundle / name) != staged[field]:
             raise ValueError('Staged trace changed after validation')
@@ -155,17 +165,21 @@ def run(game: Path, launcher: Path, bundle: Path, runtime_bundle: Path, output: 
     variables = {'VK_ADD_LAYER_PATH': str(bundle), 'VK_INSTANCE_LAYERS': LAYER,
                  'D4VR_TRACE_DIR': str(output), 'VKD3D_DEBUG': 'info',
                  'VKD3D_LOG_FILE': probe.windows_path(output / 'vkd3d.log')}
+    if xr_binding:
+        variables.update(D4VR_TRACE_XR_BINDING='1', D4VR_XR_LOADER=str(xr_loader.resolve()), XR_RUNTIME_JSON=str(xr_runtime.resolve()))
     capture = {'schema_version': 1, 'created_utc': datetime.now(timezone.utc).isoformat(),
                'phase': 'launching', 'variables': variables, 'game_files_changed': False,
                'game_audit_before': audit, 'trace_layer_sha256': staged['layer_sha256'],
                'shader_overrides_enabled': False, 'game_stereo_submitted': False}
+    capture['temporary_xr_binding_probe_requested'] = xr_binding
     probe.write_json(output / 'capture.json', capture)
     bridge = Path('/run/host/usr/bin/flatpak-spawn')
     command = ([str(bridge), '--host', '/usr/bin/env'] if bridge.exists() else ['/usr/bin/env'])
-    for name in ('VKD3D_SHADER_OVERRIDE', 'VKD3D_SHADER_DUMP_PATH', 'VKD3D_SHADER_DEBUG_RING_SIZE_LOG2'):
+    for name in ('VKD3D_SHADER_OVERRIDE', 'VKD3D_SHADER_DUMP_PATH', 'VKD3D_SHADER_DEBUG_RING_SIZE_LOG2',
+                 'D4VR_TRACE_XR_BINDING', 'D4VR_XR_LOADER'):
         command += ['-u', name]
     command += [key + '=' + value for key, value in variables.items()] + ['/usr/bin/bash', str(private_launcher)]
-    print('Battle.net : observation Vulkan isolée ; jouer une minute sur le moniteur, puis fermer le jeu et Battle.net.', flush=True)
+    print('Battle.net : diagnostic Vulkan isolé ; entrer en partie sur le moniteur, puis fermer le jeu et Battle.net.', flush=True)
     with (output / 'launcher-private.log').open('wb') as stream:
         os.chmod(stream.name, 0o600)
         result = subprocess.run(command, stdout=stream, stderr=subprocess.STDOUT)
@@ -189,6 +203,9 @@ def main() -> int:
     launch = sub.add_parser('run')
     for name in ('game-dir', 'launcher', 'bundle', 'runtime-bundle', 'output'):
         launch.add_argument('--' + name, required=True, type=Path)
+    launch.add_argument('--xr-binding', action='store_true')
+    launch.add_argument('--xr-loader', type=Path)
+    launch.add_argument('--xr-runtime', type=Path)
     summarize = sub.add_parser('report')
     summarize.add_argument('directory', type=Path)
     summarize.add_argument('--output', required=True, type=Path)
@@ -199,7 +216,8 @@ def main() -> int:
     if args.command == 'stage':
         print(json.dumps(stage(args.layer_dir, args.proof, args.output), indent=2)); return 0
     if args.command == 'run':
-        return run(args.game_dir, args.launcher, args.bundle, args.runtime_bundle, args.output)
+        return run(args.game_dir, args.launcher, args.bundle, args.runtime_bundle, args.output,
+                   args.xr_binding, args.xr_loader, args.xr_runtime)
     if args.command == 'compare-requirements':
         requirements = json.loads(args.requirements.read_text(encoding='utf-8'))
         result = compare_requirements(report(args.trace_directory), requirements)

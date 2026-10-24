@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 #include "frame_test.hpp"
+#include "external_binding.hpp"
 
 namespace {
 void xr_check(XrResult result, const char* operation) {
@@ -159,7 +160,12 @@ std::string readiness(const char* vertex_path, const char* fragment_path, bool& 
 int main(int argc, char** argv) try {
     bool frames = argc == 4 && std::string(argv[1]) == "--frames";
     if (argc == 2 && std::string(argv[1]) == "--requirements") { std::cout << legacy_requirements() << '\n'; return 0; }
-    if (argc != 1 && !frames) throw std::runtime_error("Usage: xr_readiness [--requirements | --frames scene.vert.spv scene.frag.spv]");
+    if (argc == 3 && std::string(argv[1]) == "--external-binding" && (std::string(argv[2]) == "1.2" || std::string(argv[2]) == "1.3")) {
+        bool success = false;
+        auto result = d4vr_external_binding_test(std::string(argv[2]) == "1.3" ? VK_API_VERSION_1_3 : VK_API_VERSION_1_2, success);
+        std::cout << result << '\n'; return success ? 0 : 2;
+    }
+    if (argc != 1 && !frames) throw std::runtime_error("Usage: xr_readiness [--requirements | --external-binding 1.2|1.3 | --frames scene.vert.spv scene.frag.spv]");
     bool success = true;
     auto report = readiness(frames ? argv[2] : nullptr, frames ? argv[3] : nullptr, success);
     std::cout << report << '\n'; return success ? 0 : 2;

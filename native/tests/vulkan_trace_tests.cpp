@@ -12,6 +12,10 @@ VkResult submitResult = VK_SUCCESS;
 VkCommandBuffer expectedCommand{};
 const VkGeneratedCommandsInfoEXT* expectedGenerated{};
 const VkSubmitInfo2* expectedSubmit{};
+VkQueue expectedQueue{};
+VKAPI_ATTR void VKAPI_CALL getQueue(VkDevice, uint32_t family, uint32_t index, VkQueue* out) {
+    require(family == 3 && index == 2, "Queue arguments changed"); *out = expectedQueue;
+}
 VKAPI_ATTR void VKAPI_CALL draw(VkCommandBuffer command, uint32_t a, uint32_t b, uint32_t c, uint32_t e) {
     require(command == expectedCommand && a == 3 && b == 2 && c == 1 && e == 7, "Draw arguments changed"); ++drawCalls;
 }
@@ -47,9 +51,12 @@ int main() try {
     auto queue = reinterpret_cast<VkQueue>(&queueHandle);
     auto pool = reinterpret_cast<VkCommandPool>(&dispatchKey);
     auto d = std::make_shared<Device>(); d->handle = handle; d->get = proc;
+    d->GetDeviceQueue = getQueue;
     d->CmdDraw = draw; d->CmdExecuteGeneratedCommandsEXT = generated; d->CmdExecuteCommands = execute;
     d->QueueSubmit2 = submit2; d->BeginCommandBuffer = begin; d->ResetCommandPool = resetPool; d->DestroyCommandPool = destroyPool;
     devices[key(handle)] = d;
+    expectedQueue = queue; VkQueue returned{}; d4GetDeviceQueue(handle, 3, 2, &returned);
+    require(returned == queue && d->queues.at(queue) == std::make_pair(3u, 2u), "Queue association lost");
     d->commands[primary].pool = pool; d->commands[secondary].pool = pool;
     require(d4GetDeviceProcAddr(handle, "vkCmdDraw") == reinterpret_cast<PFN_vkVoidFunction>(d4CmdDraw), "Draw hook missing");
     require(!d4GetDeviceProcAddr(handle, "vkCmdDrawIndirectCount"), "Unsupported function advertised");

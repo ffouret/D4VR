@@ -11,7 +11,8 @@ répond pas à cet objectif.
 ## État du projet
 
 **État expérimental : déplacement de sommets confirmé dans Diablo IV et scène
-native SteamVR validée séparément en casque. Le jeu n'est pas encore rendu en VR.**
+native SteamVR validée séparément en casque. Une session temporaire est aussi
+acceptée sur le périphérique Vulkan du jeu. Diablo n'est pas encore rendu en VR.**
 Le dépôt contient le laboratoire Godot/OpenXR, les outils d'analyse et de
 diagnostic de la géométrie du jeu, un cœur de projection par œil et une chaîne
 native OpenXR/Vulkan. Produire deux vues cohérentes de Diablo IV et les soumettre
@@ -122,7 +123,10 @@ et son chargement dans Steam Runtime passent ; la fixture RTX 5090 conserve ses
 pixels et sa parallaxe. La couche n'ajoute pas de rendu par œil.
 Le relevé en partie retrouve 13 800 présentations, sans buffer inconnu ; le
 propriétaire confirme une image normale. Les extensions requises par la liaison
-Vulkan de SteamVR sont comparées séparément, sans preuve de liaison au jeu.
+Vulkan de SteamVR ont été comparées avant le contrôle de liaison.
+Le contrôle suivant a créé une session temporaire et obtenu trois images
+OpenXR sur le périphérique Vulkan 1.3 de Diablo, avec identité du GPU vérifiée
+par UUID. Cette session n'est pas démarrée et ne soumet aucune image.
 Voir [le lancement isolé et les limites du relevé](docs/VULKAN_TRACE.md).
 
 ## Commandes du prototype

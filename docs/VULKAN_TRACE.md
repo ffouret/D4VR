@@ -2,7 +2,7 @@
 
 La couche explicite `VK_LAYER_D4VR_trace` prépare le raccordement entre VKD3D
 et la chaîne native OpenXR. Elle relève les versions, extensions et commandes
-réellement soumises. Elle ne crée pas de session XR et ne rejoue aucune commande.
+réellement soumises. Le mode d'observation ne crée pas de session XR et ne rejoue aucune commande.
 Les arguments, résultats et synchronisations Vulkan d'origine sont conservés.
 
 ## Pourquoi observer les commandes indirectes
@@ -111,6 +111,61 @@ La soumission Vulkan directe via OpenVR est également documentée par Valve :
 elle accepte une description des textures et des objets Vulkan de l'application.
 C'est une voie d'intégration à évaluer, sans prototype de soumission du jeu à ce stade.
 
+## Liaison temporaire au périphérique du jeu
+
+Une option séparée vérifie maintenant l'acceptation des objets Vulkan empruntés
+à l'application. Elle est désactivée dans le mode d'observation et requiert un
+build `D4VR_TRACE_WITH_XR_BINDING=ON`, avec les en-têtes OpenXR. Le loader natif
+est chargé dynamiquement uniquement pour ce contrôle ; aucun loader OpenXR n'est
+requis pour l'observation normale. Son empreinte est épinglée au build testé.
+
+La couche conserve l'instance et le périphérique d'origine, identifie la queue
+par `vkGetDeviceQueue`/`vkGetDeviceQueue2`, puis attend sa première soumission
+sur une famille graphique. Elle tente une seule liaison par périphérique. Le
+mutex des données de trace est relâché pendant les appels au runtime ; un garde
+par thread empêche les tentatives récursives. L'appel reste dans le périmètre
+de synchronisation de la queue assuré par l'application.
+
+Le runtime et la couche peuvent voir des handles physiques distincts : le
+loader utilise des handles de trampoline et de terminateur. La couche lit
+l'UUID matériel par la table de dispatch suivante et compare celui du handle
+public renvoyé par OpenXR via le loader public. La valeur de l'UUID n'est jamais
+écrite dans le journal. Une absence d'identité ou d'extension requise arrête
+le contrôle avant la création de session. La liaison utilise le handle public
+attendu par le runtime après cette vérification.
+
+Une session et une swapchain 64 × 64 sont créées, leurs images Vulkan sont
+énumérées, puis les objets OpenXR temporaires sont détruits. Aucun objet Vulkan
+emprunté n'est détruit ou remplacé. La session n'est jamais démarrée ; aucune
+image n'est acquise, dessinée ou soumise. Les commandes de l'application sont
+ensuite transmises normalement, que le contrôle ait réussi ou échoué.
+
+La fixture `borrowed_binding_vulkan.cpp` crée ses propres objets Vulkan 1.3 avec
+les noms d'extensions provenant d'un relevé frais du runtime. Elle émet une
+soumission sans commande, puis vérifie qu'elle peut fermer normalement ses
+objets après le contrôle. Le test réussit en natif et dans Steam Runtime 4 :
+UUID concordant, extensions présentes, session acceptée et trois images.
+Les durées relevées sont respectivement de 121 et 100 ms. Les pixels et la
+parallaxe des fixtures GPU habituelles restent conformes avec ce build.
+
+Le contrôle réel sur Diablo IV réussit également : instance Vulkan 1.3,
+identité matérielle concordante malgré deux handles différents, session acceptée
+et trois images OpenXR. La création et destruction temporaires prennent environ
+2,22 secondes, au démarrage. **Ce résultat confirme l'acceptation d'une session
+sur le périphérique du jeu ; il ne produit aucune vue stéréo de Diablo.**
+La couche libère immédiatement ses objets OpenXR et ne conserve pas une session
+active. Le rejeu géométrique, les ressources par œil et la synchronisation des
+futures trames de rendu restent à implémenter.
+
+```sh
+python3 tools/vulkan_trace.py run --xr-binding --xr-loader /chemin/libopenxr_loader.so --xr-runtime /chemin/SteamVR/steamxr_linux64.json --game-dir "/chemin/Diablo IV" --launcher /travail/battlenet.sh --bundle /travail/couche-validee --runtime-bundle /travail/bundle-geometrie-valide --output /travail/session-neuve
+```
+
+Le lanceur exige une preuve de réussite de la fixture empruntée et vérifie le
+SHA-256 du loader testé avant ce mode. SteamVR et la liaison du casque doivent
+être actifs pendant le démarrage. Le champ `xr_binding_probe` du rapport
+conserve le résultat ; `game_stereo_submitted` reste faux.
+
 ## Construire et lancer
 
 ```sh
@@ -148,3 +203,4 @@ binaires compilés et relevés du jeu restent hors du dépôt.
 - [Exécution de commandes générées EXT](https://docs.vulkan.org/refpages/latest/refpages/source/vkCmdExecuteGeneratedCommandsEXT.html)
 - [Exigences de version OpenXR/Vulkan](https://registry.khronos.org/OpenXR/specs/1.1/man/html/XrGraphicsRequirementsVulkanKHR.html)
 - [Soumission Vulkan à SteamVR via OpenVR](https://github.com/ValveSoftware/openvr/wiki/Vulkan)
+- [Identité du périphérique Vulkan](https://docs.vulkan.org/refpages/latest/refpages/source/VkPhysicalDeviceIDProperties.html)
