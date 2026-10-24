@@ -21,19 +21,25 @@ def build(args) -> dict:
     if args.output.exists() and any(args.output.iterdir()):
         raise ValueError("Use an empty directory for this observer bundle")
     args.output.mkdir(parents=True, exist_ok=True)
+    args.output.chmod(0o700)
     validation = args.output / "validation"
     patched_fixture = validation / "fixture.observed.spv"
-    spirv_probe.build(args.fixture_vertex, args.helper, patched_fixture, args.tools, 3, 0, 72, 1, 56, args.geometry)
+    spirv_probe.build(args.fixture_vertex, args.helper, patched_fixture, args.tools, 3, 0, 72, 1, 56, args.geometry, args.stereo)
     bridge = Path("/run/host/usr/bin/flatpak-spawn")
     command = [str(bridge), "--host"] if bridge.exists() else []
     command += [str(p.resolve()) for p in (args.gpu_fixture, args.fixture_vertex, patched_fixture, args.fixture_fragment)]
-    if args.geometry:
+    if args.stereo:
+        command.append("--stereo")
+    elif args.geometry:
         command.append("--geometry")
     result = subprocess.run(command, check=True, capture_output=True, text=True, timeout=60)
     proof = json.loads(result.stdout.splitlines()[-1])
     valid = (proof.get("geometry_parallax_verified") is True and proof.get("non_target_projection_unchanged") is True and proof.get("geometry_telemetry_verified") is True
              if args.geometry else proof.get("matrix_values_verified") == 32 and proof.get("sparse_sampling_and_budget_verified") is True)
-    if proof.get("gpu_fixture_passed") is not True or not valid:
+    if args.stereo:
+        valid = (proof.get('stereo_gpu_fixture_passed') is True and proof.get('packet_gpu_updates_verified') is True
+                 and proof.get('independent_reference_images_verified') is True and proof.get('inactive_and_non_target_unchanged') is True)
+    if not valid or (not args.stereo and proof.get("gpu_fixture_passed") is not True):
         raise ValueError("GPU diagnostic fixture did not pass")
     (validation / "gpu-result.json").write_text(json.dumps(proof, indent=2) + "\n", encoding="utf-8")
     inventory = json.loads(args.inventory.read_text(encoding="utf-8"))
@@ -64,7 +70,7 @@ def build(args) -> dict:
         if probe.digest(original_spirv) != identities.get(original_spirv.name):
             raise ValueError("SPIR-V identity differs from captured inventory")
         output = overrides / original_spirv.name
-        spirv_probe.build(original_spirv, args.helper, output, args.tools, 3, 0, 72, 1, 56, args.geometry)
+        spirv_probe.build(original_spirv, args.helper, output, args.tools, 3, 0, 72, 1, 56, args.geometry, args.stereo)
         return {"file": output.name, "original_sha256": identities[original_spirv.name],
                 "override_sha256": probe.digest(output)}
 
@@ -85,6 +91,10 @@ def build(args) -> dict:
                         projection_filter_vertical_fov_degrees=35, projection_filter_aspect_ratio=16 / 9,
                         maximum_matrix_samples=0, matrices_per_sample=0, geometry_telemetry=True,
                         maximum_geometry_samples=1024)
+    if args.stereo:
+        manifest.update(purpose='eye_transform_diagnostic',eye_state_abi=1,eye_state_specialization_id=4,
+                        projection_filter_vertical_fov_degrees=35,projection_filter_aspect_ratio=16/9,
+                        maximum_matrix_samples=0,matrices_per_sample=0,stereo_telemetry=True,maximum_stereo_samples=1024)
     probe.write_json(args.output / "bundle.json", manifest)
     return {k: v for k, v in manifest.items() if k != "entries"} | {"validated_shaders": len(entries)}
 
@@ -94,7 +104,9 @@ def main():
     for option in ("shaders", "inventory", "candidates", "helper", "tools", "proton-path", "gpu-fixture",
                    "fixture-vertex", "fixture-fragment", "output"):
         parser.add_argument("--" + option, type=Path, required=True)
-    parser.add_argument("--geometry", action="store_true", help="Build the visible vertex displacement test")
+    modes = parser.add_mutually_exclusive_group()
+    modes.add_argument("--geometry", action="store_true", help="Build the visible vertex displacement test")
+    modes.add_argument("--stereo", action="store_true", help="Build the controlled per-eye geometry helper")
     print(json.dumps(build(parser.parse_args()), indent=2))
 
 

@@ -58,19 +58,20 @@ class Module:
         self.instructions[index:index] = instructions
 
 
-def helper_library(data: bytes, geometry: bool = False) -> bytes:
+def helper_library(data: bytes, geometry: bool = False, stereo: bool = False) -> bytes:
     module = Module(data)
     names = {args[0]: literal(args[1:]) for op, args in module.instructions if op == 5}
-    targets = [identifier for identifier, name in names.items() if name.startswith("d4vr_geometry(" if geometry else "d4vr_probe(")]
+    targets = [identifier for identifier, name in names.items() if name.startswith("d4vr_stereo(" if stereo else "d4vr_geometry(" if geometry else "d4vr_probe(")]
     if len(targets) != 1:
-        raise ValueError("Expected the original d4vr_probe helper compiled without inlining")
+        raise ValueError("Expected one D4VR helper compiled without inlining")
     module.instructions = [(op, args) for op, args in module.instructions if op not in (15, 16, 331)]
     module.add_capability(5)  # Linkage, intermediate library only.
-    module.decorate([(71, [targets[0], 41, *string_words("D4VRGeometry_v1" if geometry else "D4VRProbe_v1"), 0])])
+    module.decorate([(71, [targets[0], 41, *string_words("D4VRStereo_v1" if stereo else "D4VRGeometry_v1" if geometry else "D4VRProbe_v1"), 0])])
     return module.binary()
 
 
-def instrument(data: bytes, descriptor_set: int, binding: int, first_row: int, secondary_binding: int = 1, secondary_row: int = 56, geometry: bool = False) -> bytes:
+def instrument(data: bytes, descriptor_set: int, binding: int, first_row: int, secondary_binding: int = 1, secondary_row: int = 56, geometry: bool = False, stereo: bool = False) -> bytes:
+    geometry = geometry or stereo
     module = Module(data)
     entries = [args for op, args in module.instructions if op == 15]
     if len(entries) != 1 or entries[0][0] != 0:
@@ -85,7 +86,7 @@ def instrument(data: bytes, descriptor_set: int, binding: int, first_row: int, s
     for op, args in module.instructions:
         if op == 71:
             decorations.setdefault(args[0], {})[args[1]] = args[2:]
-            if args[1] == 1 and args[2] in (0, 1, 2, 3):
+            if args[1] == 1 and args[2] in ((0, 1, 2, 3, 4) if stereo else (0, 1, 2, 3)):
                 raise ValueError("Original shader uses reserved debug-ring specialization IDs")
         elif op == 72 and args[2] == 35:
             member_offsets[(args[0], args[1])] = args[3]
@@ -195,7 +196,7 @@ def instrument(data: bytes, descriptor_set: int, binding: int, first_row: int, s
     row_indices += [(second_target, constant(secondary_row + i)) for i in range(4)]
     imported = module.allocate()
     parameters = [module.allocate() for _ in range(vector_arguments + 1)]
-    added_decorations.append((71, [imported, 41, *string_words("D4VRGeometry_v1" if geometry else "D4VRProbe_v1"), 1]))
+    added_decorations.append((71, [imported, 41, *string_words("D4VRStereo_v1" if stereo else "D4VRGeometry_v1" if geometry else "D4VRProbe_v1"), 1]))
     import_body = [(54, [void, imported, 0, function_type])]
     import_body += [(55, [local_uint_pointer if i == 0 else local_vector_pointer, identifier])
                     for i, identifier in enumerate(parameters)]
@@ -257,17 +258,22 @@ def instrument(data: bytes, descriptor_set: int, binding: int, first_row: int, s
     return module.binary()
 
 
-def build(original: Path, helper: Path, output: Path, tools: Path, descriptor_set: int, binding: int, first_row: int, secondary_binding: int = 1, secondary_row: int = 56, geometry: bool = False):
+def build(original: Path, helper: Path, output: Path, tools: Path, descriptor_set: int, binding: int, first_row: int, secondary_binding: int = 1, secondary_row: int = 56, geometry: bool = False, stereo: bool = False):
     output.parent.mkdir(parents=True, exist_ok=True)
     scratch = output.parent / "intermediate" / output.stem
     scratch.mkdir(parents=True, exist_ok=True)
     library = scratch / "helper.spv"
     caller = scratch / "caller.spv"
     linked = scratch / "linked.spv"
-    library.write_bytes(helper_library(helper.read_bytes(), geometry))
-    caller.write_bytes(instrument(original.read_bytes(), descriptor_set, binding, first_row, secondary_binding, secondary_row, geometry))
+    library.write_bytes(helper_library(helper.read_bytes(), geometry, stereo))
+    caller.write_bytes(instrument(original.read_bytes(), descriptor_set, binding, first_row, secondary_binding, secondary_row, geometry, stereo))
     subprocess.run([str(tools / "spirv-link"), "--target-env", "spv1.3", str(caller), str(library), "-o", str(linked)], check=True, capture_output=True)
     subprocess.run([str(tools / "spirv-opt"), "--eliminate-dead-functions", "--eliminate-dead-variables", str(linked), "-o", str(output)], check=True, capture_output=True)
+    if stereo:
+        module = Module(output.read_bytes())
+        index = next(i for i, (op, _) in enumerate(module.instructions) if op in (71, 72) or 19 <= op <= 39)
+        module.instructions.insert(index, (330, string_words("D4VR_STEREO_ABI_1")))
+        output.write_bytes(module.binary())
     subprocess.run([str(tools / "spirv-val"), "--target-env", "vulkan1.2", str(output)], check=True, capture_output=True)
     return output
 
@@ -284,8 +290,9 @@ def main():
     parser.add_argument("--secondary-binding", type=int, default=1)
     parser.add_argument("--secondary-row", type=int, default=56)
     parser.add_argument("--geometry", action="store_true", help="Apply the diagnostic vertex displacement helper")
+    parser.add_argument("--stereo", action="store_true", help="Apply the per-eye transform helper controlled by specialization ID 4")
     args = parser.parse_args()
-    print(build(args.original, args.helper, args.output, args.tools, args.descriptor_set, args.binding, args.first_row, args.secondary_binding, args.secondary_row, args.geometry))
+    print(build(args.original, args.helper, args.output, args.tools, args.descriptor_set, args.binding, args.first_row, args.secondary_binding, args.secondary_row, args.geometry, args.stereo))
 
 
 if __name__ == "__main__":

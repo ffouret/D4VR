@@ -9,6 +9,16 @@ import vulkan_trace
 
 
 class TraceReports(unittest.TestCase):
+    def test_eye_bridge_stats_are_distinct_from_stereo_rendering(self):
+        with tempfile.TemporaryDirectory() as directory:
+            self.write(directory,[{'event':'eye_control_error','device':1,'reason':'feature unavailable'},
+                {'event':'device','device':1},{'event':'eye_control','device':1,'control':{'prepared_stage_overrides':0}},
+                {'event':'eye_control_pipeline','device':1,'control':{'prepared_stage_overrides':2}}])
+            report = vulkan_trace.read_trace(Path(directory)/'vulkan-123.jsonl')
+            self.assertEqual(report['devices'][0]['eye_control']['prepared_stage_overrides'],2)
+            self.assertEqual(len(report['eye_control_errors']),1)
+            self.assertFalse(report['game_stereo_submitted'])
+
     def write(self, directory, rows):
         path = Path(directory) / 'vulkan-123.jsonl'
         path.write_text(''.join(json.dumps(dict(schema_version=1, **row)) + '\n' for row in rows))

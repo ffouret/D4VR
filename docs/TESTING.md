@@ -30,7 +30,7 @@ personnels du diagnostic restent dans les fichiers de travail locaux.
 | Rendu de l'aperçu et capture PNG | Réussis, OpenGL logiciel llvmpipe |
 | Rendu du laboratoire dans le Quest 2 sur Bazzite | Confirmé par le propriétaire le 24 octobre 2026 |
 | Tests et chargement headless sur Windows | Réussis en CI, sans casque ni GPU de jeu |
-| Rendu ou interaction avec Diablo IV | Non implémentés |
+| Rendu stéréo de Diablo IV dans le casque | Non implémenté ; diagnostics géométriques décrits ci-dessous |
 
 Le test OpenXR dans le conteneur a échoué au chargement du runtime : SteamVR
 ne peut pas y écrire son journal. Le pilote NVIDIA utilisable pour le rendu
@@ -126,3 +126,21 @@ avec une image normale confirmée par le propriétaire. Les deux derniers
 reconnaissent les shaders du cache et permettent de relier des candidats de la
 preuve géométrique à un groupe de sorties. Ces données ne prouvent aucun rendu
 stéréo du jeu. [Résultats et limites détaillés](FRAME_TRACE.md).
+
+## Transformation contrôlée par œil
+
+La suite locale compte 81 tests Python. Le nouveau paquet C++ `EyeState` est
+portable et son test fait partie de CTest Linux/Windows. La couche Vulkan de
+contrôle cible actuellement Linux ; le backend natif du jeu sous Windows reste
+à développer.
+
+Dix-huit essais GPU réussissent sur la RTX 5090 : onze images de référence par
+fixture stéréo correspondent octet pour octet ; le raccordement du buffer de
+couche est vérifié pour gauche/droite/désactivé, dans Steam Runtime et avec les
+pipelines du cache. Les shaders anciens non marqués conservent leur rendu.
+Les 2 113 overrides préparés pour le jeu passent la validation SPIR-V.
+
+Le relevé en partie confirme numériquement le déplacement commandé par le
+paquet, pour un œil fixe pendant tout le lancement. Cette preuve ne démontre
+aucune paire stéréo de la même trame ni aucune image de Diablo dans le casque.
+[Résultats et procédure](EYE_CONTROL.md).

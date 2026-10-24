@@ -73,6 +73,21 @@ class ObserverInstrumentationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'vertex entry'):
             spirv_probe.instrument(module.binary(), 3, 0, 72)
 
+    def test_stereo_mode_uses_its_own_abi_and_position_output(self):
+        module = spirv_probe.Module(spirv_probe.instrument(self.data,3,0,72,stereo=True))
+        imports = [a for op,a in module.instructions if op == 71 and a[1] == 41]
+        self.assertEqual(spirv_probe.literal(imports[0][2:-1]),'D4VRStereo_v1')
+        calls = [a for op,a in module.instructions if op == 57 and a[2] == imports[0][0]]
+        self.assertEqual(len(calls[0][3:]),10)
+
+    def test_eye_address_constant_collision_is_rejected_only_in_stereo_mode(self):
+        module = spirv_probe.Module(self.data)
+        for op,args in module.instructions:
+            if op == 71 and args[1:] == [1,16]: args[2] = 4
+        spirv_probe.instrument(module.binary(),3,0,72,geometry=True)
+        with self.assertRaisesRegex(ValueError,'reserved'):
+            spirv_probe.instrument(module.binary(),3,0,72,stereo=True)
+
 
 if __name__ == '__main__':
     unittest.main()

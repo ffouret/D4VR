@@ -1,5 +1,5 @@
-// Process-local diagnostic layer. Every intercepted operation is forwarded once,
-// with its original arguments. No game resources or command streams are changed.
+// Process-local diagnostics forward original arguments once. Optional eye
+// control specializes only explicitly tagged overrides with an immutable packet.
 #include <vulkan/vk_layer.h>
 #include <algorithm>
 #include <array>
@@ -15,6 +15,7 @@
 #include <unistd.h>
 #include <vector>
 #include "frame_trace.hpp"
+#include "eye_control.hpp"
 #ifdef D4VR_TRACE_XR_BINDING
 #include "xr_binding.hpp"
 #endif
@@ -159,7 +160,8 @@ struct Commands {
     X(CmdBeginRenderPass) X(CmdBeginRenderPass2) X(CmdBeginRendering) \
     X(CmdEndRenderPass) X(CmdEndRenderPass2) X(CmdEndRendering) X(CmdBindPipeline) \
     X(CreateImage) X(DestroyImage) X(CreateImageView) X(DestroyImageView) \
-    X(CreateShaderModule) X(DestroyShaderModule) X(CreateGraphicsPipelines) X(CreateComputePipelines) X(DestroyPipeline) \
+    X(CreateShaderModule) X(DestroyShaderModule) X(GetShaderModuleIdentifierEXT) X(GetShaderModuleCreateInfoIdentifierEXT) \
+    X(CreateGraphicsPipelines) X(CreateComputePipelines) X(DestroyPipeline) \
     X(QueueSubmit) X(QueueSubmit2) X(QueuePresentKHR)
 struct Device {
     VkDevice handle{};
@@ -177,6 +179,8 @@ struct Device {
 #undef D4_FIELD
     std::unordered_map<VkCommandBuffer, Commands> commands;
     d4vr::frame::Tracker frame;
+    std::unique_ptr<d4vr::eye::Control> eye;
+    uint64_t eyePipelineRecords = 0;
     Counts totals{}, interval{};
     uint64_t submissions = 0, presents = 0, submittedBuffers = 0;
 };
@@ -355,6 +359,23 @@ VKAPI_ATTR VkResult VKAPI_CALL d4CreateDevice(VkPhysicalDevice physical, const V
     auto getFamilies = reinterpret_cast<PFN_vkGetPhysicalDeviceQueueFamilyProperties>(instance->get(instance->handle, "vkGetPhysicalDeviceQueueFamilyProperties"));
     uint32_t familyCount = 0; getFamilies(physical, &familyCount, nullptr);
     d->queueFamilies.resize(familyCount); getFamilies(physical, &familyCount, d->queueFamilies.data());
+    const char* eyeFile = std::getenv("D4VR_EYE_STATE_FILE");
+    if (eyeFile && *eyeFile) try {
+        bool addressEnabled = false;
+        for (auto p = static_cast<const VkBaseInStructure*>(info->pNext); p; p = p->pNext) {
+            if (p->sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES)
+                addressEnabled |= reinterpret_cast<const VkPhysicalDeviceVulkan12Features*>(p)->bufferDeviceAddress;
+            if (p->sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES)
+                addressEnabled |= reinterpret_cast<const VkPhysicalDeviceBufferDeviceAddressFeatures*>(p)->bufferDeviceAddress;
+        }
+        if (!addressEnabled) throw std::runtime_error("Buffer device address feature is not enabled");
+        VkPhysicalDeviceMemoryProperties memory{};
+        auto getMemory = reinterpret_cast<PFN_vkGetPhysicalDeviceMemoryProperties>(instance->get(instance->handle,"vkGetPhysicalDeviceMemoryProperties"));
+        getMemory(physical,&memory);
+        d->eye = d4vr::eye::Control::create(*result,get,memory,d4vr::eye::readPacket(eyeFile));
+    } catch (const std::exception& error) {
+        logFile.write("\"event\":\"eye_control_error\",\"device\":" + std::to_string(d->id) + ",\"reason\":" + quoted(error.what()));
+    }
     std::ostringstream queues; queues << '[';
     for (uint32_t i = 0; i < info->queueCreateInfoCount; ++i) {
         auto& q = info->pQueueCreateInfos[i];
@@ -365,6 +386,7 @@ VKAPI_ATTR VkResult VKAPI_CALL d4CreateDevice(VkPhysicalDevice physical, const V
         ",\"instance_requested_api\":" + version(instance->api) +
         ",\"vendor_id\":" + std::to_string(properties.vendorID) + ",\"supported_api\":" + version(properties.apiVersion) +
         ",\"queues\":" + queues.str() + ",\"extensions\":" + extensions(info->enabledExtensionCount, info->ppEnabledExtensionNames));
+    if (d->eye) logFile.write("\"event\":\"eye_control\",\"device\":" + std::to_string(d->id) + ",\"control\":" + d->eye->json());
     return status;
 }
 VKAPI_ATTR void VKAPI_CALL d4GetDeviceQueue(VkDevice handle, uint32_t family, uint32_t index, VkQueue* queue) {
@@ -382,9 +404,10 @@ VKAPI_ATTR void VKAPI_CALL d4DestroyDevice(VkDevice handle, const VkAllocationCa
         std::lock_guard<std::mutex> lock(stateMutex);
         record = "\"event\":\"device_destroy\",\"device\":" + std::to_string(d->id) + ",\"submissions\":" + std::to_string(d->submissions) +
             ",\"present_calls\":" + std::to_string(d->presents) + ",\"submitted_command_buffers\":" + std::to_string(d->submittedBuffers) + ",\"commands\":" + countsJson(d->totals);
+        if (d->eye) record += ",\"eye_control\":" + d->eye->json();
         devices.erase(key(handle));
     }
-    logFile.write(record); d->DestroyDevice(handle, allocator);
+    logFile.write(record); d->eye.reset(); d->DestroyDevice(handle, allocator);
 }
 VKAPI_ATTR VkResult VKAPI_CALL d4AllocateCommandBuffers(VkDevice handle, const VkCommandBufferAllocateInfo* info, VkCommandBuffer* buffers) {
     auto d = deviceFor(handle); auto result = d->AllocateCommandBuffers(handle, info, buffers);
@@ -504,13 +527,35 @@ VKAPI_ATTR void VKAPI_CALL d4DestroyImageView(VkDevice device, VkImageView view,
 }
 VKAPI_ATTR VkResult VKAPI_CALL d4CreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* info, const VkAllocationCallbacks* allocator, VkShaderModule* module) {
     auto d = deviceFor(device); auto result = d->CreateShaderModule(device, info, allocator, module);
-    if (result == VK_SUCCESS && d->frame.enabled) { std::lock_guard<std::mutex> lock(stateMutex); d->frame.module(*module, *info); } return result;
+    if (result == VK_SUCCESS && d->frame.enabled) { std::lock_guard<std::mutex> lock(stateMutex); d->frame.module(*module, *info); }
+    if (result == VK_SUCCESS && d->eye) d->eye->module(*module,*info);
+    return result;
 }
 VKAPI_ATTR void VKAPI_CALL d4DestroyShaderModule(VkDevice device, VkShaderModule module, const VkAllocationCallbacks* allocator) {
-    auto d = deviceFor(device); if (d->frame.enabled) { std::lock_guard<std::mutex> lock(stateMutex); d->frame.removeModule(module); } d->DestroyShaderModule(device, module, allocator);
+    auto d = deviceFor(device); if (d->frame.enabled) { std::lock_guard<std::mutex> lock(stateMutex); d->frame.removeModule(module); }
+    if (d->eye) d->eye->removeModule(module);
+    d->DestroyShaderModule(device, module, allocator);
+}
+VKAPI_ATTR void VKAPI_CALL d4GetShaderModuleIdentifierEXT(VkDevice device,VkShaderModule module,VkShaderModuleIdentifierEXT* identifier) {
+    auto d = deviceFor(device); d->GetShaderModuleIdentifierEXT(device,module,identifier);
+    if (d->eye) d->eye->identifier(module,*identifier);
+}
+VKAPI_ATTR void VKAPI_CALL d4GetShaderModuleCreateInfoIdentifierEXT(VkDevice device,const VkShaderModuleCreateInfo* info,VkShaderModuleIdentifierEXT* identifier) {
+    auto d = deviceFor(device); d->GetShaderModuleCreateInfoIdentifierEXT(device,info,identifier);
+    if (d->eye) d->eye->identifier(*info,*identifier);
 }
 VKAPI_ATTR VkResult VKAPI_CALL d4CreateGraphicsPipelines(VkDevice device, VkPipelineCache cache, uint32_t n, const VkGraphicsPipelineCreateInfo* info, const VkAllocationCallbacks* allocator, VkPipeline* pipelines) {
-    auto d = deviceFor(device); auto result = d->CreateGraphicsPipelines(device, cache, n, info, allocator, pipelines);
+    auto d = deviceFor(device);
+    std::unique_ptr<d4vr::eye::GraphicsEdits> edits;
+    if (d->eye) try { edits = d->eye->graphics(n,info); }
+    catch (const std::exception& error) { logFile.write("\"event\":\"eye_control_error\",\"device\":" + std::to_string(d->id) + ",\"reason\":" + quoted(error.what())); }
+    auto result = d->CreateGraphicsPipelines(device, cache, n, edits ? edits->info.data() : info, allocator, pipelines);
+    if (edits) {
+        uint64_t record;
+        { std::lock_guard<std::mutex> lock(stateMutex); record = ++d->eyePipelineRecords; }
+        if (record <= 8 || (record%256 == 0 && record <= 16384)) logFile.write("\"event\":\"eye_control_pipeline\",\"device\":" + std::to_string(d->id)
+            + ",\"result\":" + std::to_string(result) + ",\"control\":" + d->eye->json());
+    }
     // Some creations can succeed even when the batch returns a failure code.
     if (d->frame.enabled) { std::lock_guard<std::mutex> lock(stateMutex); for (uint32_t i = 0; i < n; ++i) if (pipelines[i]) d->frame.graphicsPipeline(pipelines[i], info[i]); } return result;
 }

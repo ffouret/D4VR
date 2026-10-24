@@ -46,6 +46,8 @@ jobs:
           glslangValidator -V --target-env vulkan1.1 -Od native/probe_gpu/geometry_shift.vert -o work/native-xr-ci/geometry.spv
           glslangValidator -V --target-env vulkan1.1 native/tests/probe_fixture.vert -o work/native-xr-ci/fixture.spv
           python tools/spirv_probe.py work/native-xr-ci/fixture.spv --helper work/native-xr-ci/geometry.spv --tools /usr/bin --output work/native-xr-ci/instrumented.spv --geometry
+          glslangValidator -V --target-env vulkan1.1 -Od native/probe_gpu/stereo_transform.vert -o work/native-xr-ci/stereo-transform.spv
+          python tools/spirv_probe.py work/native-xr-ci/fixture.spv --helper work/native-xr-ci/stereo-transform.spv --tools /usr/bin --output work/native-xr-ci/stereo-instrumented.spv --stereo
       - name: Verify every Windows export name, ordinal and forwarder
         if: runner.os == 'Windows'
         run: python -c "import pathlib,sys; sys.path.insert(0,'tools'); import probe; probe.validate_probe(pathlib.Path('work/native-ci/probe/Release/sl.interposer.dll'),probe.profile())"

@@ -112,6 +112,26 @@ Diablo III viendra après la preuve sur Diablo IV. Seuls les éléments VR
 indépendants du jeu sont candidats au partage ; le moteur, les vues et les
 commandes nécessitent leur propre étude.
 
+## Contraintes établies pour le prochain renderer
+
+Les relevés Vulkan montrent plusieurs queues graphiques créées par le jeu.
+Le paquet d'œil intégré est donc immuable pendant le lancement. Alterner une
+valeur globale à chaque présentation ne suffit pas à attribuer un œil à tous
+les dessins d'une même vue ; la synchronisation entre queues reste à concevoir.
+
+La prochaine preuve doit utiliser des cibles couleur/profondeur possédées par
+D4VR et deux paquets distincts, puis reproduire une passe géométrique limitée
+avec une référence visuelle. Les candidats actuels comportent quatre sorties
+couleur et une profondeur ; leur rôle visible exact et les dépendances avec
+les calculs, l'éclairage et les effets ultérieurs restent à établir. Les seuls
+noms ou formats des attachements ne démontrent pas ce rôle.
+
+Une reprise de commandes devra préserver les états graphiques, les ressources,
+les descripteurs et leurs durées de vie. Elle devra aussi distinguer les écritures
+ayant des effets de bord et ne pas modifier deux fois les données du jeu.
+Les vues devront utiliser le même état de simulation. Dupliquer aveuglément
+une soumission ou alterner deux trames du jeu ne constitue pas cette preuve.
+
 ## Critères d'acceptation de la première version jouable
 
 - Les deux yeux reçoivent des vues distinctes, cohérentes dans le temps.

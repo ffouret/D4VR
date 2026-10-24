@@ -10,9 +10,9 @@ répond pas à cet objectif.
 
 ## État du projet
 
-**État expérimental : déplacement de sommets confirmé dans Diablo IV et scène
-native SteamVR validée séparément en casque. Une session temporaire est aussi
-acceptée sur le périphérique Vulkan du jeu. Diablo n'est pas encore rendu en VR.**
+**État expérimental : transformation géométrique d’un œil fixe pilotée par la
+couche Vulkan et mesurée dans Diablo IV. La chaîne native SteamVR est validée
+séparément en casque. Diablo n'est pas encore rendu en VR.**
 Le dépôt contient le laboratoire Godot/OpenXR, les outils d'analyse et de
 diagnostic de la géométrie du jeu, un cœur de projection par œil et une chaîne
 native OpenXR/Vulkan. Produire deux vues cohérentes de Diablo IV et les soumettre
@@ -141,6 +141,19 @@ huit shaders du déplacement géométrique précédent trouvent des candidats da
 un même groupe de quatre sorties couleur et d'une profondeur. Le propriétaire
 confirme une image normale ; le rôle visible exact de ce groupe reste à vérifier.
 Voir [le déclenchement, les preuves et les limites](docs/FRAME_TRACE.md).
+
+## Étape 9 : transformation géométrique pilotable par œil
+
+Un paquet GPU contient maintenant la transformation de vue et la projection de
+chaque œil. Onze images synthétiques correspondent exactement à des rendus
+indépendants, avec déplacement/rotation de tête simulés, frusta asymétriques et
+jitter. Dix-huit exécutions valident ce helper et son raccordement à une couche
+Vulkan possédant son propre buffer, y compris avec les shaders du cache.
+
+Un essai dans Diablo confirme que les sommets consomment ce paquet et suivent
+le déplacement demandé. Cet essai utilise un seul œil fixe pendant tout le
+lancement. Les deux vues d'une même trame, les traitements par œil et leur envoi
+à SteamVR restent à implémenter. Voir [les preuves et limites](docs/EYE_CONTROL.md).
 
 ## Commandes du prototype
 

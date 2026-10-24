@@ -10,6 +10,7 @@
 #include <stdexcept>
 #include <vector>
 #include "../vulkan/frame_trace.hpp" // FNV checksum of fixture pixels only
+#include "stereo_gpu_checks.hpp"
 
 static void check(VkResult result) {
     if (result != VK_SUCCESS) throw std::runtime_error("Vulkan error " + std::to_string(result));
@@ -75,13 +76,15 @@ struct Fixture {
 };
 
 int main(int argc, char** argv) try {
-    if (argc < 4) throw std::runtime_error("Usage: gpu_probe_vulkan original.spv probed.spv fragment.spv [--geometry] [--dynamic] [--identifiers]");
-    bool geometry = false, dynamic = false, identifiers = false;
+    if (argc < 4) throw std::runtime_error("Usage: gpu_probe_vulkan original.spv probed.spv fragment.spv [--geometry|--stereo|--eye-bridge] [--dynamic] [--identifiers]");
+    bool geometry = false, dynamic = false, identifiers = false, stereo = false, bridge = false;
     for (int i = 4; i < argc; ++i) {
         auto arg = std::string(argv[i]);
         if (arg == "--geometry") geometry = true;
         else if (arg == "--dynamic") dynamic = true;
         else if (arg == "--identifiers") { identifiers = true; dynamic = true; }
+        else if (arg == "--stereo") { stereo = true; geometry = true; dynamic = true; }
+        else if (arg == "--eye-bridge") { bridge = true; geometry = true; dynamic = true; }
         else throw std::runtime_error("Unknown option: " + arg);
     }
     Fixture f(dynamic, identifiers);
@@ -97,6 +100,8 @@ int main(int argc, char** argv) try {
     auto control = f.buffer(8, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, true);
     auto ring = f.buffer(ring_words * 4, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, true);
     auto staging = f.buffer(pixels, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    Buffer eyeState{};
+    if (stereo) eyeState = f.buffer(sizeof(d4vr::EyeState),VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,true);
     std::array<VkDescriptorSetLayoutBinding, 2> bindings{{
         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
         {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr}}};
@@ -136,9 +141,10 @@ int main(int argc, char** argv) try {
     VkFramebufferCreateInfo frame_create{VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO}; frame_create.renderPass = render_pass; frame_create.attachmentCount = 1; frame_create.pAttachments = &view; frame_create.width = width; frame_create.height = height; frame_create.layers = 1;
     VkFramebuffer framebuffer{}; check(vkCreateFramebuffer(f.device, &frame_create, nullptr, &framebuffer));
     auto vertex = f.shader(argv[1]), probed = f.shader(argv[2]), fragment = f.shader(argv[3]);
-    struct Specialization { uint64_t shader, control, ring; uint32_t words; } values{0xd4a0d4a0d4a0d4a0ull, control.address, ring.address, ring_words};
-    std::array<VkSpecializationMapEntry, 4> maps{{{0, 0, 8}, {1, 8, 8}, {2, 16, 8}, {3, 24, 4}}};
-    VkSpecializationInfo specialization{4, maps.data(), sizeof(values), &values};
+    struct Specialization { uint64_t shader, control, ring; uint32_t words, padding; uint64_t eyeState; } values{0xd4a0d4a0d4a0d4a0ull, control.address, ring.address, ring_words,0,eyeState.address};
+    static_assert(offsetof(Specialization,eyeState) == 32);
+    std::array<VkSpecializationMapEntry, 5> maps{{{0, 0, 8}, {1, 8, 8}, {2, 16, 8}, {3, 24, 4}, {4,32,8}}};
+    VkSpecializationInfo specialization{stereo ? 5u : 4u, maps.data(), sizeof(values), &values};
     auto pipeline = [&](VkShaderModule module, bool observe) {
         VkPipelineShaderStageCreateInfo stages[2]{};
         for (auto& s : stages) { s.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO; s.pName = "main"; }
@@ -174,12 +180,26 @@ int main(int argc, char** argv) try {
         return result;
     };
     auto original_pipeline = pipeline(vertex, false), observer_pipeline = pipeline(probed, true);
+    VkPipeline null_state_pipeline{};
+    if (stereo) {
+        values.eyeState = 0; null_state_pipeline = pipeline(probed,true); values.eyeState = eyeState.address;
+        if (eyeState.address % 16) throw std::runtime_error("Unaligned GPU eye state address");
+    }
     VkCommandPoolCreateInfo command_pool_create{VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO}; command_pool_create.queueFamilyIndex = f.family;
     VkCommandPool command_pool{}; check(vkCreateCommandPool(f.device, &command_pool_create, nullptr, &command_pool));
     VkCommandBufferAllocateInfo command_allocate{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO}; command_allocate.commandPool = command_pool; command_allocate.commandBufferCount = 1;
     VkCommandBuffer command{}; check(vkAllocateCommandBuffers(f.device, &command_allocate, &command));
-    auto render = [&](VkPipeline selected) {
+    auto render = [&](VkPipeline selected, const d4vr::EyeState* update = nullptr) {
         check(vkResetCommandPool(f.device, command_pool, 0)); VkCommandBufferBeginInfo begin{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO}; check(vkBeginCommandBuffer(command, &begin));
+        if (update) {
+            VkBufferMemoryBarrier stateBarrier{VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER}; stateBarrier.buffer = eyeState.handle;
+            stateBarrier.size = sizeof(d4vr::EyeState); stateBarrier.srcQueueFamilyIndex = stateBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            stateBarrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT; stateBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            vkCmdPipelineBarrier(command,VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,VK_PIPELINE_STAGE_TRANSFER_BIT,0,0,nullptr,1,&stateBarrier,0,nullptr);
+            vkCmdUpdateBuffer(command,eyeState.handle,0,sizeof(d4vr::EyeState),update);
+            stateBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT; stateBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+            vkCmdPipelineBarrier(command,VK_PIPELINE_STAGE_TRANSFER_BIT,VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,0,0,nullptr,1,&stateBarrier,0,nullptr);
+        }
         VkClearValue clear{}; VkRenderPassBeginInfo pass{VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO}; pass.renderPass = render_pass; pass.framebuffer = framebuffer; pass.renderArea.extent = {width, height}; pass.clearValueCount = 1; pass.pClearValues = &clear;
         VkImageMemoryBarrier image_barrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER}; image_barrier.image = image;
         image_barrier.subresourceRange = view_create.subresourceRange;
@@ -211,6 +231,30 @@ int main(int argc, char** argv) try {
         std::cout << "PIXELS_FNV1A64=" << d4vr::frame::hex(d4vr::frame::digest(bytes, pixels)) << '\n';
         return std::vector<uint8_t>(bytes, bytes + pixels);
     };
+    auto cleanup = [&] {
+        check(vkDeviceWaitIdle(f.device));
+        for (auto p : {original_pipeline,observer_pipeline,null_state_pipeline}) if (p) vkDestroyPipeline(f.device,p,nullptr);
+        vkDestroyCommandPool(f.device,command_pool,nullptr);
+        for (auto s : {vertex,probed,fragment}) vkDestroyShaderModule(f.device,s,nullptr);
+        vkDestroyFramebuffer(f.device,framebuffer,nullptr); vkDestroyRenderPass(f.device,render_pass,nullptr);
+        vkDestroyImageView(f.device,view,nullptr); vkDestroyImage(f.device,image,nullptr); vkFreeMemory(f.device,image_memory,nullptr);
+        vkDestroyDescriptorPool(f.device,pool,nullptr); vkDestroyPipelineLayout(f.device,pipeline_layout,nullptr);
+        for (auto l : layouts) vkDestroyDescriptorSetLayout(f.device,l,nullptr);
+        for (auto b : {uniform,second_uniform,control,ring,staging,eyeState}) if (b.handle) {
+            vkUnmapMemory(f.device,b.memory); vkDestroyBuffer(f.device,b.handle,nullptr); vkFreeMemory(f.device,b.memory,nullptr);
+        }
+        vkDestroyDevice(f.device,nullptr); f.device = VK_NULL_HANDLE;
+        vkDestroyInstance(f.instance,nullptr); f.instance = VK_NULL_HANDLE;
+    };
+    if (bridge) {
+        int result = d4vr_test_eye_bridge_gpu(uniform.mapped,second_uniform.mapped,control.mapped,ring.mapped,original_pipeline,observer_pipeline,render);
+        cleanup(); return result;
+    }
+    if (stereo) {
+        int result = d4vr_test_stereo_gpu(width,height,uniform.mapped,second_uniform.mapped,control.mapped,ring.mapped,
+                                        values.shader,original_pipeline,observer_pipeline,null_state_pipeline,render);
+        cleanup(); return result;
+    }
     if (geometry) {
         auto centroid = [&](const std::vector<uint8_t>& bytes) {
             double sum = 0, count = 0;
@@ -277,7 +321,7 @@ int main(int argc, char** argv) try {
         telemetry(4, false);
         std::cout << "{\"gpu_fixture_passed\":true,\"geometry_telemetry_verified\":true,\"geometry_parallax_verified\":true,\"non_target_projection_unchanged\":true,\"shift_pixels_depth_2\":"
                   << shifts[0] << ",\"shift_pixels_depth_4\":" << shifts[1] << ",\"native_game_stereo_proven\":false}\n";
-        return 0;
+        cleanup(); return 0;
     }
     auto baseline = render(original_pipeline), observed = render(observer_pipeline);
     if (baseline != observed) throw std::runtime_error("Observer changed rendered pixels");
@@ -301,5 +345,5 @@ int main(int argc, char** argv) try {
     if (render(observer_pipeline) != baseline || counters[0] != 0)
         throw std::runtime_error("Observer exceeded its sample budget");
     std::cout << "{\"gpu_fixture_passed\":true,\"unchanged_rendered_bytes\":" << pixels << ",\"matrix_values_verified\":32,\"sparse_sampling_and_budget_verified\":true,\"live_game_camera_proven\":false}\n";
-    return 0;
+    cleanup(); return 0;
 } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }

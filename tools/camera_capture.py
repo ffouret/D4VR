@@ -86,7 +86,7 @@ def validate_bundle(directory: Path) -> dict:
 
 def run(game: Path, launcher: Path, bundle: Path, output: Path, geometry_test: bool = False) -> int:
     manifest = validate_bundle(bundle)
-    if (manifest["purpose"] == "geometry_shift_diagnostic") != geometry_test:
+    if manifest['purpose'] != ('geometry_shift_diagnostic' if geometry_test else 'read_only_paired_clip_transform_diagnostic'):
         raise ValueError("The bundle purpose must match the explicit geometry-test mode")
     if geometry_test and manifest.get("geometry_telemetry") is not True:
         raise ValueError("Prepare the geometry bundle with validated before/after telemetry")
@@ -113,6 +113,8 @@ def run(game: Path, launcher: Path, bundle: Path, output: Path, geometry_test: b
     probe.write_json(output / "capture.json", capture)
     bridge = Path("/run/host/usr/bin/flatpak-spawn")
     command = ([str(bridge), "--host", "/usr/bin/env"] if bridge.exists() else ["/usr/bin/env"])
+    for key in ('D4VR_EYE_STATE_FILE','D4VR_FRAME_TRACE','D4VR_TRACE_XR_BINDING','D4VR_XR_LOADER','VK_INSTANCE_LAYERS','VK_ADD_LAYER_PATH'):
+        command += ['-u',key]
     command += [key + "=" + value for key, value in variables.items()] + ["/usr/bin/bash", str(private_launcher)]
     if geometry_test:
         print("Battle.net : test visible de déplacement des sommets, pas encore de rendu VR.", flush=True)
