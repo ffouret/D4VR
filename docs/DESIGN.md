@@ -119,12 +119,16 @@ Le paquet d'œil intégré est donc immuable pendant le lancement. Alterner une
 valeur globale à chaque présentation ne suffit pas à attribuer un œil à tous
 les dessins d'une même vue ; la synchronisation entre queues reste à concevoir.
 
-La prochaine preuve doit utiliser des cibles couleur/profondeur possédées par
+La prochaine preuve dans le jeu doit utiliser des cibles couleur/profondeur possédées par
 D4VR et deux paquets distincts, puis reproduire une passe géométrique limitée
 avec une référence visuelle. Les candidats actuels comportent quatre sorties
 couleur et une profondeur ; leur rôle visible exact et les dépendances avec
 les calculs, l'éclairage et les effets ultérieurs restent à établir. Les seuls
 noms ou formats des attachements ne démontrent pas ce rôle.
+
+La propriété et le rendu géométrique de ces cibles sont désormais vérifiés hors
+du jeu dans la [fixture à sorties multiples](STEREO_TARGETS.md). Le raccordement
+à une passe de Diablo reste à implémenter.
 
 Une reprise de commandes devra préserver les états graphiques, les ressources,
 les descripteurs et leurs durées de vie. Elle devra aussi distinguer les écritures

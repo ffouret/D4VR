@@ -144,3 +144,15 @@ Le relevé en partie confirme numériquement le déplacement commandé par le
 paquet, pour un œil fixe pendant tout le lancement. Cette preuve ne démontre
 aucune paire stéréo de la même trame ni aucune image de Diablo dans le casque.
 [Résultats et procédure](EYE_CONTROL.md).
+
+## Cibles stéréo indépendantes et sorties multiples
+
+La fixture Vulkan ajoute deux ensembles de quatre sorties couleur et une
+profondeur/stencil aux formats du groupe candidat du jeu. Seize rendus d'œil
+sont comparés à des références indépendantes dans chaque exécution positive :
+aucune différence couleur, profondeur ou stencil sur RTX 5090. Le rendu témoin
+reste intact. La validation de synchronisation est activée et vérifiée par un
+contrôle négatif ; un test sans GPU couvre 48 échecs de création partielle.
+
+Les sorties sont celles d'une scène originale. Les passes de Diablo ne sont
+pas encore reprises ni rendues deux fois. [Procédure et limites](STEREO_TARGETS.md).

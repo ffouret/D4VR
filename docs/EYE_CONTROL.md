@@ -74,17 +74,20 @@ trame de Diablo IV ou une intégration VR jouable.
 L'essai sur Diablo IV 3.2.3.73883, GE-Proton11-11 et VKD3D-Proton 3.1.0
 utilise l'œil droit, séquence 1, translation −0,032 unité de vue et projection
 courante du jeu. Le paquet est créé par la couche sur le périphérique du jeu.
-Un relevé intermédiaire contient **257 échantillons complets** : 132 sommets
-transformés conformément au calcul, dont 118 dans le volume de clip initial,
-et 125 sommets hors cible inchangés. Vingt identifiants de shaders participent
-aux transformations mesurées. Aucune incohérence, ligne rejetée ni paire de
-mesures incomplète n'est signalée dans ce relevé.
+Le relevé final contient **620 échantillons complets** : 251 sommets
+transformés conformément au calcul, dont 215 dans le volume de clip initial,
+et 369 sommets hors cible inchangés. Aucune incohérence, ligne rejetée ni paire
+de mesures incomplète n’est signalée dans ce relevé.
 
 Cela prouve que le helper exécuté dans le jeu consomme les paramètres d'œil
 fournis par la couche. Cela ne prouve ni la couverture complète du décor, ni la
 correction de l'éclairage et des effets temporels après déplacement. Le
 propriétaire est entré en partie et ne remarque rien de spécial ; le décalage
-choisi est volontairement faible. Aucune image de Diablo n'est soumise à SteamVR.
+choisi est volontairement faible. Diablo et Battle.net sont fermés, avec un code
+de sortie du lanceur de 0 et les empreintes originales conformes. Aucun événement
+de destruction explicite du périphérique Vulkan n’est présent dans ce journal ;
+le nettoyage explicite des ressources est testé dans les fixtures. Aucune image
+de Diablo n’est soumise à SteamVR.
 
 ## Essai isolé sur le moniteur
 

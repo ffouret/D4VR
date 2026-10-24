@@ -155,6 +155,16 @@ le déplacement demandé. Cet essai utilise un seul œil fixe pendant tout le
 lancement. Les deux vues d'une même trame, les traitements par œil et leur envoi
 à SteamVR restent à implémenter. Voir [les preuves et limites](docs/EYE_CONTROL.md).
 
+## Étape 10 : deux yeux avec sorties couleur et profondeur indépendantes
+
+Un composant Vulkan possède maintenant quatre cibles couleur et une profondeur
+par œil. Une scène originale est rendue pour les deux yeux dans la même
+soumission, avec des références indépendantes. Les quatre sorties, la profondeur
+et le stencil correspondent aux références ; les cibles du rendu témoin sont
+préservées. Le test passe aussi dans Steam Runtime avec validation Vulkan de la
+synchronisation. La reprise des passes de Diablo reste à implémenter.
+Voir [les résultats, la propriété des ressources et les limites](docs/STEREO_TARGETS.md).
+
 ## Commandes du prototype
 
 | Action | Quest Touch | Clavier |
