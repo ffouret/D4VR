@@ -56,6 +56,18 @@ VR avec une erreur ; il ne le remplace pas par un écran virtuel.
 Un Godot déjà présent peut être fourni par `GODOT_BIN` ou
 `python3 tools/d4vr.py --godot /chemin/vers/godot run`.
 
+## Étape 2 : sonde du renderer de Diablo IV
+
+Une sonde expérimentale Windows x64 observe les constantes de caméra et les
+tags de ressources de NVIDIA Streamline 2.12 fourni avec le jeu. Son relais
+d'appels a été testé sous Wine, avec un programme contrôlé ; le chargement des
+262 exports a aussi été vérifié avec la véritable DLL NVIDIA hors du jeu.
+
+Cette sonde doit établir quelles données Diablo IV transmet réellement. Elle
+ne rend pas encore le jeu en VR. Son installation est limitée par empreinte à
+la version identifiée et inclut la sauvegarde/restauration de la DLL originale.
+Voir [l'étude, les tests et la procédure](docs/STREAMLINE_PROBE.md).
+
 ## Commandes du prototype
 
 | Action | Quest Touch | Clavier |
@@ -96,6 +108,8 @@ utile pour la chaîne VR existante, pas une validation de Diablo IV.
 - [Étude d'Overlord et limites du transfert](docs/OVERLORD.md)
 - [Configuration de référence déclarée](config/reference-system.toml)
 - [Tests, installation détectée et limites actuelles](docs/TESTING.md)
+- [Sonde de caméra et de ressources Streamline](docs/STREAMLINE_PROBE.md)
+- [Dépendances et mentions tierces](THIRD_PARTY_NOTICES.md)
 
 ## Vérifier le développement
 

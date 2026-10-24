@@ -1,0 +1,2 @@
+# Preserve the pinned SDK bytes and its upstream whitespace for provenance checks.
+native/third_party/streamline/** -text -whitespace

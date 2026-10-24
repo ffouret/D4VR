@@ -26,3 +26,16 @@ jobs:
         run: python tools/d4vr.py test
       - name: Load complete synthetic scene
         run: python tools/d4vr.py smoke
+      - name: Configure native observation tests
+        run: cmake -S native -B work/native-ci
+      - name: Build native components
+        run: cmake --build work/native-ci --config Release
+      - name: Test observation and Windows forwarding
+        run: ctest --test-dir work/native-ci -C Release --output-on-failure
+      - name: Upload Windows probe without vendor or test libraries
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: d4vr-streamline-probe-windows-x64
+          path: work/native-ci/probe/Release/sl.interposer.dll
+          if-no-files-found: error
