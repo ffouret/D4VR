@@ -16,10 +16,10 @@ import time
 
 import probe
 import shader_capture
+import gpu_messages
 
 MARKER = 0x44345652
 PAIRED_MARKER = 0x44345653
-MESSAGE = re.compile(r"Shader: ([0-9a-fA-F]+): Instance (\d+), ID \((\d+), (\d+), (\d+)\):\s*(.*)$")
 
 
 def describe_projection(rows: list[list[float]]) -> dict:
@@ -45,55 +45,20 @@ def describe_projection(rows: list[list[float]]) -> dict:
 
 
 def parse(log: Path) -> dict:
-    if log.stat().st_size > 64 * 1024 * 1024:
-        raise ValueError("Diagnostic log exceeds 64 MiB")
-    groups, rejected = {}, 0
-    segment = 0
-    with log.open(encoding="utf-8", errors="replace") as stream:
-        for line in stream:
-            if "Enabling shader debug ring of size:" in line:
-                segment += 1
-            match = MESSAGE.search(line)
-            if not match or int(match[3]) not in (MARKER, PAIRED_MARKER):
-                continue
-            shader, invocation, marker, sample, row, text = match.groups()
-            marker = int(marker)
-            row_count = 8 if marker == PAIRED_MARKER else 4
-            sample, row = int(sample), int(row)
-            if int(invocation) != sample or sample >= 1024 or row >= row_count:
-                rejected += 1
-                continue
-            try:
-                values = [float(v.strip()) for v in text.split(",")]
-            except ValueError:
-                values = []
-            if len(values) != 4 or not all(math.isfinite(v) and abs(v) < 1e30 for v in values):
-                rejected += 1
-                continue
-            key = segment, shader.lower().zfill(16), sample, marker
-            rows = groups.setdefault(key, {})
-            if row in rows:
-                # A duplicate is not silently combined with another invocation.
-                rows["duplicate"] = True
-                rejected += 1
-            else:
-                rows[row] = values
+    messages = gpu_messages.read_records(log, {MARKER: 4, PAIRED_MARKER: 8})
     samples = []
-    for key, rows in sorted(groups.items()):
-        row_count = 8 if key[3] == PAIRED_MARKER else 4
-        if set(rows) != set(range(row_count)):
-            continue
-        sample = {"segment": key[0], "shader_hash": key[1], "sample_id": key[2],
-                  "matrix_rows": [rows[i] for i in range(4)]}
-        sample["projection_description"] = describe_projection(sample["matrix_rows"])
-        if row_count == 8:
-            sample["input_transform_rows"] = [rows[i] for i in range(4, 8)]
+    for record in messages['records']:
+        sample = {key: record[key] for key in ('segment', 'shader_hash', 'sample_id')}
+        sample['matrix_rows'] = record['rows'][:4]
+        sample['projection_description'] = describe_projection(sample['matrix_rows'])
+        if record['marker'] == PAIRED_MARKER:
+            sample['input_transform_rows'] = record['rows'][4:]
         samples.append(sample)
     distinct = {tuple(v for row in s["matrix_rows"] for v in row) for s in samples}
     return {"schema_version": 2, "complete_matrix_samples": len(samples),
             "paired_matrix_samples": sum("input_transform_rows" in s for s in samples),
             "distinct_matrices_at_log_precision": len(distinct),
-            "incomplete_or_duplicate_groups": len(groups) - len(samples), "rejected_rows": rejected,
+            "incomplete_or_duplicate_groups": messages["incomplete_or_duplicate_groups"], "rejected_rows": messages["rejected_rows"],
             "samples_by_shader": dict(Counter(s["shader_hash"] for s in samples)), "samples": samples,
             "projection_shapes": dict(Counter(s["projection_description"]["shape"] for s in samples)),
             "sample_budget_reached": any(s["sample_id"] == 1023 for s in samples),
@@ -123,6 +88,8 @@ def run(game: Path, launcher: Path, bundle: Path, output: Path, geometry_test: b
     manifest = validate_bundle(bundle)
     if (manifest["purpose"] == "geometry_shift_diagnostic") != geometry_test:
         raise ValueError("The bundle purpose must match the explicit geometry-test mode")
+    if geometry_test and manifest.get("geometry_telemetry") is not True:
+        raise ValueError("Prepare the geometry bundle with validated before/after telemetry")
     expected = probe.profile()
     if manifest["game_version"] != expected["game_version"]:
         raise ValueError("Observer bundle targets another game version")
@@ -141,8 +108,7 @@ def run(game: Path, launcher: Path, bundle: Path, output: Path, geometry_test: b
     variables = {"VKD3D_SHADER_OVERRIDE": probe.windows_path(bundle.resolve() / "overrides"),
                  "VKD3D_SHADER_DEBUG_RING_SIZE_LOG2": "24", "VKD3D_SHADER_CACHE_PATH": capture["variables"]["VKD3D_SHADER_CACHE_PATH"],
                  "VKD3D_DEBUG": "info", "VKD3D_LOG_FILE": probe.windows_path(output / "camera.log")}
-    if geometry_test:
-        del variables["VKD3D_SHADER_DEBUG_RING_SIZE_LOG2"]
+    variables["VKD3D_SHADER_DEBUG"] = "info"
     capture.update(variables=variables, observer_bundle=str(bundle.resolve()), phase="launching", game_files_changed=False)
     probe.write_json(output / "capture.json", capture)
     bridge = Path("/run/host/usr/bin/flatpak-spawn")
@@ -175,6 +141,12 @@ def run(game: Path, launcher: Path, bundle: Path, output: Path, geometry_test: b
         report = parse(output / "camera.log")
         probe.write_json(output / "matrices.json", report)
         capture["complete_matrix_samples"] = report["complete_matrix_samples"]
+        if geometry_test:
+            import geometry_report
+            geometry = geometry_report.parse(output / "camera.log")
+            probe.write_json(output / "geometry.json", geometry)
+            capture['verified_displaced_samples'] = geometry['verified_displaced_samples']
+            capture['numeric_geometry_shift_confirmed'] = geometry['numeric_geometry_shift_confirmed']
     probe.write_json(output / "capture.json", capture)
     print(json.dumps(capture, indent=2))
     return exit_code

@@ -32,3 +32,10 @@ et leur SPIR-V encodé en texte sont des créations originales D4VR. Aucun shade
 extrait de Diablo IV n'est inclus. Le helper de diagnostic est une implémentation
 originale du protocole du ring VKD3D ; aucun fichier source VKD3D n'est incorporé.
 Voir [les versions et la procédure](docs/CAMERA_OBSERVER.md).
+
+## Interfaces OpenXR et Vulkan
+
+Le diagnostic natif emploie les en-têtes et loaders externes OpenXR (Khronos) et
+Vulkan. Aucun de ces fichiers ou binaires n'est incorporé au dépôt. Les shaders
+de contrôle et le code d'application natif sont des créations originales D4VR.
+Voir [la procédure et les versions](docs/NATIVE_XR.md).

@@ -66,7 +66,11 @@ python3 tools/camera_capture.py run --geometry-test --game-dir "/chemin/Diablo I
 
 Le mode explicite doit correspondre au manifeste. Le lanceur vérifie les
 empreintes du jeu, de la DLL NVIDIA originale et du runtime VKD3D, puis prépare
-un lancement isolé. Le ring de capture de matrices n'est pas activé dans ce mode.
+un lancement isolé. Le ring de 16 Mio est actif. Le helper y écrit des coordonnées avant/après,
+les quatre paramètres de projection et le statut de sélection, sous le marqueur
+`D4GE`. Il prélève une invocation éligible sur 65 536, au maximum 1 024 fois.
+Le compteur cesse d'avancer au budget pour éviter un redémarrage après débordement.
+`VKD3D_SHADER_DEBUG=info` permet aussi de relever les substitutions du compilateur.
 Les fichiers du jeu et les réglages permanents de Lutris restent d'origine.
 
 Entrer en partie et observer le décor, le personnage et les ombres environ une
@@ -83,3 +87,33 @@ ou les calculs de culling. Ces limites peuvent apparaître sous forme d'artefact
 et servent à identifier les passes à traiter avant un rendu par œil complet.
 La profondeur reste celle du sommet, mais les calculs par pixel dépendant de
 la caméra n'ont pas encore été adaptés. Aucune image n'est envoyée à SteamVR.
+
+## Déplacement confirmé dans le jeu
+
+La session instrumentée suivante est terminée avec le code 0, le jeu et Battle.net
+fermés et les empreintes originales vérifiées. Le journal contient 35 échantillons
+complets : 12 déplacements conformes au calcul dans huit shaders, et 23 sommets
+hors cible inchangés. Aucun échantillon incohérent, groupe incomplet ou rejet de
+ligne n'est relevé. Huit sommets déplacés appartenaient au volume de clip initial.
+À la largeur de 2 560 pixels observée, leur décalage équivaut à environ 12,2 à
+16,4 pixels vers la gauche, selon leur profondeur. Le compilateur rapporte
+4 942 substitutions, correspondant à 2 050 hashes distincts de ce bundle.
+
+`tools/geometry_report.py` vérifie le déplacement, la conservation de Y/Z/W et
+la reconstruction de la coordonnée homogène. Il propage l'incertitude des six
+décimales du journal, notamment lorsque les termes de profondeur se compensent.
+Un décalage constant en coordonnées d'écran est rejeté comme incohérent avec la
+translation géométrique attendue. Les lignes manquantes ou dupliquées ne sont
+jamais assemblées en une preuve valide.
+
+Ce résultat prouve l'exécution du calcul sur des sommets dans Diablo IV. Un
+sommet dans le volume de clip peut encore être occulté ou rejeté ensuite ; le
+rapport ne déduit donc pas l'identité de la passe principale ni la visibilité
+de chaque sommet. Une paire stéréo du jeu reste absente.
+
+```sh
+python3 tools/geometry_report.py /travail/session/camera.log --output /travail/session/geometry.json
+```
+
+La [chaîne native SteamVR](NATIVE_XR.md) est validée séparément en casque.
+Le raccordement au renderer du jeu reste à réaliser.

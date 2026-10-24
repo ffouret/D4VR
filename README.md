@@ -100,9 +100,17 @@ Voir [les résultats, outils et limites](docs/CAMERA_OBSERVER.md).
 Un mode de diagnostic applique un petit déplacement latéral aux sommets de la
 projection 35° identifiée. La fixture RTX 5090 mesure 11,4 pixels à deux unités
 de distance, contre 5,7 à quatre unités. Le déplacement dépend de la profondeur.
-Ce test sur moniteur doit maintenant vérifier les passes du jeu ; il ne produit
-pas encore deux vues et n'envoie aucune image à SteamVR.
+Un relevé dans le jeu confirme maintenant 12 déplacements conformes au calcul,
+et 23 sommets hors cible inchangés. Le test ne produit pas encore deux vues du jeu.
 Voir [le test géométrique et ses limites](docs/GEOMETRY_TEST.md).
+
+## Étape 6 : chaîne native SteamVR
+
+Un composant natif OpenXR/Vulkan a soumis 2 241 trames stéréo d'une scène
+originale avec suivi de tête. Le propriétaire confirme l'affichage dans le
+Quest 2 connecté par Steam Link. SteamVR sélectionne la RTX 5090 et recommande
+2 244 × 2 352 pixels par œil. Ce composant reste indépendant de Diablo IV.
+Voir [le relevé natif et sa portée](docs/NATIVE_XR.md).
 
 ## Commandes du prototype
 
@@ -130,7 +138,7 @@ enregistrées dans le projet, mais leur acceptation en casque reste à vérifier
 | GPU | NVIDIA RTX 5090, 32 Go, déclaré par le propriétaire |
 | Casque | Meta Quest 2 |
 | Environnement VR préféré | SteamVR |
-| Liaison existante | ALVR ; indépendante de l'API utilisée par D4VR |
+| Liaison existante | ALVR initialement ; essai natif actuel avec Steam Link, via SteamVR |
 | Compatibilité visée | Windows également, dès la conception |
 | Commandes initiales | Commandes habituelles du jeu ; choix précis à confirmer |
 | Extension envisagée | Diablo III, avec une étude et un adaptateur distincts |

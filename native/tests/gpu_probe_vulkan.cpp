@@ -141,7 +141,7 @@ int main(int argc, char** argv) try {
         VkGraphicsPipelineCreateInfo p{VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO}; p.stageCount = 2; p.pStages = stages; p.pVertexInputState = &vi; p.pInputAssemblyState = &ia; p.pViewportState = &vp; p.pRasterizationState = &rs; p.pMultisampleState = &ms; p.pColorBlendState = &cb; p.layout = pipeline_layout; p.renderPass = render_pass;
         VkPipeline result{}; check(vkCreateGraphicsPipelines(f.device, VK_NULL_HANDLE, 1, &p, nullptr, &result)); return result;
     };
-    auto original_pipeline = pipeline(vertex, false), observer_pipeline = pipeline(probed, !geometry);
+    auto original_pipeline = pipeline(vertex, false), observer_pipeline = pipeline(probed, true);
     VkCommandPoolCreateInfo command_pool_create{VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO}; command_pool_create.queueFamilyIndex = f.family;
     VkCommandPool command_pool{}; check(vkCreateCommandPool(f.device, &command_pool_create, nullptr, &command_pool));
     VkCommandBufferAllocateInfo command_allocate{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO}; command_allocate.commandPool = command_pool; command_allocate.commandBufferCount = 1;
@@ -167,21 +167,63 @@ int main(int argc, char** argv) try {
             if (!count) throw std::runtime_error("No geometry pixels rendered");
             return sum / count;
         };
+        auto counters = static_cast<uint32_t*>(control.mapped);
+        auto data = static_cast<uint32_t*>(ring.mapped);
+        auto telemetry = [&](float depth, bool matched, uint32_t sample_id = 0) {
+            if (counters[0] != 48) throw std::runtime_error("Missing geometry telemetry");
+            std::array<std::array<float, 4>, 4> rows{};
+            for (unsigned row = 0; row < 4; ++row) {
+                auto message = data + row * 12;
+                if (message[0] != 0xdeadca7cu || message[1] != uint32_t(values.shader)
+                    || message[2] != uint32_t(values.shader >> 32) || message[3] != sample_id
+                    || message[4] != 0x44344745u || message[5] != sample_id
+                    || message[6] != row || message[7] != 0xaaaaaaaau)
+                    throw std::runtime_error("Invalid geometry telemetry identity");
+                std::memcpy(rows[row].data(), message + 8, 16);
+            }
+            const std::array<float, 4> point{-.7f, -.8f, -depth, 1};
+            auto projection = reinterpret_cast<float*>(static_cast<char*>(uniform.mapped) + 72 * 16);
+            for (unsigned row = 0; row < 4; ++row) {
+                double expected = 0;
+                for (unsigned k = 0; k < 4; ++k) expected += projection[row * 4 + k] * point[k];
+                if (std::abs(rows[0][row] - expected) > 1e-5) throw std::runtime_error("Incorrect original vertex telemetry");
+                if (matched && row == 0) expected -= projection[0] * .1;
+                if (std::abs(rows[1][row] - expected) > 1e-5) throw std::runtime_error("Incorrect displaced vertex telemetry");
+            }
+            if (rows[3][0] != (matched ? 1.f : 0.f) || std::abs(rows[3][1] - (matched ? 1.f : 0.f)) > 1e-5
+                || rows[3][2] != .1f || rows[3][3] != 0)
+                throw std::runtime_error("Incorrect geometry telemetry status");
+            if (rows[2][0] != projection[0] || rows[2][1] != projection[5]
+                || rows[2][2] != projection[10] || rows[2][3] != projection[11])
+                throw std::runtime_error("Incorrect geometry telemetry projection");
+        };
         std::array<double, 2> shifts{};
         for (unsigned i = 0; i < 2; ++i) {
             float depth = i == 0 ? 2.f : 4.f;
             auto model = reinterpret_cast<float*>(static_cast<char*>(second_uniform.mapped) + 56 * 16);
             model[11] = -.5f - depth;
+            counters[0] = 0; counters[1] = 0;
             auto baseline = render(original_pipeline), shifted = render(observer_pipeline);
+            telemetry(depth, true);
             shifts[i] = centroid(shifted) - centroid(baseline);
             double expected = -matrix[0] * .10 / depth * width / 2;
             if (std::abs(shifts[i] - expected) > .75) throw std::runtime_error("Measured GPU parallax differs from geometry prediction");
         }
         if (std::abs(shifts[0] / shifts[1] - 2) > .3) throw std::runtime_error("Parallax does not depend on depth");
+        counters[0] = 0; counters[1] = 65535;
+        render(observer_pipeline);
+        if (counters[0] != 0 || counters[1] != 65536) throw std::runtime_error("Geometry sampling did not skip");
+        auto sampled_image = render(observer_pipeline);
+        telemetry(4, true, 1);
+        counters[0] = 0; counters[1] = 67108864;
+        if (render(observer_pipeline) != sampled_image || counters[0] != 0 || counters[1] != 67108864)
+            throw std::runtime_error("Telemetry budget changed geometry or counter wrapped");
+        counters[0] = 0; counters[1] = 0;
         auto projection = reinterpret_cast<float*>(static_cast<char*>(uniform.mapped) + 72 * 16);
         projection[0] = .75f; projection[5] = .8f;
         if (render(original_pipeline) != render(observer_pipeline)) throw std::runtime_error("Non-target projection was modified");
-        std::cout << "{\"gpu_fixture_passed\":true,\"geometry_parallax_verified\":true,\"non_target_projection_unchanged\":true,\"shift_pixels_depth_2\":"
+        telemetry(4, false);
+        std::cout << "{\"gpu_fixture_passed\":true,\"geometry_telemetry_verified\":true,\"geometry_parallax_verified\":true,\"non_target_projection_unchanged\":true,\"shift_pixels_depth_2\":"
                   << shifts[0] << ",\"shift_pixels_depth_4\":" << shifts[1] << ",\"native_game_stereo_proven\":false}\n";
         return 0;
     }

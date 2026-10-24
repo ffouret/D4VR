@@ -32,6 +32,19 @@ jobs:
         run: cmake --build work/native-ci --config Release
       - name: Test observation and Windows forwarding
         run: ctest --test-dir work/native-ci -C Release --output-on-failure
+      - name: Compile native XR and validate diagnostic shaders without a headset
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends libopenxr-dev libvulkan-dev glslang-tools spirv-tools
+          cmake -S native -B work/native-xr-ci -DD4VR_BUILD_XR_READINESS=ON -DD4VR_BUILD_GPU_PROBE_FIXTURE=ON
+          cmake --build work/native-xr-ci --parallel 2
+          spirv-val --target-env vulkan1.2 work/native-xr-ci/scene.vert.spv
+          spirv-val --target-env vulkan1.2 work/native-xr-ci/scene.frag.spv
+          glslangValidator -V --target-env vulkan1.1 -Od native/probe_gpu/geometry_shift.vert -o work/native-xr-ci/geometry.spv
+          glslangValidator -V --target-env vulkan1.1 native/tests/probe_fixture.vert -o work/native-xr-ci/fixture.spv
+          python tools/spirv_probe.py work/native-xr-ci/fixture.spv --helper work/native-xr-ci/geometry.spv --tools /usr/bin --output work/native-xr-ci/instrumented.spv --geometry
       - name: Verify every Windows export name, ordinal and forwarder
         if: runner.os == 'Windows'
         run: python -c "import pathlib,sys; sys.path.insert(0,'tools'); import probe; probe.validate_probe(pathlib.Path('work/native-ci/probe/Release/sl.interposer.dll'),probe.profile())"

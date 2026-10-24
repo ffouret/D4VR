@@ -31,7 +31,7 @@ def build(args) -> dict:
         command.append("--geometry")
     result = subprocess.run(command, check=True, capture_output=True, text=True, timeout=60)
     proof = json.loads(result.stdout.splitlines()[-1])
-    valid = (proof.get("geometry_parallax_verified") is True and proof.get("non_target_projection_unchanged") is True
+    valid = (proof.get("geometry_parallax_verified") is True and proof.get("non_target_projection_unchanged") is True and proof.get("geometry_telemetry_verified") is True
              if args.geometry else proof.get("matrix_values_verified") == 32 and proof.get("sparse_sampling_and_budget_verified") is True)
     if proof.get("gpu_fixture_passed") is not True or not valid:
         raise ValueError("GPU diagnostic fixture did not pass")
@@ -83,7 +83,8 @@ def build(args) -> dict:
     if args.geometry:
         manifest.update(purpose="geometry_shift_diagnostic", geometry_eye_offset_view_units=0.10,
                         projection_filter_vertical_fov_degrees=35, projection_filter_aspect_ratio=16 / 9,
-                        maximum_matrix_samples=0, matrices_per_sample=0, sample_stride_qualified_invocations=0)
+                        maximum_matrix_samples=0, matrices_per_sample=0, geometry_telemetry=True,
+                        maximum_geometry_samples=1024)
     probe.write_json(args.output / "bundle.json", manifest)
     return {k: v for k, v in manifest.items() if k != "entries"} | {"validated_shaders": len(entries)}
 
