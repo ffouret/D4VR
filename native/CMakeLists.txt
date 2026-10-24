@@ -17,14 +17,17 @@ if(WIN32)
     endif()
     add_library(d4vr_streamline_probe SHARED probe/proxy.cpp)
     if(MSVC)
-        # LINK accepts forwarded exports through /EXPORT; using the same DEF
-        # entries directly fails while constructing its import library.
+        # Emit object directives so LINK does not treat forwarded symbols as
+        # local declarations while constructing its import library.
         file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/probe/exports.def" probe_exports)
+        set(export_source "// Generated from probe/exports.def.\n")
         foreach(entry IN LISTS probe_exports)
             if(entry MATCHES "^[ \t]+([^ \t]+)[ \t]+(@[0-9]+)$")
-                target_link_options(d4vr_streamline_probe PRIVATE "/EXPORT:${CMAKE_MATCH_1},${CMAKE_MATCH_2}")
+                string(APPEND export_source "#pragma comment(linker, \"/EXPORT:${CMAKE_MATCH_1},${CMAKE_MATCH_2}\")\n")
             endif()
         endforeach()
+        file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/probe_exports.cpp" "${export_source}")
+        target_sources(d4vr_streamline_probe PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/probe_exports.cpp")
     else()
         target_sources(d4vr_streamline_probe PRIVATE probe/exports.def)
     endif()
