@@ -18,8 +18,9 @@ reste à démontrer.
 
 Le chargement de la scène, son aperçu bureau et les tests de caméra ont été
 vérifiés dans l'environnement de développement et en CI sur Linux et Windows.
-L'affichage réel dans le Quest 2 et l'exécution VR sur les deux systèmes restent
-à tester. Voir les
+Le propriétaire a confirmé le rendu du laboratoire dans le Quest 2 sur sa
+Bazzite le 24 octobre 2026. L'exécution VR sous Windows et les essais détaillés
+des commandes et des reprises de session restent à vérifier. Voir les
 [preuves et limites des essais](docs/TESTING.md).
 
 ## Démarrer le laboratoire

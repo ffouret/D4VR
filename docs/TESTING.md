@@ -28,7 +28,7 @@ personnels du diagnostic restent dans les fichiers de travail locaux.
 | Action map sauvegardée : six actions et sept bindings Touch | Vérifiée |
 | Chargement complet de la scène en mode headless | Réussi |
 | Rendu de l'aperçu et capture PNG | Réussis, OpenGL logiciel llvmpipe |
-| Affichage stéréoscopique dans le Quest 2 | Non vérifié |
+| Rendu du laboratoire dans le Quest 2 sur Bazzite | Confirmé par le propriétaire le 24 octobre 2026 |
 | Tests et chargement headless sur Windows | Réussis en CI, sans casque ni GPU de jeu |
 | Rendu ou interaction avec Diablo IV | Non implémentés |
 
@@ -43,7 +43,23 @@ a réussi les tests Python, la préparation vérifiée du moteur, les tests de c
 et le chargement complet de la scène au commit `afcfc0538f31066ac68243789bc0ddb7886485e6`.
 Elle ne vérifie pas le casque, les pilotes de jeu et la liaison ALVR.
 
-## Essai à faire depuis la session Bazzite
+## Retour du test dans le Quest 2
+
+Le 24 octobre 2026, après livraison du laboratoire, le propriétaire confirme :
+« résultat parfait dans le quest ».
+
+Ce retour valide l'affichage du prototype sur sa configuration de référence
+Bazzite, RTX 5090, SteamVR et Quest 2, avec la liaison ALVR précédemment déclarée.
+Il s'agit d'une observation de l'utilisateur. Le numéro de build effectivement
+lancé, les temps de trame, les contrôles pris individuellement et les scénarios
+de perte/reprise de tracking n'ont pas été relevés séparément. Ce retour ne
+valide pas l'intégration à Diablo IV, qui n'est pas encore implémentée.
+
+L'échec antérieur dans le conteneur est conservé ci-dessus comme limite de cet
+environnement de développement ; il ne décrit pas le résultat dans la session
+Bazzite native.
+
+## Procédure de reproduction et essais détaillés
 
 1. Démarrer SteamVR avec le Quest 2 connecté par la liaison habituelle.
 2. Depuis le dossier D4VR, exécuter `./launch.sh setup`, puis `./launch.sh`.
