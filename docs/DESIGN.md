@@ -1,6 +1,6 @@
 # Conception initiale de D4VR
 
-État au 24 octobre 2026 : hypothèses de conception, sans intégration au jeu.
+État au 24 octobre 2026 : laboratoire validé en casque et observation GPU dans le jeu ; rendu stéréoscopique du jeu encore absent.
 
 ## Expérience recherchée
 
@@ -71,8 +71,9 @@ ne seront pas développées simultanément sans besoin mesuré.
 Les spécifications publiées par Blizzard indiquent DirectX 12 pour Diablo IV.
 Sous Windows, l'intégration graphique devra donc étudier D3D12. Sur Bazzite,
 la version Windows tourne dans l'environnement Wine choisi par Lutris ;
-vkd3d-proton est une implémentation D3D12 sur Vulkan, mais le runner et la
-version réellement utilisés ici ne sont pas encore connus.
+vkd3d-proton est une implémentation D3D12 sur Vulkan. Le lancement observé utilise
+GE-Proton11-11 et VKD3D-Proton 3.1.0 (`0bb64c56c8f0dcc+`). Le diagnostic GPU
+actuel dépend de ce chemin Linux ; il ne fournit pas encore un adaptateur Windows.
 
 Deux voies restent à comparer : un composant Windows utilisable aussi sous
 Wine, ou des adaptateurs graphiques Windows/Linux distincts autour d'un cœur
@@ -99,7 +100,8 @@ le racheter sur Steam pour viser SteamVR.
 4. **Prouver une paire stéréo dans Diablo IV.** Les deux vues doivent provenir
    du même état de simulation, avec des positions d'œil et projections correctes.
    Vérifier particules, transparences, ombres, surfaces nouvellement visibles
-   et historiques temporels. Aucun point d'accroche n'est actuellement connu.
+   et historiques temporels. L’observation de matrices GPU est disponible ; demander deux rendus cohérents
+   au même état de simulation reste à réaliser.
 5. **Rendre l'ensemble jouable.** Interface lisible, visée compatible avec la
    nouvelle caméra, inventaire, transitions, cinématiques, recentrage et
    reprise après perte du casque. Conserver d'abord les commandes du jeu.

@@ -79,6 +79,19 @@ déclarées. Les 20 626 fichiers de shaders ont été analysés sans erreur ; ce
 ne prouve pas quels programmes dessinent le décor ni quelles données portent
 la caméra. Voir [la capture et ses limites](docs/SHADER_CAPTURE.md).
 
+## Étape 4 : observation de matrices GPU
+
+L'analyse des 5 784 vertex shaders retrouve 2 679 multiplications finales par
+une matrice commune. Une sonde exécutée dans le jeu a récupéré 1 024 matrices
+complètes : leurs valeurs correspondent à des projections, sans prouver encore
+la caméra de scène. Une seconde sonde prélève ensemble la projection et la
+transformation qui la précède dans 2 113 programmes identifiés. Sa fixture sur
+la RTX 5090 récupère les 32 valeurs exactes sans changer l'image de contrôle.
+
+Les shaders instrumentés utilisent le ring de diagnostic VKD3D ; les DLL du jeu
+et de NVIDIA restent originales. Cela ne fournit pas encore de stéréo ni de
+rendu SteamVR de Diablo IV. Voir [les résultats, outils et limites](docs/CAMERA_OBSERVER.md).
+
 ## Commandes du prototype
 
 | Action | Quest Touch | Clavier |
@@ -119,6 +132,7 @@ utile pour la chaîne VR existante, pas une validation de Diablo IV.
 - [Étude d'Overlord et limites du transfert](docs/OVERLORD.md)
 - [Configuration de référence déclarée](config/reference-system.toml)
 - [Tests, installation détectée et limites actuelles](docs/TESTING.md)
+- [Observation des transformations GPU](docs/CAMERA_OBSERVER.md)
 - [Sonde de caméra et de ressources Streamline](docs/STREAMLINE_PROBE.md)
 - [Dépendances et mentions tierces](THIRD_PARTY_NOTICES.md)
 

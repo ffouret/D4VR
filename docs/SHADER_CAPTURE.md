@@ -86,6 +86,8 @@ SPIR-V déclarées ne suffisent pas à nommer un buffer « caméra ». Il faut e
 corréler un draw de la scène, son programme et ses constantes, puis tester un
 rendu géométrique distinct pour chaque œil.
 
+La suite de cette étude est décrite dans [l’observation des transformations GPU](CAMERA_OBSERVER.md).
+
 ## Sources des formats et diagnostics
 
 - [Diagnostics de shaders VKD3D-Proton](https://github.com/HansKristian-Work/vkd3d-proton#advanced-shader-debugging)

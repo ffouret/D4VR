@@ -1,4 +1,4 @@
-# Vérification du laboratoire 0.1.0
+# Vérification du laboratoire et des diagnostics
 
 Essais du 24 octobre 2026.
 
@@ -90,3 +90,20 @@ illustre la géométrie et le cadrage, pas la vision binoculaire dans le casque.
 - [Origine et échelle de tracking](https://docs.godotengine.org/en/stable/classes/class_xrorigin3d.html)
 - [Actions OpenXR](https://docs.godotengine.org/en/stable/tutorials/xr/xr_action_map.html)
 - [Publication officielle Godot 4.7.2](https://github.com/godotengine/godot/releases/tag/4.7.2-stable)
+
+## Observer GPU ajouté le 24 octobre
+
+La suite locale comprend maintenant 48 tests Python. Les nouvelles fixtures
+vérifient le parcours de deux transformations et l'instrumentation des shaders,
+avec des sources synthétiques originales. Les cas invalides n'annoncent aucune
+caméra et les journaux incomplets ou dupliqués sont rejetés.
+
+Le programme Vulkan optionnel s'exécute sur l'hôte Bazzite et sa RTX 5090,
+séparément du conteneur : les 32 valeurs observées sont exactes, les 16 384 octets
+de l'image restent identiques et les bornes d'échantillonnage sont vérifiées.
+Ce test nécessite le GPU ; il n'est pas lancé dans la CI générale sans GPU.
+
+La première session réelle fournit 1 024 matrices complètes de projection.
+Une seconde sonde, validée sur 2 113 shaders, prélève les deux transformations
+ensemble avec un intervalle étendu. [Procédure et portée](CAMERA_OBSERVER.md).
+Le rendu géométrique gauche/droite de Diablo IV n'est pas encore implémenté.

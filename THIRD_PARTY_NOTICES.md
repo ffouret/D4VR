@@ -23,3 +23,12 @@ Voir [les mentions légales Godot](https://godotengine.org/license/).
 
 Overlord est étudié comme référence technique. Aucun code de ce projet GPLv3
 n'a été copié dans D4VR.
+
+## Outils d'analyse GPU
+
+DXC (Microsoft), glslang et SPIRV-Tools (Khronos) sont des outils externes de
+préparation et ne sont pas redistribués. Les fixtures HLSL/GLSL, leur LLVM IR
+et leur SPIR-V encodé en texte sont des créations originales D4VR. Aucun shader
+extrait de Diablo IV n'est inclus. Le helper de diagnostic est une implémentation
+originale du protocole du ring VKD3D ; aucun fichier source VKD3D n'est incorporé.
+Voir [les versions et la procédure](docs/CAMERA_OBSERVER.md).

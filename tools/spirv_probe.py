@@ -1,0 +1,258 @@
+#!/usr/bin/env python3
+"""Prepare a read-only matrix observer for VKD3D's shader debug ring.
+
+This builds a separate SPIR-V override. It never writes game/NVIDIA libraries.
+The result must pass spirv-val and a GPU fixture before any game launch.
+"""
+from __future__ import annotations
+
+import argparse
+from pathlib import Path
+import struct
+import subprocess
+
+
+def string_words(value: str) -> list[int]:
+    data = value.encode("utf-8") + b"\0"
+    data += bytes((-len(data)) % 4)
+    return list(struct.unpack("<" + str(len(data) // 4) + "I", data))
+
+
+def literal(words) -> str:
+    return struct.pack("<" + str(len(words)) + "I", *words).split(b"\0", 1)[0].decode("utf-8")
+
+
+class Module:
+    def __init__(self, data: bytes):
+        if len(data) < 20 or len(data) % 4 or data[:4] != b"\x03\x02\x23\x07":
+            raise ValueError("Expected little-endian SPIR-V")
+        words = list(struct.unpack("<" + str(len(data) // 4) + "I", data))
+        self.header = words[:5]
+        self.instructions = []
+        index = 5
+        while index < len(words):
+            count, opcode = words[index] >> 16, words[index] & 0xFFFF
+            if count < 1 or index + count > len(words):
+                raise ValueError("Invalid SPIR-V instruction extent")
+            self.instructions.append((opcode, words[index + 1:index + count]))
+            index += count
+
+    def allocate(self):
+        identifier = self.header[3]
+        self.header[3] += 1
+        return identifier
+
+    def binary(self):
+        words = self.header.copy()
+        for opcode, arguments in self.instructions:
+            words += [((len(arguments) + 1) << 16) | opcode, *arguments]
+        return struct.pack("<" + str(len(words)) + "I", *words)
+
+    def add_capability(self, capability):
+        if (17, [capability]) not in self.instructions:
+            index = next(i for i, (op, _) in enumerate(self.instructions) if op != 17)
+            self.instructions.insert(index, (17, [capability]))
+
+    def decorate(self, instructions):
+        index = next(i for i, (op, _) in enumerate(self.instructions) if 19 <= op <= 39)
+        self.instructions[index:index] = instructions
+
+
+def helper_library(data: bytes) -> bytes:
+    module = Module(data)
+    names = {args[0]: literal(args[1:]) for op, args in module.instructions if op == 5}
+    targets = [identifier for identifier, name in names.items() if name.startswith("d4vr_probe(")]
+    if len(targets) != 1:
+        raise ValueError("Expected the original d4vr_probe helper compiled without inlining")
+    module.instructions = [(op, args) for op, args in module.instructions if op not in (15, 16, 331)]
+    module.add_capability(5)  # Linkage, intermediate library only.
+    module.decorate([(71, [targets[0], 41, *string_words("D4VRProbe_v1"), 0])])
+    return module.binary()
+
+
+def instrument(data: bytes, descriptor_set: int, binding: int, first_row: int, secondary_binding: int = 1, secondary_row: int = 56) -> bytes:
+    module = Module(data)
+    entries = [args for op, args in module.instructions if op == 15]
+    if len(entries) != 1 or entries[0][0] != 0:
+        raise ValueError("Only a single vertex entry point is supported")
+    main = entries[0][1]
+    decorations = {}
+    member_offsets = {}
+    types = {}
+    variables = {}
+    constants = {}
+    for op, args in module.instructions:
+        if op == 71:
+            decorations.setdefault(args[0], {})[args[1]] = args[2:]
+            if args[1] == 1 and args[2] in (0, 1, 2, 3):
+                raise ValueError("Original shader uses reserved debug-ring specialization IDs")
+        elif op == 72 and args[2] == 35:
+            member_offsets[(args[0], args[1])] = args[3]
+        elif 19 <= op <= 39:
+            types[args[0]] = (op, args[1:])
+        elif op == 59:
+            variables[args[1]] = (args[0], args[2])
+        elif op == 43:
+            constants[args[1]] = (args[0], args[2:])
+    def uniform_source(selected_set, selected_binding, row):
+        targets = [identifier for identifier in variables if decorations.get(identifier, {}).get(34) == [selected_set]
+                   and decorations.get(identifier, {}).get(33) == [selected_binding]]
+        if len(targets) != 1:
+            raise ValueError("Expected one uniform buffer at the selected descriptor set/binding")
+        target = targets[0]
+        pointer_type, storage = variables[target]
+        if storage != 2 or types[pointer_type][0] != 32:
+            raise ValueError("Selected descriptor is not a uniform buffer")
+        struct_type = types[pointer_type][1][1]
+        struct_op, members = types[struct_type]
+        if struct_op != 30 or len(members) != 1 or member_offsets.get((struct_type, 0)) != 0:
+            raise ValueError("Expected one array at byte offset zero in the uniform block")
+        array_type = members[0]
+        array_op, array = types[array_type]
+        if array_op != 28 or decorations.get(array_type, {}).get(6) != [16]:
+            raise ValueError("Expected a fixed float4 array with a 16-byte stride")
+        vector_type, array_length_id = array
+        vector_op, vector_args = types[vector_type]
+        if vector_op != 23 or vector_args[1] != 4 or types[vector_args[0]] != (22, [32]):
+            raise ValueError("Expected four 32-bit floats per vector")
+        length = constants.get(array_length_id, (0, []))[1]
+        if len(length) != 1 or row < 0 or row + 4 > length[0]:
+            raise ValueError("Matrix extent outside the original uniform buffer")
+        return target, vector_type
+
+    target, vector_type = uniform_source(descriptor_set, binding, first_row)
+    second_target, second_vector_type = uniform_source(descriptor_set, secondary_binding, secondary_row)
+    if vector_type != second_vector_type:
+        raise ValueError("Both observed buffers must use the same float4 type")
+    declarations = []
+
+    def type_id(opcode, arguments):
+        for identifier, declaration in types.items():
+            if declaration == (opcode, arguments):
+                return identifier
+        identifier = module.allocate()
+        types[identifier] = (opcode, arguments)
+        declarations.append((opcode, [identifier, *arguments]))
+        return identifier
+
+    def constant(value):
+        for identifier, definition in constants.items():
+            if definition == (uint, [value]):
+                return identifier
+        identifier = module.allocate()
+        constants[identifier] = (uint, [value])
+        declarations.append((43, [uint, identifier, value]))
+        return identifier
+
+    uint = type_id(21, [32, 0])
+    void = type_id(19, [])
+    uniform_vector_pointer = type_id(32, [2, vector_type])
+    local_uint_pointer = type_id(32, [7, uint])
+    local_vector_pointer = type_id(32, [7, vector_type])
+    function_type = type_id(33, [void, local_uint_pointer, *([local_vector_pointer] * 8)])
+    vertex_inputs = [identifier for identifier in variables if decorations.get(identifier, {}).get(11) == [42]]
+    added_decorations = []
+    if len(vertex_inputs) > 1:
+        raise ValueError("Ambiguous VertexIndex builtin")
+    if vertex_inputs:
+        vertex = vertex_inputs[0]
+        vertex_pointer = variables[vertex][0]
+        vertex_type = types[vertex_pointer][1][1]
+        if types[vertex_type] not in ((21, [32, 0]), (21, [32, 1])):
+            raise ValueError("Unsupported VertexIndex type")
+    else:
+        vertex_type = uint
+        input_pointer = type_id(32, [1, uint])
+        vertex = module.allocate()
+        declarations.append((59, [input_pointer, vertex, 1]))
+        added_decorations.append((71, [vertex, 11, 42]))
+        entries[0].append(vertex)
+    zero = constant(0)
+    row_indices = [(target, constant(first_row + i)) for i in range(4)]
+    row_indices += [(second_target, constant(secondary_row + i)) for i in range(4)]
+    imported = module.allocate()
+    parameters = [module.allocate() for _ in range(9)]
+    added_decorations.append((71, [imported, 41, *string_words("D4VRProbe_v1"), 1]))
+    import_body = [(54, [void, imported, 0, function_type])]
+    import_body += [(55, [local_uint_pointer if i == 0 else local_vector_pointer, identifier])
+                    for i, identifier in enumerate(parameters)]
+    import_body.append((56, []))
+    locals_ = [module.allocate() for _ in range(9)]
+    local_declarations = [(59, [local_uint_pointer if i == 0 else local_vector_pointer, identifier, 7])
+                          for i, identifier in enumerate(locals_)]
+
+    def call_body():
+        code = []
+        value = module.allocate()
+        code.append((61, [vertex_type, value, vertex]))
+        if vertex_type != uint:
+            converted = module.allocate()
+            code.append((124, [uint, converted, value]))
+            value = converted
+        code.append((62, [locals_[0], value]))
+        for i, (buffer, row) in enumerate(row_indices):
+            pointer, value = module.allocate(), module.allocate()
+            code.append((65, [uniform_vector_pointer, pointer, buffer, zero, row]))
+            code.append((61, [vector_type, value, pointer]))
+            code.append((62, [locals_[i + 1], value]))
+        code.append((57, [void, module.allocate(), imported, *locals_]))
+        return code
+
+    output = []
+    function = None
+    locals_inserted = False
+    calls = 0
+    for op, args in module.instructions:
+        if op == 54:
+            function = args[1]
+        if function == main and op == 253:
+            output.extend(call_body())
+            calls += 1
+        output.append((op, args))
+        if function == main and op == 248 and not locals_inserted:
+            output.extend(local_declarations)
+            locals_inserted = True
+        if op == 56:
+            function = None
+    if not locals_inserted or not calls:
+        raise ValueError("No normal return in the selected vertex entry point")
+    module.instructions = output
+    module.add_capability(5)
+    module.decorate(added_decorations)
+    first_function = next(i for i, (op, _) in enumerate(module.instructions) if op == 54)
+    module.instructions[first_function:first_function] = declarations + import_body
+    return module.binary()
+
+
+def build(original: Path, helper: Path, output: Path, tools: Path, descriptor_set: int, binding: int, first_row: int, secondary_binding: int = 1, secondary_row: int = 56):
+    output.parent.mkdir(parents=True, exist_ok=True)
+    scratch = output.parent / "intermediate" / output.stem
+    scratch.mkdir(parents=True, exist_ok=True)
+    library = scratch / "helper.spv"
+    caller = scratch / "caller.spv"
+    linked = scratch / "linked.spv"
+    library.write_bytes(helper_library(helper.read_bytes()))
+    caller.write_bytes(instrument(original.read_bytes(), descriptor_set, binding, first_row, secondary_binding, secondary_row))
+    subprocess.run([str(tools / "spirv-link"), "--target-env", "spv1.3", str(caller), str(library), "-o", str(linked)], check=True, capture_output=True)
+    subprocess.run([str(tools / "spirv-opt"), "--eliminate-dead-functions", "--eliminate-dead-variables", str(linked), "-o", str(output)], check=True, capture_output=True)
+    subprocess.run([str(tools / "spirv-val"), "--target-env", "vulkan1.2", str(output)], check=True, capture_output=True)
+    return output
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("original", type=Path)
+    parser.add_argument("--helper", type=Path, required=True)
+    parser.add_argument("--tools", type=Path, required=True)
+    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--set", type=int, default=3, dest="descriptor_set")
+    parser.add_argument("--binding", type=int, default=0)
+    parser.add_argument("--first-row", type=int, default=72)
+    parser.add_argument("--secondary-binding", type=int, default=1)
+    parser.add_argument("--secondary-row", type=int, default=56)
+    args = parser.parse_args()
+    print(build(args.original, args.helper, args.output, args.tools, args.descriptor_set, args.binding, args.first_row, args.secondary_binding, args.secondary_row))
+
+
+if __name__ == "__main__":
+    main()
