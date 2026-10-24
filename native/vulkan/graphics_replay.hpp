@@ -3,6 +3,8 @@
 #include <memory>
 
 namespace d4vr::replay {
+enum class DescriptorMode { sets,buffers };
+struct DescriptorLimits { uint32_t maxBindings = 0; VkDeviceSize offsetAlignment = 0; };
 // Contracts must come from the adapter's pipeline/resource audit. They are not
 // inferred from a pipeline handle or from successful shader compilation.
 struct Pipeline {
@@ -10,6 +12,7 @@ struct Pipeline {
     std::array<VkPipeline,2> eyes{};
     VkPipelineLayout layout{};
     uint32_t descriptorSets = 0,vertexBindings = 0,pushBytes = 0;
+    DescriptorMode descriptors = DescriptorMode::sets;
     VkShaderStageFlags pushStages = VK_SHADER_STAGE_VERTEX_BIT;
     uint32_t viewports = 1,scissors = 1;
     VkStencilFaceFlags stencilReference = 0;
@@ -26,27 +29,35 @@ struct Stats {
 };
 
 // One command-buffer recording. Command methods forward the original call once,
-// then owns a bounded copy of its transient data. Eligible scopes are emitted
+// then own a bounded copy of their transient data. Eligible scopes are emitted
 // twice immediately after EndRendering, followed by graphics-state restoration.
 // The adapter MUST report all unsupported commands with unsupported(), including
-// resource writes, descriptor-buffer APIs, unmodeled dynamic state, indirect or
+// resource writes, unmodeled descriptor APIs/dynamic state, indirect or
 // secondary commands, queries and conditional rendering. Pipeline variants must
 // preserve the original layout, interface and fixed-function state. Resource
 // lifetime, queue ownership and the observed attachment signature are supplied
 // by the adapter, not inferred here.
+// Descriptor-buffer methods require explicit limits and an already-enabled
+// VK_EXT_descriptor_buffer on the borrowed device; GPU descriptor bytes are
+// borrowed, not snapshotted. All descriptor calls at both GRAPHICS and COMPUTE
+// bind points must be observed to restore the shared buffer bindings correctly.
 // This module is not yet attached to the game layer. All handles are borrowed.
 class Graphics {
     struct Impl;
     std::unique_ptr<Impl> impl;
 public:
     Graphics(VkDevice,PFN_vkGetDeviceProcAddr,VkCommandBuffer,stereo::Targets&,
-             stereo::PreviousUse initialUse);
+             stereo::PreviousUse initialUse,DescriptorLimits = {});
     ~Graphics();
     void pipeline(const Pipeline&);
     void unsupported() noexcept;
     void bindPipeline(VkPipeline);
     void bindDescriptors(VkPipelineLayout,uint32_t first,uint32_t count,const VkDescriptorSet*,
-                         uint32_t dynamicCount = 0,const uint32_t* offsets = nullptr);
+                         uint32_t dynamicCount = 0,const uint32_t* offsets = nullptr,
+                         VkPipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS);
+    void bindDescriptorBuffers(uint32_t,const VkDescriptorBufferBindingInfoEXT*);
+    void descriptorBufferOffsets(VkPipelineBindPoint,VkPipelineLayout,uint32_t first,uint32_t count,
+                                 const uint32_t* indices,const VkDeviceSize* offsets);
     void push(VkPipelineLayout,VkShaderStageFlags,uint32_t offset,uint32_t size,const void*);
     void viewport(uint32_t first,uint32_t count,const VkViewport*);
     void scissor(uint32_t first,uint32_t count,const VkRect2D*);

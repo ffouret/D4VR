@@ -8,6 +8,8 @@ aucun dessin du jeu n'est encore rejoué ni envoyé à SteamVR.**
 
 Les [mesures agrégées et empreintes des sources](proofs/graphics-replay-v1.json)
 permettent de rattacher les résultats ci-dessous au binaire de contrôle testé.
+La [preuve des descriptor buffers](proofs/descriptor-replay-v1.json) complète
+ce premier relevé avec un calcul témoin après la reprise.
 
 ## Enregistrement et émission
 
@@ -45,7 +47,7 @@ conserver la même interface et le même état fixe que l'original.
 
 L'adaptateur doit signaler par `unsupported()` toute commande dont les effets
 ne sont pas modélisés : écritures de ressources, requêtes, rendu conditionnel,
-descriptor buffers, autres états dynamiques, commandes indirectes ou secondaires,
+variantes de descripteurs non couvertes, autres états dynamiques, commandes indirectes ou secondaires,
 etc. Ce signal interdit la reprise du reste de cet enregistrement. Le module
 n'intercepte pas automatiquement toute l'API Vulkan ; cette couverture est une
 condition préalable au futur raccordement au jeu.
@@ -69,6 +71,66 @@ Le journal limite chaque enregistrement à 8 192 commandes et à 1 Mio de nœuds
 et données comptabilisés, hors structures auxiliaires. Le dépassement du budget
 ou une erreur d'allocation désactive la reprise ; les appels originaux continuent
 d'être transmis.
+
+## Descriptor buffers
+
+L'activation explicite de `DescriptorLimits` ajoute la capture de
+`vkCmdBindDescriptorBuffersEXT` et `vkCmdSetDescriptorBufferOffsetsEXT`.
+Sans activation, aucun pointeur de fonction de cette extension n'est demandé.
+Le contrat du pipeline distingue les sets traditionnels des descripteurs en
+buffers ; une liaison d'un autre type ne satisfait pas un état requis.
+Les adresses, usages, indices et offsets 64 bits sont copiés, sans conserver
+les tableaux CPU de l'appelant. Les chaînes `pNext`, push descriptors et
+samplers immuables embarqués restent exclus. Les indices et alignements sont
+contrôlés avec les limites fournies par l'adaptateur, jusqu'à 32 bindings.
+
+Les bindings de buffers sont globaux aux bind points. Chaque rebind invalide
+conservativement les offsets suivis ; ils doivent être réétablis. Les offsets
+**graphiques et de calcul** et les sets traditionnels de ces deux bind points
+font donc partie de l'historique restauré. L'adaptateur doit couvrir leurs
+appels depuis le début de l'enregistrement. Une commande de descripteur pour
+un autre bind point doit interdire la reprise. Les changements entre layouts
+distincts conservent la politique de refus conservatrice.
+
+Les octets contenus dans les buffers GPU et les ressources qu'ils référencent
+ne sont pas copiés. Leurs durées de vie, lectures/écritures, plages et dépendances
+doivent être auditées par l'adaptateur. Cette capture de liaisons n'autorise
+aucune reprise arbitraire d'un heap du jeu.
+
+La fixture ajoute `--descriptor-buffers --compute /travail/descriptor-echo.spv`
+au mode de reprise. Les images de référence utilisent toujours des descriptor
+sets traditionnels et le shader original. Deux UBO sont décrits dans trois
+slots privés : la scène originale pour les graphiques, et deux caméras
+indépendantes. Après la reprise, un dispatch de contrôle utilise sa propre
+caméra, à un offset différent, **sans rebind de descripteur**. Les 32 mots lus
+sur huit dispatches correspondent exactement aux UBO attendus. Le dessin
+suivant sans rebind reste également conforme. Ce mode restaure 132 commandes
+d'état, au lieu de 108 dans le chemin initial.
+
+Un second contrôle négatif attribue volontairement au calcul l'offset de la
+caméra graphique. Cet offset est valide pour Vulkan, mais ses données sont
+incorrectes : les huit échantillons sont détectés comme erronés. La validation
+Vulkan ne signale aucune erreur d'API pour ce cas. Le contrôle de référence
+vérifie donc aussi les données, au-delà de la légalité des appels. Ce cas est
+explicitement exclu des résultats positifs.
+
+Sur RTX 5090, les trois exécutions positives (dont Steam Runtime) et les deux
+contrôles négatifs passent. Le chemin traditionnel est revérifié séparément.
+Le test GPU couvre ici des UBO en buffers ; il ne prouve pas encore des images,
+samplers, descripteurs mutables ou heaps de VKD3D en cours de modification.
+
+```sh
+glslangValidator -V --target-env vulkan1.2 native/tests/descriptor_echo.comp -o /travail/descriptor-echo.spv
+spirv-val --target-env vulkan1.2 /travail/descriptor-echo.spv
+```
+
+Ajouter `--descriptor-buffers --compute /travail/descriptor-echo.spv` à la
+commande de validation ci-dessous. Le validateur exige alors les mesures du
+calcul suivant et le contrôle négatif d'offset incorrect.
+
+Références : [bindings globaux de buffers](https://docs.vulkan.org/refpages/latest/refpages/source/vkCmdBindDescriptorBuffersEXT.html),
+[offsets par bind point](https://docs.vulkan.org/refpages/latest/refpages/source/vkCmdSetDescriptorBufferOffsetsEXT.html),
+[sets traditionnels par bind point](https://docs.vulkan.org/refpages/latest/refpages/source/vkCmdBindDescriptorSets.html).
 
 ## Preuve GPU
 
@@ -118,8 +180,8 @@ sur Linux et Windows ; le test GPU reste propre à la machine de référence.
 
 ## Travail restant pour Diablo
 
-Il faut compléter l'adaptateur pour les descriptor buffers et états dynamiques
-utilisés par VKD3D, auditer les lectures/écritures et durées de vie des ressources,
+Il faut compléter l'adaptateur pour les variantes de descripteurs et états
+dynamiques utilisés par VKD3D, auditer les lectures/écritures et durées de vie des ressources,
 retrouver l'initialisation des attachements `LOAD`, et construire des variantes
 de pipelines du jeu. Les multiples queues et trames en vol exigent une gestion
 explicite des ressources et des dépendances. La composition des passes suivantes,

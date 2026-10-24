@@ -25,20 +25,37 @@ float number(const uint8_t* p) { float v; std::memcpy(&v,p,4); return v; }
 
 int main(int argc,char** argv) try {
     if (argc < 4) throw std::runtime_error("Usage: stereo_targets_vulkan original.vert.spv stereo.vert.spv mrt.frag.spv [--negative-sync-control] [--preview-directory path]");
-    bool negative = false,split = false,recorded = false; std::filesystem::path preview;
+    bool negative = false,split = false,recorded = false,buffered = false,negativeCompute = false; std::filesystem::path preview,computePath;
     for (int k = 4; k < argc; ++k) {
         if (std::string(argv[k]) == "--negative-sync-control") negative = true;
         else if (std::string(argv[k]) == "--split-passes") split = true;
         else if (std::string(argv[k]) == "--recorded-replay") recorded = true;
+        else if (std::string(argv[k]) == "--descriptor-buffers") buffered = true;
+        else if (std::string(argv[k]) == "--negative-compute-control") negativeCompute = true;
+        else if (std::string(argv[k]) == "--compute" && k+1 < argc) computePath = argv[++k];
         else if (std::string(argv[k]) == "--preview-directory" && k+1 < argc) preview = argv[++k];
         else throw std::invalid_argument("Unknown stereo fixture option");
     }
-    if (negative && !preview.empty()) throw std::invalid_argument("Negative control cannot export previews");
+    if ((negative || negativeCompute) && !preview.empty()) throw std::invalid_argument("Negative control cannot export previews");
+    if (buffered && (!recorded || computePath.empty())) throw std::invalid_argument("Descriptor-buffer proof requires recorded replay and a compute echo shader");
+    if (negativeCompute && !buffered) throw std::invalid_argument("Compute negative control requires descriptor buffers");
     if (!preview.empty()) {
         expect(!std::filesystem::exists(preview),"Use a new preview directory");
         std::filesystem::create_directories(preview);
     }
-    Fixture f(true,false);
+    Fixture f(true,false,buffered);
+    VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptorProperties{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_PROPERTIES_EXT};
+    PFN_vkGetDescriptorSetLayoutSizeEXT getLayoutSize{}; PFN_vkGetDescriptorSetLayoutBindingOffsetEXT getBindingOffset{};
+    PFN_vkGetDescriptorEXT getDescriptor{}; PFN_vkCmdSetDescriptorBufferOffsetsEXT setBufferOffsets{};
+    if (buffered) {
+        VkPhysicalDeviceProperties2 properties{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2}; properties.pNext = &descriptorProperties;
+        vkGetPhysicalDeviceProperties2(f.physical,&properties);
+#define D4_DESCRIPTOR_LOAD(type,name) name = reinterpret_cast<PFN_vk##type>(vkGetDeviceProcAddr(f.device,"vk" #type)); expect(name != nullptr,"Descriptor dispatch unavailable");
+        D4_DESCRIPTOR_LOAD(GetDescriptorSetLayoutSizeEXT,getLayoutSize) D4_DESCRIPTOR_LOAD(GetDescriptorSetLayoutBindingOffsetEXT,getBindingOffset)
+        D4_DESCRIPTOR_LOAD(GetDescriptorEXT,getDescriptor)
+        D4_DESCRIPTOR_LOAD(CmdSetDescriptorBufferOffsetsEXT,setBufferOffsets)
+#undef D4_DESCRIPTOR_LOAD
+    }
     stereo::Config config;
     for (unsigned k = 0; k < 5; ++k) {
         VkFormat format = k < 4 ? config.colors[k] : config.depth;
@@ -63,6 +80,30 @@ int main(int argc,char** argv) try {
     VkPushConstantRange push{VK_SHADER_STAGE_VERTEX_BIT,0,sizeof(Item)};
     VkPipelineLayoutCreateInfo li{VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO}; li.setLayoutCount = 4; li.pSetLayouts = layouts.data(); li.pushConstantRangeCount = 1; li.pPushConstantRanges = &push;
     VkPipelineLayout layout{}; check(vkCreatePipelineLayout(f.device,&li,nullptr,&layout));
+    std::array<VkDescriptorSetLayout,4> bufferLayouts{}; VkPipelineLayout bufferLayout{};
+    VkDeviceSize descriptorStride = 0; Buffer descriptorStorage{},computeOutput{}; VkShaderModule computeShader{}; VkPipeline computePipeline{};
+    VkDescriptorBufferBindingInfoEXT descriptorBinding{VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT};
+    if (buffered) {
+        for (unsigned k = 0; k < 4; ++k) {
+            VkDescriptorSetLayoutCreateInfo ci{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO}; ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
+            if (k == 3) { ci.bindingCount = 2; ci.pBindings = bindings.data(); }
+            // The same UBOs are consumed by graphics and the following compute witness.
+            auto computeBindings = bindings; for (auto& b : computeBindings) b.stageFlags |= VK_SHADER_STAGE_COMPUTE_BIT;
+            if (k == 3) ci.pBindings = computeBindings.data();
+            check(vkCreateDescriptorSetLayout(f.device,&ci,nullptr,&bufferLayouts[k]));
+        }
+        li.pSetLayouts = bufferLayouts.data(); check(vkCreatePipelineLayout(f.device,&li,nullptr,&bufferLayout)); li.pSetLayouts = layouts.data();
+        VkDeviceSize layoutBytes = 0; getLayoutSize(f.device,bufferLayouts[3],&layoutBytes);
+        auto alignment = descriptorProperties.descriptorBufferOffsetAlignment;
+        descriptorStride = (layoutBytes+alignment-1)/alignment*alignment;
+        descriptorStorage = f.buffer(descriptorStride*3,VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT,true);
+        descriptorBinding.address = descriptorStorage.address; descriptorBinding.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
+        computeOutput = f.buffer(16,VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,true); computeShader = f.shader(computePath.string().c_str());
+        VkSpecializationMapEntry entry{7,0,8}; VkSpecializationInfo spec{1,&entry,8,&computeOutput.address};
+        VkComputePipelineCreateInfo ci{VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO}; ci.flags = VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT; ci.layout = bufferLayout;
+        ci.stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO; ci.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT; ci.stage.module = computeShader; ci.stage.pName = "main"; ci.stage.pSpecializationInfo = &spec;
+        check(vkCreateComputePipelines(f.device,VK_NULL_HANDLE,1,&ci,nullptr,&computePipeline));
+    }
     VkDescriptorPoolSize size{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,6};
     VkDescriptorPoolCreateInfo pi{VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO}; pi.maxSets = 3; pi.poolSizeCount = 1; pi.pPoolSizes = &size;
     VkDescriptorPool pool{}; check(vkCreateDescriptorPool(f.device,&pi,nullptr,&pool));
@@ -71,17 +112,24 @@ int main(int argc,char** argv) try {
     std::array<VkDescriptorSet,3> sets{}; check(vkAllocateDescriptorSets(f.device,&ai,sets.data()));
     std::array<std::array<Buffer,2>,3> uniforms{};
     for (unsigned s = 0; s < 3; ++s) for (unsigned b = 0; b < 2; ++b) {
-        auto& buffer = uniforms[s][b]; buffer = f.buffer((b ? 80 : 113)*16,VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+        auto& buffer = uniforms[s][b]; buffer = f.buffer((b ? 80 : 113)*16,VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,buffered);
         VkDescriptorBufferInfo info{buffer.handle,0,VK_WHOLE_SIZE};
         VkWriteDescriptorSet w{VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET}; w.dstSet = sets[s]; w.dstBinding = b;
         w.descriptorCount = 1; w.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; w.pBufferInfo = &info; vkUpdateDescriptorSets(f.device,1,&w,0,nullptr);
+        if (buffered) {
+            VkDeviceSize offset = 0; getBindingOffset(f.device,bufferLayouts[3],b,&offset);
+            VkDescriptorAddressInfoEXT address{VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT}; address.address = buffer.address; address.range = (b ? 80 : 113)*16; address.format = VK_FORMAT_UNDEFINED;
+            VkDescriptorGetInfoEXT descriptor{VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT}; descriptor.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; descriptor.data.pUniformBuffer = &address;
+            expect(offset+descriptorProperties.uniformBufferDescriptorSize <= descriptorStride,"Descriptor exceeds private slot");
+            getDescriptor(f.device,&descriptor,descriptorProperties.uniformBufferDescriptorSize,static_cast<char*>(descriptorStorage.mapped)+s*descriptorStride+offset);
+        }
     }
     auto upload = [&](unsigned set,const Matrix4& projection,const Matrix4& view) {
         auto p = reinterpret_cast<float*>(static_cast<char*>(uniforms[set][0].mapped)+72*16);
         auto v = reinterpret_cast<float*>(static_cast<char*>(uniforms[set][1].mapped)+56*16);
         for (unsigned k = 0; k < 16; ++k) { p[k] = static_cast<float>(projection[k]); v[k] = static_cast<float>(view[k]); }
     };
-    auto pipeline = [&](VkDeviceAddress address) {
+    auto pipeline = [&](VkDeviceAddress address,bool bufferMode = false) {
         VkPipelineShaderStageCreateInfo stages[2]{};
         for (auto& s : stages) { s.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO; s.pName = "main"; }
         stages[0].stage = VK_SHADER_STAGE_VERTEX_BIT; stages[0].module = address ? instrumented : vertex;
@@ -103,10 +151,12 @@ int main(int argc,char** argv) try {
         rendering.depthAttachmentFormat = rendering.stencilAttachmentFormat = config.depth;
         VkGraphicsPipelineCreateInfo ci{VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO}; ci.pNext = &rendering; ci.stageCount = 2; ci.pStages = stages;
         ci.pVertexInputState = &vi; ci.pInputAssemblyState = &ia; ci.pViewportState = &vp; ci.pRasterizationState = &rs; ci.pMultisampleState = &ms;
-        ci.pColorBlendState = &cb; ci.pDepthStencilState = &ds; ci.pDynamicState = &dy; ci.layout = layout;
+        ci.pColorBlendState = &cb; ci.pDepthStencilState = &ds; ci.pDynamicState = &dy; ci.layout = bufferMode ? bufferLayout : layout;
+        if (bufferMode) ci.flags = VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
         VkPipeline out{}; check(vkCreateGraphicsPipelines(f.device,VK_NULL_HANDLE,1,&ci,nullptr,&out)); return out;
     };
     auto originalPipeline = pipeline(0);
+    auto bufferOriginalPipeline = buffered ? pipeline(0,true) : VK_NULL_HANDLE;
     VkCommandPoolCreateInfo cpi{VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO}; cpi.queueFamilyIndex = f.family;
     VkCommandPool commands{}; check(vkCreateCommandPool(f.device,&cpi,nullptr,&commands));
     VkCommandBufferAllocateInfo cai{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO}; cai.commandPool = commands; cai.commandBufferCount = 1;
@@ -134,7 +184,7 @@ int main(int argc,char** argv) try {
         {"occlusion",2,{near,far},states(3,.064,false),false},
         {"head-asymmetric",2,{near,far},states(4,.064,true),false}}};
     Result result;
-    uint64_t recordedScopes = 0,recordedDraws = 0,restoredStateCommands = 0,witnessComparedBytes = 0,originalComparedBytes = 0;
+    uint64_t recordedScopes = 0,recordedDraws = 0,restoredStateCommands = 0,witnessComparedBytes = 0,originalComparedBytes = 0,computeWords = 0,wrongComputeSamples = 0;
     auto bytes = static_cast<const uint8_t*>(staging.mapped);
     for (unsigned caseIndex = 0; caseIndex < cases.size(); ++caseIndex) {
         const auto& test = cases[caseIndex];
@@ -148,7 +198,7 @@ int main(int argc,char** argv) try {
             expect(handles.insert(target->eye(eye).depth.handle).second,"Stereo depth images alias");
             expect(addresses.insert(target->eye(eye).packetAddress).second,"Eye packets alias");
         }
-        std::array<VkPipeline,2> eyePipeline{pipeline(eyes->eye(0).packetAddress),pipeline(eyes->eye(1).packetAddress)};
+        std::array<VkPipeline,2> eyePipeline{pipeline(eyes->eye(0).packetAddress,buffered),pipeline(eyes->eye(1).packetAddress,buffered)};
         upload(0,source,identity());
         for (unsigned eye = 0; eye < 2; ++eye) upload(eye+1,(test.states[eye].header[3]&2) ? source : matrix(test.states[eye].eyeProjection),matrix(test.states[eye].eyeFromGameView));
         for (unsigned epoch = 0; epoch < 2; ++epoch) {
@@ -182,12 +232,22 @@ int main(int argc,char** argv) try {
             };
             bool splitThisCase = split && test.count == 2;
             if (recorded) {
-                replay::Graphics recorder(f.device,vkGetDeviceProcAddr,command,*eyes,epoch ? stereo::PreviousUse::transferSource : stereo::PreviousUse::discarded);
-                replay::Pipeline contract; contract.original = originalPipeline; contract.eyes = eyePipeline; contract.layout = layout;
+                replay::Graphics recorder(f.device,vkGetDeviceProcAddr,command,*eyes,epoch ? stereo::PreviousUse::transferSource : stereo::PreviousUse::discarded,
+                    buffered ? replay::DescriptorLimits{std::min(32u,descriptorProperties.maxDescriptorBufferBindings),descriptorProperties.descriptorBufferOffsetAlignment} : replay::DescriptorLimits{});
+                auto recordedLayout = buffered ? bufferLayout : layout;
+                replay::Pipeline contract; contract.original = buffered ? bufferOriginalPipeline : originalPipeline; contract.eyes = eyePipeline; contract.layout = recordedLayout;
                 contract.descriptorSets = 1u<<3; contract.pushBytes = sizeof(Item); contract.stencilReference = VK_STENCIL_FACE_FRONT_AND_BACK;
+                contract.descriptors = buffered ? replay::DescriptorMode::buffers : replay::DescriptorMode::sets;
                 contract.externalWritesExcluded = contract.attachmentInputAliasesExcluded = true; recorder.pipeline(contract);
                 // Commands before BeginRendering must seed the replayed scope.
-                recorder.bindPipeline(originalPipeline); recorder.bindDescriptors(layout,3,1,&sets[0]);
+                recorder.bindPipeline(contract.original);
+                if (buffered) {
+                    auto scratch = descriptorBinding; recorder.bindDescriptorBuffers(1,&scratch); scratch.address = 0;
+                    uint32_t index = 0; VkDeviceSize computeOffset = descriptorStride*2,graphicsOffset = 0;
+                    recorder.descriptorBufferOffsets(VK_PIPELINE_BIND_POINT_COMPUTE,bufferLayout,3,1,&index,&computeOffset);
+                    recorder.descriptorBufferOffsets(VK_PIPELINE_BIND_POINT_GRAPHICS,bufferLayout,3,1,&index,&graphicsOffset);
+                    index = 99; computeOffset = graphicsOffset = 1;
+                } else recorder.bindDescriptors(layout,3,1,&sets[0]);
                 VkViewport vp{0,0,float(width),float(height),0,1}; VkRect2D sc{{0,0},{width,height}};
                 recorder.viewport(0,1,&vp); recorder.scissor(0,1,&sc); recorder.index(indices.handle,0,VK_INDEX_TYPE_UINT32);
                 vp.width = 1; sc.extent.width = 1; // Transient CPU arrays may be reused immediately.
@@ -198,8 +258,8 @@ int main(int argc,char** argv) try {
                     for (unsigned item = first; item < first+count; ++item) {
                         recorder.stencilReference(VK_STENCIL_FACE_FRONT_AND_BACK,item+1);
                         Item scratch = test.scene[item];
-                        recorder.push(layout,VK_SHADER_STAGE_VERTEX_BIT,0,16,&scratch);
-                        recorder.push(layout,VK_SHADER_STAGE_VERTEX_BIT,16,16,reinterpret_cast<const uint8_t*>(&scratch)+16);
+                        recorder.push(recordedLayout,VK_SHADER_STAGE_VERTEX_BIT,0,16,&scratch);
+                        recorder.push(recordedLayout,VK_SHADER_STAGE_VERTEX_BIT,16,16,reinterpret_cast<const uint8_t*>(&scratch)+16);
                         scratch = {}; // The tape must retain the original bytes.
                         recorder.drawIndexed(3,1,0,0,0);
                     }
@@ -212,6 +272,17 @@ int main(int argc,char** argv) try {
                 // this draw relies entirely on the state restored by the tape.
                 witness->begin(command,0,epoch ? stereo::PreviousUse::transferSource : stereo::PreviousUse::discarded);
                 vkCmdDrawIndexed(command,3,1,0,0,0); witness->endForReadback(command,0); copy(*witness,0,6);
+                if (buffered) {
+                    // No descriptor rebind: the graphics replay must preserve
+                    // the independent COMPUTE offsets too.
+                    if (negativeCompute) {
+                        uint32_t index = 0; VkDeviceSize wrongOffset = 0;
+                        setBufferOffsets(command,VK_PIPELINE_BIND_POINT_COMPUTE,bufferLayout,3,1,&index,&wrongOffset);
+                    }
+                    vkCmdBindPipeline(command,VK_PIPELINE_BIND_POINT_COMPUTE,computePipeline); vkCmdDispatch(command,1,1,1);
+                    VkMemoryBarrier host{VK_STRUCTURE_TYPE_MEMORY_BARRIER}; host.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT; host.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
+                    vkCmdPipelineBarrier(command,VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,VK_PIPELINE_STAGE_HOST_BIT,0,1,&host,0,nullptr,0,nullptr);
+                }
                 // Independent witness reference using the original shader.
                 witness->begin(command,1,epoch ? stereo::PreviousUse::transferSource : stereo::PreviousUse::discarded);
                 vkCmdBindPipeline(command,VK_PIPELINE_BIND_POINT_GRAPHICS,originalPipeline);
@@ -245,6 +316,13 @@ int main(int argc,char** argv) try {
             check(vkEndCommandBuffer(command));
             VkSubmitInfo submit{VK_STRUCTURE_TYPE_SUBMIT_INFO}; submit.commandBufferCount = 1; submit.pCommandBuffers = &command;
             check(vkQueueSubmit(f.queue,1,&submit,fence)); check(vkWaitForFences(f.device,1,&fence,VK_TRUE,30'000'000'000ull)); check(vkResetFences(f.device,1,&fence));
+            if (buffered) {
+                const auto* projection = static_cast<const uint8_t*>(uniforms[2][0].mapped); const auto* view = static_cast<const uint8_t*>(uniforms[2][1].mapped);
+                std::array<uint32_t,4> expected{word(projection+72*16),word(projection+73*16+4),word(view+56*16+12),word(view+58*16+8)};
+                bool matches = std::memcmp(computeOutput.mapped,expected.data(),16) == 0;
+                expect(negativeCompute ? !matches : matches,"Following compute descriptors were not restored or negative control was insensitive");
+                computeWords += 4; wrongComputeSamples += !matches;
+            }
             // D24's upper byte is undefined for depth-aspect buffer copies.
             auto depth = [&](const uint8_t* p) { return config.depth == VK_FORMAT_D24_UNORM_S8_UINT ? double(word(p)&0xffffffu)/0xffffffu : double(number(p)); };
             auto compare = [&](unsigned observed,unsigned expected,bool isolated) {
@@ -316,19 +394,24 @@ int main(int argc,char** argv) try {
     check(vkDeviceWaitIdle(f.device));
     vkDestroyFence(f.device,fence,nullptr); vkDestroyCommandPool(f.device,commands,nullptr);
     vkDestroyPipeline(f.device,originalPipeline,nullptr);
+    if (buffered) { vkDestroyPipeline(f.device,bufferOriginalPipeline,nullptr); vkDestroyPipeline(f.device,computePipeline,nullptr); vkDestroyShaderModule(f.device,computeShader,nullptr); }
     for (auto s : {vertex,instrumented,fragment}) vkDestroyShaderModule(f.device,s,nullptr);
     vkDestroyDescriptorPool(f.device,pool,nullptr); vkDestroyPipelineLayout(f.device,layout,nullptr);
     for (auto l : layouts) vkDestroyDescriptorSetLayout(f.device,l,nullptr);
+    if (buffered) { vkDestroyPipelineLayout(f.device,bufferLayout,nullptr); for (auto l : bufferLayouts) vkDestroyDescriptorSetLayout(f.device,l,nullptr); }
     auto release = [&](Buffer& b) { vkUnmapMemory(f.device,b.memory); vkDestroyBuffer(f.device,b.handle,nullptr); vkFreeMemory(f.device,b.memory,nullptr); };
     for (auto& set : uniforms) for (auto& b : set) release(b);
     release(staging); release(indices);
+    if (buffered) { release(descriptorStorage); release(computeOutput); }
     vkDestroyDevice(f.device,nullptr); f.device = VK_NULL_HANDLE; vkDestroyInstance(f.instance,nullptr); f.instance = VK_NULL_HANDLE;
-    std::cout << std::setprecision(10) << "{\"stereo_mrt_fixture_passed\":" << (negative ? "false" : "true") << ",\"negative_sync_control\":" << (negative ? "true" : "false")
+    std::cout << std::setprecision(10) << "{\"stereo_mrt_fixture_passed\":" << ((negative || negativeCompute) ? "false" : "true") << ",\"negative_sync_control\":" << (negative ? "true" : "false")
+        << ",\"negative_compute_control\":" << (negativeCompute ? "true" : "false") << ",\"incorrect_compute_samples_detected\":" << wrongComputeSamples
         << ",\"clear_followed_by_load_verified\":" << (split ? "true" : "false") << ",\"eye_rendering_passes\":" << (split ? 24 : 16)
         << ",\"recorded_graphics_replay_verified\":" << (recorded ? "true" : "false") << ",\"captured_scopes_replayed\":" << recordedScopes
         << ",\"captured_draw_copies\":" << recordedDraws << ",\"original_state_commands_restored\":" << restoredStateCommands
         << ",\"following_draw_reference_compared_bytes\":" << witnessComparedBytes
         << ",\"forwarded_original_reference_compared_bytes\":" << originalComparedBytes
+        << ",\"descriptor_buffer_replay_verified\":" << (buffered ? "true" : "false") << ",\"following_compute_reference_words\":" << computeWords
         << ",\"frozen_scene_cases\":4,\"epochs_per_case\":2,\"eye_renderings\":16,\"submissions\":8,"
         << "\"color_reference_different_bytes\":0,\"color_reference_compared_bytes\":" << result.colorBytes << ",\"depth_reference_compared_texels\":" << result.depthTexels
         << ",\"max_normalized_depth_difference\":" << result.maxDepthError << ",\"stencil_reference_different_bytes\":0,\"stencil_reference_compared_bytes\":" << result.stencilBytes

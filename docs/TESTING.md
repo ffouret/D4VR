@@ -172,3 +172,13 @@ les données temporaires, arguments indexés, restauration et chemins de refus ;
 il est ajouté aux builds CTest Linux et Windows. Les 81 tests Python passent.
 Ces résultats ne rendent pas Diablo en VR. [Contrats, reproduction et travail
 restant](GRAPHICS_REPLAY.md).
+
+Le mode descriptor buffers reprend les mêmes scènes et compare les yeux à
+des références utilisant des sets traditionnels. Un dispatch de calcul sans
+rebind après la reprise retrouve 32 mots exacts sur huit exécutions ; un offset
+valide mais volontairement incorrect produit huit erreurs de données détectées.
+Les trois contrôles positifs et les deux négatifs passent sur RTX 5090, dont
+Steam Runtime avec validation Vulkan. Les tests sans pilote couvrent aussi
+les tableaux réutilisés, offsets 64 bits, changement de type de liaison,
+invalidation après rebind et restauration indépendante du calcul. Cela reste
+une preuve synthétique UBO, sans reprise des heaps réels du jeu.

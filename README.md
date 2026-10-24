@@ -177,8 +177,13 @@ sans rebind vérifie la restauration. Les passes incomplètes, non auditées ou
 sans continuité d'attachements sont refusées. Le code commun est inclus dans
 les vérifications Linux et Windows.
 
+Le mode avec descriptor buffers capture aussi les liaisons et offsets des
+graphiques et du calcul. Après la reprise, un calcul témoin sans rebind retrouve
+ses propres constantes ; un offset volontairement incorrect est détecté. Les
+références d'images utilisent des descripteurs traditionnels indépendants.
+
 Cette preuve utilise une scène originale ; le moteur n'est pas encore raccordé
-au flux de Diablo. Les descripteurs/états propres à VKD3D, les dépendances des
+au flux de Diablo. Les variantes de descripteurs/états propres à VKD3D, les dépendances des
 passes du jeu et la soumission SteamVR restent à implémenter.
 Voir [la preuve de reprise et ses limites](docs/GRAPHICS_REPLAY.md).
 

@@ -7,6 +7,11 @@ struct Driver {
     VkPipeline pipeline{};
     std::array<VkDescriptorSet,32> sets{};
     std::vector<uint32_t> offsets;
+    std::array<VkDescriptorSet,32> computeSets{};
+    std::vector<uint32_t> computeOffsets;
+    std::vector<VkDescriptorBufferBindingInfoEXT> descriptorBuffers;
+    struct BufferSet { VkPipelineLayout layout{}; uint32_t index{}; VkDeviceSize offset{}; };
+    std::array<std::array<BufferSet,32>,2> bufferSets{};
     std::array<uint8_t,256> push{};
     std::array<VkViewport,16> viewports{};
     std::array<VkRect2D,16> scissors{};
@@ -19,8 +24,18 @@ struct DrawEvent { Driver state; std::array<int64_t,5> arguments; bool indexed; 
 std::vector<DrawEvent> drawEvents;
 unsigned begins = 0,ends = 0;
 VKAPI_ATTR void VKAPI_CALL bindPipeline(VkCommandBuffer,VkPipelineBindPoint,VkPipeline p) { driver.pipeline = p; }
-VKAPI_ATTR void VKAPI_CALL descriptors(VkCommandBuffer,VkPipelineBindPoint,VkPipelineLayout,uint32_t first,uint32_t count,const VkDescriptorSet* sets,uint32_t offsets,const uint32_t* values) {
-    std::copy(sets,sets+count,driver.sets.begin()+first); driver.offsets.clear(); if (offsets) driver.offsets.assign(values,values+offsets);
+VKAPI_ATTR void VKAPI_CALL descriptors(VkCommandBuffer,VkPipelineBindPoint point,VkPipelineLayout,uint32_t first,uint32_t count,const VkDescriptorSet* sets,uint32_t offsets,const uint32_t* values) {
+    auto& target = point == VK_PIPELINE_BIND_POINT_COMPUTE ? driver.computeSets : driver.sets;
+    auto& dynamic = point == VK_PIPELINE_BIND_POINT_COMPUTE ? driver.computeOffsets : driver.offsets;
+    std::copy(sets,sets+count,target.begin()+first); dynamic.clear(); if (offsets) dynamic.assign(values,values+offsets);
+    for (unsigned k = first; k < first+count; ++k) driver.bufferSets[point == VK_PIPELINE_BIND_POINT_COMPUTE ? 1 : 0][k] = {};
+}
+VKAPI_ATTR void VKAPI_CALL descriptorBuffers(VkCommandBuffer,uint32_t count,const VkDescriptorBufferBindingInfoEXT* values) {
+    driver.descriptorBuffers.assign(values,values+count); driver.bufferSets = {};
+}
+VKAPI_ATTR void VKAPI_CALL bufferOffsets(VkCommandBuffer,VkPipelineBindPoint point,VkPipelineLayout layout,uint32_t first,uint32_t count,const uint32_t* indices,const VkDeviceSize* offsets) {
+    auto p = point == VK_PIPELINE_BIND_POINT_COMPUTE ? 1 : 0;
+    for (unsigned k = 0; k < count; ++k) driver.bufferSets[p][first+k] = {layout,indices[k],offsets[k]};
 }
 VKAPI_ATTR void VKAPI_CALL push(VkCommandBuffer,VkPipelineLayout,VkShaderStageFlags,uint32_t offset,uint32_t size,const void* bytes) { std::memcpy(driver.push.data()+offset,bytes,size); }
 VKAPI_ATTR void VKAPI_CALL viewport(VkCommandBuffer,uint32_t first,uint32_t count,const VkViewport* values) { std::copy(values,values+count,driver.viewports.begin()+first); }
@@ -40,11 +55,18 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL getReplay(VkDevice device,const char* n
     ENTRY(CmdSetViewport,viewport) ENTRY(CmdSetScissor,scissor) ENTRY(CmdSetStencilReference,stencil)
     ENTRY(CmdBindIndexBuffer,index) ENTRY(CmdBindVertexBuffers,vertices) ENTRY(CmdBeginRendering,beginReplay)
     ENTRY(CmdEndRendering,endReplay) ENTRY(CmdDraw,draw) ENTRY(CmdDrawIndexed,indexed)
+    ENTRY(CmdBindDescriptorBuffersEXT,descriptorBuffers) ENTRY(CmdSetDescriptorBufferOffsetsEXT,bufferOffsets)
 #undef ENTRY
     return get(device,name);
 }
 void same(const Driver& a,const Driver& b,bool pipeline = true) {
     assert(!pipeline || a.pipeline == b.pipeline); assert(a.sets == b.sets && a.offsets == b.offsets && a.push == b.push);
+    assert(a.computeSets == b.computeSets && a.computeOffsets == b.computeOffsets);
+    assert(a.descriptorBuffers.size() == b.descriptorBuffers.size());
+    for (unsigned k = 0; k < a.descriptorBuffers.size(); ++k) { assert(a.descriptorBuffers[k].address == b.descriptorBuffers[k].address);
+        assert(a.descriptorBuffers[k].usage == b.descriptorBuffers[k].usage && !a.descriptorBuffers[k].pNext && !b.descriptorBuffers[k].pNext); }
+    for (unsigned p = 0; p < 2; ++p) for (unsigned k = 0; k < 32; ++k) { const auto& x = a.bufferSets[p][k]; const auto& y = b.bufferSets[p][k];
+        assert(x.layout == y.layout && x.index == y.index && x.offset == y.offset); }
     assert(std::memcmp(a.viewports.data(),b.viewports.data(),sizeof(a.viewports)) == 0);
     assert(std::memcmp(a.scissors.data(),b.scissors.data(),sizeof(a.scissors)) == 0);
     assert(a.vertices == b.vertices && a.vertexOffsets == b.vertexOffsets);
@@ -57,24 +79,35 @@ struct Rig {
     std::unique_ptr<d4vr::stereo::Targets> eyes,application;
     d4vr::replay::Pipeline policy;
     std::unique_ptr<d4vr::replay::Graphics> replay;
-    Rig(bool audited = true,bool registered = true) {
+    Rig(bool audited = true,bool registered = true,bool descriptorMode = false) {
         driver = {}; drawEvents.clear(); begins = ends = 0;
         VkPhysicalDeviceMemoryProperties memory{}; memory.memoryTypeCount = 1;
         memory.memoryTypes[0].propertyFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
         std::array<d4vr::EyeState,2> states{d4vr::make_eye_state(0,1,d4vr::identity(),d4vr::identity()),d4vr::make_eye_state(1,1,d4vr::identity(),d4vr::identity())};
         eyes = d4vr::stereo::Targets::create(device,getReplay,memory,config,states);
         application = d4vr::stereo::Targets::create(device,getReplay,memory,config,states);
-        replay = std::make_unique<d4vr::replay::Graphics>(device,getReplay,command,*eyes,d4vr::stereo::PreviousUse::discarded);
+        replay = std::make_unique<d4vr::replay::Graphics>(device,getReplay,command,*eyes,d4vr::stereo::PreviousUse::discarded,
+            descriptorMode ? d4vr::replay::DescriptorLimits{8,64} : d4vr::replay::DescriptorLimits{});
         policy.original = make<VkPipeline>(); policy.eyes = {make<VkPipeline>(),make<VkPipeline>()}; policy.layout = make<VkPipelineLayout>();
         policy.descriptorSets = (1u<<3)|(1u<<4); policy.vertexBindings = (1u<<5)|(1u<<6); policy.pushBytes = 32;
         policy.viewports = policy.scissors = 2; policy.stencilReference = VK_STENCIL_FACE_FRONT_AND_BACK;
+        policy.descriptors = descriptorMode ? d4vr::replay::DescriptorMode::buffers : d4vr::replay::DescriptorMode::sets;
         policy.externalWritesExcluded = policy.attachmentInputAliasesExcluded = audited;
         if (registered) replay->pipeline(policy);
     }
     void state(bool omitPushTail = false,bool omitViewport = false,bool omitIndex = false) {
         replay->bindPipeline(policy.original);
         VkDescriptorSet sets[]{make<VkDescriptorSet>(),make<VkDescriptorSet>()}; uint32_t offsets[]{64,128};
-        replay->bindDescriptors(policy.layout,3,2,sets,2,offsets); sets[0] = sets[1] = {}; offsets[0] = offsets[1] = 0;
+        if (policy.descriptors == d4vr::replay::DescriptorMode::buffers) {
+            VkDescriptorBufferBindingInfoEXT infos[2]{{VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT,nullptr,0x100000000ull,VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT},
+                {VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT,nullptr,0x200000000ull,VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT}};
+            replay->bindDescriptorBuffers(2,infos); infos[0].address = infos[1].address = 0;
+            uint32_t indices[2]{1,0}; VkDeviceSize values[2]{0x100000040ull,0x100000080ull};
+            replay->descriptorBufferOffsets(VK_PIPELINE_BIND_POINT_COMPUTE,policy.layout,3,2,indices,values);
+            replay->descriptorBufferOffsets(VK_PIPELINE_BIND_POINT_GRAPHICS,policy.layout,3,2,indices,values);
+            indices[0] = indices[1] = 99; values[0] = values[1] = 0;
+        } else replay->bindDescriptors(policy.layout,3,2,sets,2,offsets);
+        sets[0] = sets[1] = {}; offsets[0] = offsets[1] = 0;
         std::array<uint8_t,32> bytes{}; for (unsigned k = 0; k < bytes.size(); ++k) bytes[k] = static_cast<uint8_t>(k+1);
         replay->push(policy.layout,VK_SHADER_STAGE_VERTEX_BIT,0,16,bytes.data());
         if (!omitPushTail) replay->push(policy.layout,VK_SHADER_STAGE_VERTEX_BIT,16,16,bytes.data()+16);
@@ -110,6 +143,29 @@ int main() {
         auto stats = r.replay->stats(); assert(stats.replayedScopes == 2 && stats.rejectedScopes == 0 && stats.replayedDraws == 4 && stats.forwardedDraws == 2);
     }
     assert(empty());
+    { Rig r; rejected([&] { r.replay->bindDescriptorBuffers(0,nullptr); });
+      assert(r.replay->stats().lastRejection == Rejection::unsupportedCommand); }
+    assert(empty());
+    { Rig r(true,true,true); r.state(); auto expected = driver;
+      r.begin(); r.replay->drawIndexed(9,2,4,-2,7); assert(r.replay->endRendering());
+      assert(drawEvents.size() == 3); for (unsigned k = 0; k < 3; ++k) same(drawEvents[k].state,expected,k == 0);
+      same(driver,expected); assert(driver.bufferSets[1][3].layout && driver.bufferSets[0][3].offset == 0x100000040ull);
+      VkDescriptorSet sets[]{make<VkDescriptorSet>()}; uint32_t offsets[]{256};
+      r.replay->bindDescriptors(r.policy.layout,3,1,sets,1,offsets,VK_PIPELINE_BIND_POINT_COMPUTE);
+      auto finalState = driver; r.begin(true); r.replay->draw(3,1,0,0); assert(r.replay->endRendering()); same(driver,finalState); }
+    assert(empty());
+    for (unsigned failure = 0; failure < 5; ++failure) {
+        Rig r(true,true,true); r.state();
+        if (failure == 0 || failure == 2) {
+            VkDescriptorBufferBindingInfoEXT info{VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT,nullptr,0x300000000ull,VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT};
+            if (failure == 2) info.pNext = &r;
+            r.replay->bindDescriptorBuffers(1,&info); // Even a valid rebind invalidates prior offsets.
+        } else if (failure == 1) { VkDescriptorSet set = make<VkDescriptorSet>(); r.replay->bindDescriptors(r.policy.layout,3,1,&set); }
+        else { uint32_t index = failure == 3 ? 2 : 0; VkDeviceSize offset = failure == 4 ? 1 : 64;
+            r.replay->descriptorBufferOffsets(VK_PIPELINE_BIND_POINT_GRAPHICS,r.policy.layout,3,1,&index,&offset); }
+        r.begin(); r.replay->draw(3,1,0,0); assert(!r.replay->endRendering() && drawEvents.size() == 1);
+    }
+    assert(empty());
     for (unsigned failure = 0; failure < 6; ++failure) {
         Rig r(failure != 4,failure != 5); r.state(failure == 0,failure == 1,failure == 2); r.begin(); r.replay->drawIndexed(3,1,0,0,0);
         if (failure == 3) r.replay->unsupported();
@@ -133,5 +189,5 @@ int main() {
     { Rig r; r.state(); for (unsigned k = 0; k < 9000; ++k) r.replay->stencilReference(VK_STENCIL_FACE_FRONT_AND_BACK,k);
       r.begin(); r.replay->draw(3,1,0,0); assert(!r.replay->endRendering()); assert(drawEvents.size() == 1 && r.replay->stats().lastRejection == Rejection::budget); }
     assert(empty());
-    std::cout << "Graphics tape: transient data copies, indexed arguments, per-eye variants, exact state restoration, LOAD continuity and rejection paths: passed\n";
+    std::cout << "Graphics tape: transient copies, indexed draws, descriptor buffers/offsets, compute state restoration, LOAD continuity and rejection paths: passed\n";
 }

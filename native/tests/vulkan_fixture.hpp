@@ -14,7 +14,7 @@ struct Buffer { VkBuffer handle; VkDeviceMemory memory; void* mapped; VkDeviceAd
 struct Fixture {
     VkInstance instance{}; VkPhysicalDevice physical{}; VkDevice device{}; VkQueue queue{};
     VkPhysicalDeviceMemoryProperties memory{}; uint32_t family{};
-    Fixture(bool dynamic, bool identifiers) {
+    Fixture(bool dynamic, bool identifiers,bool descriptorBuffers = false) {
         VkApplicationInfo app{VK_STRUCTURE_TYPE_APPLICATION_INFO}; app.pApplicationName = "D4VR observer fixture"; app.apiVersion = dynamic ? VK_API_VERSION_1_3 : VK_API_VERSION_1_2;
         VkInstanceCreateInfo create{VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO}; create.pApplicationInfo = &app;
         check(vkCreateInstance(&create, nullptr, &instance));
@@ -36,10 +36,14 @@ struct Fixture {
         VkPhysicalDeviceVulkan13Features features13{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES}; features13.dynamicRendering = VK_TRUE;
         VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT idFeature{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MODULE_IDENTIFIER_FEATURES_EXT}; idFeature.shaderModuleIdentifier = VK_TRUE;
         if (identifiers) { features13.pipelineCreationCacheControl = VK_TRUE; features13.pNext = &idFeature; }
-        if (dynamic) features12.pNext = &features13;
+        VkPhysicalDeviceDescriptorBufferFeaturesEXT bufferFeature{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_FEATURES_EXT}; bufferFeature.descriptorBuffer = VK_TRUE;
+        if (descriptorBuffers) { bufferFeature.pNext = features13.pNext; features13.pNext = &bufferFeature; }
+        if (dynamic || descriptorBuffers) features12.pNext = &features13;
         VkDeviceCreateInfo d{VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO}; d.pNext = &features12; d.pEnabledFeatures = &features; d.queueCreateInfoCount = 1; d.pQueueCreateInfos = &q;
-        const char* idExtension = VK_EXT_SHADER_MODULE_IDENTIFIER_EXTENSION_NAME;
-        if (identifiers) { d.enabledExtensionCount = 1; d.ppEnabledExtensionNames = &idExtension; }
+        std::vector<const char*> extensions;
+        if (identifiers) extensions.push_back(VK_EXT_SHADER_MODULE_IDENTIFIER_EXTENSION_NAME);
+        if (descriptorBuffers) extensions.push_back(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
+        d.enabledExtensionCount = static_cast<uint32_t>(extensions.size()); d.ppEnabledExtensionNames = extensions.data();
         check(vkCreateDevice(physical, &d, nullptr, &device)); vkGetDeviceQueue(device, family, 0, &queue);
     }
     uint32_t type(uint32_t mask, VkMemoryPropertyFlags flags) {
@@ -69,4 +73,3 @@ struct Fixture {
         VkShaderModule result{}; check(vkCreateShaderModule(device, &s, nullptr, &result)); return result;
     }
 };
-

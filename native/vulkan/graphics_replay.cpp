@@ -7,7 +7,9 @@
 namespace d4vr::replay {
 namespace {
 struct Bind { VkPipeline value; };
-struct Descriptors { VkPipelineLayout layout; uint32_t first; std::vector<VkDescriptorSet> sets; std::vector<uint32_t> offsets; };
+struct Descriptors { VkPipelineBindPoint point; VkPipelineLayout layout; uint32_t first; std::vector<VkDescriptorSet> sets; std::vector<uint32_t> offsets; };
+struct DescriptorBuffers { std::vector<VkDescriptorBufferBindingInfoEXT> values; };
+struct BufferOffsets { VkPipelineBindPoint point; VkPipelineLayout layout; uint32_t first; std::vector<uint32_t> indices; std::vector<VkDeviceSize> offsets; };
 struct Push { VkPipelineLayout layout; VkShaderStageFlags stages; uint32_t offset; std::vector<uint8_t> data; };
 struct Viewports { uint32_t first; std::vector<VkViewport> values; };
 struct Scissors { uint32_t first; std::vector<VkRect2D> values; };
@@ -16,7 +18,7 @@ struct Index { VkBuffer buffer; VkDeviceSize offset; VkIndexType type; };
 struct Vertices { uint32_t first; std::vector<VkBuffer> buffers; std::vector<VkDeviceSize> offsets; };
 struct Draw { uint32_t vertices,instances,firstVertex,firstInstance; };
 struct Indexed { uint32_t indices,instances,firstIndex; int32_t vertexOffset; uint32_t firstInstance; };
-using Node = std::variant<Bind,Descriptors,Push,Viewports,Scissors,Stencil,Index,Vertices,Draw,Indexed>;
+using Node = std::variant<Bind,Descriptors,DescriptorBuffers,BufferOffsets,Push,Viewports,Scissors,Stencil,Index,Vertices,Draw,Indexed>;
 using Tape = std::vector<std::shared_ptr<const Node>>;
 uint32_t mask(uint32_t first,uint32_t count) { return count == 32 ? UINT32_MAX : ((1u<<count)-1)<<first; }
 }
@@ -34,8 +36,16 @@ struct Graphics::Impl {
     stereo::Loads loads;
     Stats counters;
     VkPipeline bound{};
-    std::array<VkPipelineLayout,32> descriptorLayouts{};
-    VkPipelineLayout descriptorLayout{};
+    struct DescriptorState {
+        VkPipelineLayout layout{};
+        std::array<VkPipelineLayout,32> sets{};
+        std::array<bool,32> buffers{};
+    };
+    std::array<DescriptorState,2> descriptors{};
+    DescriptorLimits descriptorLimits;
+    uint32_t descriptorBufferCount = 0;
+    PFN_vkCmdBindDescriptorBuffersEXT CmdBindDescriptorBuffersEXT{};
+    PFN_vkCmdSetDescriptorBufferOffsetsEXT CmdSetDescriptorBufferOffsetsEXT{};
     std::array<VkImageView,6> attachmentViews{},pendingAttachmentViews{};
     VkPipelineLayout pushLayout{};
     std::array<VkShaderStageFlags,256> pushStages{};
@@ -65,7 +75,9 @@ struct Graphics::Impl {
         if (found == pipelines.end()) { reject(Rejection::unknownPipeline); return false; }
         const auto& p = found->second;
         if (!p.externalWritesExcluded || !p.attachmentInputAliasesExcluded) { reject(Rejection::unauditedPipeline); return false; }
-        for (unsigned k = 0; k < 32; ++k) if ((p.descriptorSets&(1u<<k)) && descriptorLayouts[k] != p.layout) {
+        const auto& descriptor = descriptors[0];
+        for (unsigned k = 0; k < 32; ++k) if ((p.descriptorSets&(1u<<k)) && (descriptor.sets[k] != p.layout
+                || descriptor.buffers[k] != (p.descriptors == DescriptorMode::buffers))) {
             reject(Rejection::incompleteState); return false;
         }
         if ((vertexMask&p.vertexBindings) != p.vertexBindings || (indexed && !indexBound)
@@ -115,7 +127,9 @@ struct Graphics::Impl {
             if constexpr (std::is_same_v<T,Bind>) {
                 auto found = pipelines.find(n.value); auto selected = eye >= 0 && found != pipelines.end() ? found->second.eyes[eye] : n.value;
                 CmdBindPipeline(command,VK_PIPELINE_BIND_POINT_GRAPHICS,selected);
-            } else if constexpr (std::is_same_v<T,Descriptors>) CmdBindDescriptorSets(command,VK_PIPELINE_BIND_POINT_GRAPHICS,n.layout,n.first,static_cast<uint32_t>(n.sets.size()),n.sets.data(),static_cast<uint32_t>(n.offsets.size()),n.offsets.data());
+            } else if constexpr (std::is_same_v<T,Descriptors>) CmdBindDescriptorSets(command,n.point,n.layout,n.first,static_cast<uint32_t>(n.sets.size()),n.sets.data(),static_cast<uint32_t>(n.offsets.size()),n.offsets.data());
+            else if constexpr (std::is_same_v<T,DescriptorBuffers>) CmdBindDescriptorBuffersEXT(command,static_cast<uint32_t>(n.values.size()),n.values.data());
+            else if constexpr (std::is_same_v<T,BufferOffsets>) CmdSetDescriptorBufferOffsetsEXT(command,n.point,n.layout,n.first,static_cast<uint32_t>(n.indices.size()),n.indices.data(),n.offsets.data());
             else if constexpr (std::is_same_v<T,Push>) CmdPushConstants(command,n.layout,n.stages,n.offset,static_cast<uint32_t>(n.data.size()),n.data.data());
             else if constexpr (std::is_same_v<T,Viewports>) CmdSetViewport(command,n.first,static_cast<uint32_t>(n.values.size()),n.values.data());
             else if constexpr (std::is_same_v<T,Scissors>) CmdSetScissor(command,n.first,static_cast<uint32_t>(n.values.size()),n.values.data());
@@ -127,18 +141,26 @@ struct Graphics::Impl {
         },node);
     }
 };
-Graphics::Graphics(VkDevice device,PFN_vkGetDeviceProcAddr get,VkCommandBuffer command,stereo::Targets& targets,stereo::PreviousUse initialUse): impl(std::make_unique<Impl>(targets,initialUse)) {
+Graphics::Graphics(VkDevice device,PFN_vkGetDeviceProcAddr get,VkCommandBuffer command,stereo::Targets& targets,stereo::PreviousUse initialUse,DescriptorLimits limits): impl(std::make_unique<Impl>(targets,initialUse)) {
     if (!device || !get || !command || !targets.hasStencil() || (initialUse != stereo::PreviousUse::discarded && initialUse != stereo::PreviousUse::transferSource))
         throw std::invalid_argument("Unsupported graphics replay recording");
     impl->command = command;
 #define D4_LOAD(name) impl->name = reinterpret_cast<PFN_vk##name>(get(device,"vk" #name)); if (!impl->name) throw std::runtime_error("Replay dispatch unavailable: " #name);
     D4_REPLAY_FUNCTIONS(D4_LOAD)
+    if (limits.maxBindings) {
+        if (limits.maxBindings > 32 || !limits.offsetAlignment || (limits.offsetAlignment&(limits.offsetAlignment-1)))
+            throw std::invalid_argument("Unsupported descriptor buffer limits");
+        D4_LOAD(CmdBindDescriptorBuffersEXT) D4_LOAD(CmdSetDescriptorBufferOffsetsEXT)
+    }
+    impl->descriptorLimits = limits;
 #undef D4_LOAD
 }
 Graphics::~Graphics() = default;
 void Graphics::pipeline(const Pipeline& p) {
     if (!p.original || !p.eyes[0] || !p.eyes[1] || p.eyes[0] == p.original || p.eyes[1] == p.original || p.eyes[0] == p.eyes[1]
         || !p.layout || p.pushBytes > 256 || p.pushBytes%4 || (p.pushBytes && !p.pushStages) || p.viewports > 16 || p.scissors > 16
+        || (p.descriptors != DescriptorMode::sets && p.descriptors != DescriptorMode::buffers)
+        || (p.descriptors == DescriptorMode::buffers && !impl->descriptorLimits.maxBindings)
         || (p.stencilReference&~VK_STENCIL_FACE_FRONT_AND_BACK) || impl->active || impl->pipelines.count(p.original) || impl->pipelines.size() >= 512)
         throw std::invalid_argument("Invalid replay pipeline contract");
     impl->pipelines.emplace(p.original,p);
@@ -148,16 +170,53 @@ void Graphics::bindPipeline(VkPipeline p) {
     auto& i = *impl; i.CmdBindPipeline(i.command,VK_PIPELINE_BIND_POINT_GRAPHICS,p);
     i.capture([&] { i.bound = p; i.save(Bind{p}); });
 }
-void Graphics::bindDescriptors(VkPipelineLayout layout,uint32_t first,uint32_t count,const VkDescriptorSet* sets,uint32_t dynamicCount,const uint32_t* offsets) {
-    auto& i = *impl; i.CmdBindDescriptorSets(i.command,VK_PIPELINE_BIND_POINT_GRAPHICS,layout,first,count,sets,dynamicCount,offsets);
+void Graphics::bindDescriptors(VkPipelineLayout layout,uint32_t first,uint32_t count,const VkDescriptorSet* sets,uint32_t dynamicCount,const uint32_t* offsets,VkPipelineBindPoint point) {
+    auto& i = *impl; i.CmdBindDescriptorSets(i.command,point,layout,first,count,sets,dynamicCount,offsets);
     i.capture([&] {
+        if (point != VK_PIPELINE_BIND_POINT_GRAPHICS && point != VK_PIPELINE_BIND_POINT_COMPUTE) { i.reject(Rejection::unsupportedCommand,true); return; }
         if (!count || first >= 32 || count > 32-first || !sets || dynamicCount > 256 || (dynamicCount && !offsets)) { i.reject(Rejection::budget,true); return; }
-        Descriptors n{layout,first,{sets,sets+count},{}}; if (dynamicCount) n.offsets.assign(offsets,offsets+dynamicCount);
+        Descriptors n{point,layout,first,{sets,sets+count},{}}; if (dynamicCount) n.offsets.assign(offsets,offsets+dynamicCount);
         // Without pipeline-layout definitions the adapter cannot prove Vulkan
         // set compatibility. A layout change conservatively disturbs all sets.
-        if (i.descriptorLayout != layout) { i.descriptorLayout = layout; i.descriptorLayouts.fill(VK_NULL_HANDLE); }
-        for (unsigned k = 0; k < count; ++k) i.descriptorLayouts[first+k] = sets[k] ? layout : VK_NULL_HANDLE;
+        auto& state = i.descriptors[point == VK_PIPELINE_BIND_POINT_COMPUTE ? 1 : 0];
+        if (state.layout != layout) { state = {}; state.layout = layout; }
+        for (unsigned k = 0; k < count; ++k) { state.sets[first+k] = sets[k] ? layout : VK_NULL_HANDLE; state.buffers[first+k] = false; }
         i.save(std::move(n),count*sizeof(VkDescriptorSet)+dynamicCount*sizeof(uint32_t));
+    });
+}
+void Graphics::bindDescriptorBuffers(uint32_t count,const VkDescriptorBufferBindingInfoEXT* values) {
+    auto& i = *impl;
+    if (!i.CmdBindDescriptorBuffersEXT) { unsupported(); throw std::logic_error("Descriptor buffers were not enabled for this recording"); }
+    i.CmdBindDescriptorBuffersEXT(i.command,count,values);
+    i.capture([&] {
+        if (!count || count > i.descriptorLimits.maxBindings || !values) { i.reject(Rejection::budget,true); return; }
+        for (unsigned k = 0; k < count; ++k) {
+            if (values[k].sType != VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT || values[k].pNext
+                || !values[k].address || values[k].address%i.descriptorLimits.offsetAlignment
+                || !(values[k].usage&(VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT|VK_BUFFER_USAGE_SAMPLER_DESCRIPTOR_BUFFER_BIT_EXT))
+                || (values[k].usage&VK_BUFFER_USAGE_PUSH_DESCRIPTORS_DESCRIPTOR_BUFFER_BIT_EXT)) { i.reject(Rejection::unsupportedCommand,true); return; }
+        }
+        i.descriptorBufferCount = count;
+        // Buffer bindings are global to all bind points. Restoring them also
+        // invalidates compute offsets: capture both bind points in the history.
+        for (auto& state : i.descriptors) for (unsigned k = 0; k < 32; ++k) if (state.buffers[k]) state.sets[k] = VK_NULL_HANDLE;
+        i.save(DescriptorBuffers{{values,values+count}},count*sizeof(VkDescriptorBufferBindingInfoEXT));
+    });
+}
+void Graphics::descriptorBufferOffsets(VkPipelineBindPoint point,VkPipelineLayout layout,uint32_t first,uint32_t count,const uint32_t* indices,const VkDeviceSize* offsets) {
+    auto& i = *impl;
+    if (!i.CmdSetDescriptorBufferOffsetsEXT) { unsupported(); throw std::logic_error("Descriptor buffers were not enabled for this recording"); }
+    i.CmdSetDescriptorBufferOffsetsEXT(i.command,point,layout,first,count,indices,offsets);
+    i.capture([&] {
+        if (point != VK_PIPELINE_BIND_POINT_GRAPHICS && point != VK_PIPELINE_BIND_POINT_COMPUTE) { i.reject(Rejection::unsupportedCommand,true); return; }
+        if (!count || first >= 32 || count > 32-first || !indices || !offsets) { i.reject(Rejection::budget,true); return; }
+        for (unsigned k = 0; k < count; ++k) if (indices[k] >= i.descriptorBufferCount || offsets[k]%i.descriptorLimits.offsetAlignment) {
+            i.reject(Rejection::incompleteState,true); return;
+        }
+        auto& state = i.descriptors[point == VK_PIPELINE_BIND_POINT_COMPUTE ? 1 : 0];
+        if (state.layout != layout) { state = {}; state.layout = layout; }
+        for (unsigned k = 0; k < count; ++k) { state.sets[first+k] = layout; state.buffers[first+k] = true; }
+        i.save(BufferOffsets{point,layout,first,{indices,indices+count},{offsets,offsets+count}},count*(sizeof(uint32_t)+sizeof(VkDeviceSize)));
     });
 }
 void Graphics::push(VkPipelineLayout layout,VkShaderStageFlags stages,uint32_t offset,uint32_t size,const void* data) {

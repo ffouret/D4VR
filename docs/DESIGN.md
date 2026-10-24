@@ -139,8 +139,10 @@ une soumission ou alterner deux trames du jeu ne constitue pas cette preuve.
 Le [moteur de reprise contrôlée](GRAPHICS_REPLAY.md) valide désormais ce chemin
 sur une scène originale, avec copies des données transitoires et un dessin
 suivant sans rebind pour vérifier la restauration. Il n'est pas raccordé au
-jeu. Les descriptor buffers, états dynamiques étendus et dépendances des scopes
-réels doivent être couverts avant de permettre leur reprise.
+jeu. Les liaisons de descriptor buffers et offsets graphiques/de calcul sont
+maintenant couverts par une fixture UBO. Les variantes de descripteurs non
+couvertes, états dynamiques étendus et dépendances des scopes réels doivent
+être traités avant de permettre leur reprise.
 
 ## Critères d'acceptation de la première version jouable
 
