@@ -122,12 +122,15 @@ def stage(layer_directory: Path, proof: Path, output: Path) -> dict:
 
 
 def run(game: Path, launcher: Path, bundle: Path, runtime_bundle: Path, output: Path,
-        xr_binding: bool = False, xr_loader: Path | None = None, xr_runtime: Path | None = None) -> int:
+        xr_binding: bool = False, xr_loader: Path | None = None, xr_runtime: Path | None = None,
+        frame_trace: bool = False) -> int:
     if sys.platform != 'linux':
         raise ValueError('This Vulkan diagnostic launcher currently requires Linux')
     staged = json.loads((bundle / 'trace-bundle.json').read_text(encoding='utf-8'))
     if staged.get('purpose') != 'vulkan_trace_diagnostic':
         raise ValueError('Unexpected trace bundle')
+    if frame_trace and staged['validation'].get('frame_trace_fixture_passed') is not True:
+        raise ValueError('Validate dynamic-rendering metadata and pixel preservation before this test')
     if xr_binding:
         if staged['validation'].get('borrowed_binding_fixture_passed') is not True:
             raise ValueError('Validate the borrowed-device fixture before this test')
@@ -167,16 +170,19 @@ def run(game: Path, launcher: Path, bundle: Path, runtime_bundle: Path, output: 
                  'VKD3D_LOG_FILE': probe.windows_path(output / 'vkd3d.log')}
     if xr_binding:
         variables.update(D4VR_TRACE_XR_BINDING='1', D4VR_XR_LOADER=str(xr_loader.resolve()), XR_RUNTIME_JSON=str(xr_runtime.resolve()))
+    if frame_trace:
+        variables['D4VR_FRAME_TRACE'] = '1'
     capture = {'schema_version': 1, 'created_utc': datetime.now(timezone.utc).isoformat(),
                'phase': 'launching', 'variables': variables, 'game_files_changed': False,
                'game_audit_before': audit, 'trace_layer_sha256': staged['layer_sha256'],
                'shader_overrides_enabled': False, 'game_stereo_submitted': False}
     capture['temporary_xr_binding_probe_requested'] = xr_binding
+    capture['frame_trace_requested'] = frame_trace
     probe.write_json(output / 'capture.json', capture)
     bridge = Path('/run/host/usr/bin/flatpak-spawn')
     command = ([str(bridge), '--host', '/usr/bin/env'] if bridge.exists() else ['/usr/bin/env'])
     for name in ('VKD3D_SHADER_OVERRIDE', 'VKD3D_SHADER_DUMP_PATH', 'VKD3D_SHADER_DEBUG_RING_SIZE_LOG2',
-                 'D4VR_TRACE_XR_BINDING', 'D4VR_XR_LOADER'):
+                 'D4VR_TRACE_XR_BINDING', 'D4VR_XR_LOADER', 'D4VR_FRAME_TRACE'):
         command += ['-u', name]
     command += [key + '=' + value for key, value in variables.items()] + ['/usr/bin/bash', str(private_launcher)]
     print('Battle.net : diagnostic Vulkan isolé ; entrer en partie sur le moniteur, puis fermer le jeu et Battle.net.', flush=True)
@@ -206,6 +212,7 @@ def main() -> int:
     launch.add_argument('--xr-binding', action='store_true')
     launch.add_argument('--xr-loader', type=Path)
     launch.add_argument('--xr-runtime', type=Path)
+    launch.add_argument('--frame-trace', action='store_true')
     summarize = sub.add_parser('report')
     summarize.add_argument('directory', type=Path)
     summarize.add_argument('--output', required=True, type=Path)
@@ -217,7 +224,7 @@ def main() -> int:
         print(json.dumps(stage(args.layer_dir, args.proof, args.output), indent=2)); return 0
     if args.command == 'run':
         return run(args.game_dir, args.launcher, args.bundle, args.runtime_bundle, args.output,
-                   args.xr_binding, args.xr_loader, args.xr_runtime)
+                   args.xr_binding, args.xr_loader, args.xr_runtime, args.frame_trace)
     if args.command == 'compare-requirements':
         requirements = json.loads(args.requirements.read_text(encoding='utf-8'))
         result = compare_requirements(report(args.trace_directory), requirements)

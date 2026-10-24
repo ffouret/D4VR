@@ -1,0 +1,265 @@
+#!/usr/bin/env python3
+"""Request and summarize bounded, CPU-only Vulkan pass metadata."""
+from __future__ import annotations
+import argparse
+from collections import Counter, defaultdict
+import json
+import os
+from pathlib import Path
+import re
+import sys
+import tempfile
+
+import probe
+
+MAX_BYTES = 8 * 1024 * 1024
+DRAW_NAMES = ('draw', 'indexed', 'indirect', 'indexed_indirect', 'indirect_count',
+              'indexed_indirect_count', 'generated_ext', 'generated_nv')
+
+
+def fnv1a64(data: bytes) -> str:
+    value = 14695981039346656037
+    for byte in data:
+        value = ((value ^ byte) * 1099511628211) & 0xffffffffffffffff
+    return f'{value:016x}'
+
+
+def request(directory: Path) -> int:
+    if directory.is_symlink() or not directory.is_dir():
+        raise ValueError('Expected an existing private capture directory')
+    capture = json.loads((directory / 'capture.json').read_text(encoding='utf-8'))
+    if capture.get('frame_trace_requested') is not True or capture.get('phase') != 'launching':
+        raise ValueError('An active launch with --frame-trace is required')
+    path = directory / 'frame.request'
+    if path.is_symlink() or (path.exists() and path.stat().st_size > 64):
+        raise ValueError('Invalid request file')
+    sequence = int(path.read_text(encoding='ascii')) + 1 if path.exists() else 1
+    if not 1 <= sequence <= 4:
+        raise ValueError('At most four requests per device/session are supported')
+    fd, name = tempfile.mkstemp(prefix='.frame-request-', dir=directory)
+    try:
+        with os.fdopen(fd, 'w', encoding='ascii') as stream:
+            stream.write(str(sequence) + '\n')
+        os.replace(name, path)
+    finally:
+        if os.path.exists(name):
+            os.unlink(name)
+    return sequence
+
+
+def read_frame(path: Path) -> dict:
+    if path.is_symlink() or path.stat().st_size > MAX_BYTES:
+        raise ValueError('Invalid or oversized frame metadata')
+    data = json.loads(path.read_text(encoding='utf-8'))
+    if data.get('schema_version') != 1 or data.get('game_stereo_submitted') is not False:
+        raise ValueError('Unsupported metadata schema')
+    if data.get('scope') not in ('single_submission', 'cpu_submission_interval_between_present_calls'):
+        raise ValueError('Unknown capture scope')
+    algorithm = data.get('shader_identifier_algorithm', '')
+    if algorithm and not re.fullmatch('[0-9a-f]{32}', algorithm):
+        raise ValueError('Invalid shader identifier algorithm')
+    pipelines = data['pipelines']
+    if len(pipelines) > 65536 or len({p['id'] for p in pipelines}) != len(pipelines):
+        raise ValueError('Duplicate pipelines or pipeline budget exceeded')
+    for p in pipelines:
+        if len(p['shaders']) > 512:
+            raise ValueError('Shader metadata budget exceeded')
+        for s in p['shaders']:
+            if not re.fullmatch('[0-9a-f]{16}', s['fnv1a64']) or not 0 <= s['code_bytes'] <= 64 * 1024 * 1024:
+                raise ValueError('Invalid shader fingerprint')
+            identifier = s.get('module_identifier', '')
+            if identifier and (not re.fullmatch('[0-9a-f]+', identifier) or len(identifier) > 64 or len(identifier) % 2):
+                raise ValueError('Invalid module identifier')
+    operations = 0
+    if len(data['submissions']) > 256:
+        raise ValueError('Submission budget exceeded')
+    for submit in data['submissions']:
+        if len(submit['commands']) > 256:
+            raise ValueError('Command-buffer budget exceeded')
+        for command in submit['commands']:
+            operations += len(command['operations'])
+            for op in command['operations']:
+                if len(op.get('colors', [])) > 16 or len(op.get('draws', [])) > 512:
+                    raise ValueError('Pass metadata budget exceeded')
+                for draw in op.get('draws', []):
+                    if len(draw['counts']) != 8 or any(type(v) is not int or v < 0 for v in draw['counts']):
+                        raise ValueError('Invalid draw counts')
+    if operations > 8192:
+        raise ValueError('Operation budget exceeded')
+    return data
+
+
+def correlate(data: dict, directory: Path | None, camera_chain: Path | None = None,
+              identifier_catalog: Path | None = None) -> dict:
+    """FNV+size candidates only; no shader bytecode is emitted or copied."""
+    wanted = {(s['fnv1a64'], s['code_bytes']) for p in data['pipelines']
+              for s in p['shaders'] if s['known']}
+    sizes = {size for _, size in wanted}
+    matches = defaultdict(list)
+    files = sorted(directory.glob('*.spv')) if directory else []
+    if len(files) > 32768:
+        raise ValueError('Shader catalog file budget exceeded')
+    scanned_bytes = 0
+    for path in files:
+        if path.is_symlink() or not re.fullmatch('[0-9a-fA-F]{16}\\.spv', path.name):
+            continue
+        size = path.stat().st_size
+        if size not in sizes:
+            continue
+        scanned_bytes += size
+        if scanned_bytes > 1024 * 1024 * 1024:
+            raise ValueError('Shader catalog byte budget exceeded')
+        fingerprint = (fnv1a64(path.read_bytes()), size)
+        if fingerprint in wanted:
+            matches[fingerprint].append(path.stem.lower())
+    id_matches = defaultdict(list)
+    identifier_rows = []
+    if identifier_catalog:
+        if identifier_catalog.is_symlink() or identifier_catalog.stat().st_size > MAX_BYTES:
+            raise ValueError('Invalid implementation identifier catalog')
+        catalog = json.loads(identifier_catalog.read_text(encoding='utf-8'))
+        if (catalog.get('schema_version') != 1 or not data.get('shader_identifier_algorithm') or
+                catalog.get('shader_identifier_algorithm') != data['shader_identifier_algorithm']):
+            raise ValueError('Shader identifier algorithms differ or are missing')
+        identifier_rows = catalog['shaders']
+        if len(identifier_rows) > 32768:
+            raise ValueError('Identifier catalog budget exceeded')
+        for row in identifier_rows:
+            name = row['catalog_id'].lower()
+            if not re.fullmatch('[0-9a-f]{16}', name):
+                raise ValueError('Invalid catalog identifier')
+            id_matches[row['module_identifier']].append(name)
+            fingerprint = (row['fnv1a64'], row['code_bytes'])
+            if fingerprint in wanted and name not in matches[fingerprint]:
+                matches[fingerprint].append(name)
+    camera = {}
+    if camera_chain:
+        if camera_chain.stat().st_size > 32 * 1024 * 1024:
+            raise ValueError('Camera analysis is oversized')
+        camera = {Path(row['file']).stem.lower(): row for row in
+                  json.loads(camera_chain.read_text(encoding='utf-8'))['shaders']}
+    def candidates_for(names):
+        candidates = []
+        for name in names:
+            row = camera.get(name, {})
+            matrix = row.get('final_clip_matrix')
+            candidates.append({'catalog_id': name, 'static_final_clip_matrix_found': bool(matrix),
+                               'static_input_matrix_chain_found': bool(row.get('input_matrix_chain'))})
+        return candidates
+    shaders = []
+    for fnv, size in sorted(wanted):
+        candidates = candidates_for(matches[fnv, size])
+        shaders.append({'fnv1a64': fnv, 'code_bytes': size, 'candidates': candidates})
+    identifiers = {s.get('module_identifier') for p in data['pipelines'] for s in p['shaders'] if s.get('module_identifier')}
+    for identifier in sorted(identifiers):
+        shaders.append({'module_identifier': identifier, 'candidates': candidates_for(id_matches[identifier])})
+    return {'method': 'FNV-1a64 plus byte length, or implementation module identifier with equal algorithm UUID; candidate associations',
+            'catalog_files': len(files), 'catalog_bytes_hashed': scanned_bytes, 'shaders': shaders,
+            'identifier_catalog_files': len(identifier_rows), 'module_identifiers_observed': len(identifiers),
+            'visible_scene_role_proven': False, 'live_camera_values_proven': False}
+
+
+def summarize(data: dict, correlation: dict | None = None) -> dict:
+    pipeline_ids = {p['id'] for p in data['pipelines']}
+    stages = [s for p in data['pipelines'] for s in p['shaders']]
+    operations = Counter()
+    draw_counts = Counter()
+    passes = []
+    image_writes = defaultdict(list)
+    truncated = bool(data['truncated'])
+    missing_commands = unknown_pipeline_commands = failed = 0
+    for si, submit in enumerate(data['submissions']):
+        if not submit['complete'] or submit['result'] != 0:
+            failed += 1
+            continue  # Recorded calls in a failed submission are not executions.
+        for ci, command in enumerate(submit['commands']):
+            missing_commands += bool(command['missing'])
+            truncated |= bool(command['truncated'])
+            for oi, op in enumerate(command['operations']):
+                operations[op['kind']] += 1
+                truncated |= bool(op['truncated'])
+                if 'draws' not in op:
+                    continue
+                index = len(passes)
+                counts = Counter()
+                for draw in op['draws']:
+                    counts.update(dict(zip(DRAW_NAMES, draw['counts'])))
+                    if draw['pipeline_id'] not in pipeline_ids:
+                        unknown_pipeline_commands += sum(draw['counts'])
+                draw_counts.update(counts)
+                attachments = []
+                for slot, a in enumerate(op['colors']):
+                    attachments.append({'role': 'color', 'slot': slot, **a['view']})
+                    if a['resolve_mode']:
+                        attachments.append({'role': 'color_resolve', 'slot': slot, **a['resolve_view']})
+                for role in ('depth', 'stencil'):
+                    if op[role]:
+                        attachments.append({'role': role, **op[role]['view']})
+                for image_id in {a['image_id'] for a in attachments if a['image_id']}:
+                    image_writes[image_id].append(index)
+                passes.append({'index': index, 'submission': si, 'command': ci, 'operation': oi,
+                               'kind': op['kind'], 'area': op['area'], 'draw_commands': sum(counts.values()),
+                               'counts': dict(counts), 'pipeline_ids': [d['pipeline_id'] for d in op['draws']],
+                               'attachments': attachments, 'scene_role': 'unclassified'})
+    result = {'schema_version': 1, 'request_sequence': data['request_sequence'], 'scope': data['scope'],
+              'present_before': data['present_before'], 'present_after': data['present_after'],
+              'submission_count': len(data['submissions']), 'failed_or_incomplete_submissions': failed,
+              'operation_counts': dict(operations), 'draw_command_counts': dict(draw_counts),
+              'truncated': truncated, 'missing_command_buffers': missing_commands,
+              'draw_commands_with_unknown_pipeline': unknown_pipeline_commands,
+              'pipeline_count': len(pipeline_ids), 'passes': passes,
+              'shader_stage_occurrences': len(stages), 'stages_with_code_fingerprint': sum(s['known'] for s in stages),
+              'stages_with_module_identifier': sum(bool(s.get('module_identifier')) for s in stages),
+              'stages_without_code_or_identifier': sum(not s['known'] and not s.get('module_identifier') for s in stages),
+              'image_attachment_scopes': {str(k): v for k, v in image_writes.items()},
+              'gpu_execution_order_known': False, 'texture_content_captured': False,
+              'image_reads_and_barriers_traced': False, 'scene_pass_identified': False,
+              'game_stereo_submitted': False}
+    if correlation is not None:
+        result['shader_correlation'] = correlation
+        result['shader_keys_matched'] = sum(bool(s['candidates']) for s in correlation['shaders'])
+        result['shader_keys_observed'] = len(correlation['shaders'])
+        by_code = {(s['fnv1a64'], s['code_bytes']): s['candidates'] for s in correlation['shaders'] if 'fnv1a64' in s}
+        by_identifier = {s['module_identifier']: s['candidates'] for s in correlation['shaders'] if 'module_identifier' in s}
+        associations = {}
+        for p in data['pipelines']:
+            candidates = {}
+            for s in p['shaders']:
+                if s['stage'] != 1:  # Vertex stage; do not infer mesh/RT coverage.
+                    continue
+                rows = list(by_code.get((s['fnv1a64'], s['code_bytes']), [])) if s['known'] else []
+                rows += by_identifier.get(s.get('module_identifier'), [])
+                for row in rows:
+                    candidates[row['catalog_id']] = row
+            associations[p['id']] = {'pipeline_id': p['id'], 'vertex_candidates': list(candidates.values())}
+        result['pipeline_associations'] = list(associations.values())
+        for item in passes:
+            op = data['submissions'][item['submission']]['commands'][item['command']]['operations'][item['operation']]
+            item['draw_commands_with_static_projection_candidate'] = sum(sum(d['counts']) for d in op['draws']
+                if any(c['static_final_clip_matrix_found'] for c in associations.get(d['pipeline_id'], {}).get('vertex_candidates', [])))
+    return result
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    sub = parser.add_subparsers(dest='command', required=True)
+    arm = sub.add_parser('request'); arm.add_argument('directory', type=Path)
+    report = sub.add_parser('report'); report.add_argument('file', type=Path)
+    report.add_argument('--shader-directory', type=Path); report.add_argument('--camera-chain', type=Path)
+    report.add_argument('--identifier-catalog', type=Path)
+    report.add_argument('--output', type=Path, required=True)
+    args = parser.parse_args()
+    if args.command == 'request':
+        print(json.dumps({'request_sequence': request(args.directory)})); return 0
+    data = read_frame(args.file)
+    correlation = correlate(data, args.shader_directory, args.camera_chain, args.identifier_catalog) if args.shader_directory or args.identifier_catalog else None
+    result = summarize(data, correlation); probe.write_json(args.output, result)
+    print(json.dumps({k: v for k, v in result.items() if k not in ('passes', 'image_attachment_scopes', 'shader_correlation', 'pipeline_associations')}, indent=2))
+    return 0
+
+
+if __name__ == '__main__':
+    try:
+        raise SystemExit(main())
+    except (OSError, ValueError, KeyError, TypeError) as error:
+        print(f'D4VR passes : {error}', file=sys.stderr); raise SystemExit(2)

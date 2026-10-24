@@ -112,3 +112,17 @@ Le cœur de projection C++ vérifie aussi les frusta asymétriques, la disparit�
 2, 10 et 30 unités, un déplacement de tête, une rotation de 45° et le rejet des
 matrices invalides. Le test est inclus dans CTest pour Linux et Windows. Il
 calcule des sommets et ne soumet aucune image du jeu.
+
+## Relevé des attachements et shaders
+
+La suite locale compte maintenant 73 tests Python. Les tests C++ sans pilote
+vérifient les snapshots des ressources/pipelines, GPL, modules inline ou mis
+en cache, buffers secondaires réutilisés, soumissions en cours et limites.
+Quatorze exécutions GPU comparent les pixels avec et sans couche ; elles couvrent
+le rendu dynamique, Steam Runtime et les créations de pipelines par identifiant.
+
+Quatre relevés ponctuels dans Diablo récupèrent les attachements et pipelines,
+avec une image normale confirmée par le propriétaire. Les deux derniers
+reconnaissent les shaders du cache et permettent de relier des candidats de la
+preuve géométrique à un groupe de sorties. Ces données ne prouvent aucun rendu
+stéréo du jeu. [Résultats et limites détaillés](FRAME_TRACE.md).

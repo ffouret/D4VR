@@ -9,6 +9,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <vector>
+#include "../vulkan/frame_trace.hpp" // FNV checksum of fixture pixels only
 
 static void check(VkResult result) {
     if (result != VK_SUCCESS) throw std::runtime_error("Vulkan error " + std::to_string(result));
@@ -17,8 +18,8 @@ struct Buffer { VkBuffer handle; VkDeviceMemory memory; void* mapped; VkDeviceAd
 struct Fixture {
     VkInstance instance{}; VkPhysicalDevice physical{}; VkDevice device{}; VkQueue queue{};
     VkPhysicalDeviceMemoryProperties memory{}; uint32_t family{};
-    Fixture() {
-        VkApplicationInfo app{VK_STRUCTURE_TYPE_APPLICATION_INFO}; app.pApplicationName = "D4VR observer fixture"; app.apiVersion = VK_API_VERSION_1_2;
+    Fixture(bool dynamic, bool identifiers) {
+        VkApplicationInfo app{VK_STRUCTURE_TYPE_APPLICATION_INFO}; app.pApplicationName = "D4VR observer fixture"; app.apiVersion = dynamic ? VK_API_VERSION_1_3 : VK_API_VERSION_1_2;
         VkInstanceCreateInfo create{VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO}; create.pApplicationInfo = &app;
         check(vkCreateInstance(&create, nullptr, &instance));
         uint32_t count = 0; check(vkEnumeratePhysicalDevices(instance, &count, nullptr));
@@ -36,7 +37,13 @@ struct Fixture {
         float priority = 1; VkDeviceQueueCreateInfo q{VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO}; q.queueFamilyIndex = family; q.queueCount = 1; q.pQueuePriorities = &priority;
         VkPhysicalDeviceFeatures features{}; features.shaderInt64 = VK_TRUE; features.vertexPipelineStoresAndAtomics = VK_TRUE;
         VkPhysicalDeviceVulkan12Features features12{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES}; features12.bufferDeviceAddress = VK_TRUE;
+        VkPhysicalDeviceVulkan13Features features13{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES}; features13.dynamicRendering = VK_TRUE;
+        VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT idFeature{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MODULE_IDENTIFIER_FEATURES_EXT}; idFeature.shaderModuleIdentifier = VK_TRUE;
+        if (identifiers) { features13.pipelineCreationCacheControl = VK_TRUE; features13.pNext = &idFeature; }
+        if (dynamic) features12.pNext = &features13;
         VkDeviceCreateInfo d{VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO}; d.pNext = &features12; d.pEnabledFeatures = &features; d.queueCreateInfoCount = 1; d.pQueueCreateInfos = &q;
+        const char* idExtension = VK_EXT_SHADER_MODULE_IDENTIFIER_EXTENSION_NAME;
+        if (identifiers) { d.enabledExtensionCount = 1; d.ppEnabledExtensionNames = &idExtension; }
         check(vkCreateDevice(physical, &d, nullptr, &device)); vkGetDeviceQueue(device, family, 0, &queue);
     }
     uint32_t type(uint32_t mask, VkMemoryPropertyFlags flags) {
@@ -68,9 +75,16 @@ struct Fixture {
 };
 
 int main(int argc, char** argv) try {
-    bool geometry = argc == 5 && std::string(argv[4]) == "--geometry";
-    if (argc != 4 && !geometry) throw std::runtime_error("Usage: gpu_probe_vulkan original.spv probed.spv fragment.spv [--geometry]");
-    Fixture f;
+    if (argc < 4) throw std::runtime_error("Usage: gpu_probe_vulkan original.spv probed.spv fragment.spv [--geometry] [--dynamic] [--identifiers]");
+    bool geometry = false, dynamic = false, identifiers = false;
+    for (int i = 4; i < argc; ++i) {
+        auto arg = std::string(argv[i]);
+        if (arg == "--geometry") geometry = true;
+        else if (arg == "--dynamic") dynamic = true;
+        else if (arg == "--identifiers") { identifiers = true; dynamic = true; }
+        else throw std::runtime_error("Unknown option: " + arg);
+    }
+    Fixture f(dynamic, identifiers);
     const uint32_t width = geometry ? 256 : 64, height = width, pixels = width * height * 4, ring_words = 8192;
     auto uniform = f.buffer(113 * 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
     const std::array<float, 16> matrix = geometry
@@ -139,7 +153,25 @@ int main(int argc, char** argv) try {
         VkPipelineColorBlendAttachmentState color{}; color.colorWriteMask = 15;
         VkPipelineColorBlendStateCreateInfo cb{VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO}; cb.attachmentCount = 1; cb.pAttachments = &color;
         VkGraphicsPipelineCreateInfo p{VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO}; p.stageCount = 2; p.pStages = stages; p.pVertexInputState = &vi; p.pInputAssemblyState = &ia; p.pViewportState = &vp; p.pRasterizationState = &rs; p.pMultisampleState = &ms; p.pColorBlendState = &cb; p.layout = pipeline_layout; p.renderPass = render_pass;
-        VkPipeline result{}; check(vkCreateGraphicsPipelines(f.device, VK_NULL_HANDLE, 1, &p, nullptr, &result)); return result;
+        VkPipelineRenderingCreateInfo rendering{VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO}; rendering.colorAttachmentCount = 1; rendering.pColorAttachmentFormats = &image_create.format;
+        if (dynamic) { p.renderPass = VK_NULL_HANDLE; p.pNext = &rendering; }
+        VkPipeline result{}; check(vkCreateGraphicsPipelines(f.device, VK_NULL_HANDLE, 1, &p, nullptr, &result));
+        if (identifiers) {
+            auto query = reinterpret_cast<PFN_vkGetShaderModuleIdentifierEXT>(vkGetDeviceProcAddr(f.device,"vkGetShaderModuleIdentifierEXT"));
+            if (!query) throw std::runtime_error("Shader identifier query unavailable");
+            VkShaderModuleIdentifierEXT ids[2]{};
+            VkPipelineShaderStageModuleIdentifierCreateInfoEXT cached[2]{};
+            for (unsigned j = 0; j < 2; ++j) {
+                ids[j].sType = VK_STRUCTURE_TYPE_SHADER_MODULE_IDENTIFIER_EXT; query(f.device,stages[j].module,&ids[j]);
+                cached[j].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_MODULE_IDENTIFIER_CREATE_INFO_EXT;
+                cached[j].identifierSize = ids[j].identifierSize; cached[j].pIdentifier = ids[j].identifier;
+                stages[j].module = VK_NULL_HANDLE; stages[j].pNext = &cached[j];
+            }
+            p.flags |= VK_PIPELINE_CREATE_FAIL_ON_PIPELINE_COMPILE_REQUIRED_BIT;
+            VkPipeline fromCache{}; check(vkCreateGraphicsPipelines(f.device,VK_NULL_HANDLE,1,&p,nullptr,&fromCache));
+            vkDestroyPipeline(f.device,result,nullptr); result = fromCache;
+        }
+        return result;
     };
     auto original_pipeline = pipeline(vertex, false), observer_pipeline = pipeline(probed, true);
     VkCommandPoolCreateInfo command_pool_create{VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO}; command_pool_create.queueFamilyIndex = f.family;
@@ -149,15 +181,35 @@ int main(int argc, char** argv) try {
     auto render = [&](VkPipeline selected) {
         check(vkResetCommandPool(f.device, command_pool, 0)); VkCommandBufferBeginInfo begin{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO}; check(vkBeginCommandBuffer(command, &begin));
         VkClearValue clear{}; VkRenderPassBeginInfo pass{VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO}; pass.renderPass = render_pass; pass.framebuffer = framebuffer; pass.renderArea.extent = {width, height}; pass.clearValueCount = 1; pass.pClearValues = &clear;
-        vkCmdBeginRenderPass(command, &pass, VK_SUBPASS_CONTENTS_INLINE); vkCmdBindPipeline(command, VK_PIPELINE_BIND_POINT_GRAPHICS, selected);
-        vkCmdBindDescriptorSets(command, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 3, 1, &set, 0, nullptr); vkCmdDraw(command, 3, 1, 0, 0); vkCmdEndRenderPass(command);
+        VkImageMemoryBarrier image_barrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER}; image_barrier.image = image;
+        image_barrier.subresourceRange = view_create.subresourceRange;
+        image_barrier.srcQueueFamilyIndex = image_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        if (dynamic) {
+            image_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED; image_barrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            image_barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+            vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, nullptr, 0, nullptr, 1, &image_barrier);
+            VkRenderingAttachmentInfo color{VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO}; color.imageView = view; color.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            color.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR; color.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+            VkRenderingInfo rendering{VK_STRUCTURE_TYPE_RENDERING_INFO}; rendering.renderArea = pass.renderArea; rendering.layerCount = 1; rendering.colorAttachmentCount = 1; rendering.pColorAttachments = &color;
+            vkCmdBeginRendering(command, &rendering);
+        } else vkCmdBeginRenderPass(command, &pass, VK_SUBPASS_CONTENTS_INLINE);
+        vkCmdBindPipeline(command, VK_PIPELINE_BIND_POINT_GRAPHICS, selected);
+        vkCmdBindDescriptorSets(command, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 3, 1, &set, 0, nullptr); vkCmdDraw(command, 3, 1, 0, 0);
+        if (dynamic) {
+            vkCmdEndRendering(command);
+            image_barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; image_barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+            image_barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT; image_barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+            vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &image_barrier);
+        } else vkCmdEndRenderPass(command);
         VkBufferImageCopy copy{}; copy.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1}; copy.imageExtent = {width, height, 1};
         vkCmdCopyImageToBuffer(command, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, staging.handle, 1, &copy);
         VkMemoryBarrier barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER}; barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT; barrier.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
         vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_HOST_BIT, 0, 1, &barrier, 0, nullptr, 0, nullptr);
         check(vkEndCommandBuffer(command)); VkSubmitInfo submit{VK_STRUCTURE_TYPE_SUBMIT_INFO}; submit.commandBufferCount = 1; submit.pCommandBuffers = &command;
         check(vkQueueSubmit(f.queue, 1, &submit, VK_NULL_HANDLE)); check(vkQueueWaitIdle(f.queue));
-        auto bytes = static_cast<uint8_t*>(staging.mapped); return std::vector<uint8_t>(bytes, bytes + pixels);
+        auto bytes = static_cast<uint8_t*>(staging.mapped);
+        std::cout << "PIXELS_FNV1A64=" << d4vr::frame::hex(d4vr::frame::digest(bytes, pixels)) << '\n';
+        return std::vector<uint8_t>(bytes, bytes + pixels);
     };
     if (geometry) {
         auto centroid = [&](const std::vector<uint8_t>& bytes) {

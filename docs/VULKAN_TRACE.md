@@ -65,6 +65,10 @@ Le programme de contrôle demande Vulkan 1.2.0 et le GPU expose Vulkan 1.4.351.
 Ces versions appartiennent à la fixture ; elles ne préjugent pas de celles de
 Diablo IV. Les contrôles sur le jeu sont enregistrés séparément après la session.
 
+Un mode facultatif ajoute le relevé des attachements et pipelines à la demande.
+Sa fixture demande Vulkan 1.3 pour le rendu dynamique ; les comparaisons de
+pixels passent aussi dans Steam Runtime. Voir [FRAME_TRACE.md](FRAME_TRACE.md).
+
 ## Relevé en partie du 24 octobre 2026
 
 Le propriétaire confirme avoir joué dans le décor avec une image normale.

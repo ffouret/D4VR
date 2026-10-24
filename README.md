@@ -129,6 +129,19 @@ OpenXR sur le périphérique Vulkan 1.3 de Diablo, avec identité du GPU vérifi
 par UUID. Cette session n'est pas démarrée et ne soumet aucune image.
 Voir [le lancement isolé et les limites du relevé](docs/VULKAN_TRACE.md).
 
+## Étape 8 : sorties des passes et shaders utilisés
+
+Le diagnostic peut relever à la demande les attachements couleur/profondeur,
+les dimensions et les empreintes des shaders de chaque pipeline utilisé.
+Les comparaisons de pixels sur RTX 5090 passent en rendu classique et dynamique,
+y compris dans Steam Runtime. Ce relevé prépare le choix des passes à adapter ;
+il ne produit aucune stéréo du jeu. Deux relevés réels avec les identifiants du
+cache retrouvent des candidats pour 328/339 et 262/267 clés de shader. Six des
+huit shaders du déplacement géométrique précédent trouvent des candidats dans
+un même groupe de quatre sorties couleur et d'une profondeur. Le propriétaire
+confirme une image normale ; le rôle visible exact de ce groupe reste à vérifier.
+Voir [le déclenchement, les preuves et les limites](docs/FRAME_TRACE.md).
+
 ## Commandes du prototype
 
 | Action | Quest Touch | Clavier |
