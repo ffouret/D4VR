@@ -11,7 +11,7 @@ révision `e8aaa6eaac968711fb62473d4ae8256dde20919b`.
 Copyright NVIDIA, sous licence MIT incluse dans
 `native/third_party/streamline/license.txt`. Aucun composant Nsight Perf ni
 binaire NVIDIA n'est redistribué. Les empreintes du manifeste correspondent
-aux fichiers amont avant toute normalisation de fins de ligne par Git.
+aux fichiers amont ; `.gitattributes` préserve leurs octets et fins de ligne.
 
 ## Godot
 

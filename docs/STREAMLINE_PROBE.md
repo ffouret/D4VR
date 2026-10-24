@@ -101,6 +101,11 @@ Elle refuse d'écraser une nouvelle DLL déposée entre-temps par une mise à jo
 - Résolution des 262 exports avec la vraie DLL NVIDIA, hors du jeu : réussie.
 - Tests Python : format PE, installation/restauration, échec de copie, versions
   différentes et préservation d'une mise à jour : réussis.
+- [Contrôles GitHub Actions Linux et Windows](https://github.com/ffouret/D4VR/actions/runs/40095580572) :
+  réussis, dont compilation MSVC, tests du relais et vérification des 262 noms,
+  ordinaux et forwarders sur la DLL Windows produite.
+- Sonde installée sur le PC de référence, jeu fermé ; empreintes de la DLL
+  installée, de la sauvegarde originale et de la configuration vérifiées.
 - Données émises par Diablo IV pendant une session réelle : pas encore relevées.
 - Stéréo géométrique de Diablo IV : pas encore implémentée.
 
