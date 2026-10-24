@@ -34,6 +34,44 @@ La limite de 1 024 échantillons a été atteinte. Sans horodatage GPU, cette
 capture ne prouve pas que les déplacements du joueur sont couverts. Il serait
 incorrect d'appeler la matrice b0 une matrice monde-vue-projection complète.
 
+## Deuxième capture et calcul des vues
+
+La seconde session est terminée avec un code de sortie nul, le jeu et Battle.net
+fermés et les empreintes originales vérifiées à nouveau. Le lanceur a observé
+341 secondes de session côté CPU ; il ne s'agit pas d'une mesure GPU.
+
+Elle contient 245 paires complètes, sans ligne rejetée ni groupe incomplet, avec
+54 projections et 227 transformations d'entrée distinctes à la précision du
+journal. Le budget n'a pas été atteint. Les 245 transformations d'entrée ont une
+dernière ligne affine `[0, 0, 0, 1]` ; certaines comprennent une échelle d'objet.
+
+75 paires, issues de 18 shaders, partagent une projection perspective 16:9 à
+35° verticaux, avec 73 transformations d'entrée différentes. C'est un candidat
+pour la vue principale du jeu, par inférence de sa forme et de sa présence
+répétée. Les projections carrées et orthographiques observées simultanément
+montrent qu'il reste nécessaire de distinguer la scène des autres passes.
+Cette capture ne prouve pas encore l'identité de chaque draw.
+
+`native/core/stereo_projection.hpp` fournit le calcul portable des transformations
+par œil en coordonnées homogènes :
+
+```text
+eye_clip = eye_projection × eye_from_game_view × inverse(game_projection) × game_clip
+```
+
+Ce calcul s'applique aux sommets avant rasterisation. Les conventions sont des
+matrices stockées par lignes, des vecteurs colonnes et une vue droite regardant
+vers −Z. L'adaptateur doit convertir la pose et les projections du runtime dans
+ce repère, avec une échelle cohérente pour les déplacements et l'écart des yeux.
+
+Les tests utilisent la projection numérique relevée et vérifient une identité,
+un frustum asymétrique, les plans de profondeur, une séparation de 64 mm, une
+inclinaison latérale et une rotation de vue de 45°. À 2, 10 et 30 unités de
+distance, la disparité obtenue suit l'inverse de la distance. Ces tests sont
+mathématiques ; ils ne rendent pas une paire d'images de Diablo IV. Le composant
+ne rejoue pas les draws, ne corrige pas les effets temporels, ne traite pas le
+culling et ne soumet aucune image à SteamVR.
+
 ## Instrumentation et validations
 
 Le helper original `native/probe_gpu/probe_ring.vert` utilise le protocole du

@@ -107,3 +107,8 @@ La première session réelle fournit 1 024 matrices complètes de projection.
 Une seconde sonde, validée sur 2 113 shaders, prélève les deux transformations
 ensemble avec un intervalle étendu. [Procédure et portée](CAMERA_OBSERVER.md).
 Le rendu géométrique gauche/droite de Diablo IV n'est pas encore implémenté.
+
+Le cœur de projection C++ vérifie aussi les frusta asymétriques, la disparité à
+2, 10 et 30 unités, un déplacement de tête, une rotation de 45° et le rejet des
+matrices invalides. Le test est inclus dans CTest pour Linux et Windows. Il
+calcule des sommets et ne soumet aucune image du jeu.

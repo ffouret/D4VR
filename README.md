@@ -90,7 +90,10 @@ la RTX 5090 récupère les 32 valeurs exactes sans changer l'image de contrôle.
 
 Les shaders instrumentés utilisent le ring de diagnostic VKD3D ; les DLL du jeu
 et de NVIDIA restent originales. Cela ne fournit pas encore de stéréo ni de
-rendu SteamVR de Diablo IV. Voir [les résultats, outils et limites](docs/CAMERA_OBSERVER.md).
+rendu SteamVR de Diablo IV. La seconde session a récupéré 245 paires complètes.
+Un cœur C++ portable calcule maintenant les transformations géométriques par œil ;
+ses tests vérifient la disparité selon la profondeur, sans intégration au renderer.
+Voir [les résultats, outils et limites](docs/CAMERA_OBSERVER.md).
 
 ## Commandes du prototype
 
