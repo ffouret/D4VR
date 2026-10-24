@@ -25,7 +25,7 @@ class DiscoveryTests(unittest.TestCase):
             except OSError:
                 self.skipTest("Symbolic links unavailable to this Windows account")
             with patch.dict(os.environ, {}, clear=True), patch.object(launcher.platform, "system", return_value="Linux"):
-                self.assertEqual(launcher.steamvr_manifest(home=home), runtime)
+                self.assertEqual(launcher.steamvr_manifest(home=home), runtime.resolve())
 
     def test_explicit_other_runtime_is_not_silently_used(self):
         with tempfile.TemporaryDirectory() as folder:
@@ -60,7 +60,7 @@ class DiscoveryTests(unittest.TestCase):
             self.assertNotIn("version", info)
 
     def test_missing_engine_provides_setup_instruction(self):
-        with tempfile.TemporaryDirectory() as folder, patch.object(launcher, "ROOT", Path(folder)), patch.dict(os.environ, {}, clear=True):
+        with tempfile.TemporaryDirectory() as folder, patch.object(launcher, "ROOT", Path(folder)), patch.dict(os.environ, {}, clear=True), patch.object(launcher.platform, "machine", return_value="x86_64"):
             with self.assertRaisesRegex(RuntimeError, "setup"):
                 launcher.engine_path(None)
 

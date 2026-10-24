@@ -188,7 +188,7 @@ def run_engine(engine: Path, arguments: list[str], runtime: Path | None = None, 
         env["XDG_DATA_HOME"] = str(data)
     if runtime:
         env["XR_RUNTIME_JSON"] = str(runtime)
-    result = subprocess.run([str(engine), "--path", str(ROOT / "prototype"), "--audio-driver", "Dummy", *arguments], env=env, check=False, capture_output=validate_log, text=True)
+    result = subprocess.run([str(engine), "--path", str(ROOT / "prototype"), "--audio-driver", "Dummy", *arguments], env=env, check=False, capture_output=validate_log, text=True, encoding="utf-8", errors="replace")
     if validate_log:
         print(result.stdout, end="")
         print(result.stderr, end="", file=sys.stderr)
