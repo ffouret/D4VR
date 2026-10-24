@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Prepare a read-only matrix observer for VKD3D's shader debug ring.
+"""Prepare a VKD3D matrix observer or an explicit geometry displacement test.
 
 This builds a separate SPIR-V override. It never writes game/NVIDIA libraries.
 The result must pass spirv-val and a GPU fixture before any game launch.
@@ -58,19 +58,19 @@ class Module:
         self.instructions[index:index] = instructions
 
 
-def helper_library(data: bytes) -> bytes:
+def helper_library(data: bytes, geometry: bool = False) -> bytes:
     module = Module(data)
     names = {args[0]: literal(args[1:]) for op, args in module.instructions if op == 5}
-    targets = [identifier for identifier, name in names.items() if name.startswith("d4vr_probe(")]
+    targets = [identifier for identifier, name in names.items() if name.startswith("d4vr_geometry(" if geometry else "d4vr_probe(")]
     if len(targets) != 1:
         raise ValueError("Expected the original d4vr_probe helper compiled without inlining")
     module.instructions = [(op, args) for op, args in module.instructions if op not in (15, 16, 331)]
     module.add_capability(5)  # Linkage, intermediate library only.
-    module.decorate([(71, [targets[0], 41, *string_words("D4VRProbe_v1"), 0])])
+    module.decorate([(71, [targets[0], 41, *string_words("D4VRGeometry_v1" if geometry else "D4VRProbe_v1"), 0])])
     return module.binary()
 
 
-def instrument(data: bytes, descriptor_set: int, binding: int, first_row: int, secondary_binding: int = 1, secondary_row: int = 56) -> bytes:
+def instrument(data: bytes, descriptor_set: int, binding: int, first_row: int, secondary_binding: int = 1, secondary_row: int = 56, geometry: bool = False) -> bytes:
     module = Module(data)
     entries = [args for op, args in module.instructions if op == 15]
     if len(entries) != 1 or entries[0][0] != 0:
@@ -78,6 +78,7 @@ def instrument(data: bytes, descriptor_set: int, binding: int, first_row: int, s
     main = entries[0][1]
     decorations = {}
     member_offsets = {}
+    position_members = set()
     types = {}
     variables = {}
     constants = {}
@@ -88,6 +89,8 @@ def instrument(data: bytes, descriptor_set: int, binding: int, first_row: int, s
                 raise ValueError("Original shader uses reserved debug-ring specialization IDs")
         elif op == 72 and args[2] == 35:
             member_offsets[(args[0], args[1])] = args[3]
+        elif op == 72 and args[2:] == [11, 0]:
+            position_members.add((args[0], args[1]))
         elif 19 <= op <= 39:
             types[args[0]] = (op, args[1:])
         elif op == 59:
@@ -149,7 +152,26 @@ def instrument(data: bytes, descriptor_set: int, binding: int, first_row: int, s
     uniform_vector_pointer = type_id(32, [2, vector_type])
     local_uint_pointer = type_id(32, [7, uint])
     local_vector_pointer = type_id(32, [7, vector_type])
-    function_type = type_id(33, [void, local_uint_pointer, *([local_vector_pointer] * 8)])
+    vector_arguments = 9 if geometry else 8
+    function_type = type_id(33, [void, local_uint_pointer, *([local_vector_pointer] * vector_arguments)])
+    position_output = None
+    position_member = None
+    if geometry:
+        positions = [identifier for identifier in variables if decorations.get(identifier, {}).get(11) == [0]]
+        members = [(identifier, index) for identifier, (pointer, storage) in variables.items() if storage == 3
+                   for struct, index in position_members if types[pointer] == (32, [3, struct])]
+        if len(positions) + len(members) != 1:
+            raise ValueError("Expected one Position output")
+        if positions:
+            position_output = positions[0]
+            if types[variables[position_output][0]] != (32, [3, vector_type]):
+                raise ValueError("Expected a float4 Position output")
+        else:
+            position_output, position_member = members[0]
+            struct = types[variables[position_output][0]][1][1]
+            if types[struct][1][position_member] != vector_type:
+                raise ValueError("Expected a float4 Position member")
+        output_vector_pointer = type_id(32, [3, vector_type])
     vertex_inputs = [identifier for identifier in variables if decorations.get(identifier, {}).get(11) == [42]]
     added_decorations = []
     if len(vertex_inputs) > 1:
@@ -168,16 +190,17 @@ def instrument(data: bytes, descriptor_set: int, binding: int, first_row: int, s
         added_decorations.append((71, [vertex, 11, 42]))
         entries[0].append(vertex)
     zero = constant(0)
+    position_index = constant(position_member) if position_member is not None else None
     row_indices = [(target, constant(first_row + i)) for i in range(4)]
     row_indices += [(second_target, constant(secondary_row + i)) for i in range(4)]
     imported = module.allocate()
-    parameters = [module.allocate() for _ in range(9)]
-    added_decorations.append((71, [imported, 41, *string_words("D4VRProbe_v1"), 1]))
+    parameters = [module.allocate() for _ in range(vector_arguments + 1)]
+    added_decorations.append((71, [imported, 41, *string_words("D4VRGeometry_v1" if geometry else "D4VRProbe_v1"), 1]))
     import_body = [(54, [void, imported, 0, function_type])]
     import_body += [(55, [local_uint_pointer if i == 0 else local_vector_pointer, identifier])
                     for i, identifier in enumerate(parameters)]
     import_body.append((56, []))
-    locals_ = [module.allocate() for _ in range(9)]
+    locals_ = [module.allocate() for _ in range(vector_arguments + 1)]
     local_declarations = [(59, [local_uint_pointer if i == 0 else local_vector_pointer, identifier, 7])
                           for i, identifier in enumerate(locals_)]
 
@@ -195,7 +218,17 @@ def instrument(data: bytes, descriptor_set: int, binding: int, first_row: int, s
             code.append((65, [uniform_vector_pointer, pointer, buffer, zero, row]))
             code.append((61, [vector_type, value, pointer]))
             code.append((62, [locals_[i + 1], value]))
+        if geometry:
+            position_pointer = position_output
+            if position_index is not None:
+                position_pointer = module.allocate()
+                code.append((65, [output_vector_pointer, position_pointer, position_output, position_index]))
+            value = module.allocate()
+            code += [(61, [vector_type, value, position_pointer]), (62, [locals_[-1], value])]
         code.append((57, [void, module.allocate(), imported, *locals_]))
+        if geometry:
+            value = module.allocate()
+            code += [(61, [vector_type, value, locals_[-1]]), (62, [position_pointer, value])]
         return code
 
     output = []
@@ -224,15 +257,15 @@ def instrument(data: bytes, descriptor_set: int, binding: int, first_row: int, s
     return module.binary()
 
 
-def build(original: Path, helper: Path, output: Path, tools: Path, descriptor_set: int, binding: int, first_row: int, secondary_binding: int = 1, secondary_row: int = 56):
+def build(original: Path, helper: Path, output: Path, tools: Path, descriptor_set: int, binding: int, first_row: int, secondary_binding: int = 1, secondary_row: int = 56, geometry: bool = False):
     output.parent.mkdir(parents=True, exist_ok=True)
     scratch = output.parent / "intermediate" / output.stem
     scratch.mkdir(parents=True, exist_ok=True)
     library = scratch / "helper.spv"
     caller = scratch / "caller.spv"
     linked = scratch / "linked.spv"
-    library.write_bytes(helper_library(helper.read_bytes()))
-    caller.write_bytes(instrument(original.read_bytes(), descriptor_set, binding, first_row, secondary_binding, secondary_row))
+    library.write_bytes(helper_library(helper.read_bytes(), geometry))
+    caller.write_bytes(instrument(original.read_bytes(), descriptor_set, binding, first_row, secondary_binding, secondary_row, geometry))
     subprocess.run([str(tools / "spirv-link"), "--target-env", "spv1.3", str(caller), str(library), "-o", str(linked)], check=True, capture_output=True)
     subprocess.run([str(tools / "spirv-opt"), "--eliminate-dead-functions", "--eliminate-dead-variables", str(linked), "-o", str(output)], check=True, capture_output=True)
     subprocess.run([str(tools / "spirv-val"), "--target-env", "vulkan1.2", str(output)], check=True, capture_output=True)
@@ -250,8 +283,9 @@ def main():
     parser.add_argument("--first-row", type=int, default=72)
     parser.add_argument("--secondary-binding", type=int, default=1)
     parser.add_argument("--secondary-row", type=int, default=56)
+    parser.add_argument("--geometry", action="store_true", help="Apply the diagnostic vertex displacement helper")
     args = parser.parse_args()
-    print(build(args.original, args.helper, args.output, args.tools, args.descriptor_set, args.binding, args.first_row, args.secondary_binding, args.secondary_row))
+    print(build(args.original, args.helper, args.output, args.tools, args.descriptor_set, args.binding, args.first_row, args.secondary_binding, args.secondary_row, args.geometry))
 
 
 if __name__ == "__main__":

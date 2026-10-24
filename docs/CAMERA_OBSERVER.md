@@ -36,6 +36,8 @@ incorrect d'appeler la matrice b0 une matrice monde-vue-projection complète.
 
 ## Deuxième capture et calcul des vues
 
+Le propriétaire confirme avoir joué dans le décor avec une image normale lors
+de la seconde session. Ce retour utilisateur ne compare pas tous les pixels.
 La seconde session est terminée avec un code de sortie nul, le jeu et Battle.net
 fermés et les empreintes originales vérifiées à nouveau. Le lanceur a observé
 341 secondes de session côté CPU ; il ne s'agit pas d'une mesure GPU.

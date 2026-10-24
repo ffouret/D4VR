@@ -119,8 +119,10 @@ def validate_bundle(directory: Path) -> dict:
     return manifest
 
 
-def run(game: Path, launcher: Path, bundle: Path, output: Path) -> int:
+def run(game: Path, launcher: Path, bundle: Path, output: Path, geometry_test: bool = False) -> int:
     manifest = validate_bundle(bundle)
+    if (manifest["purpose"] == "geometry_shift_diagnostic") != geometry_test:
+        raise ValueError("The bundle purpose must match the explicit geometry-test mode")
     expected = probe.profile()
     if manifest["game_version"] != expected["game_version"]:
         raise ValueError("Observer bundle targets another game version")
@@ -139,13 +141,19 @@ def run(game: Path, launcher: Path, bundle: Path, output: Path) -> int:
     variables = {"VKD3D_SHADER_OVERRIDE": probe.windows_path(bundle.resolve() / "overrides"),
                  "VKD3D_SHADER_DEBUG_RING_SIZE_LOG2": "24", "VKD3D_SHADER_CACHE_PATH": capture["variables"]["VKD3D_SHADER_CACHE_PATH"],
                  "VKD3D_DEBUG": "info", "VKD3D_LOG_FILE": probe.windows_path(output / "camera.log")}
+    if geometry_test:
+        del variables["VKD3D_SHADER_DEBUG_RING_SIZE_LOG2"]
     capture.update(variables=variables, observer_bundle=str(bundle.resolve()), phase="launching", game_files_changed=False)
     probe.write_json(output / "capture.json", capture)
     bridge = Path("/run/host/usr/bin/flatpak-spawn")
     command = ([str(bridge), "--host", "/usr/bin/env"] if bridge.exists() else ["/usr/bin/env"])
     command += [key + "=" + value for key, value in variables.items()] + ["/usr/bin/bash", str(private_launcher)]
-    print("Battle.net : sonde GPU bornée, DLL du jeu et de NVIDIA originales.", flush=True)
-    print("Entrer en partie, rester immobile 10 secondes, marcher 2 minutes, puis quitter le jeu et Battle.net.", flush=True)
+    if geometry_test:
+        print("Battle.net : test visible de déplacement des sommets, pas encore de rendu VR.", flush=True)
+        print("Observer le décor et le personnage une minute, puis quitter le jeu et Battle.net.", flush=True)
+    else:
+        print("Battle.net : sonde GPU bornée, DLL du jeu et de NVIDIA originales.", flush=True)
+        print("Entrer en partie, rester immobile 10 secondes, marcher 2 minutes, puis quitter le jeu et Battle.net.", flush=True)
     observations = []
     started = time.monotonic()
     with (output / "launcher-private.log").open("wb") as stream:
@@ -176,6 +184,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
     launch = sub.add_parser("run")
+    launch.add_argument("--geometry-test", action="store_true")
     for name in ("game-dir", "launcher", "bundle", "output"):
         launch.add_argument("--" + name, type=Path, required=True)
     report = sub.add_parser("report")
@@ -183,7 +192,7 @@ def main():
     report.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     if args.command == "run":
-        return run(args.game_dir, args.launcher, args.bundle, args.output)
+        return run(args.game_dir, args.launcher, args.bundle, args.output, args.geometry_test)
     result = parse(args.log)
     probe.write_json(args.output, result)
     print(json.dumps({k: v for k, v in result.items() if k != "samples"}, indent=2))

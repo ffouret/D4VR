@@ -1,9 +1,10 @@
-// Headless GPU fixture: observer must report the supplied matrix without
-// changing any rendered byte. Resources belong to this short-lived process.
+// Headless GPU fixture: observation preserves rendered bytes; explicit
+// geometry mode measures vertex parallax at two depths. Resources belong to this short-lived process.
 #include <vulkan/vulkan.h>
 #include <algorithm>
 #include <array>
 #include <cstring>
+#include <cmath>
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
@@ -67,11 +68,14 @@ struct Fixture {
 };
 
 int main(int argc, char** argv) try {
-    if (argc != 4) throw std::runtime_error("Usage: gpu_probe_vulkan original.spv probed.spv fragment.spv");
+    bool geometry = argc == 5 && std::string(argv[4]) == "--geometry";
+    if (argc != 4 && !geometry) throw std::runtime_error("Usage: gpu_probe_vulkan original.spv probed.spv fragment.spv [--geometry]");
     Fixture f;
-    constexpr uint32_t width = 64, height = 64, pixels = width * height * 4, ring_words = 8192;
+    const uint32_t width = geometry ? 256 : 64, height = width, pixels = width * height * 4, ring_words = 8192;
     auto uniform = f.buffer(113 * 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-    const std::array<float, 16> matrix{0.75f, 0, 0, 0.1f, 0, 0.8f, 0, -0.1f, 0, 0, 0.5f, 0, 0, 0, 0, 1};
+    const std::array<float, 16> matrix = geometry
+        ? std::array<float, 16>{1.784022f, 0, .000439f, 0, 0, 3.171595f, -.000347f, 0, 0, 0, -1.001502f, -.300451f, 0, 0, -1, 0}
+        : std::array<float, 16>{0.75f, 0, 0, 0.1f, 0, 0.8f, 0, -0.1f, 0, 0, 0.5f, 0, 0, 0, 0, 1};
     std::memcpy(static_cast<char*>(uniform.mapped) + 72 * 16, matrix.data(), 64);
     auto second_uniform = f.buffer(80 * 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
     const std::array<float, 16> second_matrix{1, 0, 0, 0.1f, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
@@ -137,7 +141,7 @@ int main(int argc, char** argv) try {
         VkGraphicsPipelineCreateInfo p{VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO}; p.stageCount = 2; p.pStages = stages; p.pVertexInputState = &vi; p.pInputAssemblyState = &ia; p.pViewportState = &vp; p.pRasterizationState = &rs; p.pMultisampleState = &ms; p.pColorBlendState = &cb; p.layout = pipeline_layout; p.renderPass = render_pass;
         VkPipeline result{}; check(vkCreateGraphicsPipelines(f.device, VK_NULL_HANDLE, 1, &p, nullptr, &result)); return result;
     };
-    auto original_pipeline = pipeline(vertex, false), observer_pipeline = pipeline(probed, true);
+    auto original_pipeline = pipeline(vertex, false), observer_pipeline = pipeline(probed, !geometry);
     VkCommandPoolCreateInfo command_pool_create{VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO}; command_pool_create.queueFamilyIndex = f.family;
     VkCommandPool command_pool{}; check(vkCreateCommandPool(f.device, &command_pool_create, nullptr, &command_pool));
     VkCommandBufferAllocateInfo command_allocate{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO}; command_allocate.commandPool = command_pool; command_allocate.commandBufferCount = 1;
@@ -155,6 +159,32 @@ int main(int argc, char** argv) try {
         check(vkQueueSubmit(f.queue, 1, &submit, VK_NULL_HANDLE)); check(vkQueueWaitIdle(f.queue));
         auto bytes = static_cast<uint8_t*>(staging.mapped); return std::vector<uint8_t>(bytes, bytes + pixels);
     };
+    if (geometry) {
+        auto centroid = [&](const std::vector<uint8_t>& bytes) {
+            double sum = 0, count = 0;
+            for (unsigned y = 0; y < height; ++y) for (unsigned x = 0; x < width; ++x)
+                if (bytes[(y * width + x) * 4 + 3]) { sum += x + .5; ++count; }
+            if (!count) throw std::runtime_error("No geometry pixels rendered");
+            return sum / count;
+        };
+        std::array<double, 2> shifts{};
+        for (unsigned i = 0; i < 2; ++i) {
+            float depth = i == 0 ? 2.f : 4.f;
+            auto model = reinterpret_cast<float*>(static_cast<char*>(second_uniform.mapped) + 56 * 16);
+            model[11] = -.5f - depth;
+            auto baseline = render(original_pipeline), shifted = render(observer_pipeline);
+            shifts[i] = centroid(shifted) - centroid(baseline);
+            double expected = -matrix[0] * .10 / depth * width / 2;
+            if (std::abs(shifts[i] - expected) > .75) throw std::runtime_error("Measured GPU parallax differs from geometry prediction");
+        }
+        if (std::abs(shifts[0] / shifts[1] - 2) > .3) throw std::runtime_error("Parallax does not depend on depth");
+        auto projection = reinterpret_cast<float*>(static_cast<char*>(uniform.mapped) + 72 * 16);
+        projection[0] = .75f; projection[5] = .8f;
+        if (render(original_pipeline) != render(observer_pipeline)) throw std::runtime_error("Non-target projection was modified");
+        std::cout << "{\"gpu_fixture_passed\":true,\"geometry_parallax_verified\":true,\"non_target_projection_unchanged\":true,\"shift_pixels_depth_2\":"
+                  << shifts[0] << ",\"shift_pixels_depth_4\":" << shifts[1] << ",\"native_game_stereo_proven\":false}\n";
+        return 0;
+    }
     auto baseline = render(original_pipeline), observed = render(observer_pipeline);
     if (baseline != observed) throw std::runtime_error("Observer changed rendered pixels");
     size_t center = (height / 2 * width + width / 2) * 4;

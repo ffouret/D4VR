@@ -95,6 +95,15 @@ Un cœur C++ portable calcule maintenant les transformations géométriques par 
 ses tests vérifient la disparité selon la profondeur, sans intégration au renderer.
 Voir [les résultats, outils et limites](docs/CAMERA_OBSERVER.md).
 
+## Étape 5 : premier déplacement géométrique
+
+Un mode de diagnostic applique un petit déplacement latéral aux sommets de la
+projection 35° identifiée. La fixture RTX 5090 mesure 11,4 pixels à deux unités
+de distance, contre 5,7 à quatre unités. Le déplacement dépend de la profondeur.
+Ce test sur moniteur doit maintenant vérifier les passes du jeu ; il ne produit
+pas encore deux vues et n'envoie aucune image à SteamVR.
+Voir [le test géométrique et ses limites](docs/GEOMETRY_TEST.md).
+
 ## Commandes du prototype
 
 | Action | Quest Touch | Clavier |
