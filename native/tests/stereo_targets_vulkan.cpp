@@ -2,6 +2,7 @@
 // private depth/stencil per eye. No game command interception or XR submission.
 #include "vulkan_fixture.hpp"
 #include "../vulkan/stereo_targets.hpp"
+#include "../vulkan/graphics_replay.hpp"
 #include "../vulkan/frame_trace.hpp"
 #include <algorithm>
 #include <cmath>
@@ -24,10 +25,11 @@ float number(const uint8_t* p) { float v; std::memcpy(&v,p,4); return v; }
 
 int main(int argc,char** argv) try {
     if (argc < 4) throw std::runtime_error("Usage: stereo_targets_vulkan original.vert.spv stereo.vert.spv mrt.frag.spv [--negative-sync-control] [--preview-directory path]");
-    bool negative = false,split = false; std::filesystem::path preview;
+    bool negative = false,split = false,recorded = false; std::filesystem::path preview;
     for (int k = 4; k < argc; ++k) {
         if (std::string(argv[k]) == "--negative-sync-control") negative = true;
         else if (std::string(argv[k]) == "--split-passes") split = true;
+        else if (std::string(argv[k]) == "--recorded-replay") recorded = true;
         else if (std::string(argv[k]) == "--preview-directory" && k+1 < argc) preview = argv[++k];
         else throw std::invalid_argument("Unknown stereo fixture option");
     }
@@ -46,7 +48,9 @@ int main(int argc,char** argv) try {
     }
     const uint32_t width = config.extent.width,height = config.extent.height;
     const VkDeviceSize texels = VkDeviceSize(width)*height,plane = texels*4,slotBytes = plane*5+texels;
-    Buffer staging = f.buffer(slotBytes*6,VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    Buffer staging = f.buffer(slotBytes*9,VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    Buffer indices = f.buffer(3*sizeof(uint32_t),VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    const std::array<uint32_t,3> indexValues{0,1,2}; std::memcpy(indices.mapped,indexValues.data(),sizeof(indexValues));
     auto vertex = f.shader(argv[1]),instrumented = f.shader(argv[2]),fragment = f.shader(argv[3]);
     std::array<VkDescriptorSetLayout,4> layouts{};
     std::array<VkDescriptorSetLayoutBinding,2> bindings{{{0,VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,1,VK_SHADER_STAGE_VERTEX_BIT,nullptr},
@@ -130,12 +134,14 @@ int main(int argc,char** argv) try {
         {"occlusion",2,{near,far},states(3,.064,false),false},
         {"head-asymmetric",2,{near,far},states(4,.064,true),false}}};
     Result result;
+    uint64_t recordedScopes = 0,recordedDraws = 0,restoredStateCommands = 0,witnessComparedBytes = 0,originalComparedBytes = 0;
     auto bytes = static_cast<const uint8_t*>(staging.mapped);
     for (unsigned caseIndex = 0; caseIndex < cases.size(); ++caseIndex) {
         const auto& test = cases[caseIndex];
         auto eyes = Targets::create(f.device,vkGetDeviceProcAddr,f.memory,config,test.states);
         auto reference = Targets::create(f.device,vkGetDeviceProcAddr,f.memory,config,states(test.states[0].header[2],0,false));
         auto application = Targets::create(f.device,vkGetDeviceProcAddr,f.memory,config,states(test.states[0].header[2],0,false));
+        auto witness = recorded ? Targets::create(f.device,vkGetDeviceProcAddr,f.memory,config,states(test.states[0].header[2],0,false)) : nullptr;
         std::set<VkImage> handles; std::set<VkDeviceAddress> addresses;
         for (auto target : {eyes.get(),reference.get(),application.get()}) for (unsigned eye = 0; eye < 2; ++eye) {
             for (auto color : target->eye(eye).colors) expect(handles.insert(color.handle).second,"Stereo color images alias");
@@ -175,7 +181,54 @@ int main(int argc,char** argv) try {
                 target.endForReadback(command,eye); if (readback) copy(target,eye,slot);
             };
             bool splitThisCase = split && test.count == 2;
-            if (splitThisCase) {
+            if (recorded) {
+                replay::Graphics recorder(f.device,vkGetDeviceProcAddr,command,*eyes,epoch ? stereo::PreviousUse::transferSource : stereo::PreviousUse::discarded);
+                replay::Pipeline contract; contract.original = originalPipeline; contract.eyes = eyePipeline; contract.layout = layout;
+                contract.descriptorSets = 1u<<3; contract.pushBytes = sizeof(Item); contract.stencilReference = VK_STENCIL_FACE_FRONT_AND_BACK;
+                contract.externalWritesExcluded = contract.attachmentInputAliasesExcluded = true; recorder.pipeline(contract);
+                // Commands before BeginRendering must seed the replayed scope.
+                recorder.bindPipeline(originalPipeline); recorder.bindDescriptors(layout,3,1,&sets[0]);
+                VkViewport vp{0,0,float(width),float(height),0,1}; VkRect2D sc{{0,0},{width,height}};
+                recorder.viewport(0,1,&vp); recorder.scissor(0,1,&sc); recorder.index(indices.handle,0,VK_INDEX_TYPE_UINT32);
+                vp.width = 1; sc.extent.width = 1; // Transient CPU arrays may be reused immediately.
+                auto capturedPass = [&](unsigned first,unsigned count,bool continuation) {
+                    stereo::Loads loads; if (continuation) { loads.colors.fill(VK_ATTACHMENT_LOAD_OP_LOAD); loads.depth = loads.stencil = VK_ATTACHMENT_LOAD_OP_LOAD; }
+                    application->prepare(command,0,(epoch || continuation) ? stereo::PreviousUse::transferSource : stereo::PreviousUse::discarded);
+                    auto info = application->rendering(0,loads); recorder.beginRendering(info.info,config);
+                    for (unsigned item = first; item < first+count; ++item) {
+                        recorder.stencilReference(VK_STENCIL_FACE_FRONT_AND_BACK,item+1);
+                        Item scratch = test.scene[item];
+                        recorder.push(layout,VK_SHADER_STAGE_VERTEX_BIT,0,16,&scratch);
+                        recorder.push(layout,VK_SHADER_STAGE_VERTEX_BIT,16,16,reinterpret_cast<const uint8_t*>(&scratch)+16);
+                        scratch = {}; // The tape must retain the original bytes.
+                        recorder.drawIndexed(3,1,0,0,0);
+                    }
+                    expect(recorder.endRendering(),"Recorded scene scope was not replayed");
+                    application->transitionForReadback(command,0);
+                };
+                if (splitThisCase) { capturedPass(0,1,false); capturedPass(1,1,true); }
+                else capturedPass(0,test.count,false);
+                // No pipeline/descriptors/constants/viewport/index/stencil binds:
+                // this draw relies entirely on the state restored by the tape.
+                witness->begin(command,0,epoch ? stereo::PreviousUse::transferSource : stereo::PreviousUse::discarded);
+                vkCmdDrawIndexed(command,3,1,0,0,0); witness->endForReadback(command,0); copy(*witness,0,6);
+                // Independent witness reference using the original shader.
+                witness->begin(command,1,epoch ? stereo::PreviousUse::transferSource : stereo::PreviousUse::discarded);
+                vkCmdBindPipeline(command,VK_PIPELINE_BIND_POINT_GRAPHICS,originalPipeline);
+                vkCmdBindDescriptorSets(command,VK_PIPELINE_BIND_POINT_GRAPHICS,layout,3,1,&sets[0],0,nullptr);
+                VkViewport restoredVp{0,0,float(width),float(height),0,1}; VkRect2D restoredSc{{0,0},{width,height}};
+                vkCmdSetViewport(command,0,1,&restoredVp); vkCmdSetScissor(command,0,1,&restoredSc);
+                vkCmdBindIndexBuffer(command,indices.handle,0,VK_INDEX_TYPE_UINT32);
+                vkCmdSetStencilReference(command,VK_STENCIL_FACE_FRONT_AND_BACK,test.count);
+                vkCmdPushConstants(command,layout,VK_SHADER_STAGE_VERTEX_BIT,0,sizeof(Item),&test.scene[test.count-1]);
+                vkCmdDrawIndexed(command,3,1,0,0,0); witness->endForReadback(command,1); copy(*witness,1,7);
+                copy(*application,0,0); copy(*eyes,0,1); copy(*eyes,1,2);
+                // Check the forwarded original stream against an independent
+                // unrecorded rendering, not only against its later readback.
+                render(*application,1,originalPipeline,0,8);
+                auto stats = recorder.stats(); expect(stats.rejectedScopes == 0,"An original scope was rejected");
+                recordedScopes += stats.replayedScopes; recordedDraws += stats.replayedDraws; restoredStateCommands += stats.restoredStateCommands;
+            } else if (splitThisCase) {
                 render(*application,0,originalPipeline,0,0,0,1,false,false);
                 render(*eyes,0,eyePipeline[0],0,1,0,1,false,false); render(*eyes,1,eyePipeline[1],0,2,0,1,false,false);
                 render(*application,0,originalPipeline,0,0,1,1,true);
@@ -184,7 +237,7 @@ int main(int argc,char** argv) try {
             // A fixture-only negative control proves synchronization validation
             // is active. This deliberately omits the transfer-write dependency.
             if (negative && caseIndex == 0 && epoch == 0) vkCmdFillBuffer(command,staging.handle,0,4,0);
-            if (!splitThisCase) { render(*eyes,0,eyePipeline[0],0,1); render(*eyes,1,eyePipeline[1],0,2); }
+            if (!recorded && !splitThisCase) { render(*eyes,0,eyePipeline[0],0,1); render(*eyes,1,eyePipeline[1],0,2); }
             render(*reference,0,originalPipeline,1,3); render(*reference,1,originalPipeline,2,4);
             copy(*application,0,5);
             VkMemoryBarrier host{VK_STRUCTURE_TYPE_MEMORY_BARRIER}; host.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT; host.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
@@ -207,6 +260,7 @@ int main(int argc,char** argv) try {
                 else { result.colorBytes += plane*4; result.depthTexels += texels; result.stencilBytes += texels; }
             };
             compare(1,3,false); compare(2,4,false); compare(0,5,true);
+            if (recorded) { compare(6,7,true); compare(0,8,true); witnessComparedBytes += slotBytes-texels; originalComparedBytes += slotBytes-texels; }
             auto census = [&](unsigned slot) {
                 std::array<uint64_t,3> counts{}; double centroid = 0;
                 for (VkDeviceSize p = 0; p < texels; ++p) {
@@ -267,10 +321,14 @@ int main(int argc,char** argv) try {
     for (auto l : layouts) vkDestroyDescriptorSetLayout(f.device,l,nullptr);
     auto release = [&](Buffer& b) { vkUnmapMemory(f.device,b.memory); vkDestroyBuffer(f.device,b.handle,nullptr); vkFreeMemory(f.device,b.memory,nullptr); };
     for (auto& set : uniforms) for (auto& b : set) release(b);
-    release(staging);
+    release(staging); release(indices);
     vkDestroyDevice(f.device,nullptr); f.device = VK_NULL_HANDLE; vkDestroyInstance(f.instance,nullptr); f.instance = VK_NULL_HANDLE;
     std::cout << std::setprecision(10) << "{\"stereo_mrt_fixture_passed\":" << (negative ? "false" : "true") << ",\"negative_sync_control\":" << (negative ? "true" : "false")
         << ",\"clear_followed_by_load_verified\":" << (split ? "true" : "false") << ",\"eye_rendering_passes\":" << (split ? 24 : 16)
+        << ",\"recorded_graphics_replay_verified\":" << (recorded ? "true" : "false") << ",\"captured_scopes_replayed\":" << recordedScopes
+        << ",\"captured_draw_copies\":" << recordedDraws << ",\"original_state_commands_restored\":" << restoredStateCommands
+        << ",\"following_draw_reference_compared_bytes\":" << witnessComparedBytes
+        << ",\"forwarded_original_reference_compared_bytes\":" << originalComparedBytes
         << ",\"frozen_scene_cases\":4,\"epochs_per_case\":2,\"eye_renderings\":16,\"submissions\":8,"
         << "\"color_reference_different_bytes\":0,\"color_reference_compared_bytes\":" << result.colorBytes << ",\"depth_reference_compared_texels\":" << result.depthTexels
         << ",\"max_normalized_depth_difference\":" << result.maxDepthError << ",\"stencil_reference_different_bytes\":0,\"stencil_reference_compared_bytes\":" << result.stencilBytes

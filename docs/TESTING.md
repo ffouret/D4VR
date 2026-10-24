@@ -156,3 +156,19 @@ contrôle négatif ; un test sans GPU couvre 48 échecs de création partielle.
 
 Les sorties sont celles d'une scène originale. Les passes de Diablo ne sont
 pas encore reprises ni rendues deux fois. [Procédure et limites](STEREO_TARGETS.md).
+
+## Reprise du flux graphique de contrôle
+
+Le moteur de capture/reprise produit automatiquement les deux yeux à partir
+du flux original de la fixture. Avec passes séparées, chaque exécution positive
+reprend 12 scopes et émet 24 copies de dessins. Les 16 vues finales correspondent
+aux références indépendantes, sans différence couleur, profondeur ou stencil.
+Un dessin suivant sans rebind et le flux original transmis correspondent chacun
+à leur référence sur 10 485 760 octets définis.
+
+Les trois exécutions positives et le contrôle négatif de synchronisation passent,
+dont Steam Runtime avec validation Vulkan. Le nouveau test C++ sans pilote couvre
+les données temporaires, arguments indexés, restauration et chemins de refus ;
+il est ajouté aux builds CTest Linux et Windows. Les 81 tests Python passent.
+Ces résultats ne rendent pas Diablo en VR. [Contrats, reproduction et travail
+restant](GRAPHICS_REPLAY.md).

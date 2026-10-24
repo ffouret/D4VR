@@ -168,6 +168,20 @@ un clear initial et une continuation avec `LOAD`. Il peut exporter les vues de
 contrôle pour inspection. Aucun flux de commandes du jeu n'est encore rejoué.
 Voir [les résultats, la propriété des ressources et les limites](docs/STEREO_TARGETS.md).
 
+## Étape 11 : reprise automatique d'un flux graphique de contrôle
+
+Un moteur enregistre maintenant les états et dessins directs/indexés, les
+rejoue pour chaque œil puis rétablit l'état d'origine. Sur RTX 5090, les vues
+reprises correspondent aux références indépendantes. Un dessin supplémentaire
+sans rebind vérifie la restauration. Les passes incomplètes, non auditées ou
+sans continuité d'attachements sont refusées. Le code commun est inclus dans
+les vérifications Linux et Windows.
+
+Cette preuve utilise une scène originale ; le moteur n'est pas encore raccordé
+au flux de Diablo. Les descripteurs/états propres à VKD3D, les dépendances des
+passes du jeu et la soumission SteamVR restent à implémenter.
+Voir [la preuve de reprise et ses limites](docs/GRAPHICS_REPLAY.md).
+
 ## Commandes du prototype
 
 | Action | Quest Touch | Clavier |

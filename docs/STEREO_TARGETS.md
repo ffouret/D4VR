@@ -6,9 +6,11 @@ immuable par œil. Le test utilise les formats du groupe candidat relevé dans
 Diablo IV : **44, 64, 44, 50 et 129**, à une résolution de contrôle de 256 × 256.
 Il ne copie aucun contenu ni shader du jeu.
 
-Ce composant n'est pas encore raccordé à la couche chargée par Diablo. Les
-commandes de dessin de la fixture sont écrites explicitement pour une scène
-originale ; il n'existe encore aucun mécanisme de reprise des commandes du jeu.
+Ce composant n'est pas encore raccordé à la couche chargée par Diablo. Le mode
+initial de la fixture écrit explicitement les dessins d'une scène originale.
+Le mode `--recorded-replay` utilise désormais le
+[moteur de capture/reprise contrôlée](GRAPHICS_REPLAY.md) pour produire les yeux.
+Ce mécanisme ne reprend pas encore les commandes du jeu.
 Aucune image de Diablo n'est soumise à SteamVR.
 
 ## Preuve géométrique
@@ -37,7 +39,9 @@ Un rendu témoin est lu avant et après le travail stéréo, sans être redessin
 entre les deux lectures. Ses données définies restent inchangées. Les tests
 vérifient que les images et paquets des yeux et des références ne partagent
 aucun handle. Cela prouve l'isolation de ces ressources de contrôle ; aucun
-état graphique du jeu n'est intercepté ou restauré par ce test.
+état graphique du jeu n'est intercepté ou restauré par ce test. Le nouveau mode
+de reprise ajoute un témoin de restauration pour le flux synthétique, décrit
+séparément dans [GRAPHICS_REPLAY.md](GRAPHICS_REPLAY.md).
 
 ## Propriété et synchronisation
 
@@ -86,8 +90,8 @@ indépendantes dessinent les deux objets dans une seule passe. Le résultat fina
 correspond exactement pour les quatre couleurs, la profondeur et le stencil,
 y compris avec projections asymétriques. Vingt-quatre passes d'œil produisent
 les seize vues finales comparées. Les scopes de contrôle sont encore enregistrés
-explicitement ; aucun moteur de capture/reprise automatique des dessins n'est
-annoncé par ce test.
+explicitement dans ce mode initial. L'option supplémentaire `--recorded-replay`
+confie maintenant l'émission des deux yeux au moteur de reprise.
 
 `--preview-directory /travail/apercus-neufs` exporte les vues gauche/droite de
 la scène avec obstacle en PPM RGB, après la vérification des références. Les

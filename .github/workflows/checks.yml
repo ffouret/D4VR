@@ -61,12 +61,12 @@ jobs:
           repository: KhronosGroup/Vulkan-Headers
           ref: v1.3.275
           path: work/vulkan-headers
-      - name: Build and test Vulkan target ownership on Windows without a driver
+      - name: Test Vulkan targets and graphics replay on Windows without a driver
         if: runner.os == 'Windows'
         run: |
           cmake -S native -B work/stereo-targets-ci -DD4VR_BUILD_STEREO_TARGET_TESTS=ON "-DD4VR_VULKAN_INCLUDE_DIR=${{ github.workspace }}/work/vulkan-headers/include"
-          cmake --build work/stereo-targets-ci --config Release --target d4vr_stereo_targets_tests
-          ctest --test-dir work/stereo-targets-ci -C Release -R stereo_target_ownership --output-on-failure
+          cmake --build work/stereo-targets-ci --config Release --target d4vr_stereo_targets_tests d4vr_graphics_replay_tests
+          ctest --test-dir work/stereo-targets-ci -C Release -R "stereo_target_ownership|graphics_state_replay" --output-on-failure
       - name: Upload Windows probe without vendor or test libraries
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v4

@@ -37,6 +37,8 @@ def run(args) -> dict:
         command += [str(p.resolve()) for p in inputs]
         if args.split_passes:
             command.append('--split-passes')
+        if args.recorded_replay:
+            command.append('--recorded-replay')
         if negative:
             command.append('--negative-sync-control')
         log = args.output/(name+'.log')
@@ -66,6 +68,10 @@ def run(args) -> dict:
                 raise ValueError(f'{name}: stereo target reference/isolation checks did not pass')
             if args.split_passes and proof.get('clear_followed_by_load_verified') is not True:
                 raise ValueError(f'{name}: split pass continuation was not verified')
+            if args.recorded_replay and (proof.get('recorded_graphics_replay_verified') is not True
+                    or proof.get('captured_scopes_replayed',0) == 0 or proof.get('following_draw_reference_compared_bytes',0) == 0
+                    or proof.get('forwarded_original_reference_compared_bytes',0) == 0):
+                raise ValueError(f'{name}: captured replay and following-draw restoration were not verified')
         results.append({'case':name,'exit_code':result.returncode,'validation_layer_loaded':loaded,
                         'intentional_sync_hazard_detected':hazard,'fixture':proof})
         print(f'{name}: passed',flush=True)
@@ -82,6 +88,7 @@ def main() -> int:
         parser.add_argument('--'+name,type=Path,required=True)
     parser.add_argument('--runtime',type=Path)
     parser.add_argument('--split-passes',action='store_true')
+    parser.add_argument('--recorded-replay',action='store_true')
     args = parser.parse_args(); run(args); return 0
 
 
