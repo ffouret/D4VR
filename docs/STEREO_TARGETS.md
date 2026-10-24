@@ -66,9 +66,46 @@ libération, le rejet des sorties non définies d'un appel en échec et l'absenc
 de destruction du périphérique emprunté. Les assertions restent actives dans
 une compilation Release de ce test.
 
+## Continuité entre passes et aperçu
+
+Les six scopes candidats des deux relevés réels réutilisent tous leurs quatre
+couleurs, profondeur et stencil avec `LOAD`. Ils représentent respectivement
+171 et 65 commandes de dessin. Les états graphiques, lectures, barrières et
+valeurs de clear ne sont pas encore intégralement enregistrés : ces scopes ne
+forment donc pas un flux rejouable.
+
+Le composant expose maintenant séparément la préparation des images, la
+description du rendu, son démarrage et la transition de lecture. La description
+possède ses tableaux d'attachements et ne peut être copiée ou déplacée ; ses
+pointeurs restent valides pendant sa durée de vie. Les clear values sont
+conservées et les load ops de profondeur et stencil sont indépendants.
+
+La fixture `--split-passes` dessine le premier objet dans une passe avec clear,
+puis le second dans une passe avec `LOAD`, dans chaque œil. Les références
+indépendantes dessinent les deux objets dans une seule passe. Le résultat final
+correspond exactement pour les quatre couleurs, la profondeur et le stencil,
+y compris avec projections asymétriques. Vingt-quatre passes d'œil produisent
+les seize vues finales comparées. Les scopes de contrôle sont encore enregistrés
+explicitement ; aucun moteur de capture/reprise automatique des dessins n'est
+annoncé par ce test.
+
+`--preview-directory /travail/apercus-neufs` exporte les vues gauche/droite de
+la scène avec obstacle en PPM RGB, après la vérification des références. Les
+pixels proviennent de l'attachement couleur 0 lu sur le GPU. Ce sont deux
+triangles originaux, pas des images de Diablo. Le contrôle négatif refuse cet
+export. L'option peut être combinée à `--split-passes`.
+
+Le test sans pilote peut aussi être construit avec
+`D4VR_BUILD_STEREO_TARGET_TESTS=ON` et
+`D4VR_VULKAN_INCLUDE_DIR=/chemin/Vulkan-Headers/include`. Il ne lie aucune
+bibliothèque du pilote. La CI Windows récupère les headers Khronos v1.3.275 et
+compile/exécute ce composant commun avec MSVC. Cela ne valide pas un backend
+D3D12 ni une session de Diablo sous Windows.
+
 ## Validation et reproduction
 
-`tools/stereo_mrt_validate.py` lance le test natif, la validation Vulkan avec
+`tools/stereo_mrt_validate.py --split-passes` vérifie la continuité entre passes.
+Sans ce flag, il vérifie le chemin initial à une seule passe. Le script lance le test natif, la validation Vulkan avec
 synchronisation, un contrôle négatif, puis Steam Linux Runtime si fourni. Le
 contrôle négatif écrit volontairement dans une plage de buffer sans la
 dépendance requise : il doit déclencher `SYNC-HAZARD-WRITE-AFTER-WRITE` et ne

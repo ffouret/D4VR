@@ -54,6 +54,19 @@ jobs:
       - name: Verify every Windows export name, ordinal and forwarder
         if: runner.os == 'Windows'
         run: python -c "import pathlib,sys; sys.path.insert(0,'tools'); import probe; probe.validate_probe(pathlib.Path('work/native-ci/probe/Release/sl.interposer.dll'),probe.profile())"
+      - name: Fetch pinned Vulkan headers for Windows common component tests
+        if: runner.os == 'Windows'
+        uses: actions/checkout@v4
+        with:
+          repository: KhronosGroup/Vulkan-Headers
+          ref: v1.3.275
+          path: work/vulkan-headers
+      - name: Build and test Vulkan target ownership on Windows without a driver
+        if: runner.os == 'Windows'
+        run: |
+          cmake -S native -B work/stereo-targets-ci -DD4VR_BUILD_STEREO_TARGET_TESTS=ON "-DD4VR_VULKAN_INCLUDE_DIR=${{ github.workspace }}/work/vulkan-headers/include"
+          cmake --build work/stereo-targets-ci --config Release --target d4vr_stereo_targets_tests
+          ctest --test-dir work/stereo-targets-ci -C Release -R stereo_target_ownership --output-on-failure
       - name: Upload Windows probe without vendor or test libraries
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v4

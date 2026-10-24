@@ -23,6 +23,20 @@ struct Eye {
     VkDeviceAddress packetAddress{};
 };
 enum class PreviousUse { discarded, transferSource };
+struct Loads {
+    std::array<VkAttachmentLoadOp,4> colors{VK_ATTACHMENT_LOAD_OP_CLEAR,VK_ATTACHMENT_LOAD_OP_CLEAR,VK_ATTACHMENT_LOAD_OP_CLEAR,VK_ATTACHMENT_LOAD_OP_CLEAR};
+    VkAttachmentLoadOp depth = VK_ATTACHMENT_LOAD_OP_CLEAR,stencil = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    std::array<VkClearValue,4> clearColors{};
+    VkClearDepthStencilValue clearDepthStencil{1.f,0};
+};
+struct Rendering {
+    std::array<VkRenderingAttachmentInfo,4> colors{};
+    VkRenderingAttachmentInfo depth{},stencil{};
+    VkRenderingInfo info{};
+    Rendering(const Config&,const Eye&,const Loads&);
+    Rendering(const Rendering&) = delete;
+    Rendering& operator=(const Rendering&) = delete;
+};
 
 // Owns only the resources it allocates. Device, queues and command buffers are
 // borrowed. Caller guarantees enabled BDA/dynamic rendering, supported formats,
@@ -39,7 +53,10 @@ public:
     const Eye& eye(unsigned) const;
     const Config& config() const;
     bool hasStencil() const;
-    void begin(VkCommandBuffer,unsigned,PreviousUse) const;
+    Rendering rendering(unsigned,const Loads& = {}) const;
+    void prepare(VkCommandBuffer,unsigned,PreviousUse) const;
+    void begin(VkCommandBuffer,unsigned,PreviousUse,const Loads& = {}) const;
+    void transitionForReadback(VkCommandBuffer,unsigned) const;
     void endForReadback(VkCommandBuffer,unsigned) const;
 };
 } // namespace d4vr::stereo

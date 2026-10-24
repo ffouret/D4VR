@@ -163,6 +163,9 @@ soumission, avec des références indépendantes. Les quatre sorties, la profond
 et le stencil correspondent aux références ; les cibles du rendu témoin sont
 préservées. Le test passe aussi dans Steam Runtime avec validation Vulkan de la
 synchronisation. La reprise des passes de Diablo reste à implémenter.
+Le mode à passes séparées conserve aussi les couleurs et la profondeur entre
+un clear initial et une continuation avec `LOAD`. Il peut exporter les vues de
+contrôle pour inspection. Aucun flux de commandes du jeu n'est encore rejoué.
 Voir [les résultats, la propriété des ressources et les limites](docs/STEREO_TARGETS.md).
 
 ## Commandes du prototype

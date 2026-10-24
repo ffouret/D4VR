@@ -35,6 +35,8 @@ def run(args) -> dict:
         if in_runtime:
             command += [str(runtime),'--batch','--']
         command += [str(p.resolve()) for p in inputs]
+        if args.split_passes:
+            command.append('--split-passes')
         if negative:
             command.append('--negative-sync-control')
         log = args.output/(name+'.log')
@@ -62,6 +64,8 @@ def run(args) -> dict:
                     or proof.get('max_normalized_depth_difference',1) > 4/0xffffff
                     or proof.get('original_targets_preserved_defined_bytes',0) == 0):
                 raise ValueError(f'{name}: stereo target reference/isolation checks did not pass')
+            if args.split_passes and proof.get('clear_followed_by_load_verified') is not True:
+                raise ValueError(f'{name}: split pass continuation was not verified')
         results.append({'case':name,'exit_code':result.returncode,'validation_layer_loaded':loaded,
                         'intentional_sync_hazard_detected':hazard,'fixture':proof})
         print(f'{name}: passed',flush=True)
@@ -77,6 +81,7 @@ def main() -> int:
     for name in ('fixture','original','instrumented','fragment','validation-layer','output'):
         parser.add_argument('--'+name,type=Path,required=True)
     parser.add_argument('--runtime',type=Path)
+    parser.add_argument('--split-passes',action='store_true')
     args = parser.parse_args(); run(args); return 0
 
 

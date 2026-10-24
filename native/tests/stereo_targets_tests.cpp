@@ -59,7 +59,7 @@ VKAPI_ATTR void VKAPI_CALL barrier(VkCommandBuffer,VkPipelineStageFlags,VkPipeli
     assert(count == 5); for (uint32_t k = 0; k < count; ++k) assert(images.count(key(values[k].image)));
 }
 VKAPI_ATTR void VKAPI_CALL begin(VkCommandBuffer,const VkRenderingInfo* info) {
-    assert(info->colorAttachmentCount == 4 && info->pStencilAttachment == info->pDepthAttachment);
+    assert(info->colorAttachmentCount == 4 && info->pStencilAttachment->imageView == info->pDepthAttachment->imageView);
     for (unsigned k = 0; k < 4; ++k) assert(views.count(key(info->pColorAttachments[k].imageView)));
 }
 VKAPI_ATTR void VKAPI_CALL end(VkCommandBuffer) {}
@@ -89,6 +89,13 @@ int main() {
       auto command = reinterpret_cast<VkCommandBuffer>(0xf100);
       pair->begin(command,0,stereo::PreviousUse::discarded); pair->endForReadback(command,0);
       pair->begin(command,1,stereo::PreviousUse::transferSource); pair->endForReadback(command,1);
+      stereo::Loads loads; loads.colors[0] = VK_ATTACHMENT_LOAD_OP_LOAD; loads.stencil = VK_ATTACHMENT_LOAD_OP_LOAD;
+      loads.clearColors[2].color.float32[1] = .75f; loads.clearDepthStencil = {.5f,123};
+      auto scope = pair->rendering(0,loads);
+      assert(scope.info.pColorAttachments[0].loadOp == VK_ATTACHMENT_LOAD_OP_LOAD);
+      assert(scope.info.pColorAttachments[2].clearValue.color.float32[1] == .75f);
+      assert(scope.info.pDepthAttachment->loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR && scope.info.pStencilAttachment->loadOp == VK_ATTACHMENT_LOAD_OP_LOAD);
+      assert(scope.info.pDepthAttachment->clearValue.depthStencil.depth == .5f && scope.info.pStencilAttachment->clearValue.depthStencil.stencil == 123);
       rejected([&] { pair->begin(command,2,stereo::PreviousUse::discarded); });
       rejected([&] { pair->endForReadback(command,2); }); }
     assert(empty()); unsigned steps = operations; assert(steps == 48);

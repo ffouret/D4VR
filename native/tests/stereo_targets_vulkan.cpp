@@ -8,6 +8,7 @@
 #include <iomanip>
 #include <memory>
 #include <set>
+#include <filesystem>
 
 namespace {
 using namespace d4vr;
@@ -22,8 +23,19 @@ float number(const uint8_t* p) { float v; std::memcpy(&v,p,4); return v; }
 }
 
 int main(int argc,char** argv) try {
-    bool negative = argc == 5 && std::string(argv[4]) == "--negative-sync-control";
-    if (argc != 4 && !negative) throw std::runtime_error("Usage: stereo_targets_vulkan original.vert.spv stereo.vert.spv mrt.frag.spv [--negative-sync-control]");
+    if (argc < 4) throw std::runtime_error("Usage: stereo_targets_vulkan original.vert.spv stereo.vert.spv mrt.frag.spv [--negative-sync-control] [--preview-directory path]");
+    bool negative = false,split = false; std::filesystem::path preview;
+    for (int k = 4; k < argc; ++k) {
+        if (std::string(argv[k]) == "--negative-sync-control") negative = true;
+        else if (std::string(argv[k]) == "--split-passes") split = true;
+        else if (std::string(argv[k]) == "--preview-directory" && k+1 < argc) preview = argv[++k];
+        else throw std::invalid_argument("Unknown stereo fixture option");
+    }
+    if (negative && !preview.empty()) throw std::invalid_argument("Negative control cannot export previews");
+    if (!preview.empty()) {
+        expect(!std::filesystem::exists(preview),"Use a new preview directory");
+        std::filesystem::create_directories(preview);
+    }
     Fixture f(true,false);
     stereo::Config config;
     for (unsigned k = 0; k < 5; ++k) {
@@ -146,24 +158,33 @@ int main(int argc,char** argv) try {
                 part(target.eye(eye).depth.handle,VK_IMAGE_ASPECT_DEPTH_BIT,plane*4);
                 part(target.eye(eye).depth.handle,VK_IMAGE_ASPECT_STENCIL_BIT,plane*5);
             };
-            auto render = [&](const Targets& target,unsigned eye,VkPipeline selected,unsigned set,unsigned slot) {
-                target.begin(command,eye,epoch ? stereo::PreviousUse::transferSource : stereo::PreviousUse::discarded);
+            auto render = [&](const Targets& target,unsigned eye,VkPipeline selected,unsigned set,unsigned slot,
+                              unsigned firstItem = 0,unsigned itemCount = 0,bool continuation = false,bool readback = true) {
+                stereo::Loads loads;
+                if (continuation) { loads.colors.fill(VK_ATTACHMENT_LOAD_OP_LOAD); loads.depth = loads.stencil = VK_ATTACHMENT_LOAD_OP_LOAD; }
+                target.begin(command,eye,(epoch || continuation) ? stereo::PreviousUse::transferSource : stereo::PreviousUse::discarded,loads);
                 vkCmdBindPipeline(command,VK_PIPELINE_BIND_POINT_GRAPHICS,selected);
                 vkCmdBindDescriptorSets(command,VK_PIPELINE_BIND_POINT_GRAPHICS,layout,3,1,&sets[set],0,nullptr);
                 VkViewport viewport{0,0,float(width),float(height),0,1}; VkRect2D scissor{{0,0},{width,height}};
                 vkCmdSetViewport(command,0,1,&viewport); vkCmdSetScissor(command,0,1,&scissor);
-                for (unsigned item = 0; item < test.count; ++item) {
+                for (unsigned item = firstItem; item < (itemCount ? firstItem+itemCount : test.count); ++item) {
                     vkCmdSetStencilReference(command,VK_STENCIL_FACE_FRONT_AND_BACK,item+1);
                     vkCmdPushConstants(command,layout,VK_SHADER_STAGE_VERTEX_BIT,0,sizeof(Item),&test.scene[item]);
                     vkCmdDraw(command,3,1,0,0);
                 }
-                target.endForReadback(command,eye); copy(target,eye,slot);
+                target.endForReadback(command,eye); if (readback) copy(target,eye,slot);
             };
-            render(*application,0,originalPipeline,0,0);
+            bool splitThisCase = split && test.count == 2;
+            if (splitThisCase) {
+                render(*application,0,originalPipeline,0,0,0,1,false,false);
+                render(*eyes,0,eyePipeline[0],0,1,0,1,false,false); render(*eyes,1,eyePipeline[1],0,2,0,1,false,false);
+                render(*application,0,originalPipeline,0,0,1,1,true);
+                render(*eyes,0,eyePipeline[0],0,1,1,1,true); render(*eyes,1,eyePipeline[1],0,2,1,1,true);
+            } else render(*application,0,originalPipeline,0,0);
             // A fixture-only negative control proves synchronization validation
             // is active. This deliberately omits the transfer-write dependency.
             if (negative && caseIndex == 0 && epoch == 0) vkCmdFillBuffer(command,staging.handle,0,4,0);
-            render(*eyes,0,eyePipeline[0],0,1); render(*eyes,1,eyePipeline[1],0,2);
+            if (!splitThisCase) { render(*eyes,0,eyePipeline[0],0,1); render(*eyes,1,eyePipeline[1],0,2); }
             render(*reference,0,originalPipeline,1,3); render(*reference,1,originalPipeline,2,4);
             copy(*application,0,5);
             VkMemoryBarrier host{VK_STRUCTURE_TYPE_MEMORY_BARRIER}; host.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT; host.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
@@ -179,7 +200,7 @@ int main(int argc,char** argv) try {
                 for (VkDeviceSize p = 0; p < texels; ++p) {
                     double error = std::abs(depth(a+plane*4+p*4)-depth(b+plane*4+p*4));
                     result.maxDepthError = std::max(result.maxDepthError,error);
-                    expect(error <= 4./0xffffffu,"MRT depth differs from original shader reference");
+                    expect(isolated ? error == 0 : error <= 4./0xffffffu,"MRT depth differs from original shader reference");
                 }
                 expect(std::memcmp(a+plane*5,b+plane*5,static_cast<size_t>(texels)) == 0,"MRT stencil differs from original shader reference");
                 if (isolated) result.isolatedBytes += slotBytes-texels;
@@ -221,6 +242,18 @@ int main(int argc,char** argv) try {
                 result.disparity[caseIndex] = disparity;
             }
             expect(std::memcmp(bytes+slotBytes,bytes+2*slotBytes,static_cast<size_t>(plane*4)) != 0,"Both geometry eyes produced the same image");
+            if (!preview.empty() && caseIndex == 2 && epoch == 1) {
+                for (unsigned eye = 0; eye < 2; ++eye) {
+                    std::ofstream output(preview/(eye ? "right.ppm" : "left.ppm"),std::ios::binary);
+                    output << "P6\n" << width << ' ' << height << "\n255\n";
+                    for (VkDeviceSize pixel = 0; pixel < texels; ++pixel) {
+                        const uint8_t* bgra = bytes+(eye+1)*slotBytes+pixel*4;
+                        std::array<uint8_t,3> rgb{bgra[2],bgra[1],bgra[0]};
+                        output.write(reinterpret_cast<const char*>(rgb.data()),3);
+                    }
+                    expect(bool(output),"Could not export the GPU preview");
+                }
+            }
             std::cout << "CASE " << test.name << " epoch=" << epoch << " reference=pass isolation=pass\n";
         }
         for (auto p : eyePipeline) vkDestroyPipeline(f.device,p,nullptr);
@@ -237,6 +270,7 @@ int main(int argc,char** argv) try {
     release(staging);
     vkDestroyDevice(f.device,nullptr); f.device = VK_NULL_HANDLE; vkDestroyInstance(f.instance,nullptr); f.instance = VK_NULL_HANDLE;
     std::cout << std::setprecision(10) << "{\"stereo_mrt_fixture_passed\":" << (negative ? "false" : "true") << ",\"negative_sync_control\":" << (negative ? "true" : "false")
+        << ",\"clear_followed_by_load_verified\":" << (split ? "true" : "false") << ",\"eye_rendering_passes\":" << (split ? 24 : 16)
         << ",\"frozen_scene_cases\":4,\"epochs_per_case\":2,\"eye_renderings\":16,\"submissions\":8,"
         << "\"color_reference_different_bytes\":0,\"color_reference_compared_bytes\":" << result.colorBytes << ",\"depth_reference_compared_texels\":" << result.depthTexels
         << ",\"max_normalized_depth_difference\":" << result.maxDepthError << ",\"stencil_reference_different_bytes\":0,\"stencil_reference_compared_bytes\":" << result.stencilBytes

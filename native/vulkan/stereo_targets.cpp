@@ -119,7 +119,7 @@ std::unique_ptr<Targets> Targets::create(VkDevice device,PFN_vkGetDeviceProcAddr
 const Eye& Targets::eye(unsigned k) const { return impl->eyes.at(k); }
 const Config& Targets::config() const { return impl->config; }
 bool Targets::hasStencil() const { return impl->config.depth == VK_FORMAT_D24_UNORM_S8_UINT; }
-void Targets::begin(VkCommandBuffer command,unsigned eye,PreviousUse previous) const {
+void Targets::prepare(VkCommandBuffer command,unsigned eye,PreviousUse previous) const {
     if (previous != PreviousUse::discarded && previous != PreviousUse::transferSource)
         throw std::invalid_argument("Invalid previous stereo target use");
     auto barriers = impl->barriers(eye);
@@ -127,27 +127,41 @@ void Targets::begin(VkCommandBuffer command,unsigned eye,PreviousUse previous) c
         auto& b = barriers[k]; b.oldLayout = previous == PreviousUse::discarded ? VK_IMAGE_LAYOUT_UNDEFINED : VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
         b.srcAccessMask = previous == PreviousUse::discarded ? 0 : VK_ACCESS_TRANSFER_READ_BIT;
         b.newLayout = k < 4 ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-        b.dstAccessMask = k < 4 ? VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT : VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        b.dstAccessMask = k < 4 ? VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT : VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
     }
     impl->CmdPipelineBarrier(command,previous == PreviousUse::discarded ? VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT : VK_PIPELINE_STAGE_TRANSFER_BIT,
         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
         0,0,nullptr,0,nullptr,static_cast<uint32_t>(barriers.size()),barriers.data());
-    std::array<VkRenderingAttachmentInfo,4> colors{};
+}
+Rendering::Rendering(const Config& config,const Eye& eye,const Loads& loads) {
+    auto valid = [](VkAttachmentLoadOp value) { return value == VK_ATTACHMENT_LOAD_OP_CLEAR || value == VK_ATTACHMENT_LOAD_OP_LOAD; };
+    if (!valid(loads.depth) || !valid(loads.stencil) || !std::all_of(loads.colors.begin(),loads.colors.end(),valid))
+        throw std::invalid_argument("Unsupported stereo target load operation");
     for (unsigned k = 0; k < colors.size(); ++k) {
-        auto& c = colors[k]; c.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO; c.imageView = impl->eyes[eye].colors[k].view;
-        c.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; c.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR; c.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        auto& c = colors[k]; c.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO; c.imageView = eye.colors[k].view;
+        c.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; c.loadOp = loads.colors[k]; c.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        c.clearValue = loads.clearColors[k];
     }
-    VkRenderingAttachmentInfo depth{VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO}; depth.imageView = impl->eyes[eye].depth.view;
-    depth.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL; depth.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR; depth.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    depth.clearValue.depthStencil = {1.f,0};
-    VkRenderingInfo rendering{VK_STRUCTURE_TYPE_RENDERING_INFO}; rendering.renderArea.extent = impl->config.extent; rendering.layerCount = 1;
-    rendering.colorAttachmentCount = 4; rendering.pColorAttachments = colors.data(); rendering.pDepthAttachment = &depth;
-    if (hasStencil()) rendering.pStencilAttachment = &depth;
-    impl->CmdBeginRendering(command,&rendering);
+    depth.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO; depth.imageView = eye.depth.view;
+    depth.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL; depth.loadOp = loads.depth; depth.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    depth.clearValue.depthStencil = loads.clearDepthStencil;
+    stencil = depth; stencil.loadOp = loads.stencil;
+    info.sType = VK_STRUCTURE_TYPE_RENDERING_INFO; info.renderArea.extent = config.extent; info.layerCount = 1;
+    info.colorAttachmentCount = 4; info.pColorAttachments = colors.data(); info.pDepthAttachment = &depth;
+    if (config.depth == VK_FORMAT_D24_UNORM_S8_UINT) info.pStencilAttachment = &stencil;
+}
+Rendering Targets::rendering(unsigned eye,const Loads& loads) const { return Rendering(impl->config,this->eye(eye),loads); }
+void Targets::begin(VkCommandBuffer command,unsigned eye,PreviousUse previous,const Loads& loads) const {
+    auto scope = rendering(eye,loads); // Validate before recording barriers.
+    prepare(command,eye,previous); impl->CmdBeginRendering(command,&scope.info);
 }
 void Targets::endForReadback(VkCommandBuffer command,unsigned eye) const {
-    auto barriers = impl->barriers(eye); // Validate before recording anything.
+    if (eye >= 2) throw std::out_of_range("Stereo eye index");
     impl->CmdEndRendering(command);
+    transitionForReadback(command,eye);
+}
+void Targets::transitionForReadback(VkCommandBuffer command,unsigned eye) const {
+    auto barriers = impl->barriers(eye);
     for (unsigned k = 0; k < barriers.size(); ++k) {
         auto& b = barriers[k]; b.oldLayout = k < 4 ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         b.srcAccessMask = k < 4 ? VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT : VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
