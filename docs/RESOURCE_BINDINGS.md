@@ -183,6 +183,60 @@ Références Vulkan : [mapping](https://docs.vulkan.org/refpages/latest/refpages
 [flush et absence de flush implicite à l'unmap](https://docs.vulkan.org/refpages/latest/refpages/source/vkFlushMappedMemoryRanges.html),
 [liaisons multiples et échecs](https://docs.vulkan.org/refpages/latest/refpages/source/vkBindBufferMemory2.html).
 
+## Copie stable et résolution dans la fixture propriétaire
+
+`stereo_targets_vulkan --descriptor-receipt-output` exporte maintenant aussi
+les octets de son propre descriptor buffer. Le programme isolé possède cette
+allocation cohérente, écrit les six descripteurs avant le premier envoi et
+n'ajoute ensuite aucune écriture CPU ou GPU dans ce stockage. Il copie les
+octets avant les envois et vérifie leur égalité après chacun des huit fences
+terminés, avant toute libération. La copie est bornée à un Mio. Les encodages
+restent dans le même fichier privé que l'oracle des sorties GetDescriptor.
+
+Ce contrat vient du code fermé de la fixture. L'égalité avant/après ne prouve
+pas à elle seule l'absence d'écritures intermédiaires. Le registre de mappings
+passif n'empêche ni unmap/free concurrent, ni les écritures CPU ou GPU ; il
+ne doit pas servir à lire un pointeur du jeu. La couche passive n'a reçu aucun
+accès mémoire supplémentaire et ses champs `descriptor_contents_captured` et
+`descriptor_query_selection_proven` restent faux.
+
+`tools/descriptor_contents.py FRAME OWNED_ORACLE` combine cette copie avec les
+événements réels de la couche. Il additionne l'offset de l'adresse liée, celui
+du set et celui du binding fourni par le pilote, puis compare tous les octets
+du descripteur aux sorties GetDescriptor. Les correspondances ambiguës,
+catalogues incomplets, offsets inconnus, plages hors limites et générations
+libérées restent non résolus. Les tailles viennent des propriétés réellement
+interrogées par la fixture, sans décodage du format opaque NVIDIA.
+
+Le profil est volontairement limité à cette fixture : un stockage immuable,
+un envoi capturé avec un seul command buffer, trois sets vides et deux UBOs
+scalaires dans le set 3. Son oracle atteste que les six requêtes constituent
+tous les descripteurs écrits dans ce stockage ; un unique candidat dans un
+préfixe arbitraire du catalogue ne suffirait pas. Graphics et compute gardent
+des offsets séparés ; une nouvelle liaison de buffers invalide les deux.
+Les liaisons classiques ne sont pas décodées. Les générations de layouts
+doivent être identiques ; les nouvelles révisions de requêtes conservent
+cette identité. Aucune compatibilité entre layouts distincts n'est supposée.
+
+La [preuve du contenu lié](proofs/descriptor-contents-v1.json) retrouve les deux
+sources de quatre dessins et d'un dispatch dans le premier envoi capturé.
+Les quatre dessins utilisant des sets classiques restent non résolus.
+Un contrôle compute avec un offset valide mais incorrect retrouve exactement
+la mauvaise paire ; le résultat GPU détecte aussi cette erreur. Le résumé
+CLI contient seulement des comptages et aucun encodage. Cela identifie des
+sources **liées** dans cette scène propriétaire, sans prouver les accès
+dynamiques d'un shader ni copier les matrices/textures sources.
+
+Il reste à construire une capture du jeu avec protection de durée de vie,
+exclusion des écritures et visibilité démontrée, puis à établir la couverture
+de ses descripteurs, les contenus des ressources, leurs alias et la fermeture
+des passes LOAD avant de reprendre deux vues de Diablo. Cette preuve n'ajoute
+aucun rendu de Diablo ni nouvel essai dans le casque.
+
+Références Vulkan : [invalidation lors d'une nouvelle liaison](https://docs.vulkan.org/refpages/latest/refpages/source/vkCmdBindDescriptorBuffersEXT.html),
+[offsets, mises à jour et visibilité](https://docs.vulkan.org/refpages/latest/refpages/source/vkCmdSetDescriptorBufferOffsetsEXT.html),
+[tailles d'encodage](https://docs.vulkan.org/refpages/latest/refpages/source/vkGetDescriptorEXT.html).
+
 ## Événements bornés
 
 `resource_events` suit l'ordre des seules observations instrumentées dans un

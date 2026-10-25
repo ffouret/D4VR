@@ -25,6 +25,12 @@ dans les captures privées avec leur source observée, sans prouver leur usage
 effectif par le GPU ni autoriser de reprise du jeu.
 Le suivi ajoute les allocations, offsets de liaison, mappings et opérations de
 cache observées, sans lire la mémoire ni prouver sa visibilité GPU.
+Dans la [fixture propriétaire](docs/RESOURCE_BINDINGS.md#copie-stable-et-résolution-dans-la-fixture-propriétaire),
+une copie stable du descriptor buffer permet maintenant de retrouver les deux
+sources liées à quatre dessins et un dispatch. Le contrôle d'offset incorrect
+retrouve la mauvaise paire de buffers, confirmée par le résultat compute.
+Cette capture appartient au programme de test ; son équivalent dans Diablo
+reste à implémenter.
 
 La [preuve d'intégration de la couche Vulkan](docs/LAYER_REPLAY_POC.md) raccorde
 maintenant les commandes d'une application au moteur de reprise : deux passes

@@ -10,6 +10,7 @@ import probe
 import frame_trace
 import vulkan_trace
 import eye_control
+import descriptor_contents
 
 
 def run(args) -> dict:
@@ -217,7 +218,7 @@ def run(args) -> dict:
                             or [(b['binding'],b['type'],b['count'],b['stages']) for b in queried[0]['bindings']]!=[(0,6,1,33),(1,6,1,33)]):
                         raise ValueError('Observed descriptor layout definition differs from the fixture')
                     oracle_file=args.output/(name+'-descriptor-receipts.json');os.chmod(oracle_file,0o600)
-                    oracle=json.loads(oracle_file.read_text())['queries'];receipts=data.get('descriptor_query_receipts',[])
+                    owned_oracle=json.loads(oracle_file.read_text());oracle=owned_oracle['queries'];receipts=data.get('descriptor_query_receipts',[])
                     if (data.get('descriptor_queries_observed')!=7 or data.get('descriptor_query_catalog_truncated') is not False or len(receipts)!=7
                             or [{k:r[k] for k in ('type','range_bytes','encoding_hex')} for r in receipts]!=oracle):
                         raise ValueError('Layer descriptor outputs differ from the application exact-byte oracle')
@@ -229,6 +230,15 @@ def run(args) -> dict:
                             or summary['memory_fully_mapped_buffer_payloads']!=7 or summary['memory_cache_call_counts']!={'flush':1,'invalidate':1}
                             or any(not m['properties_known'] or m['property_flags']&6!=6 or not m['binding_complete'] or not m['allocation_chain_complete'] for m in memory)):
                         raise ValueError('Observed memory allocation/binding/map/cache provenance differs from fixture')
+                    contents=descriptor_contents.resolve_owned_fixture(data,owned_oracle)
+                    if (not args.library_pipelines and contents['event_status_counts']!={'resolved_owned_sources':5,'unresolved_binding_state':4}
+                            or sum(e['kind']=='dispatch' and e['status']=='resolved_owned_sources' for e in contents['events'])!=1):
+                        raise ValueError('Actual descriptor storage did not resolve all buffered fixture events')
+                    for event in contents['events']:
+                        if event['status']!='resolved_owned_sources':continue
+                        start=0 if event['kind']=='draw' or negative_compute else 4
+                        if [s['buffer_id'] for s in event['sources']]!=[r['buffer']['buffer_id'] for r in receipts[start:start+2]]:
+                            raise ValueError('Resolved graphics/compute sources differ from actual fixture offsets')
                 states = summary['pipeline_state_declarations']
                 if not states or any(not p['declarations_complete'] for p in states):
                     raise ValueError('Fixture pipeline declarations were not captured completely')
@@ -255,6 +265,8 @@ def run(args) -> dict:
                     metadata.update(descriptor_query_counts=summary['descriptor_query_counts'],descriptor_exact_byte_oracle_verified=True,
                         descriptor_source_buffers=6,descriptor_source_image_views=1,descriptor_query_selection_proven=False)
                     metadata.update({k:summary[k] for k in ('memory_observation_counts','memory_allocation_count','memory_fully_mapped_buffer_payloads','memory_cache_call_counts','memory_gpu_visibility_proven')})
+                    metadata['owned_descriptor_storage']={k:v for k,v in contents.items() if k!='events'}
+                    metadata['owned_descriptor_storage']['wrong_compute_source_pair_identified']=negative_compute
         paired=None
         if args.paired_pipelines:
             trace=vulkan_trace.report(metadata_directory)['process_traces'][0]

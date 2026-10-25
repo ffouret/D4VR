@@ -61,6 +61,9 @@ int main(int argc,char** argv) try {
     if (negativeCompute && !buffered) throw std::invalid_argument("Compute negative control requires descriptor buffers");
     if(!receiptOutput.empty() && (!buffered || std::filesystem::exists(receiptOutput)))throw std::invalid_argument("Receipt oracle needs descriptor buffers and a new private output file");
     std::vector<std::string> receiptOracle;
+    std::vector<uint8_t> descriptorSnapshot,descriptorAfter;
+    std::vector<VkDeviceSize> descriptorWriteOffsets;
+    unsigned descriptorCompletedSubmissions=0;
     auto receipt=[&](VkDescriptorType type,VkDeviceSize range,const void* bytes,size_t n){if(!receiptOutput.empty())receiptOracle.push_back("{\"type\":"+std::to_string(type)+",\"range_bytes\":"+std::to_string(range)+",\"encoding_hex\":\""+frame::hexBytes(static_cast<const uint8_t*>(bytes),n)+"\"}");};
     if (extended && !recorded) throw std::invalid_argument("Dynamic-state proof requires recorded replay");
     if (recipes && !recorded) throw std::invalid_argument("Pipeline recipes require recorded replay");
@@ -140,7 +143,9 @@ int main(int argc,char** argv) try {
         li.pSetLayouts = bufferLayouts.data(); check(vkCreatePipelineLayout(f.device,&li,nullptr,&bufferLayout)); li.pSetLayouts = layouts.data();
         VkDeviceSize layoutBytes = 0; getLayoutSize(f.device,bufferLayouts[3],&layoutBytes);
         auto alignment = descriptorProperties.descriptorBufferOffsetAlignment;
+        expect(alignment && layoutBytes && layoutBytes<=1024*1024 && alignment<=1024*1024,"Private descriptor storage exceeds snapshot budget");
         descriptorStride = (layoutBytes+alignment-1)/alignment*alignment;
+        expect(descriptorStride<=1024*1024/3,"Private descriptor storage exceeds snapshot budget");
         descriptorStorage = f.buffer(descriptorStride*3,VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT,true);
         descriptorBinding.address = descriptorStorage.address; descriptorBinding.usage = VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
         computeOutput = f.buffer(16,VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,true); computeShader = f.shader(computePath.string().c_str());
@@ -172,6 +177,7 @@ int main(int argc,char** argv) try {
             expect(offset+descriptorProperties.uniformBufferDescriptorSize <= descriptorStride,"Descriptor exceeds private slot");
             getDescriptor(f.device,&descriptor,descriptorProperties.uniformBufferDescriptorSize,static_cast<char*>(descriptorStorage.mapped)+s*descriptorStride+offset);
             receipt(descriptor.type,address.range,static_cast<char*>(descriptorStorage.mapped)+s*descriptorStride+offset,descriptorProperties.uniformBufferDescriptorSize);
+            descriptorWriteOffsets.push_back(s*descriptorStride+offset);
         }
     }
     if(buffered) {
@@ -188,6 +194,13 @@ int main(int argc,char** argv) try {
         std::vector<uint8_t> bytes(descriptorProperties.sampledImageDescriptorSize);getDescriptor(f.device,&info,bytes.size(),bytes.data());receipt(info.type,0,bytes.data(),bytes.size());
         std::fill(bytes.begin(),bytes.end(),0xcc); // The observer must own the returned bytes already.
         vkDestroyImageView(f.device,view,nullptr);vkDestroyImage(f.device,image,nullptr);vkFreeMemory(f.device,memory,nullptr);
+    }
+    if(!receiptOutput.empty()) {
+        // Owned, coherent, single-threaded fixture only. All descriptor writes
+        // precede this copy; no later CPU or GPU command writes this storage.
+        // The passive layer never dereferences an application's mapped pointer.
+        auto bytes=static_cast<const uint8_t*>(descriptorStorage.mapped);
+        descriptorSnapshot.assign(bytes,bytes+descriptorStride*3);
     }
     auto upload = [&](unsigned set,const Matrix4& projection,const Matrix4& view) {
         auto p = reinterpret_cast<float*>(static_cast<char*>(uniforms[set][0].mapped)+72*16);
@@ -506,6 +519,12 @@ int main(int argc,char** argv) try {
             check(vkEndCommandBuffer(command));
             VkSubmitInfo submit{VK_STRUCTURE_TYPE_SUBMIT_INFO}; submit.commandBufferCount = 1; submit.pCommandBuffers = &command;
             check(vkQueueSubmit(f.queue,1,&submit,fence)); check(vkWaitForFences(f.device,1,&fence,VK_TRUE,30'000'000'000ull)); check(vkResetFences(f.device,1,&fence));
+            if(!receiptOutput.empty()) {
+                auto bytes=static_cast<const uint8_t*>(descriptorStorage.mapped);
+                descriptorAfter.assign(bytes,bytes+descriptorSnapshot.size());
+                expect(descriptorAfter==descriptorSnapshot,"Owned descriptor storage changed across completed submission");
+                ++descriptorCompletedSubmissions;
+            }
             if(frozen) {
                 auto updated=test.states;
                 for(unsigned eye=0;eye<2;++eye) {
@@ -660,7 +679,16 @@ int main(int argc,char** argv) try {
     if(telemetry){release(telemetryCounters);release(telemetryRing);}
     if (buffered) { release(descriptorStorage); release(computeOutput); }
     vkDestroyDevice(f.device,nullptr); f.device = VK_NULL_HANDLE; vkDestroyInstance(f.instance,nullptr); f.instance = VK_NULL_HANDLE;
-    if(!receiptOutput.empty()){std::ofstream out(receiptOutput);out<<"{\"schema_version\":1,\"queries\":[";for(size_t i=0;i<receiptOracle.size();++i)out<<(i?",":"")<<receiptOracle[i];out<<"]}\n";expect(bool(out),"Receipt oracle output failed");}
+    if(!receiptOutput.empty()){
+        std::ofstream out(receiptOutput);out<<"{\"schema_version\":1,\"queries\":[";
+        for(size_t i=0;i<receiptOracle.size();++i)out<<(i?",":"")<<receiptOracle[i];
+        out<<"],\"owned_storage\":{\"scope\":\"owned_synthetic_fixture\",\"coherent_exclusive_immutable_storage\":true,\"completed_submissions\":"<<descriptorCompletedSubmissions
+            <<",\"uniform_descriptor_size\":"<<descriptorProperties.uniformBufferDescriptorSize<<",\"offset_alignment\":"<<descriptorProperties.descriptorBufferOffsetAlignment
+            <<",\"set_stride\":"<<descriptorStride<<",\"encoding_hex\":\""<<frame::hexBytes(descriptorSnapshot.data(),descriptorSnapshot.size())
+            <<"\",\"after_encoding_hex\":\""<<frame::hexBytes(descriptorAfter.data(),descriptorAfter.size())<<"\",\"query_write_offsets\":[";
+        for(size_t i=0;i<descriptorWriteOffsets.size();++i)out<<(i?",":"")<<descriptorWriteOffsets[i];
+        out<<"]}}\n";expect(bool(out),"Receipt oracle output failed");
+    }
     std::cout << std::setprecision(10) << "{\"stereo_mrt_fixture_passed\":" << ((negative || negativeCompute) ? "false" : "true") << ",\"negative_sync_control\":" << (negative ? "true" : "false")
         << ",\"negative_compute_control\":" << (negativeCompute ? "true" : "false") << ",\"incorrect_compute_samples_detected\":" << wrongComputeSamples
         << ",\"clear_followed_by_load_verified\":" << (split ? "true" : "false") << ",\"eye_rendering_passes\":" << (split ? 24 : 16)

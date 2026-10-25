@@ -1,0 +1,253 @@
+{
+  "schema_version": 1,
+  "scope": "exact descriptor storage and bound UBO source resolution in the owned synthetic MRT fixture only",
+  "synthetic_scene": true,
+  "diablo_rendered": false,
+  "game_capture_adapter_implemented": false,
+  "game_resource_admission": false,
+  "game_stereo_submitted": false,
+  "new_human_headset_trial": false,
+  "passive_layer_reads_mapped_memory": false,
+  "source_resource_payloads_captured": false,
+  "physical_aliases_excluded": false,
+  "ownership_contract": [
+    "single-threaded fixture owns coherent mapped descriptor storage and keeps it alive",
+    "all six descriptor writes occur before the first snapshot and queue submit; no subsequent CPU or GPU writes to descriptor storage",
+    "before/after equality checked after each of eight completed submission fences, before resource release",
+    "closed catalog coverage comes from fixture-owned writes, never inferred from endpoint equality or a unique prefix match"
+  ],
+  "resolution": [
+    "actual passive buffer bindings, per-bind-point offsets and driver-provided layout offsets",
+    "binding address offset + set offset + layout binding offset, bounded by actual storage span",
+    "entire opaque descriptor compared to every exact candidate of the required type",
+    "unknown, ambiguous, stale, partial, classic, incompatible or out-of-bounds inputs remain unresolved"
+  ],
+  "limits": {
+    "storage_bytes": 1048576,
+    "descriptor_bytes": 4096,
+    "supported_profile": "one immutable buffer; one captured successful submission/command buffer; four sets, first three empty; set3 has two scalar UBOs; monolithic layout generations"
+  },
+  "cpu_checks": {
+    "python_tests": 157,
+    "adversarial_resolver_tests": 10,
+    "cases": [
+      "independent graphics/compute offsets",
+      "query revisions preserve layout generation",
+      "buffer rebinding invalidates offsets at both points",
+      "classic sets invalidate only their bind point",
+      "binding address offset adds to set offset",
+      "valid wrong offset selects a different exact source pair",
+      "bounds/alignment/index/unknown bytes",
+      "equal encoding with distinct sources is ambiguous",
+      "missing/partial/GPL/other-generation layouts",
+      "released/noncoherent/unknown source memory",
+      "absent ownership contract, changed bytes, incomplete catalog and submission"
+    ]
+  },
+  "source_sha256": {
+    "native/tests/stereo_targets_vulkan.cpp": "cbd7073b5ba369bca8706304bd26faa3236b83a080e5d2d888145bbedb7af0a6",
+    "tools/descriptor_contents.py": "f9b35cec007603241fbbc7cee32839a5d165007ea192de155e1cde6284eab03a",
+    "tools/stereo_mrt_validate.py": "b7b1b2e79b95903b4ab137e3b19c38a4079851c40cc3c5d2277d5deea908309f",
+    "tests/test_descriptor_contents.py": "22c7019105ad5109f3a1d3fcc85e309f24bc3ce79b44d5ec3f71b770768ef692"
+  },
+  "artifact_sha256": {
+    "frozen_targets_fixture": "febd04abebbb4256bc9ce10ec5450b02a1494fff5b4b5689c9d6d6ab0e2d0322",
+    "libd4vr_vulkan_trace.so": "fa1f0aa5db5a4b44a124172d05ad5375c51013f0650501a93b40ca7d11d48316"
+  },
+  "gpu_controls": [
+    {
+      "case": "native",
+      "exit_code": 0,
+      "validation_layer_loaded": false,
+      "intentional_sync_hazard_detected": false,
+      "intentional_wrong_compute_offset_detected": false,
+      "unexpected_validation_error": false,
+      "owned_descriptor_storage": {
+        "schema_version": 1,
+        "scope": "owned_synthetic_fixture",
+        "storage_bytes": 192,
+        "completed_immutable_storage_checks": 8,
+        "event_status_counts": {
+          "resolved_owned_sources": 5,
+          "unresolved_binding_state": 4
+        },
+        "game_capture_supported": false,
+        "dynamic_shader_accesses_proven": false,
+        "resource_content_captured": false,
+        "resource_aliases_excluded": false,
+        "game_resource_admission": false,
+        "game_stereo_submitted": false,
+        "wrong_compute_source_pair_identified": false
+      },
+      "metadata_disabled_verified": false,
+      "reference_checks": {
+        "color_reference_different_bytes": 0,
+        "max_normalized_depth_difference": 0,
+        "stencil_reference_different_bytes": 0,
+        "following_compute_reference_words": 32,
+        "incorrect_compute_samples_detected": 0,
+        "original_targets_preserved_defined_bytes": 31457280
+      }
+    },
+    {
+      "case": "native-validation",
+      "exit_code": 0,
+      "validation_layer_loaded": true,
+      "intentional_sync_hazard_detected": false,
+      "intentional_wrong_compute_offset_detected": false,
+      "unexpected_validation_error": false,
+      "owned_descriptor_storage": {
+        "schema_version": 1,
+        "scope": "owned_synthetic_fixture",
+        "storage_bytes": 192,
+        "completed_immutable_storage_checks": 8,
+        "event_status_counts": {
+          "resolved_owned_sources": 5,
+          "unresolved_binding_state": 4
+        },
+        "game_capture_supported": false,
+        "dynamic_shader_accesses_proven": false,
+        "resource_content_captured": false,
+        "resource_aliases_excluded": false,
+        "game_resource_admission": false,
+        "game_stereo_submitted": false,
+        "wrong_compute_source_pair_identified": false
+      },
+      "metadata_disabled_verified": false,
+      "reference_checks": {
+        "color_reference_different_bytes": 0,
+        "max_normalized_depth_difference": 0,
+        "stencil_reference_different_bytes": 0,
+        "following_compute_reference_words": 32,
+        "incorrect_compute_samples_detected": 0,
+        "original_targets_preserved_defined_bytes": 31457280
+      }
+    },
+    {
+      "case": "sync-negative-control",
+      "exit_code": 0,
+      "validation_layer_loaded": true,
+      "intentional_sync_hazard_detected": true,
+      "intentional_wrong_compute_offset_detected": false,
+      "unexpected_validation_error": null,
+      "owned_descriptor_storage": {
+        "schema_version": 1,
+        "scope": "owned_synthetic_fixture",
+        "storage_bytes": 192,
+        "completed_immutable_storage_checks": 8,
+        "event_status_counts": {
+          "resolved_owned_sources": 5,
+          "unresolved_binding_state": 4
+        },
+        "game_capture_supported": false,
+        "dynamic_shader_accesses_proven": false,
+        "resource_content_captured": false,
+        "resource_aliases_excluded": false,
+        "game_resource_admission": false,
+        "game_stereo_submitted": false,
+        "wrong_compute_source_pair_identified": false
+      },
+      "metadata_disabled_verified": false,
+      "reference_checks": {
+        "color_reference_different_bytes": 0,
+        "max_normalized_depth_difference": 0,
+        "stencil_reference_different_bytes": 0,
+        "following_compute_reference_words": 32,
+        "incorrect_compute_samples_detected": 0,
+        "original_targets_preserved_defined_bytes": 31457280
+      }
+    },
+    {
+      "case": "descriptor-offset-negative-control",
+      "exit_code": 0,
+      "validation_layer_loaded": true,
+      "intentional_sync_hazard_detected": false,
+      "intentional_wrong_compute_offset_detected": true,
+      "unexpected_validation_error": false,
+      "owned_descriptor_storage": {
+        "schema_version": 1,
+        "scope": "owned_synthetic_fixture",
+        "storage_bytes": 192,
+        "completed_immutable_storage_checks": 8,
+        "event_status_counts": {
+          "resolved_owned_sources": 5,
+          "unresolved_binding_state": 4
+        },
+        "game_capture_supported": false,
+        "dynamic_shader_accesses_proven": false,
+        "resource_content_captured": false,
+        "resource_aliases_excluded": false,
+        "game_resource_admission": false,
+        "game_stereo_submitted": false,
+        "wrong_compute_source_pair_identified": true
+      },
+      "metadata_disabled_verified": false,
+      "reference_checks": {
+        "color_reference_different_bytes": 0,
+        "max_normalized_depth_difference": 0,
+        "stencil_reference_different_bytes": 0,
+        "following_compute_reference_words": 32,
+        "incorrect_compute_samples_detected": 8,
+        "original_targets_preserved_defined_bytes": 31457280
+      }
+    },
+    {
+      "case": "metadata-disabled",
+      "exit_code": 0,
+      "validation_layer_loaded": true,
+      "intentional_sync_hazard_detected": false,
+      "intentional_wrong_compute_offset_detected": false,
+      "unexpected_validation_error": false,
+      "owned_descriptor_storage": null,
+      "metadata_disabled_verified": true,
+      "reference_checks": {
+        "color_reference_different_bytes": 0,
+        "max_normalized_depth_difference": 0,
+        "stencil_reference_different_bytes": 0,
+        "following_compute_reference_words": 32,
+        "incorrect_compute_samples_detected": 0,
+        "original_targets_preserved_defined_bytes": 31457280
+      }
+    },
+    {
+      "case": "steam-runtime-validation",
+      "exit_code": 0,
+      "validation_layer_loaded": true,
+      "intentional_sync_hazard_detected": false,
+      "intentional_wrong_compute_offset_detected": false,
+      "unexpected_validation_error": false,
+      "owned_descriptor_storage": {
+        "schema_version": 1,
+        "scope": "owned_synthetic_fixture",
+        "storage_bytes": 192,
+        "completed_immutable_storage_checks": 8,
+        "event_status_counts": {
+          "resolved_owned_sources": 5,
+          "unresolved_binding_state": 4
+        },
+        "game_capture_supported": false,
+        "dynamic_shader_accesses_proven": false,
+        "resource_content_captured": false,
+        "resource_aliases_excluded": false,
+        "game_resource_admission": false,
+        "game_stereo_submitted": false,
+        "wrong_compute_source_pair_identified": false
+      },
+      "metadata_disabled_verified": false,
+      "reference_checks": {
+        "color_reference_different_bytes": 0,
+        "max_normalized_depth_difference": 0,
+        "stencil_reference_different_bytes": 0,
+        "following_compute_reference_words": 32,
+        "incorrect_compute_samples_detected": 0,
+        "original_targets_preserved_defined_bytes": 31457280
+      }
+    }
+  ],
+  "remaining": [
+    "protect lifetime and exclude CPU/GPU writers for a real game snapshot with demonstrated visibility",
+    "establish descriptor catalog coverage and actual game descriptor formats/state",
+    "capture UBO/texture contents and audit physical aliases, write effects, complete draw state and LOAD dependency closure",
+    "replay actual Diablo draw scopes into two private eyes and submit them to SteamVR; Windows native D3D12 adapter remains absent"
+  ]
+}
