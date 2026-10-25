@@ -20,7 +20,9 @@ VR de Diablo ni une preuve sans erreur de validation.
 Les [premières observations de buffers et de liaisons de ressources](docs/RESOURCE_BINDINGS.md)
 préparent le raccordement aux dessins du jeu. Elles conservent identités et
 bornes observées, ainsi que les déclarations de layouts et les offsets fournis
-par le pilote, sans lire les données ni autoriser de reprise du jeu.
+par le pilote. Les sorties opaques de `vkGetDescriptorEXT` sont aussi conservées
+dans les captures privées avec leur source observée, sans prouver leur usage
+effectif par le GPU ni autoriser de reprise du jeu.
 
 La [preuve d'intégration de la couche Vulkan](docs/LAYER_REPLAY_POC.md) raccorde
 maintenant les commandes d'une application au moteur de reprise : deux passes

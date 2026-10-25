@@ -28,6 +28,7 @@ VkResult bufferResult=VK_SUCCESS;unsigned bufferCreates=0,bufferDestroys=0,addre
 const VkDescriptorSetLayoutCreateInfo* expectedSetInfo{};const VkPipelineLayoutCreateInfo* expectedPipelineLayoutInfo{};
 VkDescriptorSetLayout expectedSetLayout{};VkDeviceSize* expectedLayoutQuery{};
 VkResult layoutResult=VK_SUCCESS;unsigned setCreates=0,setDestroys=0,pipelineLayoutCreates=0,pipelineLayoutDestroys=0,sizeQueries=0,offsetQueries=0;
+const VkDescriptorGetInfoEXT* expectedDescriptorInfo{};void* expectedDescriptorOutput{};unsigned descriptorQueries=0;
 template<class T> T object(uintptr_t value) { return reinterpret_cast<T>(value); }
 VKAPI_ATTR VkResult VKAPI_CALL originalCreate(VkDevice,VkPipelineCache cache,uint32_t n,const VkGraphicsPipelineCreateInfo* info,const VkAllocationCallbacks* allocator,VkPipeline* out) {
     require(n==3 && cache==expectedCache && info==expectedGraphics && allocator==expectedAllocator,"Original pipeline arguments changed");
@@ -92,6 +93,10 @@ VKAPI_ATTR VkResult VKAPI_CALL createPipelineLayout(VkDevice,const VkPipelineLay
 VKAPI_ATTR void VKAPI_CALL destroyPipelineLayout(VkDevice,VkPipelineLayout layout,const VkAllocationCallbacks* allocator) {require(layout==expectedLayout && allocator==expectedAllocator,"Pipeline layout destruction changed");++pipelineLayoutDestroys;}
 VKAPI_ATTR void VKAPI_CALL layoutSize(VkDevice,VkDescriptorSetLayout layout,VkDeviceSize* out) {require(layout==expectedSetLayout && out==expectedLayoutQuery,"Layout size query changed");++sizeQueries;*out=128;}
 VKAPI_ATTR void VKAPI_CALL layoutOffset(VkDevice,VkDescriptorSetLayout layout,uint32_t binding,VkDeviceSize* out) {require(layout==expectedSetLayout && binding==7 && out==expectedLayoutQuery,"Layout offset query changed");++offsetQueries;*out=32;}
+VKAPI_ATTR void VKAPI_CALL getDescriptor(VkDevice,const VkDescriptorGetInfoEXT* info,size_t n,void* out) {
+    require(info==expectedDescriptorInfo && n==16 && out==expectedDescriptorOutput,"Descriptor query arguments changed");++descriptorQueries;
+    for(unsigned i=0;i<16;++i)static_cast<uint8_t*>(out)[i]=uint8_t(i+1);
+}
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL proc(VkDevice, const char* name) {
     if (std::strcmp(name,"vkCreateGraphicsPipelines")==0) return reinterpret_cast<PFN_vkVoidFunction>(privateCreate);
     if (std::strcmp(name,"vkDestroyPipeline")==0) return reinterpret_cast<PFN_vkVoidFunction>(pipelineDestroy);
@@ -105,6 +110,7 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL proc(VkDevice, const char* name) {
     if(std::strcmp(name,"vkDestroyPipelineLayout")==0)return reinterpret_cast<PFN_vkVoidFunction>(destroyPipelineLayout);
     if(std::strcmp(name,"vkGetDescriptorSetLayoutSizeEXT")==0)return reinterpret_cast<PFN_vkVoidFunction>(layoutSize);
     if(std::strcmp(name,"vkGetDescriptorSetLayoutBindingOffsetEXT")==0)return reinterpret_cast<PFN_vkVoidFunction>(layoutOffset);
+    if(std::strcmp(name,"vkGetDescriptorEXT")==0)return reinterpret_cast<PFN_vkVoidFunction>(getDescriptor);
     return nullptr;
 }
 } // namespace
@@ -212,6 +218,15 @@ int main() try {
     auto& events=d->commands[primary].frame.resources;require(events.size()==3 && events[0].buffers[0].status==d4vr::frame::BufferRange::uniqueObserved && events[0].buffers[0].offset==32,"Layer did not resolve actual forwarded address");
     require(events[1].layout && events[2].layout==events[1].layout && events[1].layout->sets[0]->size==128 && events[1].layout->sets[0]->bindings[0].offset==32,"Layout query identity missing from forwarding observation");
     auto oldLayout=events[1].layout;d4DestroyDescriptorSetLayout(handle,setLayout,expectedAllocator);d4DestroyPipelineLayout(handle,pl,expectedAllocator);
+    d->GetDescriptorEXT=getDescriptor;VkDescriptorAddressInfoEXT source{VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT};source.address=0x40020;source.range=128;
+    VkDescriptorGetInfoEXT descriptor{VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT};descriptor.type=VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;descriptor.data.pUniformBuffer=&source;expectedDescriptorInfo=&descriptor;
+    uint8_t returnedDescriptor[16]{};expectedDescriptorOutput=returnedDescriptor;
+    require(d4GetDeviceProcAddr(handle,"vkGetDescriptorEXT")==reinterpret_cast<PFN_vkVoidFunction>(d4GetDescriptorEXT),"Descriptor query hook not advertised");
+    d4GetDescriptorEXT(handle,&descriptor,16,returnedDescriptor);d4GetDescriptorEXT(handle,&descriptor,16,returnedDescriptor);
+    d->frame.enabled=false;d4GetDescriptorEXT(handle,&descriptor,16,returnedDescriptor);d->frame.enabled=true;returnedDescriptor[0]=99;
+    auto queryTicket=d->frame.submit(1,0,0,0,{primary},[&](auto)->const d4vr::frame::Command*{return &d->commands[primary].frame;});d->frame.submitted(queryTicket,VK_SUCCESS);auto queryCaptures=d->frame.takeReady();
+    require(descriptorQueries==3 && queryCaptures.size()==1 && queryCaptures[0]->descriptorQueries==2 && queryCaptures[0]->descriptorReceipts.size()==1
+        && queryCaptures[0]->descriptorReceipts[0]->bytes[0]==1 && queryCaptures[0]->descriptorReceipts[0]->buffer.offset==32,"Descriptor output bytes/opt-in/forwarding or owned source identity changed");
     layoutResult=VK_ERROR_OUT_OF_HOST_MEMORY;
     require(d4CreateDescriptorSetLayout(handle,&setInfo,expectedAllocator,&setLayout)==layoutResult && d4CreatePipelineLayout(handle,&layoutInfo,expectedAllocator,&pl)==layoutResult,"Failed layout creation result changed");
     d4CmdBindDescriptorSets(primary,VK_PIPELINE_BIND_POINT_COMPUTE,expectedLayout,1,1,&set,0,nullptr);

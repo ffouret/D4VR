@@ -173,7 +173,44 @@ int main() try {
     require(rc.truncated && rc.resources.size()==2048,"Resource event budget ignored");resources.reset(rc);resources.classicDescriptors(rc,VK_PIPELINE_BIND_POINT_GRAPHICS,0,1);
     require(!rc.truncated && rc.resources.size()==1,"Resource event reset did not recover budget");
     resources.resourceFailure(&rc);resources.descriptorBuffers(rc,1,&db);require(rc.truncated && rc.resources.empty(),"Resource failure did not close observation");
+    // A GetDescriptor receipt owns the exact returned bytes and the source
+    // identity observed before forwarding. It never establishes active use.
+    Tracker queries(true);bi.size=4096;queries.buffer(b1,bi);queries.bufferAddress(b1,0x10000);
+    VkDescriptorAddressInfoEXT source{VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT};source.address=0x10020;source.range=256;source.format=VkFormat(1234567); // Ignored for a UBO.
+    VkDescriptorGetInfoEXT get{VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT};get.type=VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;get.data.pUniformBuffer=&source;
+    auto input=queries.descriptorInput(get);require(input.buffer.id && input.buffer.offset==32 && input.rangeFits() && input.format==VK_FORMAT_UNDEFINED,"Descriptor buffer source bounds or ignored format wrong");
+    uint8_t encoding[]{1,2,3,4};DescriptorReceipts catalog;auto firstReceipt=catalog.observed(input,4,encoding);
+    require(firstReceipt==1 && catalog.observed(input,4,encoding)==1 && catalog.queryCount()==2 && catalog.records().size()==1,"Exact descriptor query was not deduplicated");
+    encoding[3]=5;require(catalog.observed(input,4,encoding)==2,"Different exact bytes were conflated");encoding[3]=4;
+    auto oldEncoding=catalog.records()[0];queries.removeBuffer(b1);queries.buffer(b1,bi);queries.bufferAddress(b1,0x10000);auto newInput=queries.descriptorInput(get);
+    require(newInput.buffer.id!=input.buffer.id && catalog.observed(newInput,4,encoding)==3 && catalog.candidates(encoding,4).size()==2,"Recycled resource identity/ambiguous equal encodings collapsed");
+    encoding[0]=9;require(oldEncoding->bytes==std::vector<uint8_t>({1,2,3,4}),"Descriptor output pointer was borrowed");
+    source.range=8192;require(!queries.descriptorInput(get).rangeFits(),"Descriptor range beyond observed buffer accepted");source.range=256;
+    get.pNext=&foreign;require(!queries.descriptorInput(get).inputChainComplete,"Unknown descriptor input chain accepted");get.pNext=nullptr;
+    get.data.pUniformBuffer=nullptr;require(queries.descriptorInput(get).inputPointerNull && queries.descriptorInput(get).nullDescriptor,"Null address-info pointer dereferenced or conflated");
+    get.data.pUniformBuffer=&source;source.address=0;source.range=VK_WHOLE_SIZE;require(queries.descriptorInput(get).nullDescriptor,"Explicit null address was not observed");source.address=0x10020;source.range=256;
+    get.type=VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;get.data.pStorageTexelBuffer=&source;source.format=VK_FORMAT_R32_UINT;require(queries.descriptorInput(get).format==VK_FORMAT_R32_UINT,"Texel-buffer format lost");
+    queries.image(ih,image);queries.view(vh,view);VkDescriptorImageInfo ii{handle<VkSampler>(999),vh,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+    get.type=VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;get.data.pSampledImage=&ii;auto sampled=queries.descriptorInput(get);
+    require(sampled.viewKnown && sampled.imageKnown && sampled.viewId && !sampled.samplerUsed && !sampled.samplerPresent,"Image receipt lost identity or read ignored sampler");
+    catalog.observed(sampled,4,encoding);queries.removeView(vh);queries.view(vh,view);auto newSampled=queries.descriptorInput(get);
+    require(newSampled.viewId!=sampled.viewId,"Recycled image view kept old descriptor identity");
+    get.type=VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;get.data.pCombinedImageSampler=&ii;auto combined=queries.descriptorInput(get);
+    require(combined.samplerUsed && combined.samplerPresent && !combined.deduplicable(),"Unobserved sampler identity invented");
+    DescriptorReceipts unknowns;unknowns.observed(combined,4,encoding);unknowns.observed(combined,4,encoding);require(unknowns.candidates(encoding,4).size()==2,"Unresolved equal sampler encodings silently collapsed");
+    get.type=VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;get.data.pSampledImage=nullptr;require(queries.descriptorInput(get).nullDescriptor,"Null image descriptor pointer dereferenced");
+    VkSampler sampler=handle<VkSampler>(555);get.type=VK_DESCRIPTOR_TYPE_SAMPLER;get.data.pSampler=&sampler;require(queries.descriptorInput(get).samplerPresent,"Sampler receipt omitted presence");
+    get.type=VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;get.data.accelerationStructure=1;require(queries.descriptorInput(get).kind==DescriptorReceipt::unsupported,"Unsupported union interpreted as a pointer");
+    DescriptorReceipts limited(1,4);limited.observed(input,4,encoding);require(limited.observed(input,4,encoding)==1 && !limited.truncated(),"Duplicate consumed an already full receipt budget");
+    auto retained=limited.records()[0];encoding[0]=10;limited.observed(input,4,encoding);
+    require(limited.truncated() && limited.candidates(retained->bytes.data(),4).empty() && retained->bytes[0]==9,"Receipt budget failed open or damaged owned history");
+    DescriptorReceipts oversized;oversized.observed(input,4097,reinterpret_cast<void*>(1));require(oversized.truncated(),"Oversized receipt read unbounded output");
+    DescriptorReceipts byteBudget(9,3);byteBudget.observed(input,4,encoding);require(byteBudget.truncated() && byteBudget.records().empty(),"Descriptor byte budget exceeded");
+    queries.descriptorOutput(input,4,encoding);auto qc=queries.command();auto qt=queries.submit(1,0,0,0,{primaryHandle},[&](auto)->const Command*{return &qc;});queries.submitted(qt,VK_SUCCESS);
+    auto qr=queries.takeReady();encoding[0]=11;queries.descriptorOutput(newInput,4,encoding);queries.removeBuffer(b1);queries.removeView(vh);queries.removeImage(ih);
+    require(qr[0]->descriptorQueries==1 && qr[0]->descriptorReceipts.size()==1 && qr[0]->descriptorReceipts[0]->bytes[0]==10,"Submitted descriptor catalog changed after later queries/destruction");
+    auto qjson=serialize(*qr[0]);require(qjson.find("\"encoding_hex\":\"0a020304\"")!=std::string::npos && qjson.find("\"descriptor_query_selection_proven\":false")!=std::string::npos,"Exact private receipt or explicit selection limitation missing");
     Tracker disabled; auto off = disabled.command(); disabled.begin(off,rendering); disabled.draw(off,0); require(off.ops.empty() && off.resources.empty(),"Disabled tracker recorded metadata");
-    std::cout << "Frame metadata: attachment/pipeline lifetime, GPL/inline shaders, DGC, secondary reuse, request boundaries, pending/error submissions, caps: passed\n";
+    std::cout << "Frame metadata: attachments/pipelines/layouts, exact descriptor receipts, resource generations, GPL/DGC, submission lifetime and caps: passed\n";
     return 0;
 } catch (const std::exception& e) { std::cerr << e.what() << '\n'; return 1; }

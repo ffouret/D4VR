@@ -1,9 +1,11 @@
 #pragma once
-// CPU-only metadata. No GPU commands, resource contents or raw handle addresses
-// are emitted. The caller serializes access with the layer's state mutex.
+// CPU metadata and bounded opaque query outputs, saved only in private captures.
+// Descriptor encodings may contain implementation addresses. No GPU commands
+// are added. The caller serializes access with the layer's state mutex.
 #include <vulkan/vulkan.h>
 #include "buffer_addresses.hpp"
 #include "descriptor_layouts.hpp"
+#include "descriptor_receipts.hpp"
 #include <algorithm>
 #include <array>
 #include <cstdint>
@@ -103,6 +105,8 @@ struct Capture {
     bool headless = false, closed = false, truncated = false;
     uint32_t pending = 0, operations = 0;
     std::vector<Submission> submissions;
+    std::vector<std::shared_ptr<const DescriptorReceipt>> descriptorReceipts;
+    uint64_t descriptorQueries=0;bool descriptorCatalogTruncated=false;
 };
 struct Ticket { std::shared_ptr<Capture> capture; size_t index = 0; };
 
@@ -111,7 +115,7 @@ class Tracker {
     uint64_t nextImage = 1, nextView = 1, nextPipeline = 1, nextCommand = 1, lastRequest = 0;
     size_t liveOps = 0, liveDraws = 0;
     size_t declarationWords = 0;
-    size_t liveResourceEvents=0;BufferAddresses bufferRanges;DescriptorLayouts layouts;bool resourceFaulted=false;
+    size_t liveResourceEvents=0;BufferAddresses bufferRanges;DescriptorLayouts layouts;DescriptorReceipts receipts;bool resourceFaulted=false;
     unsigned captureCount = 0;
     std::shared_ptr<Capture> current;
     std::vector<std::shared_ptr<Capture>> ready;
@@ -181,7 +185,7 @@ class Tracker {
     }
 public:
     void resourceFailure(Command* c=nullptr) noexcept {
-        resourceFaulted=true;bufferRanges.invalidate();layouts.invalidate();
+        resourceFaulted=true;bufferRanges.invalidate();layouts.invalidate();receipts.invalidate();
         if(c){liveResourceEvents-=c->resources.size();c->resources.clear();c->truncated=true;}
     }
     bool enabled = false, hasSwapchain = false;
@@ -219,6 +223,34 @@ public:
     void setLayoutOffset(VkDescriptorSetLayout h,uint32_t binding,VkDeviceSize bytes) {if(enabled)layouts.offset(h,binding,bytes);}
     void pipelineLayout(VkPipelineLayout h,const VkPipelineLayoutCreateInfo& info) {if(enabled)layouts.created(h,info);}
     void removePipelineLayout(VkPipelineLayout h) {if(enabled)layouts.destroyed(h);}
+    DescriptorReceipt descriptorInput(const VkDescriptorGetInfoEXT& info) {
+        DescriptorReceipt r;r.type=info.type;r.inputChainComplete=!info.pNext;
+        const VkDescriptorAddressInfoEXT* address=nullptr;const VkDescriptorImageInfo* image=nullptr;
+        switch(info.type) {
+        case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:address=info.data.pUniformBuffer;r.kind=DescriptorReceipt::bufferResource;break;
+        case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:address=info.data.pStorageBuffer;r.kind=DescriptorReceipt::bufferResource;break;
+        case VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:address=info.data.pUniformTexelBuffer;r.kind=DescriptorReceipt::bufferResource;break;
+        case VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:address=info.data.pStorageTexelBuffer;r.kind=DescriptorReceipt::bufferResource;break;
+        case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:image=info.data.pSampledImage;r.kind=DescriptorReceipt::imageResource;break;
+        case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:image=info.data.pStorageImage;r.kind=DescriptorReceipt::imageResource;break;
+        case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:image=info.data.pInputAttachmentImage;r.kind=DescriptorReceipt::imageResource;break;
+        case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:image=info.data.pCombinedImageSampler;r.kind=DescriptorReceipt::imageResource;r.samplerUsed=true;break;
+        case VK_DESCRIPTOR_TYPE_SAMPLER:r.kind=DescriptorReceipt::samplerResource;r.samplerUsed=true;r.inputPointerNull=!info.data.pSampler;r.samplerPresent=info.data.pSampler && *info.data.pSampler;break;
+        default:break; // Do not dereference another union member for unknown types.
+        }
+        if(r.kind==DescriptorReceipt::bufferResource) {
+            r.inputPointerNull=!address;r.nullDescriptor=!address || !address->address;
+            if(address){r.inputChainComplete &= !address->pNext;r.range=address->range;
+                if(info.type==VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER || info.type==VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER)r.format=address->format;
+                if(address->address)r.buffer=bufferRanges.resolve(address->address);}
+        } else if(r.kind==DescriptorReceipt::imageResource) {
+            r.inputPointerNull=!image;r.nullDescriptor=!image || !image->imageView;
+            if(image){r.imageLayout=image->imageLayout;if(r.samplerUsed)r.samplerPresent=bool(image->sampler);
+                auto i=views.find(image->imageView);if(image->imageView && i!=views.end()){auto& v=i->second;r.viewId=v.id;r.imageId=v.image.id;r.viewKnown=v.known;r.imageKnown=v.image.known;r.format=v.format;}}
+        }
+        return r;
+    }
+    void descriptorOutput(DescriptorReceipt r,size_t n,const void* output) {if(enabled)receipts.observed(std::move(r),n,output);}
     void descriptorBuffers(Command& c,uint32_t n,const VkDescriptorBufferBindingInfoEXT* infos) {
         auto e=resource(c,ResourceEvent::descriptorBuffers);if(!e)return;e->count=n;e->truncated=n>32 || (n && !infos);if(!infos)return;
         for(uint32_t i=0;i<std::min(n,32u);++i){auto r=bufferRanges.resolve(infos[i].address);if(infos[i].pNext)r.creationComplete=false;e->buffers.push_back(r);e->usages.push_back(infos[i].usage);}
@@ -339,6 +371,9 @@ public:
         if (!enabled) return {};
         if (!hasSwapchain && !current && request > lastRequest && captureCount < 4) start(request, present, true);
         if (!current || current->closed) return {};
+        current->descriptorQueries=receipts.queryCount();current->descriptorCatalogTruncated=receipts.truncated();
+        try {if(current->descriptorReceipts.size()!=receipts.records().size())current->descriptorReceipts=receipts.records();}
+        catch(...){current->descriptorCatalogTruncated=true;current->truncated=true;}
         if (current->submissions.size() >= 256) { current->truncated = true; return {}; }
         Submission s; s.family = family; s.queue = queue;
         auto visit = [&](auto&& self, VkCommandBuffer handle, unsigned depth) -> void {
@@ -392,6 +427,16 @@ inline void writeAttachment(std::ostream& out, const Attachment& a) {
     else out << "null";
     out << '}';
 }
+inline void writeReceipt(std::ostream& out,const DescriptorReceipt& r) {
+    out<<"{\"id\":"<<r.id<<",\"first_observed_query\":"<<r.firstCall<<",\"type\":"<<r.type<<",\"kind\":"<<r.kind
+        <<",\"input_chain_complete\":"<<r.inputChainComplete<<",\"input_pointer_null\":"<<r.inputPointerNull<<",\"null_descriptor\":"<<r.nullDescriptor
+        <<",\"encoding_bytes\":"<<r.bytes.size()<<",\"encoding_hex\":\""<<hexBytes(r.bytes.data(),r.bytes.size())<<"\",\"range_bytes\":"<<r.range
+        <<",\"format\":"<<r.format<<",\"range_within_observed_buffer\":"<<r.rangeFits()<<",\"buffer\":{\"status\":"<<r.buffer.status
+        <<",\"buffer_id\":"<<r.buffer.id<<",\"size\":"<<r.buffer.size<<",\"buffer_usage\":"<<r.buffer.usage<<",\"address_offset\":"<<r.buffer.offset
+        <<",\"remaining_bytes\":"<<r.buffer.remaining<<",\"creation_chain_complete\":"<<r.buffer.creationComplete
+        <<"},\"view\":{\"view_id\":"<<r.viewId<<",\"image_id\":"<<r.imageId<<",\"view_known\":"<<r.viewKnown<<",\"image_known\":"<<r.imageKnown
+        <<",\"layout\":"<<r.imageLayout<<"},\"sampler_used\":"<<r.samplerUsed<<",\"sampler_present\":"<<r.samplerPresent<<",\"sampler_identity_captured\":false}";
+}
 inline std::string serialize(const Capture& capture) {
     std::map<uint64_t, std::shared_ptr<const Pipeline>> pipelines;
     std::map<uint64_t,std::shared_ptr<const PipelineLayoutSnapshot>> layouts;
@@ -410,7 +455,10 @@ inline std::string serialize(const Capture& capture) {
         << ",\"truncated\":" << capture.truncated << ",\"shader_identifier_algorithm\":\"" << capture.identifierAlgorithm
         << "\",\"gpu_execution_order_known\":false,\"replayable_command_stream\":false"
         << ",\"descriptor_contents_captured\":false,\"resource_aliases_excluded\":false"
-        << ",\"legacy_attachment_details_supported\":false,\"game_stereo_submitted\":false,\"descriptor_set_layouts\":[";
+        << ",\"legacy_attachment_details_supported\":false,\"game_stereo_submitted\":false,\"descriptor_queries_observed\":"<<capture.descriptorQueries
+        << ",\"descriptor_query_catalog_truncated\":"<<capture.descriptorCatalogTruncated<<",\"descriptor_query_selection_proven\":false,\"descriptor_query_receipts\":[";
+    for(size_t i=0;i<capture.descriptorReceipts.size();++i){if(i)out<<',';writeReceipt(out,*capture.descriptorReceipts[i]);}
+    out<<"],\"descriptor_set_layouts\":[";
     bool setComma=false;for(auto& item:sets){auto& s=*item.second;if(setComma)out<<',';setComma=true;
         out<<"{\"id\":"<<s.id<<",\"snapshot_id\":"<<s.revision<<",\"flags\":"<<s.flags<<",\"definition_complete\":"<<s.complete
             <<",\"binding_count\":"<<s.bindingCount<<",\"size_known\":"<<s.sizeKnown<<",\"size_bytes\":"<<s.size<<",\"bindings\":[";

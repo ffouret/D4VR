@@ -33,7 +33,7 @@ std::vector<uint32_t> readCode(const char* path) {
 
 int main(int argc,char** argv) try {
     if (argc < 4) throw std::runtime_error("Usage: stereo_targets_vulkan original.vert.spv stereo.vert.spv mrt.frag.spv [--negative-sync-control] [--preview-directory path]");
-    bool negative = false,split = false,recorded = false,buffered = false,negativeCompute = false,extended = false,recipes = false,libraries = false,libraryOriginalLive = false,stateDecoys = false,staticState = false,telemetry = false,singleCameraBuffer = false,frozen = false; std::filesystem::path preview,computePath,telemetryControlPath;
+    bool negative = false,split = false,recorded = false,buffered = false,negativeCompute = false,extended = false,recipes = false,libraries = false,libraryOriginalLive = false,stateDecoys = false,staticState = false,telemetry = false,singleCameraBuffer = false,frozen = false; std::filesystem::path preview,computePath,telemetryControlPath,receiptOutput;
     for (int k = 4; k < argc; ++k) {
         if (std::string(argv[k]) == "--negative-sync-control") negative = true;
         else if (std::string(argv[k]) == "--split-passes") split = true;
@@ -52,12 +52,16 @@ int main(int argc,char** argv) try {
         else if (std::string(argv[k]) == "--telemetry-control-shader" && k+1 < argc) telemetryControlPath = argv[++k];
         else if (std::string(argv[k]) == "--compute" && k+1 < argc) computePath = argv[++k];
         else if (std::string(argv[k]) == "--preview-directory" && k+1 < argc) preview = argv[++k];
+        else if (std::string(argv[k]) == "--descriptor-receipt-output" && k+1 < argc) receiptOutput = argv[++k];
         else throw std::invalid_argument("Unknown stereo fixture option");
     }
     if ((negative || negativeCompute) && !preview.empty()) throw std::invalid_argument("Negative control cannot export previews");
     if(frozen && (!recorded || !recipes || split || buffered || extended || staticState))throw std::invalid_argument("Frozen replay proof requires complete classic monolithic recorded scopes");
     if (buffered && (!recorded || computePath.empty())) throw std::invalid_argument("Descriptor-buffer proof requires recorded replay and a compute echo shader");
     if (negativeCompute && !buffered) throw std::invalid_argument("Compute negative control requires descriptor buffers");
+    if(!receiptOutput.empty() && (!buffered || std::filesystem::exists(receiptOutput)))throw std::invalid_argument("Receipt oracle needs descriptor buffers and a new private output file");
+    std::vector<std::string> receiptOracle;
+    auto receipt=[&](VkDescriptorType type,VkDeviceSize range,const void* bytes,size_t n){if(!receiptOutput.empty())receiptOracle.push_back("{\"type\":"+std::to_string(type)+",\"range_bytes\":"+std::to_string(range)+",\"encoding_hex\":\""+frame::hexBytes(static_cast<const uint8_t*>(bytes),n)+"\"}");};
     if (extended && !recorded) throw std::invalid_argument("Dynamic-state proof requires recorded replay");
     if (recipes && !recorded) throw std::invalid_argument("Pipeline recipes require recorded replay");
     if (libraries && (!recorded || recipes)) throw std::invalid_argument("Library pipelines require recorded replay and their own pipeline mode");
@@ -163,7 +167,23 @@ int main(int argc,char** argv) try {
             VkDescriptorGetInfoEXT descriptor{VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT}; descriptor.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; descriptor.data.pUniformBuffer = &address;
             expect(offset+descriptorProperties.uniformBufferDescriptorSize <= descriptorStride,"Descriptor exceeds private slot");
             getDescriptor(f.device,&descriptor,descriptorProperties.uniformBufferDescriptorSize,static_cast<char*>(descriptorStorage.mapped)+s*descriptorStride+offset);
+            receipt(descriptor.type,address.range,static_cast<char*>(descriptorStorage.mapped)+s*descriptorStride+offset,descriptorProperties.uniformBufferDescriptorSize);
         }
+    }
+    if(buffered) {
+        // Unused sampled-image descriptor: exercise exact output + image/view
+        // identity capture without adding a GPU command to the rendering test.
+        VkImageCreateInfo ci{VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};ci.imageType=VK_IMAGE_TYPE_2D;ci.format=VK_FORMAT_R8G8B8A8_UNORM;ci.extent={4,4,1};
+        ci.mipLevels=1;ci.arrayLayers=1;ci.samples=VK_SAMPLE_COUNT_1_BIT;ci.tiling=VK_IMAGE_TILING_OPTIMAL;ci.usage=VK_IMAGE_USAGE_SAMPLED_BIT;
+        VkImage image{};check(vkCreateImage(f.device,&ci,nullptr,&image));VkMemoryRequirements requirements{};vkGetImageMemoryRequirements(f.device,image,&requirements);
+        VkMemoryAllocateInfo allocate{VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};allocate.allocationSize=requirements.size;allocate.memoryTypeIndex=f.type(requirements.memoryTypeBits,VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        VkDeviceMemory memory{};check(vkAllocateMemory(f.device,&allocate,nullptr,&memory));check(vkBindImageMemory(f.device,image,memory,0));
+        VkImageViewCreateInfo vi{VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};vi.image=image;vi.viewType=VK_IMAGE_VIEW_TYPE_2D;vi.format=ci.format;vi.subresourceRange={VK_IMAGE_ASPECT_COLOR_BIT,0,1,0,1};
+        VkImageView view{};check(vkCreateImageView(f.device,&vi,nullptr,&view));VkDescriptorImageInfo imageInfo{VK_NULL_HANDLE,view,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+        VkDescriptorGetInfoEXT info{VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT};info.type=VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;info.data.pSampledImage=&imageInfo;
+        std::vector<uint8_t> bytes(descriptorProperties.sampledImageDescriptorSize);getDescriptor(f.device,&info,bytes.size(),bytes.data());receipt(info.type,0,bytes.data(),bytes.size());
+        std::fill(bytes.begin(),bytes.end(),0xcc); // The observer must own the returned bytes already.
+        vkDestroyImageView(f.device,view,nullptr);vkDestroyImage(f.device,image,nullptr);vkFreeMemory(f.device,memory,nullptr);
     }
     auto upload = [&](unsigned set,const Matrix4& projection,const Matrix4& view) {
         auto p = reinterpret_cast<float*>(static_cast<char*>(uniforms[set][0].mapped)+72*16);
@@ -636,6 +656,7 @@ int main(int argc,char** argv) try {
     if(telemetry){release(telemetryCounters);release(telemetryRing);}
     if (buffered) { release(descriptorStorage); release(computeOutput); }
     vkDestroyDevice(f.device,nullptr); f.device = VK_NULL_HANDLE; vkDestroyInstance(f.instance,nullptr); f.instance = VK_NULL_HANDLE;
+    if(!receiptOutput.empty()){std::ofstream out(receiptOutput);out<<"{\"schema_version\":1,\"queries\":[";for(size_t i=0;i<receiptOracle.size();++i)out<<(i?",":"")<<receiptOracle[i];out<<"]}\n";expect(bool(out),"Receipt oracle output failed");}
     std::cout << std::setprecision(10) << "{\"stereo_mrt_fixture_passed\":" << ((negative || negativeCompute) ? "false" : "true") << ",\"negative_sync_control\":" << (negative ? "true" : "false")
         << ",\"negative_compute_control\":" << (negativeCompute ? "true" : "false") << ",\"incorrect_compute_samples_detected\":" << wrongComputeSamples
         << ",\"clear_followed_by_load_verified\":" << (split ? "true" : "false") << ",\"eye_rendering_passes\":" << (split ? 24 : 16)

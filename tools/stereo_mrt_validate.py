@@ -95,6 +95,7 @@ def run(args) -> dict:
             command.append('--recorded-replay')
         if args.descriptor_buffers:
             command.append('--descriptor-buffers')
+            command+=['--descriptor-receipt-output',str((args.output/(name+'-descriptor-receipts.json')).resolve())]
         if args.dynamic_state:
             command.append('--dynamic-state')
         if args.static_state:
@@ -215,6 +216,14 @@ def run(args) -> dict:
                     if (len(queried)!=1 or queried[0]['flags']!=16 or not queried[0]['size_known'] or not queried[0]['size_bytes']
                             or [(b['binding'],b['type'],b['count'],b['stages']) for b in queried[0]['bindings']]!=[(0,6,1,33),(1,6,1,33)]):
                         raise ValueError('Observed descriptor layout definition differs from the fixture')
+                    oracle_file=args.output/(name+'-descriptor-receipts.json');os.chmod(oracle_file,0o600)
+                    oracle=json.loads(oracle_file.read_text())['queries'];receipts=data.get('descriptor_query_receipts',[])
+                    if (data.get('descriptor_queries_observed')!=7 or data.get('descriptor_query_catalog_truncated') is not False or len(receipts)!=7
+                            or [{k:r[k] for k in ('type','range_bytes','encoding_hex')} for r in receipts]!=oracle):
+                        raise ValueError('Layer descriptor outputs differ from the application exact-byte oracle')
+                    if (any(r['buffer']['status']!=1 or not r['range_within_observed_buffer'] for r in receipts[:6])
+                            or len({r['buffer']['buffer_id'] for r in receipts[:6]})!=6 or not receipts[6]['view']['view_known'] or not receipts[6]['view']['image_known']):
+                        raise ValueError('Descriptor buffer/image resource identities were not observed')
                 states = summary['pipeline_state_declarations']
                 if not states or any(not p['declarations_complete'] for p in states):
                     raise ValueError('Fixture pipeline declarations were not captured completely')
@@ -238,6 +247,8 @@ def run(args) -> dict:
                     metadata.update({k:summary[k] for k in ('resource_observation_counts','buffer_address_status_counts','layout_observation_counts',
                         'descriptor_layout_query_counts')})
                     metadata.update(observed_pipeline_layouts=len(summary['observed_pipeline_layout_ids']),observed_set_layouts=len(summary['observed_set_layout_ids']))
+                    metadata.update(descriptor_query_counts=summary['descriptor_query_counts'],descriptor_exact_byte_oracle_verified=True,
+                        descriptor_source_buffers=6,descriptor_source_image_views=1,descriptor_query_selection_proven=False)
         paired=None
         if args.paired_pipelines:
             trace=vulkan_trace.report(metadata_directory)['process_traces'][0]

@@ -6,12 +6,14 @@ buffers, leurs offsets et les liaisons classiques de descriptor sets. Les
 événements draw/dispatch situent ces observations dans l'enregistrement CPU.
 Elle observe aussi les layouts de groupes et de pipelines, ainsi que les
 tailles et offsets de bindings demandés au pilote.
+`vkGetDescriptorEXT` conserve maintenant une copie bornée des octets retournés
+avec l'identité observée du buffer ou de la vue d'image source.
 Les arguments et résultats originaux traversent chaque interception une fois.
 
 **Ces observations ne rendent aucun dessin de Diablo et n'autorisent aucune
-reprise.** Le contenu des descripteurs, les images
-référencées et les alias de mémoire physique restent inconnus. Le diagnostic ne
-lit ni n'écrit le contenu des buffers et n'ajoute aucune commande GPU.
+reprise.** Les descripteurs actifs, le contenu courant des buffers/textures et
+les alias de mémoire physique restent inconnus. L'observateur copie uniquement
+les sorties de requêtes CPU ; il n'ajoute aucune commande GPU.
 
 ## Identité et bornes
 
@@ -81,6 +83,48 @@ Références Vulkan : [bindings et immutable samplers](https://docs.vulkan.org/r
 [pipeline layouts](https://docs.vulkan.org/refpages/latest/refpages/source/VkPipelineLayoutCreateInfo.html),
 [offsets fournis par le pilote](https://docs.vulkan.org/refpages/latest/refpages/source/vkGetDescriptorSetLayoutBindingOffsetEXT.html).
 
+## Sorties exactes de GetDescriptor
+
+L'interception copie la source typée avant l'appel original et les octets
+retournés après cet appel, sans modifier ses arguments, destination ou résultat.
+Elle lit uniquement le membre d'union désigné par `type`. Les buffers conservent
+leur identité/plage observée, l'offset et la range demandée ; le format ignoré
+des uniform/storage buffers n'est pas lu. Les texel buffers gardent leur format.
+Les images conservent les identités de vue/image et le layout demandé. Les
+sources nulles, inconnues ou ambiguës restent distinctes. Les samplers sont
+signalés présents ou absents, sans inventer leur identité. Les types non
+pris en charge gardent seulement leur type et leurs octets opaques.
+
+Le catalogue compare les **octets entiers** puis la source observée pour
+dédupliquer les requêtes connues. Aucune empreinte faible n'est utilisée.
+Des encodages identiques associés à deux générations de ressource, ou à des
+samplers non résolus, restent plusieurs candidats. Une recherche retourne
+tous les candidats exacts ; elle n'autorise jamais une reprise. Le catalogue
+est un préfixe borné des requêtes observées depuis l'activation, sans preuve
+que leurs sorties figurent dans les descriptor buffers lus par une frame.
+
+Chaque capture possède le préfixe connu au moment de ses envois CPU. Les
+observations déjà capturées survivent aux nouvelles requêtes, à l'écrasement
+de la destination et à la destruction des ressources. Elles ne prolongent
+aucune durée de vie GPU. `descriptor_query_selection_proven` et
+`descriptor_contents_captured` restent faux : les requêtes ne sont pas un
+snapshot du contenu actif des descriptor buffers, et l'adresse CPU de sortie
+n'est pas interprétée comme un emplacement GPU.
+
+Les limites sont 4 096 entrées, 4 096 octets par sortie et un Mio d'octets dans
+les entrées. Les duplications connues sont reconnues avant de consommer le budget.
+Après dépassement ou échec, le catalogue est marqué tronqué et les recherches
+ne retournent plus de candidats ; les copies historiques restent lisibles.
+Il faudra mesurer cette couverture dans le jeu avant d'utiliser ce préfixe
+pour une capture de ressources exploitable.
+
+Les encodages peuvent contenir des adresses propres au pilote : ils restent
+dans les fichiers de capture privés, hors du dépôt. Le résumé Python émet des
+comptages sans recopier ces octets. Références Vulkan :
+[GetDescriptor](https://docs.vulkan.org/refpages/latest/refpages/source/vkGetDescriptorEXT.html),
+[source typée](https://docs.vulkan.org/refpages/latest/refpages/source/VkDescriptorDataEXT.html),
+[adresse, range et format](https://docs.vulkan.org/refpages/latest/refpages/source/VkDescriptorAddressInfoEXT.html).
+
 ## Événements bornés
 
 `resource_events` suit l'ordre des seules observations instrumentées dans un
@@ -121,7 +165,16 @@ La CI vérifie ces métadonnées sous Linux et Windows et ajoute le test de fram
 aux contrôles ASan/UBSan. Le runtime ASan local est absent ; cette vérification
 est effectuée en CI. Aucun nouvel essai dans Diablo n'est revendiqué ici.
 
-Avant une nouvelle capture du jeu, il faut compléter l'observation des
-descripteurs et la provenance des ressources qui y sont encodées. Les
+La [preuve des sorties de descripteurs](proofs/descriptor-receipts-v1.json)
+compare les copies de la couche aux octets reçus par l'application GPU isolée :
+six buffers et une vue de texture inutilisée, détruite avant le premier envoi.
+La destination de cette dernière est écrasée après l'appel, sans modifier la
+capture. Les mêmes six processus GPU et onze régressions du POC sont exécutés ;
+le témoin compute et les références graphiques restent comparés. Ce contrôle
+ne prouve pas la sélection active d'une texture par le jeu.
+
+Avant une nouvelle capture du jeu, il faut compléter la provenance mémoire et
+la visibilité des ressources, puis relier les encodages à leur emplacement
+actif. Les
 observations présentes ne ferment pas les dépendances LOAD ni les états de
 dessin requis par le moteur de reprise.

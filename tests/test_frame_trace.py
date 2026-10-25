@@ -25,6 +25,26 @@ def sample():
 
 
 class Frames(unittest.TestCase):
+    def test_exact_descriptor_query_catalog_is_bounded_and_does_not_claim_active_selection(self):
+        data=sample();r={'id':1,'first_observed_query':1,'type':6,'kind':1,'input_chain_complete':True,'input_pointer_null':False,'null_descriptor':False,
+            'encoding_bytes':4,'encoding_hex':'01020304','range_bytes':256,'format':0,'range_within_observed_buffer':True,
+            'buffer':{'status':1,'buffer_id':8,'size':4096,'buffer_usage':0,'address_offset':128,'remaining_bytes':3968,'creation_chain_complete':True},
+            'view':{'view_id':0,'image_id':0,'view_known':False,'image_known':False,'layout':0},'sampler_used':False,'sampler_present':False,'sampler_identity_captured':False}
+        data.update(descriptor_queries_observed=2,descriptor_query_catalog_truncated=False,descriptor_query_selection_proven=False,descriptor_query_receipts=[r])
+        with tempfile.TemporaryDirectory() as directory:
+            p=Path(directory)/'frame.json';p.write_text(json.dumps(data));summary=frame_trace.summarize(frame_trace.read_frame(p))
+            self.assertEqual(summary['descriptor_query_counts'],{'observed_calls':2,'owned_receipts':1,'encoding_bytes':4,'resource_kinds':{1:1}})
+            self.assertNotIn('01020304',json.dumps(summary));self.assertFalse(summary['descriptor_query_selection_proven'])
+            for obj,key,value in [(r,'id',2),(r,'first_observed_query',3),(r,'encoding_bytes',4097),(r,'encoding_hex','0102030z'),(r,'encoding_hex','0102'),
+                    (r,'format',99),(r,'kind',0),(r,'sampler_identity_captured',True),(r,'range_bytes',8192),(r,'null_descriptor',True),
+                    (r['buffer'],'remaining_bytes',4096),(r['view'],'view_known',True),(data,'descriptor_query_selection_proven',True)]:
+                old=obj[key];obj[key]=value;p.write_text(json.dumps(data))
+                with self.assertRaises(ValueError):frame_trace.read_frame(p)
+                obj[key]=old
+            data['descriptor_query_catalog_truncated']=True;p.write_text(json.dumps(data));self.assertTrue(frame_trace.summarize(frame_trace.read_frame(p))['truncated'])
+            r['buffer'].update(status=0,buffer_id=0,size=0,address_offset=0,remaining_bytes=0);r['range_within_observed_buffer']=False
+            p.write_text(json.dumps(data));frame_trace.read_frame(p) # Unresolved source is an observation, never admission.
+
     def test_layout_snapshots_link_events_and_pipelines_with_owned_query_metadata(self):
         data=sample();s={'id':20,'snapshot_id':1,'flags':16,'definition_complete':True,'binding_count':1,'size_known':True,'size_bytes':128,
             'bindings':[{'binding':7,'type':6,'count':1,'stages':1,'flags':0,'immutable_samplers_unresolved':False,'offset_known':True,'offset_bytes':32}]}

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Request and summarize bounded, CPU-only Vulkan pass metadata."""
+"""Read private bounded Vulkan metadata/descriptor receipts; summarize without raw encodings."""
 from __future__ import annotations
 import argparse
 from collections import Counter, defaultdict
@@ -19,6 +19,49 @@ ADDRESS_STATUS=('unknown','unique_observed_range','ambiguous','invalid','incompl
 
 def unsigned(value,bits=64):
     return type(value) is int and 0<=value<2**bits
+
+
+def descriptor_receipts(data: dict) -> None:
+    rows=data.get('descriptor_query_receipts',[]);queries=data.get('descriptor_queries_observed',0)
+    if (len(rows)>4096 or not unsigned(queries) or len(rows)>queries
+            or type(data.get('descriptor_query_catalog_truncated',False)) is not bool
+            or data.get('descriptor_query_selection_proven',False) is not False):
+        raise ValueError('Invalid descriptor query catalog or unsupported selection claim')
+    total=last=0
+    for index,r in enumerate(rows):
+        if (type(r.get('id')) is not int or r['id']!=index+1 or not unsigned(r.get('first_observed_query')) or not last<r['first_observed_query']<=queries
+                or not unsigned(r.get('type'),32) or type(r.get('kind')) is not int or r['kind'] not in range(4)):
+            raise ValueError('Invalid descriptor query identity/order')
+        last=r['first_observed_query'];n=r['encoding_bytes'];encoding=r['encoding_hex']
+        if (not unsigned(n) or not 1<=n<=4096 or not isinstance(encoding,str) or len(encoding)!=n*2 or not re.fullmatch('[0-9a-f]+',encoding)):
+            raise ValueError('Invalid exact descriptor encoding')
+        total+=n
+        if any(type(r.get(k)) is not bool for k in ('input_chain_complete','input_pointer_null','null_descriptor','range_within_observed_buffer','sampler_used','sampler_present')) or r.get('sampler_identity_captured') is not False:
+            raise ValueError('Invalid descriptor query flags or unsupported sampler identity')
+        kind=1 if r['type'] in (4,5,6,7) else 2 if r['type'] in (1,2,3,10) else 3 if r['type']==0 else 0
+        if r['kind']!=kind or r['sampler_used']!=(r['type'] in (0,1)) or (r['sampler_present'] and not r['sampler_used']):
+            raise ValueError('Descriptor union selection disagrees with its type')
+        if not unsigned(r['range_bytes']) or not unsigned(r['format'],32):raise ValueError('Invalid descriptor range/format')
+        if r['type'] in (6,7) and r['format']:raise ValueError('Ignored buffer format was captured')
+        b=r['buffer'];v=r['view']
+        if type(b.get('status')) is not int or b['status'] not in range(len(ADDRESS_STATUS)) or type(b.get('creation_chain_complete')) is not bool:
+            raise ValueError('Invalid descriptor source buffer status')
+        if any(not unsigned(b[k]) for k in ('buffer_id','size','buffer_usage','address_offset','remaining_bytes')):
+            raise ValueError('Invalid descriptor source buffer bounds')
+        if b['status']==1:
+            if not b['buffer_id'] or not b['size'] or b['address_offset']>=b['size'] or b['remaining_bytes']!=b['size']-b['address_offset']:
+                raise ValueError('Descriptor source buffer bounds disagree')
+        elif any(b[k] for k in ('buffer_id','size','address_offset','remaining_bytes')):
+            raise ValueError('Unresolved descriptor source invented a buffer owner')
+        fits=b['status']==1 and 0<r['range_bytes']<2**64-1 and r['range_bytes']<=b['remaining_bytes']
+        if r['range_within_observed_buffer']!=fits:raise ValueError('Descriptor range fit claim disagrees with bounds')
+        if (any(not unsigned(v[k]) for k in ('view_id','image_id','layout')) or any(type(v[k]) is not bool for k in ('view_known','image_known'))
+                or bool(v['view_id'])!=v['view_known'] or bool(v['image_id'])!=v['image_known'] or (v['image_known'] and not v['view_known'])):
+            raise ValueError('Invalid descriptor source image/view identity')
+        if ((kind!=1 and (r['range_bytes'] or b['status'] or b['buffer_id'])) or (kind!=2 and (v['view_id'] or v['image_id'] or v['layout']))
+                or (r['null_descriptor'] and (b['buffer_id'] or v['view_id'])) or (kind in (1,2) and r['input_pointer_null'] and not r['null_descriptor'])):
+            raise ValueError('Descriptor source fields disagree with the selected resource')
+    if total>1024*1024:raise ValueError('Descriptor query byte budget exceeded')
 
 
 def layout_tables(data: dict) -> dict:
@@ -139,6 +182,7 @@ def read_frame(path: Path) -> dict:
     if data.get('scope') not in ('single_submission', 'cpu_submission_interval_between_present_calls'):
         raise ValueError('Unknown capture scope')
     layouts=layout_tables(data)
+    descriptor_receipts(data)
     algorithm = data.get('shader_identifier_algorithm', '')
     if algorithm and not re.fullmatch('[0-9a-f]{32}', algorithm):
         raise ValueError('Invalid shader identifier algorithm')
@@ -279,7 +323,7 @@ def summarize(data: dict, correlation: dict | None = None) -> dict:
     draw_counts = Counter()
     passes = []
     image_writes = defaultdict(list)
-    truncated = bool(data['truncated'])
+    truncated = bool(data['truncated']) or data.get('descriptor_query_catalog_truncated',False)
     missing_commands = unknown_pipeline_commands = failed = 0
     resource_counts=Counter();address_counts=Counter();buffer_ids=set();layout_counts=Counter();layout_ids=set();set_ids=set();queried_sizes=set();queried_offsets=set()
     layouts={p['snapshot_id']:p for p in data.get('pipeline_layouts',[])};sets={s['snapshot_id']:s for s in data.get('descriptor_set_layouts',[])}
@@ -342,6 +386,10 @@ def summarize(data: dict, correlation: dict | None = None) -> dict:
               'descriptor_contents_captured':False,'resource_aliases_excluded':False,
               'layout_observation_counts':dict(layout_counts),'observed_pipeline_layout_ids':sorted(layout_ids),'observed_set_layout_ids':sorted(set_ids),
               'descriptor_layout_query_counts':{'sizes':len(queried_sizes),'binding_offsets':len(queried_offsets)},
+              'descriptor_query_counts':{'observed_calls':data.get('descriptor_queries_observed',0),'owned_receipts':len(data.get('descriptor_query_receipts',[])),
+                  'encoding_bytes':sum(r['encoding_bytes'] for r in data.get('descriptor_query_receipts',[])),
+                  'resource_kinds':dict(Counter(r['kind'] for r in data.get('descriptor_query_receipts',[])))},
+              'descriptor_query_catalog_truncated':data.get('descriptor_query_catalog_truncated',False),'descriptor_query_selection_proven':False,
               'truncated': truncated, 'missing_command_buffers': missing_commands,
               'draw_commands_with_unknown_pipeline': unknown_pipeline_commands,
               'pipeline_count': len(pipeline_ids), 'passes': passes,

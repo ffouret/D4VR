@@ -179,7 +179,7 @@ struct Commands {
     X(EndCommandBuffer) X(DeviceWaitIdle) X(CreatePipelineLayout) X(DestroyPipelineLayout) \
     X(CmdPushConstants) X(CmdSetViewport) X(CmdSetScissor) X(CmdSetStencilReference) \
     X(CreateBuffer) X(DestroyBuffer) X(GetBufferDeviceAddress) \
-    X(CreateDescriptorSetLayout) X(DestroyDescriptorSetLayout) X(GetDescriptorSetLayoutSizeEXT) X(GetDescriptorSetLayoutBindingOffsetEXT) \
+    X(CreateDescriptorSetLayout) X(DestroyDescriptorSetLayout) X(GetDescriptorSetLayoutSizeEXT) X(GetDescriptorSetLayoutBindingOffsetEXT) X(GetDescriptorEXT) \
     X(CmdBindDescriptorBuffersEXT) X(CmdSetDescriptorBufferOffsetsEXT) X(CmdBindDescriptorSets)
 struct Device {
     VkDevice handle{};
@@ -615,6 +615,13 @@ VKAPI_ATTR void VKAPI_CALL d4GetDescriptorSetLayoutSizeEXT(VkDevice device,VkDes
 VKAPI_ATTR void VKAPI_CALL d4GetDescriptorSetLayoutBindingOffsetEXT(VkDevice device,VkDescriptorSetLayout layout,uint32_t binding,VkDeviceSize* offset) {
     auto d=deviceFor(device);d->GetDescriptorSetLayoutBindingOffsetEXT(device,layout,binding,offset);
     if(d->frame.enabled){std::lock_guard<std::mutex> lock(stateMutex);try{d->frame.setLayoutOffset(layout,binding,*offset);}catch(...){d->frame.resourceFailure();}}
+}
+VKAPI_ATTR void VKAPI_CALL d4GetDescriptorEXT(VkDevice device,const VkDescriptorGetInfoEXT* info,size_t n,void* output) {
+    auto d=deviceFor(device);if(!d->frame.enabled){d->GetDescriptorEXT(device,info,n,output);return;}
+    d4vr::frame::DescriptorReceipt input;
+    {std::lock_guard<std::mutex> lock(stateMutex);try{input=d->frame.descriptorInput(*info);}catch(...){d->frame.resourceFailure();}}
+    d->GetDescriptorEXT(device,info,n,output);
+    {std::lock_guard<std::mutex> lock(stateMutex);d->frame.descriptorOutput(std::move(input),n,output);}
 }
 VKAPI_ATTR void VKAPI_CALL d4CmdDispatch(VkCommandBuffer command, uint32_t x, uint32_t y, uint32_t z) {
     auto d = deviceFor(command); count(d, command, Dispatch);
