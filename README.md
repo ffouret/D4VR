@@ -31,6 +31,11 @@ sources liées à quatre dessins et un dispatch. Le contrôle d'offset incorrect
 retrouve la mauvaise paire de buffers, confirmée par le résultat compute.
 Cette capture appartient au programme de test ; son équivalent dans Diablo
 reste à implémenter.
+La [copie GPU bornée](docs/RESOURCE_BINDINGS.md#copie-gpu-des-descripteurs-et-des-buffers-de-caméra)
+récupère aussi ces descripteurs et les six buffers de caméra de la fixture,
+sans modifier l'usage des sources. Les 9 456 octets correspondent aux sources ;
+une copie provenant d'une mauvaise ressource est refusée. Le transport GPU
+est commun aux plateformes ; son raccordement aux ressources du jeu reste ouvert.
 
 La [preuve d'intégration de la couche Vulkan](docs/LAYER_REPLAY_POC.md) raccorde
 maintenant les commandes d'une application au moteur de reprise : deux passes

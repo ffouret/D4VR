@@ -237,6 +237,49 @@ Références Vulkan : [invalidation lors d'une nouvelle liaison](https://docs.vu
 [offsets, mises à jour et visibilité](https://docs.vulkan.org/refpages/latest/refpages/source/vkCmdSetDescriptorBufferOffsetsEXT.html),
 [tailles d'encodage](https://docs.vulkan.org/refpages/latest/refpages/source/vkGetDescriptorEXT.html).
 
+## Copie GPU des descripteurs et des buffers de caméra
+
+`native/vulkan/buffer_readback` ajoute le transport par adresses GPU existantes.
+Un shader compute lit des mots de quatre octets vers un buffer privé cohérent.
+Les sources gardent leur usage original : BDA est requis, TRANSFER_SRC ne l'est
+pas. Le shader n'écrit aucune source et ne requiert ni descripteur, atomic,
+accès 8 bits ou capability shaderInt64. Les 24 octets de push constants portent
+les deux adresses et le nombre de mots. Le plan vérifie tout le batch avant la
+première commande : alignements, tailles, overflow, usages, chevauchements VA
+source/destination ou destinations, maximum 32 spans et un Mio au total.
+Les alias physiques à adresses distinctes restent à exclure par l'appelant.
+
+Le composant enregistre dans un command buffer compute **privé**, hors passe de
+rendu. L'appelant conserve les ressources, exclut les writers, synchronise la
+queue et les producteurs, soumet et attend le fence avant lecture/libération.
+Les barrières couvrent les écritures host cohérentes et les producteurs de la
+même queue, puis la visibilité des résultats vers l'hôte. Elles ne remplacent
+pas une synchronisation entre queues ou une protection contre free/unmap/écriture
+concurrente. Aucun accès à un pointeur mappé du jeu n'est ajouté à la couche.
+
+Avec `--readback-compute`, la fixture copie immédiatement après son premier
+fence terminé, avant de modifier les sources : 192 octets de descripteurs et
+9 264 octets des six UBOs. Ce moment correspond au premier envoi capturé ; les
+données ne sont pas prises après les mises à jour des cas suivants. Les copies
+GPU sont comparées aux sources CPU possédées avant toute reprise des tests.
+224 octets de garde restent intacts et les sept sources sont inchangées.
+Le résolveur utilise ensuite la copie **GPU** des descripteurs pour retrouver
+les sources liées aux quatre dessins et au dispatch. Les payloads de caméra
+restent dans l'oracle privé, avec les encodages opaques.
+
+La [preuve GPU](proofs/buffer-readback-v1.json) couvre sept processus. Le nouveau
+contrôle négatif pointe vers une autre ressource valide : Vulkan reste sans
+erreur, mais la comparaison des octets et le résolveur refusent la copie. Les
+références couleur/profondeur/stencil et les témoins suivants restent inchangés.
+La validation Vulkan ne garantit pas une couverture de tous les accès BDA ;
+les comparaisons exactes, bornes et gardes apportent des contrôles séparés.
+Les tests CPU de plan sont portables Linux/Windows et inclus dans ASan/UBSan CI.
+La couche passive et son profil d'admission n'ont pas changé ; aucun dessin de
+Diablo ni nouvel essai au casque ne résulte de cette étape.
+
+Références : [plages des adresses GPU](https://docs.vulkan.org/refpages/latest/refpages/source/vkGetBufferDeviceAddress.html),
+[mémoire des PhysicalStorageBuffers](https://docs.vulkan.org/spec/latest/chapters/interfaces.html#interfaces-resources-layout).
+
 ## Événements bornés
 
 `resource_events` suit l'ordre des seules observations instrumentées dans un

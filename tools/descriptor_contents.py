@@ -57,6 +57,19 @@ def resolve_owned_fixture(data: dict, oracle: dict) -> dict:
              and [r['type'] for r in receipts] == [6]*6+[2], 'Frame and owned fixture catalog differ')
     encodings = [_bytes(r['encoding_hex'],4096) for r in receipts[:6]]
     _require(all(len(b) == width for b in encodings), 'Descriptor property and query size differ')
+    gpu=oracle.get('gpu_readback');uniform_bytes=0
+    if gpu is not None:
+        _require(gpu.get('scope')=='after_first_completed_fixture_submission' and gpu.get('guard_bytes_verified')==224
+                 and gpu.get('source_usage_unchanged') is True and len(gpu.get('copies',[]))==7, 'Unsupported GPU readback contract')
+        copies=gpu['copies'];copied=_bytes(copies[0]['encoding_hex'],1024*1024)
+        _require(_bytes(copies[0]['oracle_hex'],1024*1024)==payload and copied==payload,
+                 'GPU descriptor readback differs from owned storage')
+        payload=copied # Resolution below now reads the actual GPU copy.
+        for copy,r in zip(copies[1:],receipts[:6]):
+            source=_bytes(copy['encoding_hex'],1024*1024)
+            _require(source==_bytes(copy['oracle_hex'],1024*1024) and len(source)==r['range_bytes'],
+                     'GPU uniform payload differs from owned first-submission source')
+            uniform_bytes+=len(source)
     writes = storage.get('query_write_offsets', [])
     _require(len(writes) == 6 and all(_uint(o) and o+width <= len(payload) for o in writes)
              and all(payload[o:o+width] == b for o,b in zip(writes,encodings)), 'Owned write slots differ from query outputs')
@@ -168,7 +181,8 @@ def resolve_owned_fixture(data: dict, oracle: dict) -> dict:
             'completed_immutable_storage_checks':storage['completed_submissions'],
             'event_status_counts':counts,'events':resolved,
             'game_capture_supported':False,'dynamic_shader_accesses_proven':False,
-            'resource_content_captured':False,'resource_aliases_excluded':False,
+            'resource_content_captured':gpu is not None,'resource_aliases_excluded':False,
+            'gpu_storage_readback_verified':gpu is not None,'owned_uniform_payload_bytes':uniform_bytes,
             'game_resource_admission':False,'game_stereo_submitted':False}
 
 

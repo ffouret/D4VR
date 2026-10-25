@@ -43,6 +43,7 @@ jobs:
           ctest --test-dir work/native-xr-ci --output-on-failure
           spirv-val --target-env vulkan1.2 work/native-xr-ci/scene.vert.spv
           spirv-val --target-env vulkan1.2 work/native-xr-ci/scene.frag.spv
+          spirv-val --target-env vulkan1.2 work/native-xr-ci/buffer-readback.comp.spv
           glslangValidator -V --target-env vulkan1.1 -Od native/probe_gpu/geometry_shift.vert -o work/native-xr-ci/geometry.spv
           glslangValidator -V --target-env vulkan1.1 native/tests/probe_fixture.vert -o work/native-xr-ci/fixture.spv
           python tools/spirv_probe.py work/native-xr-ci/fixture.spv --helper work/native-xr-ci/geometry.spv --tools /usr/bin --output work/native-xr-ci/instrumented.spv --geometry
@@ -60,8 +61,8 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           cmake -S native -B work/recipe-sanitized-ci -DD4VR_BUILD_STEREO_TARGET_TESTS=ON -DD4VR_BUILD_VULKAN_TRACE=ON -DCMAKE_BUILD_TYPE=Debug "-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer"
-          cmake --build work/recipe-sanitized-ci --target d4vr_pipeline_recipe_tests d4vr_library_variants_tests d4vr_dynamic_states_tests d4vr_graphics_replay_tests d4vr_replay_specialization_tests d4vr_vulkan_trace_tests d4vr_frame_trace_tests --parallel 2
-          ctest --test-dir work/recipe-sanitized-ci -R "pipeline_recipe_ownership|library_variant_ownership|gpl_dynamic_state_ownership|graphics_state_replay|replay_specialization_ownership|vulkan_trace_forwarding|vulkan_frame_metadata" --output-on-failure
+          cmake --build work/recipe-sanitized-ci --target d4vr_pipeline_recipe_tests d4vr_library_variants_tests d4vr_dynamic_states_tests d4vr_graphics_replay_tests d4vr_replay_specialization_tests d4vr_vulkan_trace_tests d4vr_frame_trace_tests d4vr_buffer_readback_tests --parallel 2
+          ctest --test-dir work/recipe-sanitized-ci -R "pipeline_recipe_ownership|library_variant_ownership|gpl_dynamic_state_ownership|graphics_state_replay|replay_specialization_ownership|vulkan_trace_forwarding|vulkan_frame_metadata|buffer_readback_bounds" --output-on-failure
       - name: Fetch pinned SPIR-V grammar for static audit controls
         if: runner.os == 'Linux'
         uses: actions/checkout@v4

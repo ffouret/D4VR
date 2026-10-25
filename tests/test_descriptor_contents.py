@@ -54,6 +54,17 @@ def fixture():
 
 
 class OwnedDescriptors(unittest.TestCase):
+    def test_gpu_copy_is_used_only_after_entire_descriptor_and_uniform_comparison(self):
+        data,oracle,_=fixture();payload=oracle['owned_storage']['encoding_hex']
+        copies=[{'encoding_hex':payload,'oracle_hex':payload}]+[{'encoding_hex':'01'*32,'oracle_hex':'01'*32} for _ in range(6)]
+        oracle['gpu_readback']={'scope':'after_first_completed_fixture_submission','guard_bytes_verified':224,'source_usage_unchanged':True,'copies':copies}
+        result=descriptor_contents.resolve_owned_fixture(data,oracle)
+        self.assertTrue(result['gpu_storage_readback_verified']);self.assertEqual(result['owned_uniform_payload_bytes'],192)
+        copies[0]['encoding_hex']='00'*48
+        with self.assertRaisesRegex(ValueError,'GPU descriptor readback differs'):descriptor_contents.resolve_owned_fixture(data,oracle)
+        copies[0]['encoding_hex']=payload;copies[1]['encoding_hex']='02'*32
+        with self.assertRaisesRegex(ValueError,'GPU uniform payload differs'):descriptor_contents.resolve_owned_fixture(data,oracle)
+
     def test_resolves_exact_sources_with_independent_compute_and_layout_query_revisions(self):
         data,oracle,_=fixture();r=descriptor_contents.resolve_owned_fixture(data,oracle)
         self.assertEqual(r['event_status_counts'],{'resolved_owned_sources':2,'unresolved_binding_state':1})

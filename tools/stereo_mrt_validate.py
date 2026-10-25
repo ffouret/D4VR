@@ -19,6 +19,9 @@ def run(args) -> dict:
     inputs = [args.fixture,args.original,args.instrumented,args.fragment]
     if args.compute:
         inputs.append(args.compute)
+    if args.readback_compute:
+        if not args.descriptor_buffers:raise ValueError('GPU readback requires the owned descriptor-buffer fixture')
+        inputs.append(args.readback_compute)
     if args.telemetry_control_shader:
         if not args.replay_telemetry:raise ValueError('Separate diagnostic shader requires the telemetry proof')
         inputs.append(args.telemetry_control_shader)
@@ -57,6 +60,8 @@ def run(args) -> dict:
              ('sync-negative-control',True,False,True,False)]
     if args.descriptor_buffers:
         cases.append(('descriptor-offset-negative-control',True,False,False,True))
+    if args.readback_compute:
+        cases.append(('readback-source-negative-control',True,False,False,False))
     if args.trace_layer:
         cases.append(('metadata-disabled',True,False,False,False))
     if args.paired_pipelines:
@@ -65,6 +70,7 @@ def run(args) -> dict:
         cases.append(('steam-runtime-validation',True,True,False,False))
     results = []
     for name,validation,in_runtime,negative,negative_compute in cases:
+        negative_readback=name=='readback-source-negative-control'
         bridge = Path('/run/host/usr/bin/flatpak-spawn')
         command = [str(bridge),'--host','/usr/bin/env'] if bridge.exists() else ['/usr/bin/env']
         for key in ('VK_INSTANCE_LAYERS','VK_ADD_LAYER_PATH','VK_LAYER_PATH','VK_LAYER_ENABLES','VK_LAYER_VALIDATE_SYNC',
@@ -90,6 +96,9 @@ def run(args) -> dict:
         command += [str(p.resolve()) for p in inputs[:4]]
         if args.compute:
             command += ['--compute',str(args.compute.resolve())]
+        if args.readback_compute:
+            command+=['--readback-compute',str(args.readback_compute.resolve())]
+            if negative_readback:command.append('--negative-readback-control')
         if args.split_passes:
             command.append('--split-passes')
         if args.recorded_replay:
@@ -150,6 +159,10 @@ def run(args) -> dict:
                     or proof.get('negative_compute_control') is not True or proof.get('incorrect_compute_samples_detected') != 8
                     or proof.get('stereo_mrt_fixture_passed') is not False):
                 raise ValueError('The valid but incorrect compute descriptor offset was not detected')
+        elif negative_readback:
+            if ('VUID-' in text or 'Validation Error' in text or 'SYNC-HAZARD-' in text
+                    or proof.get('gpu_readback_wrong_source_detected') is not True or proof.get('stereo_mrt_fixture_passed') is not False):
+                raise ValueError('Valid wrong-source GPU readback was not detected')
         else:
             if 'VUID-' in text or 'Validation Error' in text or 'SYNC-HAZARD-' in text:
                 raise ValueError(f'{name}: Vulkan validation reported an error')
@@ -230,10 +243,18 @@ def run(args) -> dict:
                             or summary['memory_fully_mapped_buffer_payloads']!=7 or summary['memory_cache_call_counts']!={'flush':1,'invalidate':1}
                             or any(not m['properties_known'] or m['property_flags']&6!=6 or not m['binding_complete'] or not m['allocation_chain_complete'] for m in memory)):
                         raise ValueError('Observed memory allocation/binding/map/cache provenance differs from fixture')
-                    contents=descriptor_contents.resolve_owned_fixture(data,owned_oracle)
-                    if (not args.library_pipelines and contents['event_status_counts']!={'resolved_owned_sources':5,'unresolved_binding_state':4}
+                    if negative_readback:
+                        try:descriptor_contents.resolve_owned_fixture(data,owned_oracle)
+                        except ValueError as error:
+                            if str(error)!='GPU descriptor readback differs from owned storage':raise
+                        else:raise ValueError('Wrong GPU descriptor source was accepted by resolver')
+                        contents={'scope':'owned_synthetic_fixture','wrong_source_readback_refused':True,'game_stereo_submitted':False,'events':[]}
+                    else:contents=descriptor_contents.resolve_owned_fixture(data,owned_oracle)
+                    if not negative_readback and (not args.library_pipelines and contents['event_status_counts']!={'resolved_owned_sources':5,'unresolved_binding_state':4}
                             or sum(e['kind']=='dispatch' and e['status']=='resolved_owned_sources' for e in contents['events'])!=1):
                         raise ValueError('Actual descriptor storage did not resolve all buffered fixture events')
+                    if args.readback_compute and not negative_readback and (not contents['gpu_storage_readback_verified'] or contents['owned_uniform_payload_bytes']!=9264):
+                        raise ValueError('GPU descriptor/camera payloads were not verified')
                     for event in contents['events']:
                         if event['status']!='resolved_owned_sources':continue
                         start=0 if event['kind']=='draw' or negative_compute else 4
@@ -284,6 +305,7 @@ def run(args) -> dict:
         results.append({'case':name,'exit_code':result.returncode,'validation_layer_loaded':loaded,
                         'intentional_sync_hazard_detected':hazard,
                         'intentional_wrong_compute_offset_detected':negative_compute and proof.get('incorrect_compute_samples_detected') == 8,'fixture':proof,
+                        'intentional_wrong_readback_source_detected':negative_readback and proof.get('gpu_readback_wrong_source_detected') is True,
                         'frame_metadata':metadata,'paired_pipelines':paired})
         print(f'{name}: passed',flush=True)
     report = {'schema_version':1,'scope':'original synthetic scene only','cases':results,
@@ -303,6 +325,7 @@ def main() -> int:
     parser.add_argument('--recorded-replay',action='store_true')
     parser.add_argument('--descriptor-buffers',action='store_true')
     parser.add_argument('--compute',type=Path)
+    parser.add_argument('--readback-compute',type=Path,help='Bounded physical-address copy shader for owned descriptor/camera buffers')
     parser.add_argument('--dynamic-state',action='store_true')
     parser.add_argument('--static-state',action='store_true')
     parser.add_argument('--replay-telemetry',action='store_true')

@@ -6,6 +6,7 @@
 #include "../vulkan/frame_trace.hpp"
 #include "../vulkan/pipeline_recipe.hpp"
 #include "../vulkan/library_variants.hpp"
+#include "../vulkan/buffer_readback.hpp"
 #include <algorithm>
 #include <cmath>
 #include <iomanip>
@@ -29,11 +30,51 @@ std::vector<uint32_t> readCode(const char* path) {
     std::vector<uint32_t> out(size_t(file.tellg())/4);file.seekg(0);file.read(reinterpret_cast<char*>(out.data()),std::streamsize(out.size()*4));
     expect(bool(file),"Shader recipe read failed");return out;
 }
+// Caller is the single-threaded fixture, after its first successful fence and
+// before any source update. This is not a lifetime contract for arbitrary games.
+std::vector<std::vector<uint8_t>> readbackOwned(Fixture& f,const std::filesystem::path& shaderPath,const std::vector<readback::Buffer>& sources,bool wrongSource) {
+    uint32_t count=0;vkGetPhysicalDeviceQueueFamilyProperties(f.physical,&count,nullptr);
+    std::vector<VkQueueFamilyProperties> families(count);vkGetPhysicalDeviceQueueFamilyProperties(f.physical,&count,families.data());
+    expect(f.family<count && (families[f.family].queueFlags&VK_QUEUE_COMPUTE_BIT),"Readback requires a compute queue");
+    VkDeviceSize total=0;for(const auto& s:sources)total+=s.size+32;
+    auto target=f.buffer(total,VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,true);std::memset(target.mapped,0xcd,size_t(total));
+    VkPushConstantRange range{VK_SHADER_STAGE_COMPUTE_BIT,0,sizeof(readback::Packet)};
+    VkPipelineLayoutCreateInfo li{VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};li.pushConstantRangeCount=1;li.pPushConstantRanges=&range;
+    VkPipelineLayout layout{};check(vkCreatePipelineLayout(f.device,&li,nullptr,&layout));
+    auto shader=f.shader(shaderPath.string().c_str());
+    VkComputePipelineCreateInfo ci{VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO};ci.layout=layout;
+    ci.stage.sType=VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;ci.stage.stage=VK_SHADER_STAGE_COMPUTE_BIT;ci.stage.module=shader;ci.stage.pName="main";
+    VkPipeline pipeline{};check(vkCreateComputePipelines(f.device,VK_NULL_HANDLE,1,&ci,nullptr,&pipeline));
+    VkCommandPoolCreateInfo pi{VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};pi.queueFamilyIndex=f.family;
+    VkCommandPool pool{};check(vkCreateCommandPool(f.device,&pi,nullptr,&pool));
+    VkCommandBufferAllocateInfo ai{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};ai.commandPool=pool;ai.level=VK_COMMAND_BUFFER_LEVEL_PRIMARY;ai.commandBufferCount=1;
+    VkCommandBuffer command{};check(vkAllocateCommandBuffers(f.device,&ai,&command));
+    VkCommandBufferBeginInfo bi{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};bi.flags=VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;check(vkBeginCommandBuffer(command,&bi));
+    std::vector<readback::Copy> copies;VkDeviceSize offset=0;
+    for(const auto& source:sources) {
+        offset+=16;copies.push_back({source,0,{target.address,total,VK_BUFFER_USAGE_STORAGE_BUFFER_BIT|VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT},offset,source.size});offset+=source.size+16;
+    }
+    if(wrongSource)copies[0].source=sources[1]; // Valid address/range, wrong resource.
+    readback::record(f.device,vkGetDeviceProcAddr,command,pipeline,layout,copies);check(vkEndCommandBuffer(command));
+    VkFenceCreateInfo fi{VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};VkFence fence{};check(vkCreateFence(f.device,&fi,nullptr,&fence));
+    VkSubmitInfo submit{VK_STRUCTURE_TYPE_SUBMIT_INFO};submit.commandBufferCount=1;submit.pCommandBuffers=&command;check(vkQueueSubmit(f.queue,1,&submit,fence));
+    check(vkWaitForFences(f.device,1,&fence,VK_TRUE,30'000'000'000ull));
+    std::vector<std::vector<uint8_t>> result;auto bytes=static_cast<const uint8_t*>(target.mapped);offset=0;
+    for(const auto& source:sources) {
+        for(unsigned k=0;k<16;++k)expect(bytes[offset+k]==0xcd && bytes[offset+16+source.size+k]==0xcd,"GPU readback guard overwritten");
+        result.emplace_back(bytes+offset+16,bytes+offset+16+source.size);offset+=source.size+32;
+    }
+    vkDestroyFence(f.device,fence,nullptr);vkDestroyCommandPool(f.device,pool,nullptr);vkDestroyPipeline(f.device,pipeline,nullptr);
+    vkDestroyShaderModule(f.device,shader,nullptr);vkDestroyPipelineLayout(f.device,layout,nullptr);
+    vkUnmapMemory(f.device,target.memory);vkDestroyBuffer(f.device,target.handle,nullptr);vkFreeMemory(f.device,target.memory,nullptr);
+    return result;
+}
 }
 
 int main(int argc,char** argv) try {
     if (argc < 4) throw std::runtime_error("Usage: stereo_targets_vulkan original.vert.spv stereo.vert.spv mrt.frag.spv [--negative-sync-control] [--preview-directory path]");
-    bool negative = false,split = false,recorded = false,buffered = false,negativeCompute = false,extended = false,recipes = false,libraries = false,libraryOriginalLive = false,stateDecoys = false,staticState = false,telemetry = false,singleCameraBuffer = false,frozen = false; std::filesystem::path preview,computePath,telemetryControlPath,receiptOutput;
+    bool negative = false,split = false,recorded = false,buffered = false,negativeCompute = false,extended = false,recipes = false,libraries = false,libraryOriginalLive = false,stateDecoys = false,staticState = false,telemetry = false,singleCameraBuffer = false,frozen = false; std::filesystem::path preview,computePath,telemetryControlPath,receiptOutput,readbackPath;
+    bool negativeReadback=false;
     for (int k = 4; k < argc; ++k) {
         if (std::string(argv[k]) == "--negative-sync-control") negative = true;
         else if (std::string(argv[k]) == "--split-passes") split = true;
@@ -53,6 +94,8 @@ int main(int argc,char** argv) try {
         else if (std::string(argv[k]) == "--compute" && k+1 < argc) computePath = argv[++k];
         else if (std::string(argv[k]) == "--preview-directory" && k+1 < argc) preview = argv[++k];
         else if (std::string(argv[k]) == "--descriptor-receipt-output" && k+1 < argc) receiptOutput = argv[++k];
+        else if (std::string(argv[k]) == "--readback-compute" && k+1 < argc) readbackPath = argv[++k];
+        else if (std::string(argv[k]) == "--negative-readback-control") negativeReadback=true;
         else throw std::invalid_argument("Unknown stereo fixture option");
     }
     if ((negative || negativeCompute) && !preview.empty()) throw std::invalid_argument("Negative control cannot export previews");
@@ -60,10 +103,14 @@ int main(int argc,char** argv) try {
     if (buffered && (!recorded || computePath.empty())) throw std::invalid_argument("Descriptor-buffer proof requires recorded replay and a compute echo shader");
     if (negativeCompute && !buffered) throw std::invalid_argument("Compute negative control requires descriptor buffers");
     if(!receiptOutput.empty() && (!buffered || std::filesystem::exists(receiptOutput)))throw std::invalid_argument("Receipt oracle needs descriptor buffers and a new private output file");
+    if(!readbackPath.empty() && receiptOutput.empty())throw std::invalid_argument("GPU readback needs the owned descriptor fixture oracle");
+    if(negativeReadback && readbackPath.empty())throw std::invalid_argument("Wrong-source control requires GPU readback");
     std::vector<std::string> receiptOracle;
     std::vector<uint8_t> descriptorSnapshot,descriptorAfter;
     std::vector<VkDeviceSize> descriptorWriteOffsets;
     unsigned descriptorCompletedSubmissions=0;
+    std::vector<std::vector<uint8_t>> gpuReadbacks;
+    std::vector<std::vector<uint8_t>> gpuReadbackOracle;
     auto receipt=[&](VkDescriptorType type,VkDeviceSize range,const void* bytes,size_t n){if(!receiptOutput.empty())receiptOracle.push_back("{\"type\":"+std::to_string(type)+",\"range_bytes\":"+std::to_string(range)+",\"encoding_hex\":\""+frame::hexBytes(static_cast<const uint8_t*>(bytes),n)+"\"}");};
     if (extended && !recorded) throw std::invalid_argument("Dynamic-state proof requires recorded replay");
     if (recipes && !recorded) throw std::invalid_argument("Pipeline recipes require recorded replay");
@@ -525,6 +572,20 @@ int main(int argc,char** argv) try {
                 expect(descriptorAfter==descriptorSnapshot,"Owned descriptor storage changed across completed submission");
                 ++descriptorCompletedSubmissions;
             }
+            if(!readbackPath.empty() && !caseIndex && !epoch) {
+                std::vector<readback::Buffer> sources{{descriptorStorage.address,descriptorStride*3,VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT|VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT}};
+                gpuReadbackOracle.push_back(descriptorSnapshot);
+                for(const auto& set:uniforms)for(unsigned b=0;b<2;++b) {
+                    auto size=VkDeviceSize(b?80:113)*16;const auto& source=set[b];auto bytes=static_cast<const uint8_t*>(source.mapped);
+                    sources.push_back({source.address,size,VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT|VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT});
+                    gpuReadbackOracle.emplace_back(bytes,bytes+size);
+                }
+                gpuReadbacks=readbackOwned(f,readbackPath,sources,negativeReadback);
+                expect((gpuReadbacks[0]!=gpuReadbackOracle[0])==negativeReadback,"GPU descriptor readback mismatch/control not detected");
+                for(size_t i=1;i<gpuReadbacks.size();++i)expect(gpuReadbacks[i]==gpuReadbackOracle[i],"GPU camera buffer readback mismatch");
+                expect(!std::memcmp(descriptorStorage.mapped,gpuReadbackOracle[0].data(),gpuReadbackOracle[0].size()),"Readback changed descriptor storage");
+                for(unsigned s=0;s<3;++s)for(unsigned b=0;b<2;++b)expect(!std::memcmp(uniforms[s][b].mapped,gpuReadbackOracle[s*2+b+1].data(),gpuReadbackOracle[s*2+b+1].size()),"Readback changed camera source");
+            }
             if(frozen) {
                 auto updated=test.states;
                 for(unsigned eye=0;eye<2;++eye) {
@@ -687,9 +748,16 @@ int main(int argc,char** argv) try {
             <<",\"set_stride\":"<<descriptorStride<<",\"encoding_hex\":\""<<frame::hexBytes(descriptorSnapshot.data(),descriptorSnapshot.size())
             <<"\",\"after_encoding_hex\":\""<<frame::hexBytes(descriptorAfter.data(),descriptorAfter.size())<<"\",\"query_write_offsets\":[";
         for(size_t i=0;i<descriptorWriteOffsets.size();++i)out<<(i?",":"")<<descriptorWriteOffsets[i];
-        out<<"]}}\n";expect(bool(out),"Receipt oracle output failed");
+        out<<"]}";
+        if(!gpuReadbacks.empty()) {
+            out<<",\"gpu_readback\":{\"scope\":\"after_first_completed_fixture_submission\",\"guard_bytes_verified\":224,\"source_usage_unchanged\":true,\"copies\":[";
+            for(size_t i=0;i<gpuReadbacks.size();++i)out<<(i?",":"")<<"{\"encoding_hex\":\""<<frame::hexBytes(gpuReadbacks[i].data(),gpuReadbacks[i].size())<<"\",\"oracle_hex\":\""<<frame::hexBytes(gpuReadbackOracle[i].data(),gpuReadbackOracle[i].size())<<"\"}";
+            out<<"]}";
+        }
+        out<<"}\n";expect(bool(out),"Receipt oracle output failed");
     }
-    std::cout << std::setprecision(10) << "{\"stereo_mrt_fixture_passed\":" << ((negative || negativeCompute) ? "false" : "true") << ",\"negative_sync_control\":" << (negative ? "true" : "false")
+    std::cout << std::setprecision(10) << "{\"stereo_mrt_fixture_passed\":" << ((negative || negativeCompute || negativeReadback) ? "false" : "true") << ",\"negative_sync_control\":" << (negative ? "true" : "false")
+        <<",\"gpu_readback_copies\":"<<gpuReadbacks.size()<<",\"gpu_readback_wrong_source_detected\":"<<(negativeReadback?"true":"false")
         << ",\"negative_compute_control\":" << (negativeCompute ? "true" : "false") << ",\"incorrect_compute_samples_detected\":" << wrongComputeSamples
         << ",\"clear_followed_by_load_verified\":" << (split ? "true" : "false") << ",\"eye_rendering_passes\":" << (split ? 24 : 16)
         << ",\"recorded_graphics_replay_verified\":" << (recorded ? "true" : "false") << ",\"captured_scopes_replayed\":" << recordedScopes

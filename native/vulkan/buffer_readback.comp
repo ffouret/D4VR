@@ -1,0 +1,12 @@
+#version 460
+#extension GL_EXT_buffer_reference : require
+// Both ranges are supplied by a validated caller-owned plan. No descriptors,
+// atomics, source writes, 8-bit access or shaderInt64 feature are required.
+layout(local_size_x=64) in;
+layout(buffer_reference,std430,buffer_reference_align=4) readonly buffer Source { uint words[]; };
+layout(buffer_reference,std430,buffer_reference_align=4) writeonly buffer Target { uint words[]; };
+layout(push_constant,std430) uniform Copy { Source source; Target target; uint word_count; } request;
+void main() {
+    uint index=gl_GlobalInvocationID.x;
+    if(index<request.word_count)request.target.words[index]=request.source.words[index];
+}
