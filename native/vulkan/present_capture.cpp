@@ -5,6 +5,7 @@
 #include <map>
 #include <mutex>
 #include <stdexcept>
+#include <string>
 
 namespace d4vr::present {
 namespace {

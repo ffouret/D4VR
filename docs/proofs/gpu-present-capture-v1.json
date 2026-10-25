@@ -227,5 +227,12 @@
     "No requested XR pose/time is known for these immutable game eye packets; the left and right images are sequential, not a coherent same-instant pair.",
     "Connecting to the projection session still requires safe XR pacing, resource ownership and either real requested-pose rendering or an explicit approximate temporal mode.",
     "Prior real SteamVR internal validation errors remain unresolved. No new headset test, complete-world coverage or Windows D3D12 backend is claimed."
-  ]
+  ],
+  "tested_source_commit": "c0f11323b4a1b3d8007fe4896c50a31408ee465e",
+  "portability_header_fix": {
+    "path": "native/vulkan/present_capture.cpp",
+    "sha256": "002181e889695eb3922cddae5e3147cb57ffeead49cbbf8e3e021ea657edeb4b",
+    "change": "Include <string> directly for MSVC std::to_string; no GPU lifecycle logic changed",
+    "strict_linux_portable_ownership_test_passed": true
+  }
 }
