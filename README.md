@@ -10,21 +10,20 @@ répond pas à cet objectif.
 
 ## État du projet
 
-Le [premier chemin de capture de deux vues successives](docs/SEQUENTIAL_CAPTURE.md)
-a obtenu des images réelles de Diablo IV en 2560 × 1440. Un second essai prend
-gauche/droite puis gauche/droite, sans atteindre le quota élargi de pipelines.
-Mais les 35 zones de terrain suivies restent au même emplacement à la résolution
-d'analyse de deux pixels : **la stéréo du terrain n'est pas validée**. Le premier
-décalage visible ne constituait donc pas une preuve suffisante de relief.
-Un défaut de transparence des PNG, qui masquait le décor dans certains lecteurs,
-est corrigé ; les pixels bruts sont conservés. Aucune image du jeu n'est encore
-envoyée à SteamVR. Les preuves de relief vérifiées restent synthétiques.
+Le [troisième essai réel de vues successives](docs/SEQUENTIAL_CAPTURE.md#troisième-essai-réel--disparité-reproductible-sur-une-partie-du-terrain)
+montre maintenant **un décalage reproductible sur une partie du terrain de
+Diablo IV**, en 2560 × 1440. Parmi 36 zones suivies, 21 se décalent de 4 à
+18 pixels entre les yeux ; les deux passages gauche/droite donnent exactement
+les mêmes déplacements, avec zéro au retour au même œil. Fabien a aussi vu le
+décalage à l'écran. Quinze zones restent fixes : la couverture est partielle.
+Ces images successives ne sont pas encore envoyées à SteamVR et ne constituent
+pas un jeu VR continu avec suivi de tête.
 
-Le [constructeur de bundle a depuis été corrigé](docs/SEQUENTIAL_CAPTURE.md) :
-son ancien filtre écartait 566 shaders à projection reconnue sans matrice d'objet
-séparée. Le nouveau bundle privé couvre 2 679 candidats ; il passe la validation
-SPIR-V et les références GPU sans télémétrie. Son effet sur le terrain réel reste
-à vérifier lors d'un nouvel essai du jeu.
+Ce résultat suit la correction du constructeur de bundle : son ancien filtre
+écartait 566 shaders à projection reconnue sans matrice d'objet séparée. Le
+nouveau bundle privé couvre 2 679 candidats, validés par SPIR-V et les références
+GPU sans télémétrie. Le second essai avec l'ancien bundle restait négatif sur
+les 35 zones suivies. Les preuves historiques et les pixels bruts sont conservés.
 
 La [reprise figée vers SteamVR](docs/FROZEN_REPLAY_XR.md) affiche maintenant les
 images issues de l'interception à 1024 × 1024 par œil : 890 paires suivies en dix

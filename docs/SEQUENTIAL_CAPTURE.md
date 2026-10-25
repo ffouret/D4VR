@@ -3,10 +3,10 @@
 Le mode expérimental prépare deux images successives avec deux positions de
 caméra. Il conserve le moteur de rendu original pour obtenir une première
 preuve visible avant la reprise complète de ses ressources. **Une première paire
-réelle de Diablo IV a été capturée**, en 2560 × 1440. Un second essai répété
-ne retrouve cependant aucun décalage dans les zones de terrain suivies.
-La capture fonctionne, mais le relief du terrain reste non validé ; ce résultat
-ne constitue pas encore du Diablo en VR.
+réelle de Diablo IV a été capturée**, en 2560 × 1440. Après un second essai
+négatif et la correction du filtre de shaders, le troisième essai retrouve
+un décalage reproductible sur 21 des 36 zones de terrain suivies. La couverture
+reste partielle et ce résultat ne constitue pas encore du Diablo en VR.
 
 ## Sélection et capture
 
@@ -40,9 +40,9 @@ conversion PNG n'est pas un tone mapping HDR calibré.
 
 Le [chemin BLIT de VKD3D-Proton étudié](https://github.com/HansKristian-Work/vkd3d-proton/blob/ef9a02e873715c9e2da0d6db8a236aca8380b303/libs/vkd3d/swapchain.c)
 rend cette capture possible sans ajouter `TRANSFER_SRC` aux images de
-swapchain. L'emploi effectif de ce chemin dans le runtime Lutris épinglé reste
-à vérifier pendant le premier essai du jeu. Son chemin de présentation par
-shader n'est pas pris en charge ici.
+swapchain. Les captures réelles confirment l'emploi de ce chemin dans les
+sessions du runtime Lutris épinglé. Son chemin de présentation par shader
+n'est pas pris en charge ici.
 
 ## Preuves actuelles
 
@@ -174,8 +174,47 @@ paquets invalides, le jitter et les changements de pose. Dans le nouveau mode,
 les buffers de diagnostic restent intacts. Le contrôle historique conserve sa
 télémétrie et un témoin négatif détecte bien un shader qui écrit dans ces buffers.
 Les quatre processus utilisent la validation de synchronisation, dont un dans
-Steam Runtime. Ces contrôles sont synthétiques : le correctif n'a pas encore
-été essayé dans le jeu et ne prouve pas la cause du terrain immobile.
+Steam Runtime. Ces contrôles sont synthétiques ; leur essai réel ultérieur
+est décrit ci-dessous.
+
+## Troisième essai réel : disparité reproductible sur une partie du terrain
+
+La [preuve agrégée du troisième essai](proofs/sequential-diablo-v3.json) teste
+le bundle du commit `16715d6`, avec le même binaire natif que le second essai.
+Le lancement de Battle.net et l'entrée dans le monde avec le personnage déjà
+sélectionné sont effectués par l'interface habituelle, après autorisation
+humaine du contrôle de saisie KDE. Le personnage reste immobile ; aucun casque
+n'est nécessaire pour cet essai.
+
+Quatre images 2560 × 1440 du même processus/device correspondent aux yeux
+0, 1, 0, 1 et aux présentations 34130, 34427, 34724 et 35022. Elles comptent
+537, 552, 538 et 540 commandes de dessin sélectionnées. Le registre compte
+3 386 à 3 521 nœuds privés sur un plafond de 4 096, sans refus de budget ni
+échec de création pilote. Les 3 039 autres refus ne sont pas attribués
+individuellement par ce relevé.
+
+La même méthode exploratoire que précédemment accepte 36 des 40 patches
+contrastés. **21 ont un décalage horizontal non nul, de −4 à −18 pixels,
+identique dans les deux paires gauche/droite.** Les 36 patches retrouvent zéro
+déplacement au retour au même œil, et zéro déplacement vertical entre yeux.
+La médiane horizontale de l'ensemble est −6 pixels. La variation spatiale du
+décalage, avec une partie du terrain proche autour de −16 pixels et des zones
+lointaines autour de −4 à −8 pixels, concorde avec une transformation
+géométrique ; il ne s'agit pas d'une mesure indépendante de profondeur.
+Fabien signale également avoir vu le décalage pendant l'essai.
+
+**Quinze patches restent fixes.** La sélection de tous les dessins du monde
+n'est donc pas prouvée et la scène complète n'est pas validée pour le casque.
+Les captures sont successives ; l'animation du personnage et les effets
+atmosphériques changent encore. La mesure à deux pixels ne couvre ni tous les
+objets ni les mouvements inférieurs à cette résolution. Les pixels et shaders
+restent privés ; le dépôt ne contient que les hashes et résultats agrégés.
+La sélection revient à `2` après les quatre prises. La validation Khronos
+n'est pas activée dans le jeu et aucun nouvel essai SteamVR n'a été effectué.
+
+La suite porte sur les géométries restées fixes, puis sur deux yeux complets au
+même instant et leur envoi à SteamVR avec suivi de tête. Le backend Windows
+D3D12 et les erreurs de validation SteamVR précédemment observées restent ouverts.
 
 `tools/sequential_capture.py prepare` vérifie le binaire testé, le bundle de
 shaders déjà validé, la version du jeu et le lanceur Lutris complet. Il crée
