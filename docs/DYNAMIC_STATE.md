@@ -47,7 +47,9 @@ périphérique emprunté doit déjà satisfaire leurs prérequis. La fixture uti
 Vulkan 1.3 et active la feature de bounds de profondeur ; le composant ne change
 aucune feature du périphérique du jeu.
 
-Le contrat fournit la liste complète `dynamicStates` du pipeline. Les états
+Le contrat fournit la liste complète `dynamicStates` du pipeline. Le
+[mode de déclaration explicite](STATIC_STATE.md) distingue une liste complète
+vide d'un contrat inconnu ou du comportement historique. Les états
 inconnus ou dupliqués sont refusés. Un dessin doit avoir les valeurs requises,
 faces stencil et strides de chaque binding consommé. Lier un pipeline qui rend
 un état statique invalide son suivi dynamique. Les modes viewport/scissor

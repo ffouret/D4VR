@@ -33,7 +33,7 @@ std::vector<uint32_t> readCode(const char* path) {
 
 int main(int argc,char** argv) try {
     if (argc < 4) throw std::runtime_error("Usage: stereo_targets_vulkan original.vert.spv stereo.vert.spv mrt.frag.spv [--negative-sync-control] [--preview-directory path]");
-    bool negative = false,split = false,recorded = false,buffered = false,negativeCompute = false,extended = false,recipes = false,libraries = false,libraryOriginalLive = false,stateDecoys = false; std::filesystem::path preview,computePath;
+    bool negative = false,split = false,recorded = false,buffered = false,negativeCompute = false,extended = false,recipes = false,libraries = false,libraryOriginalLive = false,stateDecoys = false,staticState = false; std::filesystem::path preview,computePath;
     for (int k = 4; k < argc; ++k) {
         if (std::string(argv[k]) == "--negative-sync-control") negative = true;
         else if (std::string(argv[k]) == "--split-passes") split = true;
@@ -45,6 +45,7 @@ int main(int argc,char** argv) try {
         else if (std::string(argv[k]) == "--library-pipelines") libraries = true;
         else if (std::string(argv[k]) == "--library-original-live") libraryOriginalLive = true;
         else if (std::string(argv[k]) == "--library-state-decoys") stateDecoys = true;
+        else if (std::string(argv[k]) == "--static-state") staticState = true;
         else if (std::string(argv[k]) == "--compute" && k+1 < argc) computePath = argv[++k];
         else if (std::string(argv[k]) == "--preview-directory" && k+1 < argc) preview = argv[++k];
         else throw std::invalid_argument("Unknown stereo fixture option");
@@ -56,7 +57,8 @@ int main(int argc,char** argv) try {
     if (recipes && !recorded) throw std::invalid_argument("Pipeline recipes require recorded replay");
     if (libraries && (!recorded || recipes)) throw std::invalid_argument("Library pipelines require recorded replay and their own pipeline mode");
     if(libraryOriginalLive && !libraries)throw std::invalid_argument("Original GPL witness requires library pipelines");
-    if(stateDecoys && (!libraries || !extended))throw std::invalid_argument("Dynamic state decoys require extended GPL replay");
+    if (staticState && (!recorded || extended)) throw std::invalid_argument("Static-state proof requires recorded replay without extended dynamic state");
+    if(stateDecoys && (!libraries || (!extended && !staticState)))throw std::invalid_argument("Dynamic state decoys require extended or static GPL replay");
     if (!preview.empty()) {
         expect(!std::filesystem::exists(preview),"Use a new preview directory");
         std::filesystem::create_directories(preview);
@@ -174,6 +176,9 @@ int main(int argc,char** argv) try {
         VkPipelineInputAssemblyStateCreateInfo ia{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO}; ia.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         VkPipelineViewportStateCreateInfo vp{VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO}; vp.viewportCount = vp.scissorCount = 1;
         if (extendedMode) vp.viewportCount = vp.scissorCount = 0;
+        VkViewport bakedViewport{0,0,float(config.extent.width),float(config.extent.height),0,1};
+        VkRect2D bakedScissor{{0,0},config.extent};
+        if (staticState) { vp.pViewports = &bakedViewport; vp.pScissors = &bakedScissor; }
         VkPipelineRasterizationStateCreateInfo rs{VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO}; rs.polygonMode = VK_POLYGON_MODE_FILL; rs.lineWidth = 1;
         VkPipelineMultisampleStateCreateInfo ms{VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO}; ms.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
         std::array<VkPipelineColorBlendAttachmentState,4> colors{}; for (auto& c : colors) c.colorWriteMask = 15;
@@ -181,9 +186,11 @@ int main(int argc,char** argv) try {
         VkPipelineDepthStencilStateCreateInfo ds{VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO}; ds.depthTestEnable = VK_TRUE; ds.depthWriteEnable = writeDepth; ds.depthCompareOp = VK_COMPARE_OP_LESS;
         ds.depthBoundsTestEnable = extended; ds.minDepthBounds = 0; ds.maxDepthBounds = 1;
         ds.stencilTestEnable = VK_TRUE; ds.front = {VK_STENCIL_OP_KEEP,VK_STENCIL_OP_REPLACE,VK_STENCIL_OP_KEEP,VK_COMPARE_OP_ALWAYS,255,255,0}; ds.back = ds.front;
+        if (staticState) ds.front.reference = ds.back.reference = 1;
         std::array<VkDynamicState,3> dynamic{VK_DYNAMIC_STATE_VIEWPORT,VK_DYNAMIC_STATE_SCISSOR,VK_DYNAMIC_STATE_STENCIL_REFERENCE};
         VkPipelineDynamicStateCreateInfo dy{VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO}; dy.dynamicStateCount = static_cast<uint32_t>(dynamic.size()); dy.pDynamicStates = dynamic.data();
         if (extendedMode) { dy.dynamicStateCount = static_cast<uint32_t>(extendedStates.size()); dy.pDynamicStates = extendedStates.data(); }
+        if (staticState) { dy.dynamicStateCount = 0; dy.pDynamicStates = nullptr; }
         VkPipelineRenderingCreateInfo rendering{VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO}; rendering.colorAttachmentCount = 4; rendering.pColorAttachmentFormats = config.colors.data();
         rendering.depthAttachmentFormat = rendering.stencilAttachmentFormat = config.depth;
         VkGraphicsPipelineCreateInfo ci{VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO}; ci.pNext = &rendering; ci.stageCount = 2; ci.pStages = stages;
@@ -261,10 +268,11 @@ int main(int argc,char** argv) try {
                     if(part==0)ci.pMultisampleState=nullptr;
                     if(part!=2)ci.pColorBlendState=nullptr;
                     auto dynamic=*source.pDynamicState;
-                    std::vector<VkDynamicState> declarations(dynamic.pDynamicStates,dynamic.pDynamicStates+dynamic.dynamicStateCount);
+                    std::vector<VkDynamicState> declarations;
+                    if(dynamic.dynamicStateCount)declarations.assign(dynamic.pDynamicStates,dynamic.pDynamicStates+dynamic.dynamicStateCount);
                     // Each library deliberately receives irrelevant declarations.
-                    // These two legacy viewport flags belong only to the shader
-                    // library, which instead owns the WITH_COUNT variants.
+                    // These flags belong only to the shader library, which
+                    // owns WITH_COUNT variants or fully static viewport state.
                     if(stateDecoys && part==0)declarations.push_back(VK_DYNAMIC_STATE_VIEWPORT);
                     if(stateDecoys && part==2)declarations.push_back(VK_DYNAMIC_STATE_SCISSOR);
                     dynamic.dynamicStateCount=uint32_t(declarations.size());dynamic.pDynamicStates=declarations.data();ci.pDynamicState=&dynamic;
@@ -278,7 +286,7 @@ int main(int argc,char** argv) try {
                 VkPipeline original{};check(vkCreateGraphicsPipelines(f.device,VK_NULL_HANDLE,1,&ci,nullptr,&original));
                 expect(registry->observe(original,ci)==pipeline::LibraryResult::registered,"Linked eye pair registration failed");libraryLease=registry->lookup(original);
                 expect(libraryLease && libraryLease->parts()==15 && !libraryLease->library() && libraryLease->stereoVertex(),"Linked graph contract missing");
-                auto expected=extended?extendedStates:std::vector<VkDynamicState>{VK_DYNAMIC_STATE_VIEWPORT,VK_DYNAMIC_STATE_SCISSOR,VK_DYNAMIC_STATE_STENCIL_REFERENCE};
+                auto expected=staticState?std::vector<VkDynamicState>{}:extended?extendedStates:std::vector<VkDynamicState>{VK_DYNAMIC_STATE_VIEWPORT,VK_DYNAMIC_STATE_SCISSOR,VK_DYNAMIC_STATE_STENCIL_REFERENCE};
                 std::sort(expected.begin(),expected.end());
                 expect(libraryLease->dynamicStates().complete() && libraryLease->dynamicStates().values==expected,"Linked GPL dynamic contract differs from independent fixture declaration");
                 for(auto s:sources){registry->remove(s);if(libraryOriginalLive)retainedSourceLibraries.push_back(s);else vkDestroyPipeline(f.device,s,nullptr);}registry->remove(original);
@@ -321,10 +329,10 @@ int main(int argc,char** argv) try {
                 vkCmdBindPipeline(command,VK_PIPELINE_BIND_POINT_GRAPHICS,selected);
                 vkCmdBindDescriptorSets(command,VK_PIPELINE_BIND_POINT_GRAPHICS,layout,3,1,&sets[set],0,nullptr);
                 VkViewport viewport{0,0,float(width),float(height),0,1}; VkRect2D scissor{{0,0},{width,height}};
-                vkCmdSetViewport(command,0,1,&viewport); vkCmdSetScissor(command,0,1,&scissor);
+                if (!staticState) { vkCmdSetViewport(command,0,1,&viewport); vkCmdSetScissor(command,0,1,&scissor); }
                 if (extended) { VkDeviceSize offset = 0; vkCmdBindVertexBuffers(command,0,1,&vertexInput.handle,&offset); }
                 for (unsigned item = firstItem; item < (itemCount ? firstItem+itemCount : test.count); ++item) {
-                    vkCmdSetStencilReference(command,VK_STENCIL_FACE_FRONT_AND_BACK,item+1);
+                    if (!staticState) vkCmdSetStencilReference(command,VK_STENCIL_FACE_FRONT_AND_BACK,item+1);
                     vkCmdPushConstants(command,layout,VK_SHADER_STAGE_VERTEX_BIT,0,sizeof(Item),&test.scene[item]);
                     vkCmdDraw(command,3,1,0,0);
                 }
@@ -341,9 +349,19 @@ int main(int argc,char** argv) try {
                 if (extended) { contract.dynamicStates = extendedStates; contract.vertexBindings = 1; }
                 // Use the library graph's owned snapshot, after source modules,
                 // declaration arrays and registry have already been released.
-                if(libraryLease)contract.dynamicStates=libraryLease->dynamicStates().values;
+                if(libraryLease) {
+                    contract.dynamicStates=libraryLease->dynamicStates().values;
+                    contract.dynamicDeclaration=libraryLease->dynamicStates().complete()?replay::DynamicDeclaration::complete:replay::DynamicDeclaration::unknown;
+                } else if(staticState) contract.dynamicDeclaration=replay::DynamicDeclaration::complete;
                 contract.externalWritesExcluded = contract.attachmentInputAliasesExcluded = true; recorder.pipeline(contract);
                 // Commands before BeginRendering must seed the replayed scope.
+                if (staticState) {
+                    // Intentionally different dynamic values must be overwritten
+                    // by the following static bind, including during restoration.
+                    VkViewport seed{0,0,13,17,.25f,.75f}; VkRect2D clip{{2,3},{11,7}};
+                    recorder.viewport(0,1,&seed); recorder.scissor(0,1,&clip);
+                    recorder.stencilReference(VK_STENCIL_FACE_FRONT_AND_BACK,91);
+                }
                 recorder.bindPipeline(contract.original);
                 if (buffered) {
                     auto scratch = descriptorBinding; recorder.bindDescriptorBuffers(1,&scratch); scratch.address = 0;
@@ -361,7 +379,7 @@ int main(int argc,char** argv) try {
                     recorder.stencilWriteMask(VK_STENCIL_FACE_FRONT_BIT,255); recorder.stencilWriteMask(VK_STENCIL_FACE_BACK_BIT,127);
                     VkBuffer buffer = vertexInput.handle; VkDeviceSize offset = 0,size = 48,stride = 16;
                     recorder.vertices2(0,1,&buffer,&offset,&size,&stride); buffer = VK_NULL_HANDLE; size = stride = 0;
-                } else { recorder.viewport(0,1,&vp); recorder.scissor(0,1,&sc); }
+                } else if (!staticState) { recorder.viewport(0,1,&vp); recorder.scissor(0,1,&sc); }
                 recorder.index(indices.handle,0,VK_INDEX_TYPE_UINT32);
                 vp.width = 1; sc.extent.width = 1; // Transient CPU arrays may be reused immediately.
                 auto capturedPass = [&](unsigned first,unsigned count,bool continuation) {
@@ -369,7 +387,7 @@ int main(int argc,char** argv) try {
                     application->prepare(command,0,(epoch || continuation) ? stereo::PreviousUse::transferSource : stereo::PreviousUse::discarded);
                     auto info = application->rendering(0,loads); recorder.beginRendering(info.info,config);
                     for (unsigned item = first; item < first+count; ++item) {
-                        recorder.stencilReference(VK_STENCIL_FACE_FRONT_AND_BACK,item+1);
+                        if (!staticState) recorder.stencilReference(VK_STENCIL_FACE_FRONT_AND_BACK,item+1);
                         if (extended) recorder.depthWriteEnable(VK_TRUE);
                         Item scratch = test.scene[item];
                         recorder.push(recordedLayout,VK_SHADER_STAGE_VERTEX_BIT,0,16,&scratch);
@@ -403,10 +421,10 @@ int main(int argc,char** argv) try {
                 vkCmdBindPipeline(command,VK_PIPELINE_BIND_POINT_GRAPHICS,extended ? witnessPipeline : originalPipeline);
                 vkCmdBindDescriptorSets(command,VK_PIPELINE_BIND_POINT_GRAPHICS,layout,3,1,&sets[0],0,nullptr);
                 VkViewport restoredVp{0,0,float(width),float(height),0,1}; VkRect2D restoredSc{{0,0},{width,height}};
-                vkCmdSetViewport(command,0,1,&restoredVp); vkCmdSetScissor(command,0,1,&restoredSc);
+                if (!staticState) { vkCmdSetViewport(command,0,1,&restoredVp); vkCmdSetScissor(command,0,1,&restoredSc); }
                 if (extended) { VkDeviceSize offset = 0; vkCmdBindVertexBuffers(command,0,1,&vertexInput.handle,&offset); }
                 vkCmdBindIndexBuffer(command,indices.handle,0,VK_INDEX_TYPE_UINT32);
-                vkCmdSetStencilReference(command,VK_STENCIL_FACE_FRONT_AND_BACK,test.count);
+                if (!staticState) vkCmdSetStencilReference(command,VK_STENCIL_FACE_FRONT_AND_BACK,test.count);
                 vkCmdPushConstants(command,layout,VK_SHADER_STAGE_VERTEX_BIT,0,sizeof(Item),&test.scene[test.count-1]);
                 vkCmdDrawIndexed(command,3,1,0,0,0); witness->endForReadback(command,1); copy(*witness,1,7);
                 copy(*application,0,0); copy(*eyes,0,1); copy(*eyes,1,2);
@@ -443,7 +461,11 @@ int main(int argc,char** argv) try {
             auto depth = [&](const uint8_t* p) { return config.depth == VK_FORMAT_D24_UNORM_S8_UINT ? double(word(p)&0xffffffu)/0xffffffu : double(number(p)); };
             auto compare = [&](unsigned observed,unsigned expected,bool isolated) {
                 const auto* a = bytes+observed*slotBytes; const auto* b = bytes+expected*slotBytes;
-                expect(std::memcmp(a,b,static_cast<size_t>(plane*4)) == 0,"MRT colors differ from original shader reference");
+                if (std::memcmp(a,b,static_cast<size_t>(plane*4))) {
+                    VkDeviceSize first = 0; while (a[first] == b[first]) ++first;
+                    throw std::runtime_error("MRT colors differ: observed slot "+std::to_string(observed)+", reference slot "+std::to_string(expected)
+                        +", first byte "+std::to_string(first)+", observed "+std::to_string(a[first])+", expected "+std::to_string(b[first]));
+                }
                 for (VkDeviceSize p = 0; p < texels; ++p) {
                     double error = std::abs(depth(a+plane*4+p*4)-depth(b+plane*4+p*4));
                     result.maxDepthError = std::max(result.maxDepthError,error);
@@ -453,12 +475,23 @@ int main(int argc,char** argv) try {
                 if (isolated) result.isolatedBytes += slotBytes-texels;
                 else { result.colorBytes += plane*4; result.depthTexels += texels; result.stencilBytes += texels; }
             };
-            compare(1,3,false); compare(2,4,false); compare(0,5,true);
+            compare(0,5,true); compare(1,3,false); compare(2,4,false);
             if (recorded) { compare(6,7,true); compare(0,8,true); witnessComparedBytes += slotBytes-texels; originalComparedBytes += slotBytes-texels; }
+            // Static pipelines bake stencil reference 1 for both objects. Their
+            // independently colored albedo identifies near/far for the census;
+            // raw stencil is still compared byte-for-byte above and checked here.
+            auto object = [&](unsigned slot,VkDeviceSize p) -> unsigned {
+                auto stencil = bytes[slot*slotBytes+plane*5+p];
+                if (!staticState) { expect(stencil < 3,"Unexpected stencil value"); return stencil; }
+                expect(stencil <= 1,"Static stencil reference differs from baked value");
+                if (!stencil) return 0;
+                const auto* albedo = bytes+slot*slotBytes+p*4;
+                return albedo[0] > albedo[2] ? 2u : 1u;
+            };
             auto census = [&](unsigned slot) {
                 std::array<uint64_t,3> counts{}; double centroid = 0;
                 for (VkDeviceSize p = 0; p < texels; ++p) {
-                    auto stencil = bytes[slot*slotBytes+plane*5+p]; expect(stencil < 3,"Unexpected stencil value"); ++counts[stencil];
+                    auto stencil = object(slot,p); ++counts[stencil];
                     if (stencil == 1) centroid += double(p%width)+.5;
                     double actual = depth(bytes+slot*slotBytes+plane*4+p*4);
                     expect(actual >= 0 && actual <= 1,"Invalid depth value");
@@ -476,7 +509,7 @@ int main(int argc,char** argv) try {
             if (caseIndex == 2) {
                 uint64_t leftFarRightNear = 0,rightFarLeftNear = 0;
                 for (VkDeviceSize p = 0; p < texels; ++p) {
-                    auto left = bytes[slotBytes+plane*5+p],right = bytes[2*slotBytes+plane*5+p];
+                    auto left = object(1,p),right = object(2,p);
                     leftFarRightNear += left == 2 && right == 1;
                     rightFarLeftNear += right == 2 && left == 1;
                 }
@@ -533,7 +566,7 @@ int main(int argc,char** argv) try {
         << ",\"following_draw_reference_compared_bytes\":" << witnessComparedBytes
         << ",\"forwarded_original_reference_compared_bytes\":" << originalComparedBytes
         << ",\"descriptor_buffer_replay_verified\":" << (buffered ? "true" : "false") << ",\"following_compute_reference_words\":" << computeWords
-        << ",\"dynamic_state_replay_verified\":" << (extended ? "true" : "false") << ",\"declared_dynamic_states\":" << (extended ? extendedStates.size() : 3)
+        << ",\"dynamic_state_replay_verified\":" << (extended ? "true" : "false") << ",\"declared_dynamic_states\":" << (staticState ? 0 : extended ? extendedStates.size() : 3)
         << ",\"pipeline_recipe_variants_verified\":" << (recipes ? "true" : "false") << ",\"original_shader_modules_destroyed_before_variants\":" << (recipes ? "true" : "false")
         << ",\"library_pipeline_variants_verified\":" << (libraries ? "true" : "false") << ",\"library_source_modules_destroyed_before_link\":" << (libraries ? "true" : "false")
         << ",\"source_registry_released_before_render\":" << (libraries ? "true" : "false")
@@ -543,7 +576,9 @@ int main(int argc,char** argv) try {
         << ",\"gpl_dynamic_state_contract_resolved\":" << (libraries ? "true" : "false")
         << ",\"gpl_dynamic_state_contract_used_for_replay\":" << (libraries && recorded ? "true" : "false")
         << ",\"gpl_nonowner_dynamic_decoys_verified\":" << (stateDecoys ? "true" : "false")
-        << ",\"gpl_effective_dynamic_state_count\":" << (libraries ? (extended?extendedStates.size():3) : 0)
+        << ",\"gpl_effective_dynamic_state_count\":" << (libraries ? (staticState?0:extended?extendedStates.size():3) : 0)
+        << ",\"complete_static_state_contract_verified\":" << (staticState ? "true" : "false")
+        << ",\"static_bind_overwrites_dynamic_values_verified\":" << (staticState ? "true" : "false")
         << ",\"following_draw_depth_write_disabled_verified\":" << (extended ? "true" : "false")
         << ",\"frozen_scene_cases\":4,\"epochs_per_case\":2,\"eye_renderings\":16,\"submissions\":8,"
         << "\"color_reference_different_bytes\":0,\"color_reference_compared_bytes\":" << result.colorBytes << ",\"depth_reference_compared_texels\":" << result.depthTexels

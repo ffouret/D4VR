@@ -10,6 +10,13 @@ répond pas à cet objectif.
 
 ## État du projet
 
+Le [contrat statique explicite](docs/STATIC_STATE.md) permet de reprendre un
+pipeline dont la liste dynamique complète est vide, avec restauration des
+états. Les contrôles GPU sans déclarations parasites passent. Un contrôle
+renforcé révèle toutefois un écart sur le cas GPL statique avec déclarations
+parasites ; ce cas reste une anomalie ouverte et ne constitue pas une preuve
+positive. Les ressources doivent toujours être auditées séparément.
+
 Le [calcul des déclarations dynamiques GPL](docs/GPL_DYNAMIC_STATES.md) filtre
 les états par propriétaire et conserve le contrat dans les graphes privés. La
 fixture reprend maintenant ses dessins avec cette liste calculée, y compris

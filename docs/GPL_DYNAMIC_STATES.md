@@ -33,10 +33,13 @@ chevauchantes, doublons, modes de viewport/scissor contradictoires, extensions
 et flags non couverts restent inconnus. Une bibliothèque partielle peut
 transmettre son snapshot à ses parents sans prétendre être complète.
 
-Un contrat complet vide représente un pipeline statique. Le chemin historique
-de `Graphics` donne encore une autre signification à une liste vide : son
-intégration générale devra distinguer ces deux cas. La fixture utilise ici un
-contrat non vide de trois ou douze états. Les conditions qui rendent certains
+Un contrat complet vide représente un pipeline statique. Le mode explicite
+`DynamicDeclaration::complete` de `Graphics` distingue désormais ce cas du
+chemin historique ; les contrats inconnus sont refusés. La preuve de cette
+page utilise un contrat non vide de trois ou douze états. Le
+[contrôle statique renforcé](STATIC_STATE.md) mesure séparément une anomalie
+avec des déclarations parasites et un propriétaire statique : sa validité
+théorique ne suffit pas à établir l'état fixe effectivement rendu. Les conditions qui rendent certains
 états inutiles pour un dessin, les valeurs courantes, les ressources et les
 durées de vie GPU restent des vérifications distinctes.
 

@@ -22,14 +22,16 @@ def run(args) -> dict:
         raise ValueError('Descriptor buffers require recorded replay and the compute echo shader')
     if args.dynamic_state and not args.recorded_replay:
         raise ValueError('Dynamic state requires recorded replay')
+    if args.static_state and (not args.recorded_replay or args.dynamic_state):
+        raise ValueError('Static state requires recorded replay without extended dynamic state')
     if args.pipeline_recipes and not args.recorded_replay:
         raise ValueError('Pipeline recipes require recorded replay')
     if args.library_pipelines and (not args.recorded_replay or args.pipeline_recipes):
         raise ValueError('Library pipelines require recorded replay and their own pipeline mode')
     if args.library_original_live and not args.library_pipelines:
         raise ValueError('Original GPL witness requires library pipelines')
-    if args.library_state_decoys and not (args.library_pipelines and args.dynamic_state):
-        raise ValueError('Dynamic state decoys require extended GPL replay')
+    if args.library_state_decoys and not (args.library_pipelines and (args.dynamic_state or args.static_state)):
+        raise ValueError('Dynamic state decoys require extended or static GPL replay')
     if not all(p.is_file() for p in inputs) or args.output.exists():
         raise ValueError('Provide the built fixture/shaders and a new private output directory')
     manifest = json.loads((args.validation_layer/'VkLayer_khronos_validation.json').read_text())
@@ -89,6 +91,8 @@ def run(args) -> dict:
             command.append('--descriptor-buffers')
         if args.dynamic_state:
             command.append('--dynamic-state')
+        if args.static_state:
+            command.append('--static-state')
         if args.pipeline_recipes:
             command.append('--pipeline-recipes')
         if args.library_pipelines:
@@ -112,7 +116,7 @@ def run(args) -> dict:
         proof = payloads[-1]
         if args.library_pipelines and (proof.get('gpl_dynamic_state_contract_resolved') is not True
                 or proof.get('gpl_dynamic_state_contract_used_for_replay') is not True
-                or proof.get('gpl_effective_dynamic_state_count')!=(12 if args.dynamic_state else 3)):
+                or proof.get('gpl_effective_dynamic_state_count')!=(0 if args.static_state else 12 if args.dynamic_state else 3)):
             raise ValueError('The fixture did not use the resolved GPL dynamic contract')
         if args.library_state_decoys and proof.get('gpl_nonowner_dynamic_decoys_verified') is not True:
             raise ValueError('Nonowner declaration decoys were not verified')
@@ -149,6 +153,10 @@ def run(args) -> dict:
             if args.dynamic_state and (proof.get('dynamic_state_replay_verified') is not True
                     or proof.get('declared_dynamic_states') != 12 or proof.get('following_draw_depth_write_disabled_verified') is not True):
                 raise ValueError(f'{name}: dynamic-state replay and following-draw depth restoration were not verified')
+            if args.static_state and (proof.get('complete_static_state_contract_verified') is not True
+                    or proof.get('static_bind_overwrites_dynamic_values_verified') is not True
+                    or proof.get('declared_dynamic_states') != 0):
+                raise ValueError(f'{name}: complete empty static-state contract was not verified')
             if args.pipeline_recipes and (proof.get('pipeline_recipe_variants_verified') is not True
                     or proof.get('original_shader_modules_destroyed_before_variants') is not True):
                 raise ValueError(f'{name}: recipe-created variants after module destruction were not verified')
@@ -181,6 +189,7 @@ def run(args) -> dict:
                     raise ValueError('Monolithic fixture declarations were not captured completely')
                 largest = max(len(b['states']) for p in states for b in p['declarations'])
                 if args.dynamic_state and largest != (13 if args.library_state_decoys else 12):raise ValueError('Dynamic pipeline declaration does not match fixture')
+                if args.static_state and largest != (1 if args.library_state_decoys else 0):raise ValueError('Static pipeline declaration does not match fixture')
                 attachments = [a for p in summary['passes'] for a in p['attachments'] if a['role'] in ('color','depth','stencil')]
                 clears = [a for a in attachments if a['load_op'] == 1]
                 if not clears or any(a['clear_value_words'] is None for a in clears):raise ValueError('Clear values absent from fixture metadata')
@@ -225,6 +234,7 @@ def main() -> int:
     parser.add_argument('--descriptor-buffers',action='store_true')
     parser.add_argument('--compute',type=Path)
     parser.add_argument('--dynamic-state',action='store_true')
+    parser.add_argument('--static-state',action='store_true')
     parser.add_argument('--pipeline-recipes',action='store_true')
     parser.add_argument('--library-pipelines',action='store_true')
     parser.add_argument('--library-original-live',action='store_true')

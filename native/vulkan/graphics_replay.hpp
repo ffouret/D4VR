@@ -5,6 +5,7 @@
 
 namespace d4vr::replay {
 enum class DescriptorMode { sets,buffers };
+enum class DynamicDeclaration { legacy,complete,unknown };
 struct DescriptorLimits { uint32_t maxBindings = 0; VkDeviceSize offsetAlignment = 0; };
 // Contracts must come from the adapter's pipeline/resource audit. They are not
 // inferred from a pipeline handle or from successful shader compilation.
@@ -17,9 +18,12 @@ struct Pipeline {
     VkShaderStageFlags pushStages = VK_SHADER_STAGE_VERTEX_BIT;
     uint32_t viewports = 1,scissors = 1;
     VkStencilFaceFlags stencilReference = 0;
-    // Empty preserves the original viewport/scissor/stencil contract. Otherwise
-    // this is the complete audited list from VkPipelineDynamicStateCreateInfo.
+    // legacy preserves existing callers: an empty list uses the viewport/
+    // scissor/stencil fields, a nonempty list is complete. complete treats even
+    // an empty list literally (fully static). unknown is never replay eligible.
+    // Declaration completeness does not establish either resource audit below.
     std::vector<VkDynamicState> dynamicStates;
+    DynamicDeclaration dynamicDeclaration = DynamicDeclaration::legacy;
     bool externalWritesExcluded = false,attachmentInputAliasesExcluded = false;
 };
 enum class Rejection {

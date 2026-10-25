@@ -35,7 +35,7 @@ uint32_t bit(VkDynamicState state) {
     return 0;
 }
 uint32_t required(const Pipeline& p) {
-    if (p.dynamicStates.empty()) return (p.viewports ? bit(VK_DYNAMIC_STATE_VIEWPORT) : 0)
+    if (p.dynamicStates.empty() && p.dynamicDeclaration == DynamicDeclaration::legacy) return (p.viewports ? bit(VK_DYNAMIC_STATE_VIEWPORT) : 0)
         | (p.scissors ? bit(VK_DYNAMIC_STATE_SCISSOR) : 0) | (p.stencilReference ? bit(VK_DYNAMIC_STATE_STENCIL_REFERENCE) : 0);
     uint32_t result = 0; for (auto state : p.dynamicStates) result |= bit(state); return result;
 }
@@ -209,6 +209,8 @@ Graphics::Graphics(VkDevice device,PFN_vkGetDeviceProcAddr get,VkCommandBuffer c
 }
 Graphics::~Graphics() = default;
 void Graphics::pipeline(const Pipeline& p) {
+    if (p.dynamicDeclaration != DynamicDeclaration::legacy && p.dynamicDeclaration != DynamicDeclaration::complete)
+        throw std::invalid_argument("Replay pipeline dynamic declaration is unknown");
     uint32_t seen = 0;
     for (auto state : p.dynamicStates) {
         auto flag = bit(state);
@@ -217,6 +219,9 @@ void Graphics::pipeline(const Pipeline& p) {
             throw std::invalid_argument("Unsupported or duplicate dynamic state in replay pipeline");
         seen |= flag;
     }
+    if (((seen&bit(VK_DYNAMIC_STATE_VIEWPORT)) && (seen&bit(VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT)))
+        || ((seen&bit(VK_DYNAMIC_STATE_SCISSOR)) && (seen&bit(VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT))))
+        throw std::invalid_argument("Conflicting viewport/scissor dynamic declarations");
     if (!p.original || !p.eyes[0] || !p.eyes[1] || p.eyes[0] == p.original || p.eyes[1] == p.original || p.eyes[0] == p.eyes[1]
         || !p.layout || p.pushBytes > 256 || p.pushBytes%4 || (p.pushBytes && !p.pushStages) || p.viewports > 16 || p.scissors > 16
         || (p.descriptors != DescriptorMode::sets && p.descriptors != DescriptorMode::buffers)

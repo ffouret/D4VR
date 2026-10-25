@@ -184,6 +184,43 @@ int main() {
         auto stats = r.replay->stats(); assert(stats.replayedScopes == 2 && stats.rejectedScopes == 0 && stats.replayedDraws == 4 && stats.forwardedDraws == 2);
     }
     assert(empty());
+    // A known empty declaration is static despite the legacy fields' defaults.
+    // It needs no dynamic setters, but still needs resources and their audit.
+    for (unsigned failure = 0; failure < 4; ++failure) {
+        Rig r(failure != 1,false);
+        r.policy.dynamicDeclaration = DynamicDeclaration::complete;
+        r.replay->pipeline(r.policy);
+        r.state(failure == 2,true,failure == 3);
+        // state() emitted legacy setters; a fresh static bind overwrites them.
+        r.replay->bindPipeline(r.policy.original);
+        auto expected = driver; r.begin(); r.replay->drawIndexed(3,1,0,0,0);
+        if (!failure) { assert(r.replay->endRendering() && drawEvents.size() == 3); same(driver,expected); }
+        else { assert(!r.replay->endRendering() && drawEvents.size() == 1);
+            assert(r.replay->stats().lastRejection == (failure == 1 ? Rejection::unauditedPipeline : Rejection::incompleteState)); }
+    }
+    assert(empty());
+    // Binding static state invalidates all previously set dynamic values.
+    // Rebinding the dynamic pipeline alone must not resurrect those values.
+    for (bool reset : {false,true}) {
+        Rig r; r.state(); auto baked = r.policy; baked.original = make<VkPipeline>();
+        baked.dynamicDeclaration = DynamicDeclaration::complete;
+        r.replay->pipeline(baked); r.replay->bindPipeline(baked.original); r.replay->bindPipeline(r.policy.original);
+        if (reset) r.state();
+        r.begin(); r.replay->drawIndexed(3,1,0,0,0);
+        assert(r.replay->endRendering() == reset && drawEvents.size() == (reset ? 3 : 1));
+        if (!reset) assert(r.replay->stats().lastRejection == Rejection::incompleteState);
+    }
+    assert(empty());
+    // Unknown or malformed declaration snapshots cannot opt in to replay.
+    for (unsigned failure = 0; failure < 5; ++failure) {
+        Rig r(true,false,false,true);
+        r.policy.dynamicDeclaration = failure < 2 ? DynamicDeclaration::unknown : failure == 2 ? static_cast<DynamicDeclaration>(99) : DynamicDeclaration::complete;
+        if (failure == 0) r.policy.dynamicStates.clear();
+        if (failure == 3) r.policy.dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT,VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT};
+        if (failure == 4) r.policy.dynamicStates = {VK_DYNAMIC_STATE_SCISSOR,VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT};
+        rejected([&] { r.replay->pipeline(r.policy); });
+    }
+    assert(empty());
     { Rig r(true,true,true,true); r.state(); r.extendedState(); auto expected = driver;
       r.begin(); r.replay->drawIndexed(11,2,3,-4,9); r.replay->depthWriteEnable(VK_FALSE); auto finalState = driver;
       assert(r.replay->endRendering()); for (unsigned k = 0; k < 3; ++k) same(drawEvents[k].state,expected,k == 0); same(driver,finalState);
@@ -249,5 +286,5 @@ int main() {
     { Rig r; r.state(); for (unsigned k = 0; k < 9000; ++k) r.replay->stencilReference(VK_STENCIL_FACE_FRONT_AND_BACK,k);
       r.begin(); r.replay->draw(3,1,0,0); assert(!r.replay->endRendering()); assert(drawEvents.size() == 1 && r.replay->stats().lastRejection == Rejection::budget); }
     assert(empty());
-    std::cout << "Graphics tape: transient copies, indexed draws, descriptor buffers/offsets, compute state restoration, LOAD continuity and rejection paths: passed\n";
+    std::cout << "Graphics tape: transient copies, indexed draws, descriptor buffers/offsets, compute state restoration, complete static/unknown declarations, static invalidation, LOAD continuity and rejection paths: passed\n";
 }
