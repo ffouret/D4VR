@@ -10,6 +10,13 @@ répond pas à cet objectif.
 
 ## État du projet
 
+Le [premier chemin de capture de deux vues successives](docs/SEQUENTIAL_CAPTURE.md)
+est prêt pour un essai de Diablo. Il sélectionne deux caméras géométriques en
+conservant le moteur de rendu original. La capture, la différence de relief et
+le retour à la vue normale sont vérifiés dans une vraie fenêtre Vulkan, aussi
+sous Steam Runtime. Cette preuve est synthétique : aucune paire du jeu n'a
+encore été obtenue, et ce mode ne soumet pas ses images à SteamVR.
+
 La [reprise figée vers SteamVR](docs/FROZEN_REPLAY_XR.md) affiche maintenant les
 images issues de l'interception à 1024 × 1024 par œil : 890 paires suivies en dix
 secondes, image plus nette, relief et mouvements confirmés dans le Quest. Cette
