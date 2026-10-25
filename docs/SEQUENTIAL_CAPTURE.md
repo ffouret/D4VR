@@ -3,8 +3,10 @@
 Le mode expérimental prépare deux images successives avec deux positions de
 caméra. Il conserve le moteur de rendu original pour obtenir une première
 preuve visible avant la reprise complète de ses ressources. **Une première paire
-réelle de Diablo IV a été capturée**, en 2560 × 1440. Elle reste successive et
-partiellement transformée ; ce résultat ne constitue pas encore du Diablo en VR.
+réelle de Diablo IV a été capturée**, en 2560 × 1440. Un second essai répété
+ne retrouve cependant aucun décalage dans les zones de terrain suivies.
+La capture fonctionne, mais le relief du terrain reste non validé ; ce résultat
+ne constitue pas encore du Diablo en VR.
 
 ## Sélection et capture
 
@@ -114,6 +116,42 @@ effectue maintenant quatre captures : 1 048 576 octets égaux aux références
 dans chaque cas actif natif et Steam Runtime, sous validation de synchronisation.
 Ces essais supplémentaires restent synthétiques ; le premier essai réel
 ci-dessus utilise toujours l'ancien binaire `24e19a9`.
+
+## Second essai réel : résultat négatif sur le terrain suivi
+
+La [preuve réelle répétée](proofs/sequential-diablo-v2.json), testée au commit
+`d00a0e9`, contient quatre images de 2560 × 1440 : yeux 0, 1, 0, 1 aux
+présentations 2229, 2248, 2266 et 2284. Les compteurs au moment de l'export
+montrent 711 à 795 nœuds privés, zéro refus de budget et zéro échec de création
+pilote. Le plafond précédent est donc levé pour cet essai. Les autres refus
+et la sélection effective de toutes les géométries restent à résoudre.
+
+L'analyse locale suit 35 patches contrastés du terrain dans les couples
+gauche/droite, gauche/retour gauche, puis retour gauche/retour droite. Ils
+retrouvent tous un décalage de zéro pixel aux coordonnées analysées. Les images
+sont réduites de moitié pour cette mesure ; un effet inférieur à deux pixels
+ou sur d'autres géométries n'est pas exclu. Les patches de 7 × 7 échantillons
+espacés de deux pixels utilisent l'erreur absolue après retrait de la moyenne,
+une recherche de ±40 pixels horizontalement et ±8 verticalement, un contraste
+moyen d'au moins 2, une erreur inférieure à 0,8 fois ce contraste et un rapport
+de 1,5 face au meilleur candidat distinct. Ce contrôle exploratoire ne prouve
+pas toute la scène. Il **ne valide pas la stéréo du décor** et le mouvement
+visible du premier essai ne doit pas être présenté comme une preuve acquise.
+
+Fabien a aussi signalé que le premier PNG ne montrait que l'interface. La cause
+est vérifiée : 6 665 235 pixels sur 7 372 800 de cette paire ont un alpha nul,
+malgré des couleurs de décor présentes. L'alpha du backbuffer composé ne
+représente pas la transparence d'une capture d'écran. L'export force désormais
+l'alpha des seuls aperçus PNG à 255. Les RGB et les payloads bruts, avec leurs
+hashes d'origine, restent inchangés. Un test décode le PNG produit avec des
+couleurs de terrain à alpha nul pour vérifier leur visibilité et la préservation
+du fichier brut. Les aperçus des deux essais sont régénérés.
+
+Les processus du second essai sont sortis et les vérifications de l'exécutable,
+de la bibliothèque d'origine et de ses exports correspondent encore aux
+références. Aucun nouvel essai casque n'a été effectué. La prochaine étape
+porte sur les shaders et matrices des dessins de terrain, avant toute
+présentation du résultat comme une réussite VR.
 
 ## Procédure d'essai privée
 

@@ -115,6 +115,13 @@ def png(path: Path,width: int,height: int,data: bytes):
     path.write_bytes(b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack('>2I5B',width,height,8,6,0,0,0))+chunk(b'IDAT',zlib.compress(rows))+chunk(b'IEND',b''));path.chmod(0o600)
 
 
+def preview_rgba(data: bytes,fmt: int) -> bytes:
+    # Presentation RGB is already composed. Backbuffer alpha is not window
+    # transparency: Diablo writes zero over most terrain. Keep raw pixels
+    # untouched, but make the exported presentation preview fully opaque.
+    out=bytearray(rgba(data,fmt));out[3::4]=b'\xff'*(len(out)//4);return bytes(out)
+
+
 def pair(output: Path,require_game: bool=True) -> dict:
     groups={}
     for path in output.glob('image-*.json'):
@@ -134,18 +141,19 @@ def pair(output: Path,require_game: bool=True) -> dict:
     left,right=images[:2]
     if any(left[1][k]!=x[1][k] for k in ('width','height','format') for x in images[1:]):raise ValueError('Eye formats/extents differ')
     if any(a[1]['sequence']>=b[1]['sequence'] or a[1]['present']>=b[1]['present'] for a,b in zip(images,images[1:])):raise ValueError('Eye order is invalid')
-    width,height=left[1]['width'],left[1]['height'];colors=[rgba(x[2],x[1]['format']) for x in (left,right)]
+    width,height=left[1]['width'],left[1]['height'];colors=[preview_rgba(x[2],x[1]['format']) for x in (left,right)]
     for name,color in zip(('left','right'),colors):png(output/(name+'.png'),width,height,color)
     joined=b''.join(colors[0][y*width*4:(y+1)*width*4]+colors[1][y*width*4:(y+1)*width*4] for y in range(height))
     png(output/'pair.png',width*2,height,joined)
     report={'schema_version':1,'scope':'sequential_original_render_images','synthetic_scene':not require_game,'game_process_observed':require_game,
         'width':width,'height':height,'format':left[1]['format'],'same_instant_pair':False,'game_stereo_submitted':False,
+        'preview_alpha_policy':'opaque presentation RGB; original captured pixels retained unchanged',
         'different_pixel_bytes':sum(a!=b for a,b in zip(left[2],right[2])),
         'images':[{'metadata':str(x[0]),'eye':x[1]['eye'],'sha256':hashlib.sha256(x[2]).hexdigest(),'selected_draw_commands':x[1]['selected_draw_commands']} for x in (left,right)]}
     if len(images)==4:
         report['repeat_images']=[]
         for x,name in zip(images[2:],('left','right')):
-            png(output/('repeat-'+name+'.png'),width,height,rgba(x[2],x[1]['format']))
+            png(output/('repeat-'+name+'.png'),width,height,preview_rgba(x[2],x[1]['format']))
             report['repeat_images'].append({'metadata':str(x[0]),'eye':x[1]['eye'],'sha256':hashlib.sha256(x[2]).hexdigest()})
         report['repeated_eye_selections_verified']=True
         report['stationary_scene_proven']=False

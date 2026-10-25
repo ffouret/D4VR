@@ -11,12 +11,14 @@ répond pas à cet objectif.
 ## État du projet
 
 Le [premier chemin de capture de deux vues successives](docs/SEQUENTIAL_CAPTURE.md)
-a obtenu deux images réelles de Diablo IV en 2560 × 1440, avec les variantes de
-caméra gauche puis droite sélectionnées. Le décor change de point de vue ;
-l'animation et certains éléments d'interface changent aussi entre les captures.
-La couverture des pipelines reste partielle et la disparité exclusivement
-géométrique reste à vérifier. Cette première paire n'est pas envoyée à SteamVR.
-Les références exactes de capture et de relief restent les contrôles synthétiques.
+a obtenu des images réelles de Diablo IV en 2560 × 1440. Un second essai prend
+gauche/droite puis gauche/droite, sans atteindre le quota élargi de pipelines.
+Mais les 35 zones de terrain suivies restent au même emplacement à la résolution
+d'analyse de deux pixels : **la stéréo du terrain n'est pas validée**. Le premier
+décalage visible ne constituait donc pas une preuve suffisante de relief.
+Un défaut de transparence des PNG, qui masquait le décor dans certains lecteurs,
+est corrigé ; les pixels bruts sont conservés. Aucune image du jeu n'est encore
+envoyée à SteamVR. Les preuves de relief vérifiées restent synthétiques.
 
 La [reprise figée vers SteamVR](docs/FROZEN_REPLAY_XR.md) affiche maintenant les
 images issues de l'interception à 1024 × 1024 par œil : 890 paires suivies en dix

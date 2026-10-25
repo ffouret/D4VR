@@ -4,6 +4,7 @@ import struct
 import sys
 import tempfile
 import unittest
+import zlib
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'tools'))
 import sequential_capture as capture
 
@@ -65,6 +66,20 @@ class SequentialImages(unittest.TestCase):
             directory=Path(tmp);p,d=sample(directory,0);sample(directory,1)
             extra=directory/'image-99-1-3.json';extra.write_text(json.dumps({**d,'sequence':3,'present':12}));extra.with_suffix('.pixels').write_bytes(p.with_suffix('.pixels').read_bytes())
             with self.assertRaises(ValueError):capture.pair(directory,False)
+
+    def test_presentation_png_is_opaque_when_terrain_alpha_is_zero(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            directory=Path(tmp);p,_=sample(directory,0);q,_=sample(directory,1)
+            original=bytes([33,66,99,0,10,20,30,95])
+            for x in (p,q):x.with_suffix('.pixels').write_bytes(original)
+            result=capture.pair(directory,False);data=(directory/'left.png').read_bytes();offset=8;compressed=b''
+            while offset<len(data):
+                length=struct.unpack_from('>I',data,offset)[0];kind=data[offset+4:offset+8]
+                if kind==b'IDAT':compressed+=data[offset+8:offset+8+length]
+                offset+=length+12
+            self.assertEqual(zlib.decompress(compressed),bytes([0,99,66,33,255,30,20,10,255]))
+            self.assertEqual(p.with_suffix('.pixels').read_bytes(),original)
+            self.assertIn('opaque',result['preview_alpha_policy'])
 
 
 if __name__=='__main__':unittest.main()
