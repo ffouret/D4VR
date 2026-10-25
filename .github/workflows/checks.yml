@@ -55,6 +55,13 @@ jobs:
           python tools/spirv_probe.py work/native-xr-ci/mrt.vert.spv --helper work/native-xr-ci/stereo-transform.spv --tools /usr/bin --output work/native-xr-ci/mrt-instrumented.spv --stereo
           glslangValidator -V --target-env vulkan1.1 native/tests/stereo_mrt_vertex.vert -o work/native-xr-ci/mrt-vertex.spv
           python tools/spirv_probe.py work/native-xr-ci/mrt-vertex.spv --helper work/native-xr-ci/stereo-transform.spv --tools /usr/bin --output work/native-xr-ci/mrt-vertex-instrumented.spv --stereo
+      - name: Check pipeline recipe lifetimes with ASan and UBSan
+        # No GPU or game is involved in this CPU ownership test.
+        if: runner.os == 'Linux'
+        run: |
+          cmake -S native -B work/recipe-sanitized-ci -DD4VR_BUILD_STEREO_TARGET_TESTS=ON -DCMAKE_BUILD_TYPE=Debug "-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer"
+          cmake --build work/recipe-sanitized-ci --target d4vr_pipeline_recipe_tests --parallel 2
+          ctest --test-dir work/recipe-sanitized-ci -R pipeline_recipe_ownership --output-on-failure
       - name: Fetch pinned SPIR-V grammar for static audit controls
         if: runner.os == 'Linux'
         uses: actions/checkout@v4
@@ -79,8 +86,8 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           cmake -S native -B work/stereo-targets-ci -DD4VR_BUILD_STEREO_TARGET_TESTS=ON "-DD4VR_VULKAN_INCLUDE_DIR=${{ github.workspace }}/work/vulkan-headers/include"
-          cmake --build work/stereo-targets-ci --config Release --target d4vr_stereo_targets_tests d4vr_graphics_replay_tests d4vr_frame_trace_tests
-          ctest --test-dir work/stereo-targets-ci -C Release -R "stereo_target_ownership|graphics_state_replay|vulkan_frame_metadata" --output-on-failure
+          cmake --build work/stereo-targets-ci --config Release --target d4vr_stereo_targets_tests d4vr_graphics_replay_tests d4vr_frame_trace_tests d4vr_pipeline_recipe_tests
+          ctest --test-dir work/stereo-targets-ci -C Release -R "stereo_target_ownership|graphics_state_replay|vulkan_frame_metadata|pipeline_recipe_ownership" --output-on-failure
       - name: Upload Windows probe without vendor or test libraries
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v4

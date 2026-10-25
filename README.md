@@ -10,6 +10,11 @@ répond pas à cet objectif.
 
 ## État du projet
 
+Le [module de recettes de pipelines](docs/PIPELINE_RECIPES.md) copie les
+paramètres et octets shader pour créer les deux variantes d'œil. La scène GPU
+de contrôle les utilise après destruction des modules sources ; ses références
+restent exactes. Ce module n'est pas encore raccordé au flux de Diablo.
+
 Le [recensement statique des accès mémoire](docs/SHADER_EFFECTS.md) prépare
 l'audit des passes préparatoires du jeu. Ses contrôles détectent les écritures
 de buffer, image, adresse GPU et la télémétrie de notre helper. Il n'autorise

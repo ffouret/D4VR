@@ -19,6 +19,8 @@ def run(args) -> dict:
         raise ValueError('Descriptor buffers require recorded replay and the compute echo shader')
     if args.dynamic_state and not args.recorded_replay:
         raise ValueError('Dynamic state requires recorded replay')
+    if args.pipeline_recipes and not args.recorded_replay:
+        raise ValueError('Pipeline recipes require recorded replay')
     if not all(p.is_file() for p in inputs) or args.output.exists():
         raise ValueError('Provide the built fixture/shaders and a new private output directory')
     manifest = json.loads((args.validation_layer/'VkLayer_khronos_validation.json').read_text())
@@ -70,6 +72,8 @@ def run(args) -> dict:
             command.append('--descriptor-buffers')
         if args.dynamic_state:
             command.append('--dynamic-state')
+        if args.pipeline_recipes:
+            command.append('--pipeline-recipes')
         if negative:
             command.append('--negative-sync-control')
         if negative_compute:
@@ -116,6 +120,9 @@ def run(args) -> dict:
             if args.dynamic_state and (proof.get('dynamic_state_replay_verified') is not True
                     or proof.get('declared_dynamic_states') != 12 or proof.get('following_draw_depth_write_disabled_verified') is not True):
                 raise ValueError(f'{name}: dynamic-state replay and following-draw depth restoration were not verified')
+            if args.pipeline_recipes and (proof.get('pipeline_recipe_variants_verified') is not True
+                    or proof.get('original_shader_modules_destroyed_before_variants') is not True):
+                raise ValueError(f'{name}: recipe-created variants after module destruction were not verified')
         metadata = None
         if args.trace_layer:
             if not vulkan_trace.report(metadata_directory)['trace_loaded']:
@@ -162,6 +169,7 @@ def main() -> int:
     parser.add_argument('--descriptor-buffers',action='store_true')
     parser.add_argument('--compute',type=Path)
     parser.add_argument('--dynamic-state',action='store_true')
+    parser.add_argument('--pipeline-recipes',action='store_true')
     parser.add_argument('--trace-layer',type=Path)
     args = parser.parse_args(); run(args); return 0
 

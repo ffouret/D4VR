@@ -2,6 +2,17 @@
 
 Essais du 24 octobre 2026.
 
+## Variantes créées depuis les recettes (25 octobre)
+
+La fixture crée les variantes des deux yeux depuis une copie des paramètres du
+pipeline et des octets shader. Les modules sources sont détruits avant cette
+création. Les seize vues restent identiques aux références indépendantes, avec
+les deux contrôles négatifs toujours détectés, dont Steam Runtime. Les cinq
+exécutions du chemin manuel précédent passent également. Le test C++ vérifie
+copies, spécialisations, pointeurs ignorés et nettoyage après création partielle
+en échec ; il est inclus sous Linux/Windows et avec ASan/UBSan dans la CI Linux.
+Les 100 tests Python passent. Voir [PIPELINE_RECIPES.md](PIPELINE_RECIPES.md).
+
 ## Recensement statique des shaders (25 octobre)
 
 Les 100 tests Python passent. Cinq contrôles originaux compilés passent

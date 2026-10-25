@@ -4,6 +4,7 @@
 #include "../vulkan/stereo_targets.hpp"
 #include "../vulkan/graphics_replay.hpp"
 #include "../vulkan/frame_trace.hpp"
+#include "../vulkan/pipeline_recipe.hpp"
 #include <algorithm>
 #include <cmath>
 #include <iomanip>
@@ -21,11 +22,17 @@ struct Result { uint64_t colorBytes = 0,depthTexels = 0,stencilBytes = 0,isolate
 Matrix4 matrix(const std::array<float,16>& values) { Matrix4 m{}; std::copy(values.begin(),values.end(),m.begin()); return m; }
 uint32_t word(const uint8_t* p) { uint32_t v; std::memcpy(&v,p,4); return v; }
 float number(const uint8_t* p) { float v; std::memcpy(&v,p,4); return v; }
+std::vector<uint32_t> readCode(const char* path) {
+    std::ifstream file(path,std::ios::binary|std::ios::ate);
+    expect(file && file.tellg()>=20 && size_t(file.tellg())%4==0,"Shader recipe file invalid");
+    std::vector<uint32_t> out(size_t(file.tellg())/4);file.seekg(0);file.read(reinterpret_cast<char*>(out.data()),std::streamsize(out.size()*4));
+    expect(bool(file),"Shader recipe read failed");return out;
+}
 }
 
 int main(int argc,char** argv) try {
     if (argc < 4) throw std::runtime_error("Usage: stereo_targets_vulkan original.vert.spv stereo.vert.spv mrt.frag.spv [--negative-sync-control] [--preview-directory path]");
-    bool negative = false,split = false,recorded = false,buffered = false,negativeCompute = false,extended = false; std::filesystem::path preview,computePath;
+    bool negative = false,split = false,recorded = false,buffered = false,negativeCompute = false,extended = false,recipes = false; std::filesystem::path preview,computePath;
     for (int k = 4; k < argc; ++k) {
         if (std::string(argv[k]) == "--negative-sync-control") negative = true;
         else if (std::string(argv[k]) == "--split-passes") split = true;
@@ -33,6 +40,7 @@ int main(int argc,char** argv) try {
         else if (std::string(argv[k]) == "--descriptor-buffers") buffered = true;
         else if (std::string(argv[k]) == "--negative-compute-control") negativeCompute = true;
         else if (std::string(argv[k]) == "--dynamic-state") extended = true;
+        else if (std::string(argv[k]) == "--pipeline-recipes") recipes = true;
         else if (std::string(argv[k]) == "--compute" && k+1 < argc) computePath = argv[++k];
         else if (std::string(argv[k]) == "--preview-directory" && k+1 < argc) preview = argv[++k];
         else throw std::invalid_argument("Unknown stereo fixture option");
@@ -41,6 +49,7 @@ int main(int argc,char** argv) try {
     if (buffered && (!recorded || computePath.empty())) throw std::invalid_argument("Descriptor-buffer proof requires recorded replay and a compute echo shader");
     if (negativeCompute && !buffered) throw std::invalid_argument("Compute negative control requires descriptor buffers");
     if (extended && !recorded) throw std::invalid_argument("Dynamic-state proof requires recorded replay");
+    if (recipes && !recorded) throw std::invalid_argument("Pipeline recipes require recorded replay");
     if (!preview.empty()) {
         expect(!std::filesystem::exists(preview),"Use a new preview directory");
         std::filesystem::create_directories(preview);
@@ -76,6 +85,10 @@ int main(int argc,char** argv) try {
         vertexInput = f.buffer(sizeof(vertices),VK_BUFFER_USAGE_VERTEX_BUFFER_BIT); std::memcpy(vertexInput.mapped,vertices.data(),sizeof(vertices));
     }
     auto vertex = f.shader(argv[1]),instrumented = f.shader(argv[2]),fragment = f.shader(argv[3]);
+    std::unique_ptr<pipeline::Recipe> recipe;
+    auto originalCode=recipes?readCode(argv[1]):std::vector<uint32_t>{};
+    auto transformedCode=recipes?readCode(argv[2]):std::vector<uint32_t>{};
+    auto fragmentCode=recipes?readCode(argv[3]):std::vector<uint32_t>{};
     std::array<VkDescriptorSetLayout,4> layouts{};
     std::array<VkDescriptorSetLayoutBinding,2> bindings{{{0,VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,1,VK_SHADER_STAGE_VERTEX_BIT,nullptr},
         {1,VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,1,VK_SHADER_STAGE_VERTEX_BIT,nullptr}}};
@@ -169,11 +182,21 @@ int main(int argc,char** argv) try {
         ci.pVertexInputState = &vi; ci.pInputAssemblyState = &ia; ci.pViewportState = &vp; ci.pRasterizationState = &rs; ci.pMultisampleState = &ms;
         ci.pColorBlendState = &cb; ci.pDepthStencilState = &ds; ci.pDynamicState = &dy; ci.layout = bufferMode ? bufferLayout : layout;
         if (bufferMode) ci.flags = VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
+        if (recipes && !address && writeDepth && bufferMode==buffered && extendedMode==extended) {
+            recipe=pipeline::Recipe::capture(ci,[&](VkShaderModule module){
+                expect(module==vertex || module==fragment,"Recipe requested unknown module");return module==vertex?originalCode:fragmentCode;
+            });
+        }
         VkPipeline out{}; check(vkCreateGraphicsPipelines(f.device,VK_NULL_HANDLE,1,&ci,nullptr,&out)); return out;
     };
     auto originalPipeline = pipeline(0);
     auto bufferOriginalPipeline = (buffered || extended) ? pipeline(0,buffered,extended) : VK_NULL_HANDLE;
     auto witnessPipeline = extended ? pipeline(0,false,false,false) : VK_NULL_HANDLE;
+    if (recipes) {
+        expect(bool(recipe),"Original application pipeline recipe missing");
+        for(auto s:{vertex,instrumented,fragment})vkDestroyShaderModule(f.device,s,nullptr);
+        vertex=instrumented=fragment=VK_NULL_HANDLE;originalCode.clear();fragmentCode.clear();
+    }
     VkCommandPoolCreateInfo cpi{VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO}; cpi.queueFamilyIndex = f.family;
     VkCommandPool commands{}; check(vkCreateCommandPool(f.device,&cpi,nullptr,&commands));
     VkCommandBufferAllocateInfo cai{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO}; cai.commandPool = commands; cai.commandBufferCount = 1;
@@ -215,7 +238,10 @@ int main(int argc,char** argv) try {
             expect(handles.insert(target->eye(eye).depth.handle).second,"Stereo depth images alias");
             expect(addresses.insert(target->eye(eye).packetAddress).second,"Eye packets alias");
         }
-        std::array<VkPipeline,2> eyePipeline{pipeline(eyes->eye(0).packetAddress,buffered,extended),pipeline(eyes->eye(1).packetAddress,buffered,extended)};
+        auto variants=recipes?recipe->stereo(f.device,vkGetDeviceProcAddr,transformedCode,
+            {eyes->eye(0).packetAddress,eyes->eye(1).packetAddress}):nullptr;
+        std::array<VkPipeline,2> eyePipeline=variants?variants->handles():std::array<VkPipeline,2>{
+            pipeline(eyes->eye(0).packetAddress,buffered,extended),pipeline(eyes->eye(1).packetAddress,buffered,extended)};
         upload(0,source,identity());
         for (unsigned eye = 0; eye < 2; ++eye) upload(eye+1,(test.states[eye].header[3]&2) ? source : matrix(test.states[eye].eyeProjection),matrix(test.states[eye].eyeFromGameView));
         for (unsigned epoch = 0; epoch < 2; ++epoch) {
@@ -419,7 +445,7 @@ int main(int argc,char** argv) try {
             }
             std::cout << "CASE " << test.name << " epoch=" << epoch << " reference=pass isolation=pass\n";
         }
-        for (auto p : eyePipeline) vkDestroyPipeline(f.device,p,nullptr);
+        if (!variants) for (auto p : eyePipeline) vkDestroyPipeline(f.device,p,nullptr);
     }
     expect(std::abs(result.disparity[0]/result.disparity[1]-2) < .3,"MRT parallax is not depth dependent");
     check(vkDeviceWaitIdle(f.device));
@@ -447,6 +473,7 @@ int main(int argc,char** argv) try {
         << ",\"forwarded_original_reference_compared_bytes\":" << originalComparedBytes
         << ",\"descriptor_buffer_replay_verified\":" << (buffered ? "true" : "false") << ",\"following_compute_reference_words\":" << computeWords
         << ",\"dynamic_state_replay_verified\":" << (extended ? "true" : "false") << ",\"declared_dynamic_states\":" << (extended ? extendedStates.size() : 3)
+        << ",\"pipeline_recipe_variants_verified\":" << (recipes ? "true" : "false") << ",\"original_shader_modules_destroyed_before_variants\":" << (recipes ? "true" : "false")
         << ",\"following_draw_depth_write_disabled_verified\":" << (extended ? "true" : "false")
         << ",\"frozen_scene_cases\":4,\"epochs_per_case\":2,\"eye_renderings\":16,\"submissions\":8,"
         << "\"color_reference_different_bytes\":0,\"color_reference_compared_bytes\":" << result.colorBytes << ",\"depth_reference_compared_texels\":" << result.depthTexels
