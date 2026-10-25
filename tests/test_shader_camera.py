@@ -55,6 +55,39 @@ class CameraTraceTests(unittest.TestCase):
         text = re.sub(r'^!\d+ = !\{i32 \d+, !"SV_Position".*$', '', FIXTURE.read_text(), flags=re.M)
         self.assertFalse(shader_camera.analyze_ir(text)["position_signature_resolved"])
 
+    def test_resource_range_ids_are_scoped_to_constant_buffers(self):
+        text = FIXTURE.read_text().replace('!4 = !{null, null, !5, null}',
+                                            '!4 = !{!100, !102, !5, !104}')
+        text += '''
+!100 = !{!101}
+!101 = !{i32 0, %struct.Texture* undef, !"", i32 0, i32 20, i32 1, i32 4096, null}
+!102 = !{!103}
+!103 = !{i32 1, %struct.WritableTexture* undef, !"", i32 0, i32 21, i32 1, i32 4096, null}
+!104 = !{!105}
+!105 = !{i32 0, %struct.SamplerState* undef, !"", i32 0, i32 22, i32 1, i32 0, null}
+'''
+        original = shader_camera.analyze_ir(FIXTURE.read_text())
+        actual = shader_camera.analyze_ir(text)
+        self.assertEqual(actual['final_clip_matrix'], original['final_clip_matrix'])
+        self.assertEqual(actual['input_matrix_chain'], original['input_matrix_chain'])
+
+    def test_absent_or_ambiguous_resource_root_is_not_guessed(self):
+        text = FIXTURE.read_text()
+        for changed in (text.replace('!dx.resources = !{!4}', ''),
+                        text + '\n!dx.resources = !{!4}\n',
+                        text.replace('!4 = !{null, null, !5, null}', '!4 = !{null, !5, null}'),
+                        text.replace('!dx.resources = !{!4}', '!dx.resources = !{!999}')):
+            with self.subTest(changed=changed[-80:]):
+                self.assertIsNone(shader_camera.analyze_ir(changed)['final_clip_matrix'])
+
+    def test_duplicate_cbuffer_range_or_missing_table_entry_is_rejected(self):
+        text = FIXTURE.read_text()
+        for changed in (text.replace('!5 = !{!6, !7}', '!5 = !{!6, !6}'),
+                        text.replace('!5 = !{!6, !7}', '!5 = !{!6, !999}'),
+                        text + '\n!6 = !{null}\n'):
+            with self.subTest(changed=changed[-80:]):
+                self.assertIsNone(shader_camera.analyze_ir(changed)['final_clip_matrix'])
+
 
 if __name__ == '__main__':
     unittest.main()

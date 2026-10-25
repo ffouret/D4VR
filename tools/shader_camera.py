@@ -22,6 +22,41 @@ HANDLE = re.compile(r"@dx\.op\.createHandle\(i32 57, i8 2, i32 (\d+), i32 ([^,]+
 RESOURCE = re.compile(r'^!\d+ = !\{i32 (\d+), %([\w.$]+)\* undef, !"[^"]*", i32 (\d+), i32 (\d+), i32 (\d+), i32 (\d+),')
 
 
+def constant_buffer_layouts(text: str) -> dict:
+    # Range IDs are local to a resource class. A sampler or SRV with range ID
+    # zero must never overwrite cbuffer zero. Resolve only the third list in
+    # the DXIL resource table, rather than scanning every resource-shaped node.
+    roots = re.findall(r'^!dx\.resources = !\{!(\d+)\}\s*$', text, re.M)
+    nodes = {}
+    for line in text.splitlines():
+        node = re.fullmatch(r'!(\d+) = !\{(.*)\}', line)
+        if node:
+            if node[1] in nodes:
+                return {}
+            nodes[node[1]] = (node[2], line)
+    if len(roots) != 1 or roots[0] not in nodes:
+        return {}
+    classes = [part.strip() for part in nodes[roots[0]][0].split(',')]
+    if len(classes) != 4 or any(not re.fullmatch(r'null|!\d+', part) for part in classes):
+        return {}
+    if classes[2] == 'null' or classes[2][1:] not in nodes:
+        return {}
+    references = [part.strip() for part in nodes[classes[2][1:]][0].split(',')]
+    layouts = {}
+    for reference in references:
+        if not re.fullmatch(r'!\d+', reference) or reference[1:] not in nodes:
+            return {}
+        resource = RESOURCE.match(nodes[reference[1:]][1])
+        if not resource:
+            return {}
+        identifier, name, space, register, count, size = resource.groups()
+        if int(identifier) in layouts:
+            return {}
+        layouts[int(identifier)] = {"name": name.removeprefix("hostlayout."), "space": int(space),
+                                    "register": int(register), "array_count": int(count), "bytes": int(size)}
+    return layouts
+
+
 def canonical(value: str) -> str:
     value = value.strip()
     if value.startswith("%") or value.startswith("0x"):
@@ -33,17 +68,13 @@ def canonical(value: str) -> str:
 
 
 def analyze_ir(text: str) -> dict:
-    definitions, handles, layouts, loads, stores = {}, {}, {}, {}, {}
+    definitions, handles, loads, stores = {}, {}, {}, {}
+    layouts = constant_buffer_layouts(text)
     position_ids = set()
     for line in text.splitlines():
         signature = re.match(r'^!\d+ = !\{i32 (\d+), !"SV_Position",', line, re.I)
         if signature:
             position_ids.add(int(signature[1]))
-        resource = RESOURCE.match(line)
-        if resource:
-            identifier, name, space, register, count, size = resource.groups()
-            layouts[int(identifier)] = {"name": name.removeprefix("hostlayout."), "space": int(space),
-                                        "register": int(register), "array_count": int(count), "bytes": int(size)}
         assignment = ASSIGN.match(line)
         if assignment:
             value, rhs = assignment.groups()
