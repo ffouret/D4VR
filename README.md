@@ -41,6 +41,10 @@ de pose demandées avant acquisition des swapchains. Les pixels copiés par le G
 sont comparés exactement aux références du programme, avec refus des paires périmées
 et conservation de l'ancien chemin de reprise. Ces essais utilisent un runtime
 XR simulé ; le producteur d'images cohérentes de Diablo reste à raccorder.
+La session peut maintenant avancer par étapes en rendant la main entre les
+attentes GPU, avec une seule paire en cours. Douze contrôles supplémentaires
+vérifient ce cycle, les timeouts et les arrêts. Le cadencement XR et le producteur
+réel du jeu demandent encore leur intégration.
 
 Les [premières observations de buffers et de liaisons de ressources](docs/RESOURCE_BINDINGS.md)
 préparent le raccordement aux dessins du jeu. Elles conservent identités et

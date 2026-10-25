@@ -2,6 +2,8 @@
 // No game, HMD, SteamVR or application resource borrowing is involved.
 #include "../xr/replay_presenter.hpp"
 #include <cstring>
+#include <chrono>
+#include <thread>
 #include <iostream>
 #include <stdexcept>
 #include <string>
@@ -15,8 +17,17 @@ struct Fixture {
     VkInstance instance{};VkPhysicalDevice physical{};VkDevice device{};VkQueue queue{};uint32_t family=0;
     VkPhysicalDeviceMemoryProperties memory{};VkPhysicalDeviceIDProperties id{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES};
     struct Eye {VkImage image{};VkDeviceMemory imageMemory{};VkBuffer buffer{};VkDeviceMemory bufferMemory{};void* mapped{};};
-    std::array<Eye,2> eyes{};VkExtent2D extent{64,48};bool initialized=false;
-    ~Fixture(){if(device){vkDeviceWaitIdle(device);for(auto& e:eyes){if(e.mapped)vkUnmapMemory(device,e.bufferMemory);if(e.buffer)vkDestroyBuffer(device,e.buffer,nullptr);if(e.bufferMemory)vkFreeMemory(device,e.bufferMemory,nullptr);if(e.image)vkDestroyImage(device,e.image,nullptr);if(e.imageMemory)vkFreeMemory(device,e.imageMemory,nullptr);}vkDestroyDevice(device,nullptr);}if(instance)vkDestroyInstance(instance,nullptr);}
+    std::array<Eye,2> eyes{};VkExtent2D extent{64,48};bool initialized=false;unsigned records=0,appTicks=0;bool hold=false;
+    VkEvent gate{};VkCommandPool appPool{};VkCommandBuffer appCommand{};VkFence appFence{};
+    VkBuffer appBuffer{};VkDeviceMemory appMemory{};void* appMapped{};
+    ~Fixture(){if(device){if(gate)vkSetEvent(device,gate);vkDeviceWaitIdle(device);
+        if(appMapped)vkUnmapMemory(device,appMemory);
+        if(appBuffer)vkDestroyBuffer(device,appBuffer,nullptr);
+        if(appMemory)vkFreeMemory(device,appMemory,nullptr);
+        if(appFence)vkDestroyFence(device,appFence,nullptr);
+        if(appPool)vkDestroyCommandPool(device,appPool,nullptr);
+        if(gate)vkDestroyEvent(device,gate,nullptr);
+        for(auto& e:eyes){if(e.mapped)vkUnmapMemory(device,e.bufferMemory);if(e.buffer)vkDestroyBuffer(device,e.buffer,nullptr);if(e.bufferMemory)vkFreeMemory(device,e.bufferMemory,nullptr);if(e.image)vkDestroyImage(device,e.image,nullptr);if(e.imageMemory)vkFreeMemory(device,e.imageMemory,nullptr);}vkDestroyDevice(device,nullptr);}if(instance)vkDestroyInstance(instance,nullptr);}
     uint32_t type(uint32_t mask,VkMemoryPropertyFlags flags){for(uint32_t i=0;i<memory.memoryTypeCount;++i)if((mask&(1u<<i)) && (memory.memoryTypes[i].propertyFlags&flags)==flags)return i;throw std::runtime_error("No memory type");}
     void setup(){
         VkApplicationInfo app{VK_STRUCTURE_TYPE_APPLICATION_INFO};app.pApplicationName="D4VR projection images fixture";app.apiVersion=VK_API_VERSION_1_3;
@@ -33,7 +44,26 @@ struct Fixture {
             VkBufferCreateInfo bi{VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};bi.size=VkDeviceSize(extent.width)*extent.height*4;bi.usage=VK_BUFFER_USAGE_TRANSFER_SRC_BIT;check(vkCreateBuffer(device,&bi,nullptr,&e.buffer));vkGetBufferMemoryRequirements(device,e.buffer,&r);ma.allocationSize=r.size;ma.memoryTypeIndex=type(r.memoryTypeBits,VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT|VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);check(vkAllocateMemory(device,&ma,nullptr,&e.bufferMemory));check(vkBindBufferMemory(device,e.buffer,e.bufferMemory,0));check(vkMapMemory(device,e.bufferMemory,0,bi.size,0,&e.mapped));
         }
     }
+    void setupCaller(bool gateGpu) {
+        hold=gateGpu;VkEventCreateInfo ei{VK_STRUCTURE_TYPE_EVENT_CREATE_INFO};check(vkCreateEvent(device,&ei,nullptr,&gate));
+        VkBufferCreateInfo bi{VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};bi.size=16;bi.usage=VK_BUFFER_USAGE_TRANSFER_DST_BIT;check(vkCreateBuffer(device,&bi,nullptr,&appBuffer));
+        VkMemoryRequirements r{};vkGetBufferMemoryRequirements(device,appBuffer,&r);VkMemoryAllocateInfo ma{VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};ma.allocationSize=r.size;ma.memoryTypeIndex=type(r.memoryTypeBits,VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT|VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);check(vkAllocateMemory(device,&ma,nullptr,&appMemory));check(vkBindBufferMemory(device,appBuffer,appMemory,0));check(vkMapMemory(device,appMemory,0,16,0,&appMapped));
+        VkCommandPoolCreateInfo pi{VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};pi.queueFamilyIndex=family;check(vkCreateCommandPool(device,&pi,nullptr,&appPool));VkCommandBufferAllocateInfo ca{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};ca.commandPool=appPool;ca.level=VK_COMMAND_BUFFER_LEVEL_PRIMARY;ca.commandBufferCount=1;check(vkAllocateCommandBuffers(device,&ca,&appCommand));
+        VkCommandBufferBeginInfo cb{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};check(vkBeginCommandBuffer(appCommand,&cb));vkCmdFillBuffer(appCommand,appBuffer,0,16,0xc0decafe);
+        VkMemoryBarrier b{VK_STRUCTURE_TYPE_MEMORY_BARRIER};b.srcAccessMask=VK_ACCESS_TRANSFER_WRITE_BIT;b.dstAccessMask=VK_ACCESS_HOST_READ_BIT;vkCmdPipelineBarrier(appCommand,VK_PIPELINE_STAGE_TRANSFER_BIT,VK_PIPELINE_STAGE_HOST_BIT,0,1,&b,0,nullptr,0,nullptr);check(vkEndCommandBuffer(appCommand));
+        VkFenceCreateInfo fi{VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};check(vkCreateFence(device,&fi,nullptr,&appFence));
+    }
+    void callerGpuTick() {
+        check(vkResetFences(device,1,&appFence));VkSubmitInfo submit{VK_STRUCTURE_TYPE_SUBMIT_INFO};submit.commandBufferCount=1;submit.pCommandBuffers=&appCommand;check(vkQueueSubmit(queue,1,&submit,appFence));check(vkWaitForFences(device,1,&appFence,VK_TRUE,UINT64_MAX));
+        auto data=static_cast<uint32_t*>(appMapped);for(unsigned i=0;i<4;++i)require(data[i]==0xc0decafe);++appTicks;
+    }
     bool record(const ProjectionRequest& r,VkCommandBuffer command,ProjectionFrame& out,const std::string& mode){
+        ++records;
+        if(mode=="throw-source")throw std::runtime_error("Injected source failure");
+        if(hold) {
+            check(vkResetEvent(device,gate));
+            vkCmdWaitEvents(command,1,&gate,VK_PIPELINE_STAGE_HOST_BIT,VK_PIPELINE_STAGE_TRANSFER_BIT,0,nullptr,0,nullptr,0,nullptr);
+        }
         for(unsigned i=0;i<2;++i)require(r.packets[i].identity[0]==i && r.packets[i].header[2]==r.sequence);
         if(mode=="missing" || (mode=="missing-first" && r.sequence==1))return false;
         VkMemoryBarrier host{VK_STRUCTURE_TYPE_MEMORY_BARRIER};host.srcAccessMask=VK_ACCESS_HOST_WRITE_BIT;host.dstAccessMask=VK_ACCESS_TRANSFER_READ_BIT;vkCmdPipelineBarrier(command,VK_PIPELINE_STAGE_HOST_BIT,VK_PIPELINE_STAGE_TRANSFER_BIT,0,1,&host,0,nullptr,0,nullptr);
@@ -61,5 +91,40 @@ int main(int argc,char** argv)try {
     Fixture f;f.setup();BorrowedBinding binding;binding.instance=f.instance;binding.device=f.device;binding.queue=f.queue;binding.family=f.family;binding.get=vkGetDeviceProcAddr;binding.setLoaderData=loaderData;std::memcpy(binding.uuid.data(),f.id.deviceUUID,VK_UUID_SIZE);
     ProjectionSource source;source.extent=f.extent;source.format=VK_FORMAT_B8G8R8A8_UNORM;source.flipY=mode=="flip";
     source.record=[&](const ProjectionRequest& r,VkCommandBuffer command,ProjectionFrame& out){return f.record(r,command,out,mode);};
-    std::cout<<presentProjectionImages(binding,source,1);return 0;
+    if(mode.rfind("pump",0)!=0 && mode!="throw-source") {std::cout<<presentProjectionImages(binding,source,1);return 0;}
+    bool gpuGate=mode=="pump-gpu" || mode=="pump-stop" || mode=="pump-abandon-gpu";
+    f.setupCaller(gpuGate);unsigned cpuTicks=0,gpuPending=0,submitted=0,presented=0;std::string report;
+    {
+        ProjectionSession session(binding,source);
+        // Descriptors/callback objects are copied; underlying resources stay owned.
+        binding={};source={};
+        // Draining only never starts a frame or invokes the source.
+        for(unsigned i=0;i<3;++i)require(session.advance(false)==ProjectionStep::idle);
+        require(f.records==0);
+        auto deadline=std::chrono::steady_clock::now()+std::chrono::seconds(3);
+        unsigned seenRecords=0;
+        while(std::chrono::steady_clock::now()<deadline) {
+            auto step=session.advance(f.records==presented);++cpuTicks;
+            if(f.records>seenRecords) {require(f.records==seenRecords+1);seenRecords=f.records;f.callerGpuTick();}
+            if(step==ProjectionStep::submitted)++submitted;
+            if(step==ProjectionStep::gpuPending) {
+                ++gpuPending;require(f.records==submitted);
+                // Keep the actual GPU fence unsignaled over three caller turns.
+                if(gpuGate && gpuPending%3==0)check(vkSetEvent(f.device,f.gate));
+            }
+            if(step==ProjectionStep::presented)++presented;
+            if(mode=="pump-abandon-images" && step==ProjectionStep::imagesPending && cpuTicks>=2)break;
+            if(mode=="pump-abandon-gpu" && step==ProjectionStep::submitted){check(vkSetEvent(f.device,f.gate));break;}
+            if(step==ProjectionStep::stopped || step==ProjectionStep::failed) {
+                require(session.advance(false)==step);break;
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+        if(gpuGate)check(vkSetEvent(f.device,f.gate));
+        report=session.report();
+    }
+    if(mode=="pump-gpu")require(gpuPending>=6 && presented==2 && submitted==2 && f.records==2);
+    if(mode=="pump-stop")require(gpuPending>=3 && presented==0 && submitted==1 && f.records==1);
+    std::cerr<<"D4VR caller progress: "<<cpuTicks<<" turns, "<<f.appTicks<<" GPU markers, "<<gpuPending<<" pending GPU turns, "<<presented<<" presentations\n";
+    std::cout<<report;return 0;
 }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}

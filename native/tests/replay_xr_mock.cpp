@@ -19,11 +19,11 @@
 #define assert(x) do { if(!(x))std::abort(); } while(false)
 struct XrInstance_T {};
 struct XrSession_T {
-    XrGraphicsBindingVulkanKHR binding;unsigned frames=0,ticks=0,acquires=0,releases=0;bool ready=false,exit=false;
+    XrGraphicsBindingVulkanKHR binding;unsigned frames=0,ticks=0,acquires=0,releases=0;bool ready=false,exit=false,frameOpen=false,stopSent=false;
     VkQueue queue{};VkCommandPool pool{};VkQueryPool query{};VkBuffer buffer{};VkDeviceMemory memory{};VkFence fence{};
 };
 struct XrSpace_T {};
-struct XrSwapchain_T { VkDevice device{};VkImage image{};VkDeviceMemory memory{};uint32_t width=0,height=0;bool acquired=false; };
+struct XrSwapchain_T { VkDevice device{};VkImage image{};VkDeviceMemory memory{};uint32_t width=0,height=0;bool acquired=false,waited=false;unsigned waits=0; };
 namespace { XrInstance_T instance;XrSession active{};unsigned swapchains=0; }
 namespace {
 void verifyPixels(XrSession s,const XrCompositionLayerProjection& projection) {
@@ -80,7 +80,7 @@ XR_FN(xrCreateSession)(XrInstance,const XrSessionCreateInfo* info,XrSession* out
 }
 XR_FN(xrDestroySession)(XrSession s) {
     assert(s==active && !swapchains);auto d=s->binding.device;
-    assert(s->acquires==s->releases);std::fprintf(stderr,"D4VR mock XR image lifecycle: %u acquires, %u releases\n",s->acquires,s->releases);
+    assert(!s->frameOpen && s->acquires==s->releases);std::fprintf(stderr,"D4VR mock XR image lifecycle: %u acquires, %u releases\n",s->acquires,s->releases);
     // No wait here: the presenter must complete work enqueued by xrEndFrame,
     // including this runtime's own query/buffer use, before destroying session.
     if(s->query)vkDestroyQueryPool(d,s->query,nullptr);
@@ -112,18 +112,23 @@ XR_FN(xrPollEvent)(XrInstance,XrEventDataBuffer* out) {
     if(!active)return XR_EVENT_UNAVAILABLE;
     auto e=reinterpret_cast<XrEventDataSessionStateChanged*>(out);
     if(!active->ready){active->ready=true;e->type=XR_TYPE_EVENT_DATA_SESSION_STATE_CHANGED;e->session=active;e->state=XR_SESSION_STATE_READY;return XR_SUCCESS;}
-    if(active->ticks>=2 && !active->exit){active->exit=true;e->type=XR_TYPE_EVENT_DATA_SESSION_STATE_CHANGED;e->session=active;e->state=XR_SESSION_STATE_EXITING;return XR_SUCCESS;}
+    if(active->ticks>=2 && !active->frameOpen && !active->exit){active->exit=true;e->type=XR_TYPE_EVENT_DATA_SESSION_STATE_CHANGED;e->session=active;e->state=XR_SESSION_STATE_EXITING;return XR_SUCCESS;}
+    if(((std::getenv("D4VR_MOCK_XR_STOP") && active->acquires>=2) || (std::getenv("D4VR_MOCK_XR_STOP_IMAGES") && active->acquires>=1)) && !active->stopSent) {
+        active->stopSent=true;e->type=XR_TYPE_EVENT_DATA_SESSION_STATE_CHANGED;e->session=active;e->state=XR_SESSION_STATE_STOPPING;return XR_SUCCESS;
+    }
     return XR_EVENT_UNAVAILABLE;
 }
 XR_FN(xrBeginSession)(XrSession,const XrSessionBeginInfo*) { return XR_SUCCESS; }
-XR_FN(xrEndSession)(XrSession) { return XR_SUCCESS; }
-XR_FN(xrWaitFrame)(XrSession s,const XrFrameWaitInfo*,XrFrameState* out) { ++s->ticks;out->shouldRender=XR_TRUE;out->predictedDisplayTime=s->ticks*10000000;out->predictedDisplayPeriod=10000000;return XR_SUCCESS; }
-XR_FN(xrBeginFrame)(XrSession,const XrFrameBeginInfo*) { return XR_SUCCESS; }
+XR_FN(xrEndSession)(XrSession s) { assert(!s->frameOpen);std::fputs("D4VR mock XR session stopped\n",stderr);return XR_SUCCESS; }
+XR_FN(xrWaitFrame)(XrSession s,const XrFrameWaitInfo*,XrFrameState* out) { assert(!s->frameOpen);++s->ticks;out->shouldRender=std::getenv("D4VR_MOCK_XR_HIDDEN")?XR_FALSE:XR_TRUE;out->predictedDisplayTime=s->ticks*10000000;out->predictedDisplayPeriod=10000000;return XR_SUCCESS; }
+XR_FN(xrBeginFrame)(XrSession s,const XrFrameBeginInfo*) { assert(!s->frameOpen);s->frameOpen=true;return XR_SUCCESS; }
 XR_FN(xrLocateViews)(XrSession s,const XrViewLocateInfo*,XrViewState* state,uint32_t capacity,uint32_t* count,XrView* out) {
     assert(capacity>=2);*count=2;state->viewStateFlags=XR_VIEW_STATE_ORIENTATION_VALID_BIT|XR_VIEW_STATE_POSITION_VALID_BIT|XR_VIEW_STATE_ORIENTATION_TRACKED_BIT|XR_VIEW_STATE_POSITION_TRACKED_BIT;
+    if(std::getenv("D4VR_MOCK_XR_UNTRACKED"))state->viewStateFlags=0;
     for(unsigned i=0;i<2;++i){out[i].pose.orientation={0,0,0,1};out[i].pose.position={(s->ticks-1)*.025f+(i?.032f:-.032f),0,0};out[i].fov={-.8f,.8f,.8f,-.8f};}return XR_SUCCESS;
 }
 XR_FN(xrEndFrame)(XrSession s,const XrFrameEndInfo* info) {
+    assert(s->frameOpen);s->frameOpen=false;
     if(info->layerCount){assert(info->layerCount==1 && info->layers[0]->type==XR_TYPE_COMPOSITION_LAYER_PROJECTION);
         auto p=reinterpret_cast<const XrCompositionLayerProjection*>(info->layers[0]);assert(p->viewCount==2);
         for(unsigned i=0;i<2;++i)assert(!p->views[i].subImage.swapchain->acquired);
@@ -149,9 +154,15 @@ XR_FN(xrEndFrame)(XrSession s,const XrFrameEndInfo* info) {
         }
     }return XR_SUCCESS;
 }
-XR_FN(xrAcquireSwapchainImage)(XrSwapchain s,const XrSwapchainImageAcquireInfo*,uint32_t* index) { assert(!s->acquired);s->acquired=true;++active->acquires;*index=0;return XR_SUCCESS; }
-XR_FN(xrWaitSwapchainImage)(XrSwapchain s,const XrSwapchainImageWaitInfo*) { assert(s->acquired);return XR_SUCCESS; }
-XR_FN(xrReleaseSwapchainImage)(XrSwapchain s,const XrSwapchainImageReleaseInfo*) { assert(s->acquired);s->acquired=false;++active->releases;return XR_SUCCESS; }
+XR_FN(xrAcquireSwapchainImage)(XrSwapchain s,const XrSwapchainImageAcquireInfo*,uint32_t* index) { assert(!s->acquired);if(std::getenv("D4VR_MOCK_XR_FAIL_ACQUIRE") && active->acquires==1)return XR_ERROR_RUNTIME_FAILURE;s->acquired=true;s->waited=false;s->waits=0;++active->acquires;*index=0;return XR_SUCCESS; }
+XR_FN(xrWaitSwapchainImage)(XrSwapchain s,const XrSwapchainImageWaitInfo* info) {
+    assert(s->acquired && !s->waited);++s->waits;
+    if(std::getenv("D4VR_MOCK_XR_TIMEOUT") && info->timeout==0 && s->waits<=2) {
+        std::fputs("D4VR mock XR image wait timed out\n",stderr);return XR_TIMEOUT_EXPIRED;
+    }
+    s->waited=true;return XR_SUCCESS;
+}
+XR_FN(xrReleaseSwapchainImage)(XrSwapchain s,const XrSwapchainImageReleaseInfo*) { assert(s->acquired && s->waited);s->acquired=s->waited=false;++active->releases;return XR_SUCCESS; }
 XR_FN(xrGetInstanceProcAddr)(XrInstance,const char* name,PFN_xrVoidFunction* out) {
 #define MATCH(fn) if(std::strcmp(name,#fn)==0){*out=reinterpret_cast<PFN_xrVoidFunction>(fn);return XR_SUCCESS;}
     MATCH(xrDestroyInstance) MATCH(xrGetSystem) MATCH(xrGetInstanceProperties) MATCH(xrGetVulkanGraphicsRequirementsKHR)

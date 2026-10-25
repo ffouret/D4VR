@@ -29,9 +29,9 @@ Matrix4 pose(const XrPosef& p) {
     X(EnumerateSwapchainFormats) X(CreateSwapchain) X(DestroySwapchain) X(EnumerateSwapchainImages) X(CreateReferenceSpace) X(DestroySpace) \
     X(PollEvent) X(BeginSession) X(EndSession) X(WaitFrame) X(BeginFrame) X(LocateViews) X(EndFrame) X(AcquireSwapchainImage) X(WaitSwapchainImage) X(ReleaseSwapchainImage)
 #define VK_FUNCTIONS(X) X(CreateCommandPool) X(DestroyCommandPool) X(AllocateCommandBuffers) X(ResetCommandPool) X(BeginCommandBuffer) \
-    X(EndCommandBuffer) X(CreateFence) X(DestroyFence) X(ResetFences) X(QueueSubmit) X(WaitForFences) X(QueueWaitIdle) X(CmdPipelineBarrier) X(CmdBlitImage)
+    X(EndCommandBuffer) X(CreateFence) X(DestroyFence) X(ResetFences) X(QueueSubmit) X(GetFenceStatus) X(QueueWaitIdle) X(CmdPipelineBarrier) X(CmdBlitImage)
 struct Presenter {
-    const BorrowedBinding& binding;const ProjectionSource& source;
+    const BorrowedBinding binding;const ProjectionSource source;
     void* loader{};void* vkLoader{};PFN_xrGetInstanceProcAddr get{};
     XrInstance instance{};XrSystemId system{};XrSession session{};XrSpace space{};
 #define XF(n) PFN_xr##n xr##n{};
@@ -40,20 +40,32 @@ struct Presenter {
 #define VF(n) PFN_vk##n vk##n{};
     VK_FUNCTIONS(VF)
 #undef VF
-    struct Eye {XrSwapchain swapchain{};std::vector<XrSwapchainImageVulkanKHR> images;uint32_t index=0;bool acquired=false;};
+    struct Eye {XrSwapchain swapchain{};std::vector<XrSwapchainImageVulkanKHR> images;uint32_t index=0;bool acquired=false,waited=false;};
     std::array<Eye,2> eyes;
     VkCommandPool pool{};VkCommandBuffer command{};VkFence fence{};VkFormat format{};
     bool pending=false,running=false,frameOpen=false,anchored=false,uuidMatch=false,extensionsMatch=false;
+    enum class Phase { idle, images, gpu } phase=Phase::idle;
+    bool setupDone=false,stop=false,stopping=false;std::string error;
+    std::array<XrView,2> views{{{XR_TYPE_VIEW},{XR_TYPE_VIEW}}};XrViewStateFlags viewFlags=0;ProjectionFrame images;
+    uint32_t advances=0,imageTimeouts=0,fencePollsPending=0;
     XrTime displayTime{};Matrix4 anchor=identity();std::array<double,3> initial{};
     uint32_t frames=0,tracked=0,poseUpdates=0,requests=0,rejected=0,unavailable=0;double movement=0,separation=0;std::string runtime;
     Presenter(const BorrowedBinding& b,const ProjectionSource& s):binding(b),source(s) {}
     ~Presenter() {
-        // xrEndFrame can enqueue runtime work after our own fence completed.
-        // Complete that borrowed-queue work before freeing any XR image/session.
+        // Cleanup may block. Complete private GPU use before releasing images.
+        if(pending && vkQueueWaitIdle)vkQueueWaitIdle(binding.queue);
+        for(auto& e:eyes)if(e.acquired && xrWaitSwapchainImage && xrReleaseSwapchainImage) {
+            if(!e.waited) {
+                XrSwapchainImageWaitInfo w{XR_TYPE_SWAPCHAIN_IMAGE_WAIT_INFO};w.timeout=XR_INFINITE_DURATION;
+                auto r=xrWaitSwapchainImage(e.swapchain,&w);e.waited=(r==XR_SUCCESS || r==XR_SESSION_LOSS_PENDING);
+            }
+            if(e.waited){XrSwapchainImageReleaseInfo release{XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO};xrReleaseSwapchainImage(e.swapchain,&release);e.acquired=false;}
+        }
+        if(frameOpen && xrEndFrame) {XrFrameEndInfo end{XR_TYPE_FRAME_END_INFO};end.displayTime=displayTime;end.environmentBlendMode=XR_ENVIRONMENT_BLEND_MODE_OPAQUE;xrEndFrame(session,&end);}
+        // Even empty xrEndFrame can enqueue runtime work after our own fence.
         if(session && vkQueueWaitIdle)vkQueueWaitIdle(binding.queue);
         if(fence && vkDestroyFence)vkDestroyFence(binding.device,fence,nullptr);
         if(pool && vkDestroyCommandPool)vkDestroyCommandPool(binding.device,pool,nullptr);
-        if(frameOpen && xrEndFrame) {XrFrameEndInfo end{XR_TYPE_FRAME_END_INFO};end.displayTime=displayTime;end.environmentBlendMode=XR_ENVIRONMENT_BLEND_MODE_OPAQUE;xrEndFrame(session,&end);}
         for(auto& e:eyes)if(e.swapchain && xrDestroySwapchain)xrDestroySwapchain(e.swapchain);
         if(space && xrDestroySpace)xrDestroySpace(space);
         if(session && xrDestroySession)xrDestroySession(session);
@@ -73,6 +85,11 @@ struct Presenter {
     void setup() {
         if(!binding.instance || !binding.device || !binding.queue || !binding.get || !source.record || !source.extent.width || !source.extent.height
             || source.extent.width>4096 || source.extent.height>4096)throw std::invalid_argument("Replay presenter contract unavailable");
+        // Make cleanup dispatch available before the runtime can enqueue work,
+        // including failures during session/swapchain setup.
+#define LOAD_VK(n) vk##n=reinterpret_cast<PFN_vk##n>(binding.get(binding.device,"vk" #n));if(!vk##n)throw std::runtime_error("Private replay dispatch missing: " #n);
+        VK_FUNCTIONS(LOAD_VK)
+#undef LOAD_VK
         const char* path=std::getenv("D4VR_XR_LOADER");loader=dlopen(path&&*path?path:"libopenxr_loader.so.1",RTLD_NOW|RTLD_LOCAL);
         if(!loader)throw std::runtime_error("OpenXR loader unavailable");
         auto create=reinterpret_cast<PFN_xrCreateInstance>(dlsym(loader,"xrCreateInstance"));get=reinterpret_cast<PFN_xrGetInstanceProcAddr>(dlsym(loader,"xrGetInstanceProcAddr"));
@@ -112,9 +129,6 @@ struct Presenter {
             check(xrEnumerateSwapchainImages(e.swapchain,0,&n,nullptr),"XR image count");if(!n||n>64)throw std::runtime_error("XR image budget");
             e.images.resize(n,{XR_TYPE_SWAPCHAIN_IMAGE_VULKAN_KHR});check(xrEnumerateSwapchainImages(e.swapchain,n,&n,reinterpret_cast<XrSwapchainImageBaseHeader*>(e.images.data())),"XR images");
         }
-#define LOAD_VK(n) vk##n=reinterpret_cast<PFN_vk##n>(binding.get(binding.device,"vk" #n));if(!vk##n)throw std::runtime_error("Private replay dispatch missing: " #n);
-        VK_FUNCTIONS(LOAD_VK)
-#undef LOAD_VK
         VkCommandPoolCreateInfo cp{VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};cp.queueFamilyIndex=binding.family;vkcheck(vkCreateCommandPool(binding.device,&cp,nullptr,&pool),"vkCreateCommandPool");
         VkCommandBufferAllocateInfo ca{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};ca.commandPool=pool;ca.level=VK_COMMAND_BUFFER_LEVEL_PRIMARY;ca.commandBufferCount=1;vkcheck(vkAllocateCommandBuffers(binding.device,&ca,&command),"vkAllocateCommandBuffers");
         if(!binding.setLoaderData)throw std::runtime_error("Device loader-data callback unavailable");
@@ -135,73 +149,137 @@ struct Presenter {
             vkCmdPipelineBarrier(command,VK_PIPELINE_STAGE_TRANSFER_BIT,VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,0,0,nullptr,0,nullptr,1,&b);
         }
     }
-    void run(uint32_t seconds) {
-        auto deadline=std::chrono::steady_clock::now()+std::chrono::seconds(seconds);
-        while(std::chrono::steady_clock::now()<deadline) {
-            XrEventDataBuffer event{XR_TYPE_EVENT_DATA_BUFFER};
-            while(xrPollEvent(instance,&event)==XR_SUCCESS) {
-                if(event.type==XR_TYPE_EVENT_DATA_SESSION_STATE_CHANGED) {
-                    auto state=reinterpret_cast<XrEventDataSessionStateChanged*>(&event)->state;
-                    if(state==XR_SESSION_STATE_READY && !running){XrSessionBeginInfo b{XR_TYPE_SESSION_BEGIN_INFO};b.primaryViewConfigurationType=XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;check(xrBeginSession(session,&b),"xrBeginSession");running=true;}
-                    if(state==XR_SESSION_STATE_STOPPING){if(running)check(xrEndSession(session),"xrEndSession");running=false;return;}
-                    if(state==XR_SESSION_STATE_EXITING||state==XR_SESSION_STATE_LOSS_PENDING)return;
+    void endFrame(bool projection) {
+        std::array<XrCompositionLayerProjectionView,2> layers{{{XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW},{XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW}}};
+        for(unsigned eye=0;eye<2;++eye) {
+            auto& e=eyes[eye];
+            if(e.acquired) {
+                if(!e.waited)throw std::runtime_error("XR release before successful wait");
+                XrSwapchainImageReleaseInfo release{XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO};check(xrReleaseSwapchainImage(e.swapchain,&release),"xrReleaseSwapchainImage");e.acquired=e.waited=false;
+            }
+            layers[eye].pose=views[eye].pose;layers[eye].fov=views[eye].fov;layers[eye].subImage.swapchain=e.swapchain;
+            layers[eye].subImage.imageRect.extent={int32_t(source.extent.width),int32_t(source.extent.height)};
+        }
+        XrCompositionLayerProjection layer{XR_TYPE_COMPOSITION_LAYER_PROJECTION};layer.space=space;layer.viewCount=2;layer.views=layers.data();
+        const auto* header=reinterpret_cast<const XrCompositionLayerBaseHeader*>(&layer);
+        XrFrameEndInfo end{XR_TYPE_FRAME_END_INFO};end.displayTime=displayTime;end.environmentBlendMode=XR_ENVIRONMENT_BLEND_MODE_OPAQUE;
+        if(projection){end.layerCount=1;end.layers=&header;}
+        check(xrEndFrame(session,&end),"xrEndFrame");frameOpen=false;phase=Phase::idle;
+        if(projection) {
+            ++frames;auto tracking=XR_VIEW_STATE_ORIENTATION_TRACKED_BIT|XR_VIEW_STATE_POSITION_TRACKED_BIT;
+            if((viewFlags&tracking)==tracking)++tracked;
+        }
+    }
+    void events() {
+        // A faulty/event-flooding runtime must not trap the caller in a loop.
+        for(unsigned i=0;i<64;++i) {
+            XrEventDataBuffer event{XR_TYPE_EVENT_DATA_BUFFER};auto result=xrPollEvent(instance,&event);
+            if(result==XR_EVENT_UNAVAILABLE)return;
+            check(result,"xrPollEvent");
+            if(event.type==XR_TYPE_EVENT_DATA_INSTANCE_LOSS_PENDING)stop=true;
+            if(event.type!=XR_TYPE_EVENT_DATA_SESSION_STATE_CHANGED)continue;
+            auto state=reinterpret_cast<XrEventDataSessionStateChanged*>(&event)->state;
+            if(state==XR_SESSION_STATE_READY && !running && !stop) {
+                XrSessionBeginInfo b{XR_TYPE_SESSION_BEGIN_INFO};b.primaryViewConfigurationType=XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;
+                check(xrBeginSession(session,&b),"xrBeginSession");running=true;
+            }
+            if(state==XR_SESSION_STATE_STOPPING){stop=true;stopping=true;}
+            if(state==XR_SESSION_STATE_EXITING || state==XR_SESSION_STATE_LOSS_PENDING)stop=true;
+        }
+    }
+    ProjectionStep stopped() {
+        if(stopping && running){check(xrEndSession(session),"xrEndSession");running=false;}
+        return ProjectionStep::stopped;
+    }
+    ProjectionStep advance(bool allowFrameStart) {
+        ++advances;events();
+        if(phase==Phase::gpu) {
+            auto status=vkGetFenceStatus(binding.device,fence);
+            if(status==VK_NOT_READY){++fencePollsPending;return ProjectionStep::gpuPending;}
+            vkcheck(status,"vkGetFenceStatus private replay");pending=false;
+            endFrame(!stop);return stop?stopped():ProjectionStep::presented;
+        }
+        if(phase==Phase::images) {
+            for(auto& e:eyes) {
+                if(stop && !e.acquired)continue;
+                if(!e.acquired) {
+                    XrSwapchainImageAcquireInfo a{XR_TYPE_SWAPCHAIN_IMAGE_ACQUIRE_INFO};check(xrAcquireSwapchainImage(e.swapchain,&a,&e.index),"xrAcquireSwapchainImage");e.acquired=true;
                 }
-                event={XR_TYPE_EVENT_DATA_BUFFER};
+                if(!e.waited) {
+                    XrSwapchainImageWaitInfo w{XR_TYPE_SWAPCHAIN_IMAGE_WAIT_INFO};w.timeout=0;auto status=xrWaitSwapchainImage(e.swapchain,&w);
+                    // XR_TIMEOUT_EXPIRED is positive: XR_SUCCEEDED is insufficient.
+                    if(status==XR_TIMEOUT_EXPIRED){++imageTimeouts;return ProjectionStep::imagesPending;}
+                    check(status,"xrWaitSwapchainImage");e.waited=true;
+                }
             }
-            if(!running){std::this_thread::sleep_for(std::chrono::milliseconds(10));continue;}
-            XrFrameWaitInfo wait{XR_TYPE_FRAME_WAIT_INFO};XrFrameState frame{XR_TYPE_FRAME_STATE};check(xrWaitFrame(session,&wait,&frame),"xrWaitFrame");
-            XrFrameBeginInfo begin{XR_TYPE_FRAME_BEGIN_INFO};check(xrBeginFrame(session,&begin),"xrBeginFrame");frameOpen=true;displayTime=frame.predictedDisplayTime;
-            XrFrameEndInfo end{XR_TYPE_FRAME_END_INFO};end.displayTime=displayTime;end.environmentBlendMode=XR_ENVIRONMENT_BLEND_MODE_OPAQUE;
-            if(!frame.shouldRender){check(xrEndFrame(session,&end),"xrEndFrame empty");frameOpen=false;continue;}
-            XrViewLocateInfo locate{XR_TYPE_VIEW_LOCATE_INFO};locate.viewConfigurationType=XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;locate.displayTime=displayTime;locate.space=space;
-            XrViewState state{XR_TYPE_VIEW_STATE};uint32_t n=0;std::array<XrView,2> views{{{XR_TYPE_VIEW},{XR_TYPE_VIEW}}};check(xrLocateViews(session,&locate,&state,2,&n,views.data()),"xrLocateViews");
-            auto valid=XR_VIEW_STATE_ORIENTATION_VALID_BIT|XR_VIEW_STATE_POSITION_VALID_BIT;
-            if(n!=2||(state.viewStateFlags&valid)!=valid){check(xrEndFrame(session,&end),"xrEndFrame untracked");frameOpen=false;continue;}
-            std::array<double,3> center{(views[0].pose.position.x+views[1].pose.position.x)*.5,(views[0].pose.position.y+views[1].pose.position.y)*.5,(views[0].pose.position.z+views[1].pose.position.z)*.5};
-            if(!anchored){anchor=pose(views[0].pose);anchor[3]=center[0];anchor[7]=center[1];anchor[11]=center[2];initial=center;anchored=true;}
-            double distance=0,ipd=0;for(unsigned k=0;k<3;++k)distance+=(center[k]-initial[k])*(center[k]-initial[k]);movement=std::max(movement,std::sqrt(distance));
-            auto a=views[0].pose.position,b=views[1].pose.position;ipd=(a.x-b.x)*(a.x-b.x)+(a.y-b.y)*(a.y-b.y)+(a.z-b.z)*(a.z-b.z);separation=std::sqrt(ipd);
-            ProjectionRequest request;request.sequence=++requests;request.queueFamily=binding.family;request.displayTime=displayTime;
-            for(unsigned eye=0;eye<2;++eye) {
-                auto& view=views[eye];auto projection=perspective(std::tan(view.fov.angleLeft),std::tan(view.fov.angleRight),std::tan(view.fov.angleDown),std::tan(view.fov.angleUp),.1,100);
-                request.packets[eye]=make_eye_state(eye,request.sequence,multiply(inverse(pose(view.pose)),anchor),projection);
-            }
-            vkcheck(vkResetCommandPool(binding.device,pool,0),"vkResetCommandPool");VkCommandBufferBeginInfo cb{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};cb.flags=VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;vkcheck(vkBeginCommandBuffer(command,&cb),"vkBeginCommandBuffer");
-            ProjectionFrame images;
-            bool available=source.record(request,command,images);++poseUpdates;
-            if(!available || !coherentProjection(request,images,source.extent,source.format)) {
-                if(available)++rejected;else ++unavailable;
-                vkcheck(vkEndCommandBuffer(command),"vkEndCommandBuffer discarded source");
-                check(xrEndFrame(session,&end),"xrEndFrame no coherent pair");frameOpen=false;continue;
-            }
-            for(unsigned eye=0;eye<2;++eye) {
-                XrSwapchainImageAcquireInfo acquire{XR_TYPE_SWAPCHAIN_IMAGE_ACQUIRE_INFO};check(xrAcquireSwapchainImage(eyes[eye].swapchain,&acquire,&eyes[eye].index),"xrAcquireSwapchainImage");eyes[eye].acquired=true;
-                XrSwapchainImageWaitInfo w{XR_TYPE_SWAPCHAIN_IMAGE_WAIT_INFO};w.timeout=XR_INFINITE_DURATION;check(xrWaitSwapchainImage(eyes[eye].swapchain,&w),"xrWaitSwapchainImage");
-            }
+            if(stop) {vkcheck(vkEndCommandBuffer(command),"vkEndCommandBuffer cancelled");endFrame(false);return stopped();}
             copy(images);vkcheck(vkEndCommandBuffer(command),"vkEndCommandBuffer");
             vkcheck(vkResetFences(binding.device,1,&fence),"vkResetFences");VkSubmitInfo submit{VK_STRUCTURE_TYPE_SUBMIT_INFO};submit.commandBufferCount=1;submit.pCommandBuffers=&command;
-            vkcheck(vkQueueSubmit(binding.queue,1,&submit,fence),"vkQueueSubmit private replay");pending=true;vkcheck(vkWaitForFences(binding.device,1,&fence,VK_TRUE,UINT64_MAX),"vkWaitForFences private replay");pending=false;
-            std::array<XrCompositionLayerProjectionView,2> layers{{{XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW},{XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW}}};
-            for(unsigned eye=0;eye<2;++eye){XrSwapchainImageReleaseInfo release{XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO};check(xrReleaseSwapchainImage(eyes[eye].swapchain,&release),"xrReleaseSwapchainImage");eyes[eye].acquired=false;
-                layers[eye].pose=views[eye].pose;layers[eye].fov=views[eye].fov;layers[eye].subImage.swapchain=eyes[eye].swapchain;layers[eye].subImage.imageRect.extent={int32_t(source.extent.width),int32_t(source.extent.height)};}
-            XrCompositionLayerProjection layer{XR_TYPE_COMPOSITION_LAYER_PROJECTION};layer.space=space;layer.viewCount=2;layer.views=layers.data();const auto* header=reinterpret_cast<const XrCompositionLayerBaseHeader*>(&layer);end.layerCount=1;end.layers=&header;
-            check(xrEndFrame(session,&end),"xrEndFrame replay images");frameOpen=false;++frames;
-            auto tracking=XR_VIEW_STATE_ORIENTATION_TRACKED_BIT|XR_VIEW_STATE_POSITION_TRACKED_BIT;if((state.viewStateFlags&tracking)==tracking)++tracked;
+            vkcheck(vkQueueSubmit(binding.queue,1,&submit,fence),"vkQueueSubmit private replay");pending=true;phase=Phase::gpu;
+            return ProjectionStep::submitted;
         }
+        if(stop)return stopped();
+        if(!running || !allowFrameStart)return ProjectionStep::idle;
+        XrFrameWaitInfo wait{XR_TYPE_FRAME_WAIT_INFO};XrFrameState frame{XR_TYPE_FRAME_STATE};check(xrWaitFrame(session,&wait,&frame),"xrWaitFrame");
+        XrFrameBeginInfo begin{XR_TYPE_FRAME_BEGIN_INFO};check(xrBeginFrame(session,&begin),"xrBeginFrame");frameOpen=true;displayTime=frame.predictedDisplayTime;
+        if(!frame.shouldRender){endFrame(false);return ProjectionStep::skipped;}
+        XrViewLocateInfo locate{XR_TYPE_VIEW_LOCATE_INFO};locate.viewConfigurationType=XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;locate.displayTime=displayTime;locate.space=space;
+        XrViewState state{XR_TYPE_VIEW_STATE};uint32_t n=0;check(xrLocateViews(session,&locate,&state,2,&n,views.data()),"xrLocateViews");viewFlags=state.viewStateFlags;
+        auto valid=XR_VIEW_STATE_ORIENTATION_VALID_BIT|XR_VIEW_STATE_POSITION_VALID_BIT;
+        if(n!=2||(viewFlags&valid)!=valid){endFrame(false);return ProjectionStep::skipped;}
+        std::array<double,3> center{(views[0].pose.position.x+views[1].pose.position.x)*.5,(views[0].pose.position.y+views[1].pose.position.y)*.5,(views[0].pose.position.z+views[1].pose.position.z)*.5};
+        if(!anchored){anchor=pose(views[0].pose);anchor[3]=center[0];anchor[7]=center[1];anchor[11]=center[2];initial=center;anchored=true;}
+        double distance=0;for(unsigned k=0;k<3;++k)distance+=(center[k]-initial[k])*(center[k]-initial[k]);movement=std::max(movement,std::sqrt(distance));
+        auto a=views[0].pose.position,b=views[1].pose.position;separation=std::sqrt((a.x-b.x)*(a.x-b.x)+(a.y-b.y)*(a.y-b.y)+(a.z-b.z)*(a.z-b.z));
+        ProjectionRequest request;request.sequence=++requests;request.queueFamily=binding.family;request.displayTime=displayTime;
+        for(unsigned eye=0;eye<2;++eye) {
+            auto& view=views[eye];auto projection=perspective(std::tan(view.fov.angleLeft),std::tan(view.fov.angleRight),std::tan(view.fov.angleDown),std::tan(view.fov.angleUp),.1,100);
+            request.packets[eye]=make_eye_state(eye,request.sequence,multiply(inverse(pose(view.pose)),anchor),projection);
+        }
+        vkcheck(vkResetCommandPool(binding.device,pool,0),"vkResetCommandPool");VkCommandBufferBeginInfo cb{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};cb.flags=VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;vkcheck(vkBeginCommandBuffer(command,&cb),"vkBeginCommandBuffer");
+        images={};bool available=source.record(request,command,images);++poseUpdates;
+        if(!available || !coherentProjection(request,images,source.extent,source.format)) {
+            if(available)++rejected;else ++unavailable;
+            vkcheck(vkEndCommandBuffer(command),"vkEndCommandBuffer discarded source");endFrame(false);return ProjectionStep::skipped;
+        }
+        phase=Phase::images;return ProjectionStep::imagesPending;
+    }
+    std::string report(bool preflightOnly) const {
+        std::ostringstream out;out<<"{\"schema_version\":1,\"synthetic_scene\":true,\"diablo_rendered\":false,\"runtime\":"<<quote(runtime)
+            <<",\"preflight_only\":"<<(preflightOnly?"true":"false")<<",\"session_and_swapchains_created\":"<<(setupDone?"true":"false")
+            <<",\"success\":"<<(error.empty()&&setupDone&&(preflightOnly||frames>0)?"true":"false")<<",\"runtime_uuid_matches\":"<<(uuidMatch?"true":"false")
+            <<",\"required_extensions_enabled\":"<<(extensionsMatch?"true":"false")<<",\"replayed_xr_frames\":"<<frames<<",\"tracked_frames\":"<<tracked
+            <<",\"eye_packet_updates\":"<<poseUpdates<<",\"head_translation_meters\":"<<movement<<",\"eye_separation_meters\":"<<separation
+            <<",\"projection_requests\":"<<requests<<",\"incoherent_pairs_rejected\":"<<rejected<<",\"unavailable_pairs\":"<<unavailable
+            <<",\"cooperative_advances\":"<<advances<<",\"swapchain_wait_timeouts\":"<<imageTimeouts<<",\"gpu_pending_polls\":"<<fencePollsPending
+            <<",\"application_submissions_repeated\":0,\"borrowed_vulkan_objects_destroyed\":false,\"error\":"<<quote(error)<<"}\n";return out.str();
     }
 };
 }
-std::string presentProjectionImages(const BorrowedBinding& binding,const ProjectionSource& source,uint32_t seconds) {
-    Presenter p(binding,source);std::string error;bool setup=false;
-    try {if(seconds>30)throw std::invalid_argument("XR replay duration exceeds 30 seconds");p.setup();setup=true;if(seconds)p.run(seconds);}catch(const std::exception& e){error=e.what();}
-    std::ostringstream out;out<<"{\"schema_version\":1,\"synthetic_scene\":true,\"diablo_rendered\":false,\"runtime\":"<<quote(p.runtime)
-        <<",\"preflight_only\":"<<(!seconds?"true":"false")<<",\"session_and_swapchains_created\":"<<(setup?"true":"false")
-        <<",\"success\":"<<(error.empty()&&setup&&(!seconds||p.frames>0)?"true":"false")<<",\"runtime_uuid_matches\":"<<(p.uuidMatch?"true":"false")
-        <<",\"required_extensions_enabled\":"<<(p.extensionsMatch?"true":"false")<<",\"replayed_xr_frames\":"<<p.frames<<",\"tracked_frames\":"<<p.tracked
-        <<",\"eye_packet_updates\":"<<p.poseUpdates<<",\"head_translation_meters\":"<<p.movement<<",\"eye_separation_meters\":"<<p.separation
-        <<",\"projection_requests\":"<<p.requests<<",\"incoherent_pairs_rejected\":"<<p.rejected<<",\"unavailable_pairs\":"<<p.unavailable
-        <<",\"application_submissions_repeated\":0,\"borrowed_vulkan_objects_destroyed\":false,\"error\":"<<quote(error)<<"}\n";return out.str();
+struct ProjectionSession::Impl : Presenter {
+    Impl(const BorrowedBinding& b,const ProjectionSource& s):Presenter(b,s) {try{setup();setupDone=true;}catch(const std::exception& e){error=e.what();}}
+};
+ProjectionSession::ProjectionSession(const BorrowedBinding& b,const ProjectionSource& s):impl_(std::make_unique<Impl>(b,s)) {}
+ProjectionSession::~ProjectionSession()=default;
+ProjectionStep ProjectionSession::advance(bool allowFrameStart) {
+    if(!impl_->error.empty())return ProjectionStep::failed;
+    try{return impl_->advance(allowFrameStart);}catch(const std::exception& e){impl_->error=e.what();return ProjectionStep::failed;}
 }
+std::string ProjectionSession::report(bool preflightOnly) const {return impl_->report(preflightOnly);}
+std::string presentProjectionImages(const BorrowedBinding& binding,const ProjectionSource& source,uint32_t seconds) {
+    Presenter presenter(binding,source);
+    try {
+        if(seconds>30)throw std::invalid_argument("XR replay duration exceeds 30 seconds");
+        presenter.setup();presenter.setupDone=true;
+        auto deadline=std::chrono::steady_clock::now()+std::chrono::seconds(seconds);
+        while(std::chrono::steady_clock::now()<deadline) {
+            auto step=presenter.advance(true);if(step==ProjectionStep::stopped)break;
+            if(step==ProjectionStep::idle || step==ProjectionStep::imagesPending || step==ProjectionStep::gpuPending)std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+    }catch(const std::exception& e){presenter.error=e.what();}
+    return presenter.report(!seconds);
+}
+
 std::string presentReplay(const BorrowedBinding& binding,const ReplaySource& source,uint32_t seconds) {
     ProjectionSource adapter;adapter.extent=source.extent;adapter.format=source.format;adapter.flipY=true;
     if(source.update && source.record && source.images[0] && source.images[1] && source.images[0]!=source.images[1])
