@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <vector>
+#include <array>
 
 #ifdef NDEBUG
 #undef NDEBUG
@@ -24,7 +25,14 @@ struct XrSession_T {
 };
 struct XrSpace_T {};
 struct XrSwapchain_T { VkDevice device{};VkImage image{};VkDeviceMemory memory{};uint32_t width=0,height=0;bool acquired=false,waited=false;unsigned waits=0; };
-namespace { XrInstance_T instance;XrSession active{};unsigned swapchains=0; }
+namespace { XrInstance_T instance;XrSession active{};unsigned swapchains=0;
+struct Reference{unsigned request=0,width=0,height=0;std::vector<unsigned char> bytes;};std::array<Reference,2> references; }
+// Test-only independent CPU-transformed geometry references. Copy immediately;
+// the client retains no pointer into the mock and the runtime reads XR images.
+extern "C" void d4vrMockExpectedPixels(unsigned request,unsigned eye,unsigned width,unsigned height,const void* data,size_t size){
+    assert(std::getenv("D4VR_MOCK_XR_EXTERNAL_REFERENCE") && eye<2 && request && width && height && width<=4096 && height<=4096 && size==size_t(width)*height*4 && data);
+    auto p=static_cast<const unsigned char*>(data);references[eye]={request,width,height,{p,p+size}};
+}
 namespace {
 void verifyPixels(XrSession s,const XrCompositionLayerProjection& projection) {
     auto d=s->binding.device;auto left=projection.views[0].subImage.swapchain;
@@ -47,7 +55,11 @@ void verifyPixels(XrSession s,const XrCompositionLayerProjection& projection) {
     VkMemoryBarrier host{VK_STRUCTURE_TYPE_MEMORY_BARRIER};host.srcAccessMask=VK_ACCESS_TRANSFER_WRITE_BIT;host.dstAccessMask=VK_ACCESS_HOST_READ_BIT;vkCmdPipelineBarrier(command,VK_PIPELINE_STAGE_TRANSFER_BIT,VK_PIPELINE_STAGE_HOST_BIT,0,1,&host,0,nullptr,0,nullptr);assert(vkEndCommandBuffer(command)==VK_SUCCESS);
     VkFenceCreateInfo fi{VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};assert(vkCreateFence(d,&fi,nullptr,&fence)==VK_SUCCESS);VkSubmitInfo submit{VK_STRUCTURE_TYPE_SUBMIT_INFO};submit.commandBufferCount=1;submit.pCommandBuffers=&command;assert(vkQueueSubmit(s->queue,1,&submit,fence)==VK_SUCCESS);assert(vkWaitForFences(d,1,&fence,VK_TRUE,UINT64_MAX)==VK_SUCCESS);
     void* raw{};assert(vkMapMemory(d,memory,0,2*bytes,0,&raw)==VK_SUCCESS);auto pixels=static_cast<const unsigned char*>(raw);
-    for(unsigned i=0;i<2;++i)for(uint32_t y=0;y<left->height;++y)for(uint32_t x=0;x<left->width;++x){auto index=i*bytes+(VkDeviceSize(y)*left->width+x)*4;auto sy=std::getenv("D4VR_MOCK_XR_FLIP")?left->height-1-y:y;
+    if(std::getenv("D4VR_MOCK_XR_EXTERNAL_REFERENCE")){
+        for(unsigned i=0;i<2;++i){auto& ref=references[i];assert(ref.request==s->ticks && ref.width==left->width && ref.height==left->height && ref.bytes.size()==bytes);
+            assert(!std::memcmp(pixels+i*bytes,ref.bytes.data(),size_t(bytes)));ref={};}
+        std::fputs("D4VR mock XR independent geometry pixels verified\n",stderr);
+    }else for(unsigned i=0;i<2;++i)for(uint32_t y=0;y<left->height;++y)for(uint32_t x=0;x<left->width;++x){auto index=i*bytes+(VkDeviceSize(y)*left->width+x)*4;auto sy=std::getenv("D4VR_MOCK_XR_FLIP")?left->height-1-y:y;
         assert(pixels[index]==(i?200:20) && pixels[index+1]==x%251 && pixels[index+2]==(sy+s->ticks*5)%251 && pixels[index+3]==255);}
     vkUnmapMemory(d,memory);vkDestroyFence(d,fence,nullptr);vkDestroyCommandPool(d,pool,nullptr);vkDestroyBuffer(d,buffer,nullptr);vkFreeMemory(d,memory,nullptr);
     std::fputs("D4VR mock XR image pixels verified\n",stderr);

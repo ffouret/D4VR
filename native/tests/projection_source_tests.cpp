@@ -28,6 +28,32 @@ int main()try {
     }
     auto next=r;next.sequence++;next.displayTime++;
     require(!valid(next,f)); // Even a previously good pair cannot answer a new pose.
+    d4vr::PoseSample sample;sample.session=13;sample.request=r.sequence;sample.displayTime=r.displayTime;sample.viewFlags=3;
+    for(auto& view:sample.views)view.fov={-.8f,.8f,-.8f,.8f};
+    r.pose.emplace(sample,r.sequence);for(unsigned i=0;i<2;++i)r.packets[i]=r.pose->packets().eye(i);auto remapped=r.pose->withPacketSequence(81);
+    f.successive.emplace(SuccessiveProjection{remapped,{}});
+    for(unsigned i=0;i<2;++i){f.eyes[i].sceneSequence=0;auto observation=d4vr::camera_observation(&remapped.packets(),i,11+i);
+        f.successive->eyes[i]={21+i,31+i,41+i,{observation,observation}};}
+    auto diagnostic=[&](const auto& request,const auto& images){return successiveProjection(request,images,{64,48},VK_FORMAT_B8G8R8A8_UNORM,8);};
+    require(diagnostic(r,f) && !valid(r,f));
+    for(unsigned control=0;control<14;++control){auto q=r;auto bad=f;
+        switch(control){
+        case 0:bad.successive.reset();break;
+        case 1:bad.successive->eyes[1].present=41;break;
+        case 2:bad.successive->eyes[1].present=50;break;
+        case 3:bad.successive->eyes[1].lease=21;break;
+        case 4:bad.successive->eyes[1].captureSequence=31;break;
+        case 5:bad.successive->eyes[0].camera.selectedDrawInterval.status=d4vr::CameraStatus::mixed;break;
+        case 6:bad.successive->eyes[0].camera.copySubmit.packet.header[2]++;break;
+        case 7:{auto other=sample;other.session++;bad.successive->pose=d4vr::PoseRequest(other,81);break;}
+        case 8:bad.eyes[0].sceneSequence=1;break;
+        case 9:bad.eyes[1].poseSequence++;break;
+        case 10:q.pose.reset();break;
+        case 11:{auto other=sample;other.views[0].position[0]=.01f;bad.successive->pose=d4vr::PoseRequest(other,81);break;}
+        case 12:bad.eyes[1].displayTime++;break;
+        case 13:bad.queueFamily++;break;
+        }require(!diagnostic(q,bad));
+    }
     std::cout<<"Projection images: matching pose/time/scene, eye identity, queue, extent and format: passed\n";
     return 0;
 }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}

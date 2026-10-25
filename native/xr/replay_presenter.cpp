@@ -100,6 +100,7 @@ struct Presenter {
         if(!binding.instance || !binding.device || !binding.queue || !binding.get || !source.record || !source.extent.width || !source.extent.height
             || source.extent.width>4096 || source.extent.height>4096)throw std::invalid_argument("Replay presenter contract unavailable");
         if((bool(source.request)!=bool(source.poll)) || (bool(source.request)!=bool(source.finish)))throw std::invalid_argument("Deferred source callbacks must be complete");
+        if(source.mode!=ProjectionMode::coherent && (source.mode!=ProjectionMode::successiveDiagnostic || !source.maxPresentGap))throw std::invalid_argument("Projection diagnostic mode unavailable");
         // Make cleanup dispatch available before the runtime can enqueue work,
         // including failures during session/swapchain setup.
 #define LOAD_VK(n) vk##n=reinterpret_cast<PFN_vk##n>(binding.get(binding.device,"vk" #n));if(!vk##n)throw std::runtime_error("Private replay dispatch missing: " #n);
@@ -190,7 +191,10 @@ struct Presenter {
         if(!activeRequest)throw std::runtime_error("XR request lifetime missing");
         vkcheck(vkResetCommandPool(binding.device,pool,0),"vkResetCommandPool");VkCommandBufferBeginInfo cb{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};cb.flags=VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;vkcheck(vkBeginCommandBuffer(command,&cb),"vkBeginCommandBuffer");
         images={};bool available=source.record(*activeRequest,command,images);++poseUpdates;
-        if(!available || !coherentProjection(*activeRequest,images,source.extent,source.format)){
+        bool valid=source.mode==ProjectionMode::coherent
+            ?!images.successive && coherentProjection(*activeRequest,images,source.extent,source.format)
+            :successiveProjection(*activeRequest,images,source.extent,source.format,source.maxPresentGap);
+        if(!available || !valid){
             if(available)++rejected;else ++unavailable;
             vkcheck(vkEndCommandBuffer(command),"vkEndCommandBuffer discarded source");endFrame(false);return ProjectionStep::skipped;
         }
@@ -288,6 +292,8 @@ struct Presenter {
             <<",\"projection_requests\":"<<requests<<",\"incoherent_pairs_rejected\":"<<rejected<<",\"unavailable_pairs\":"<<unavailable
             <<",\"cooperative_advances\":"<<advances<<",\"swapchain_wait_timeouts\":"<<imageTimeouts<<",\"gpu_pending_polls\":"<<fencePollsPending
             <<",\"request_session_identity\":"<<sessionIdentity<<",\"deferred_requests\":"<<deferredRequests<<",\"deferred_finishes\":"<<deferredFinishes<<",\"source_pending_polls\":"<<sourcePending
+            <<",\"presentation_mode\":"<<quote(source.mode==ProjectionMode::coherent?"coherent":"successive_diagnostic")
+            <<",\"whole_scene_verified\":false,\"common_scene_time_known\":false"
             <<",\"application_submissions_repeated\":0,\"borrowed_vulkan_objects_destroyed\":false,\"error\":"<<quote(error)<<"}\n";return out.str();
     }
 };
@@ -310,7 +316,7 @@ std::string presentProjectionImages(const BorrowedBinding& binding,const Project
         auto deadline=std::chrono::steady_clock::now()+std::chrono::seconds(seconds);
         while(std::chrono::steady_clock::now()<deadline) {
             auto step=presenter.advance(true);if(step==ProjectionStep::stopped)break;
-            if(step==ProjectionStep::idle || step==ProjectionStep::imagesPending || step==ProjectionStep::gpuPending)std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            if(step==ProjectionStep::idle || step==ProjectionStep::sourcePending || step==ProjectionStep::imagesPending || step==ProjectionStep::gpuPending)std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
     }catch(const std::exception& e){presenter.error=e.what();}
     return presenter.report(!seconds);
