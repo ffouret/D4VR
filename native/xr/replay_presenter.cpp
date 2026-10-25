@@ -3,10 +3,12 @@
 #include <openxr/openxr.h>
 #include <openxr/openxr_platform.h>
 #include <algorithm>
+#include <atomic>
 #include <chrono>
 #include <cstdlib>
 #include <cstring>
 #include <dlfcn.h>
+#include <limits>
 #include <sstream>
 #include <stdexcept>
 #include <thread>
@@ -23,6 +25,10 @@ Matrix4 pose(const XrPosef& p) {
     return {1-2*(y*y+z*z),2*(x*y-z*w),2*(x*z+y*w),p.position.x,
         2*(x*y+z*w),1-2*(x*x+z*z),2*(y*z-x*w),p.position.y,
         2*(x*z-y*w),2*(y*z+x*w),1-2*(x*x+y*y),p.position.z,0,0,0,1};
+}
+uint64_t newSessionIdentity(){
+    static std::atomic<uint64_t> next{1};auto id=next.load();
+    for(;;){if(id==std::numeric_limits<uint64_t>::max())throw std::overflow_error("XR session identity exhausted");if(next.compare_exchange_weak(id,id+1))return id;}
 }
 #define XR_FUNCTIONS(X) X(DestroyInstance) X(GetSystem) X(GetInstanceProperties) X(GetVulkanGraphicsRequirementsKHR) \
     X(GetVulkanInstanceExtensionsKHR) X(GetVulkanDeviceExtensionsKHR) X(GetVulkanGraphicsDeviceKHR) X(CreateSession) X(DestroySession) \
@@ -44,11 +50,13 @@ struct Presenter {
     std::array<Eye,2> eyes;
     VkCommandPool pool{};VkCommandBuffer command{};VkFence fence{};VkFormat format{};
     bool pending=false,running=false,frameOpen=false,anchored=false,uuidMatch=false,extensionsMatch=false;
-    enum class Phase { idle, images, gpu } phase=Phase::idle;
+    enum class Phase { idle, source, images, gpu } phase=Phase::idle;
     bool setupDone=false,stop=false,stopping=false;std::string error;
     std::array<XrView,2> views{{{XR_TYPE_VIEW},{XR_TYPE_VIEW}}};XrViewStateFlags viewFlags=0;ProjectionFrame images;
     uint32_t advances=0,imageTimeouts=0,fencePollsPending=0;
-    XrTime displayTime{};Matrix4 anchor=identity();std::array<double,3> initial{};
+    uint64_t sessionIdentity=newSessionIdentity();std::optional<ProjectionRequest> activeRequest;
+    uint32_t sourcePending=0,deferredRequests=0,deferredFinishes=0;
+    XrTime displayTime{};alignas(16) Matrix4 anchor=identity();std::array<double,3> initial{};
     uint32_t frames=0,tracked=0,poseUpdates=0,requests=0,rejected=0,unavailable=0;double movement=0,separation=0;std::string runtime;
     Presenter(const BorrowedBinding& b,const ProjectionSource& s):binding(b),source(s) {}
     ~Presenter() {
@@ -64,6 +72,7 @@ struct Presenter {
         if(frameOpen && xrEndFrame) {XrFrameEndInfo end{XR_TYPE_FRAME_END_INFO};end.displayTime=displayTime;end.environmentBlendMode=XR_ENVIRONMENT_BLEND_MODE_OPAQUE;xrEndFrame(session,&end);}
         // Even empty xrEndFrame can enqueue runtime work after our own fence.
         if(session && vkQueueWaitIdle)vkQueueWaitIdle(binding.queue);
+        try{finishRequest(error.empty()?ProjectionFinish::stopped:ProjectionFinish::failed);}catch(...){}
         if(fence && vkDestroyFence)vkDestroyFence(binding.device,fence,nullptr);
         if(pool && vkDestroyCommandPool)vkDestroyCommandPool(binding.device,pool,nullptr);
         for(auto& e:eyes)if(e.swapchain && xrDestroySwapchain)xrDestroySwapchain(e.swapchain);
@@ -72,6 +81,11 @@ struct Presenter {
         if(instance && xrDestroyInstance)xrDestroyInstance(instance);
         if(loader)dlclose(loader);
         if(vkLoader)dlclose(vkLoader);
+    }
+    void finishRequest(ProjectionFinish outcome){
+        if(!activeRequest)return;
+        auto request=std::move(*activeRequest);activeRequest.reset();
+        if(source.finish){++deferredFinishes;source.finish(request,outcome);}
     }
     template<class T>T function(const char* name) {PFN_xrVoidFunction p{};check(get(instance,name,&p),name);if(!p)throw std::runtime_error(name);return reinterpret_cast<T>(p);}
     template<class T>bool extensions(T fn,const std::vector<std::string>& enabled) {
@@ -85,6 +99,7 @@ struct Presenter {
     void setup() {
         if(!binding.instance || !binding.device || !binding.queue || !binding.get || !source.record || !source.extent.width || !source.extent.height
             || source.extent.width>4096 || source.extent.height>4096)throw std::invalid_argument("Replay presenter contract unavailable");
+        if((bool(source.request)!=bool(source.poll)) || (bool(source.request)!=bool(source.finish)))throw std::invalid_argument("Deferred source callbacks must be complete");
         // Make cleanup dispatch available before the runtime can enqueue work,
         // including failures during session/swapchain setup.
 #define LOAD_VK(n) vk##n=reinterpret_cast<PFN_vk##n>(binding.get(binding.device,"vk" #n));if(!vk##n)throw std::runtime_error("Private replay dispatch missing: " #n);
@@ -169,6 +184,17 @@ struct Presenter {
             ++frames;auto tracking=XR_VIEW_STATE_ORIENTATION_TRACKED_BIT|XR_VIEW_STATE_POSITION_TRACKED_BIT;
             if((viewFlags&tracking)==tracking)++tracked;
         }
+        finishRequest(stop?ProjectionFinish::stopped:projection?ProjectionFinish::presented:ProjectionFinish::skipped);
+    }
+    ProjectionStep recordActive(){
+        if(!activeRequest)throw std::runtime_error("XR request lifetime missing");
+        vkcheck(vkResetCommandPool(binding.device,pool,0),"vkResetCommandPool");VkCommandBufferBeginInfo cb{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};cb.flags=VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;vkcheck(vkBeginCommandBuffer(command,&cb),"vkBeginCommandBuffer");
+        images={};bool available=source.record(*activeRequest,command,images);++poseUpdates;
+        if(!available || !coherentProjection(*activeRequest,images,source.extent,source.format)){
+            if(available)++rejected;else ++unavailable;
+            vkcheck(vkEndCommandBuffer(command),"vkEndCommandBuffer discarded source");endFrame(false);return ProjectionStep::skipped;
+        }
+        phase=Phase::images;return ProjectionStep::imagesPending;
     }
     void events() {
         // A faulty/event-flooding runtime must not trap the caller in a loop.
@@ -177,6 +203,10 @@ struct Presenter {
             if(result==XR_EVENT_UNAVAILABLE)return;
             check(result,"xrPollEvent");
             if(event.type==XR_TYPE_EVENT_DATA_INSTANCE_LOSS_PENDING)stop=true;
+            // An anchor/sample belongs to this session's LOCAL coordinate
+            // frame. Stop instead of reinterpreting retained requests after
+            // a reference-space change; a fresh session gets a fresh identity.
+            if(event.type==XR_TYPE_EVENT_DATA_REFERENCE_SPACE_CHANGE_PENDING)stop=true;
             if(event.type!=XR_TYPE_EVENT_DATA_SESSION_STATE_CHANGED)continue;
             auto state=reinterpret_cast<XrEventDataSessionStateChanged*>(&event)->state;
             if(state==XR_SESSION_STATE_READY && !running && !stop) {
@@ -193,6 +223,13 @@ struct Presenter {
     }
     ProjectionStep advance(bool allowFrameStart) {
         ++advances;events();
+        if(phase==Phase::source){
+            if(stop){endFrame(false);return stopped();}
+            auto availability=source.poll(*activeRequest);
+            if(availability==ProjectionAvailability::pending){++sourcePending;return ProjectionStep::sourcePending;}
+            if(availability==ProjectionAvailability::unavailable){++unavailable;endFrame(false);return ProjectionStep::skipped;}
+            return recordActive();
+        }
         if(phase==Phase::gpu) {
             auto status=vkGetFenceStatus(binding.device,fence);
             if(status==VK_NOT_READY){++fencePollsPending;return ProjectionStep::gpuPending;}
@@ -232,17 +269,15 @@ struct Presenter {
         double distance=0;for(unsigned k=0;k<3;++k)distance+=(center[k]-initial[k])*(center[k]-initial[k]);movement=std::max(movement,std::sqrt(distance));
         auto a=views[0].pose.position,b=views[1].pose.position;separation=std::sqrt((a.x-b.x)*(a.x-b.x)+(a.y-b.y)*(a.y-b.y)+(a.z-b.z)*(a.z-b.z));
         ProjectionRequest request;request.sequence=++requests;request.queueFamily=binding.family;request.displayTime=displayTime;
+        PoseSample sample;sample.session=sessionIdentity;sample.request=request.sequence;sample.displayTime=displayTime;sample.viewFlags=viewFlags;sample.gameViewInLocal=multiply(anchor,source.anchorFromGameView);
         for(unsigned eye=0;eye<2;++eye) {
-            auto& view=views[eye];auto projection=perspective(std::tan(view.fov.angleLeft),std::tan(view.fov.angleRight),std::tan(view.fov.angleDown),std::tan(view.fov.angleUp),.1,100);
-            request.packets[eye]=make_eye_state(eye,request.sequence,multiply(inverse(pose(view.pose)),anchor),projection);
+            auto& v=views[eye];sample.views[eye].orientation={v.pose.orientation.x,v.pose.orientation.y,v.pose.orientation.z,v.pose.orientation.w};
+            sample.views[eye].position={v.pose.position.x,v.pose.position.y,v.pose.position.z};sample.views[eye].fov={v.fov.angleLeft,v.fov.angleRight,v.fov.angleDown,v.fov.angleUp};
         }
-        vkcheck(vkResetCommandPool(binding.device,pool,0),"vkResetCommandPool");VkCommandBufferBeginInfo cb{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};cb.flags=VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;vkcheck(vkBeginCommandBuffer(command,&cb),"vkBeginCommandBuffer");
-        images={};bool available=source.record(request,command,images);++poseUpdates;
-        if(!available || !coherentProjection(request,images,source.extent,source.format)) {
-            if(available)++rejected;else ++unavailable;
-            vkcheck(vkEndCommandBuffer(command),"vkEndCommandBuffer discarded source");endFrame(false);return ProjectionStep::skipped;
-        }
-        phase=Phase::images;return ProjectionStep::imagesPending;
+        request.pose.emplace(sample,request.sequence);for(unsigned eye=0;eye<2;++eye)request.packets[eye]=request.pose->packets().eye(eye);
+        activeRequest=std::move(request);
+        if(source.request){++deferredRequests;source.request(*activeRequest);phase=Phase::source;++sourcePending;return ProjectionStep::sourcePending;}
+        return recordActive();
     }
     std::string report(bool preflightOnly) const {
         std::ostringstream out;out<<"{\"schema_version\":1,\"synthetic_scene\":true,\"diablo_rendered\":false,\"runtime\":"<<quote(runtime)
@@ -252,6 +287,7 @@ struct Presenter {
             <<",\"eye_packet_updates\":"<<poseUpdates<<",\"head_translation_meters\":"<<movement<<",\"eye_separation_meters\":"<<separation
             <<",\"projection_requests\":"<<requests<<",\"incoherent_pairs_rejected\":"<<rejected<<",\"unavailable_pairs\":"<<unavailable
             <<",\"cooperative_advances\":"<<advances<<",\"swapchain_wait_timeouts\":"<<imageTimeouts<<",\"gpu_pending_polls\":"<<fencePollsPending
+            <<",\"request_session_identity\":"<<sessionIdentity<<",\"deferred_requests\":"<<deferredRequests<<",\"deferred_finishes\":"<<deferredFinishes<<",\"source_pending_polls\":"<<sourcePending
             <<",\"application_submissions_repeated\":0,\"borrowed_vulkan_objects_destroyed\":false,\"error\":"<<quote(error)<<"}\n";return out.str();
     }
 };

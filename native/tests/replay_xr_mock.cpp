@@ -16,10 +16,10 @@
 #endif
 // Keep assertions active in optimized regression builds.
 #undef assert
-#define assert(x) do { if(!(x))std::abort(); } while(false)
+#define assert(x) do { if(!(x)){std::fprintf(stderr,"D4VR mock assertion %s:%d: %s\n",__FILE__,__LINE__,#x);std::abort();} } while(false)
 struct XrInstance_T {};
 struct XrSession_T {
-    XrGraphicsBindingVulkanKHR binding;unsigned frames=0,ticks=0,acquires=0,releases=0;bool ready=false,exit=false,frameOpen=false,stopSent=false;
+    XrGraphicsBindingVulkanKHR binding;unsigned frames=0,ticks=0,acquires=0,releases=0;bool ready=false,exit=false,frameOpen=false,stopSent=false,spaceSent=false;
     VkQueue queue{};VkCommandPool pool{};VkQueryPool query{};VkBuffer buffer{};VkDeviceMemory memory{};VkFence fence{};
 };
 struct XrSpace_T {};
@@ -113,7 +113,11 @@ XR_FN(xrPollEvent)(XrInstance,XrEventDataBuffer* out) {
     auto e=reinterpret_cast<XrEventDataSessionStateChanged*>(out);
     if(!active->ready){active->ready=true;e->type=XR_TYPE_EVENT_DATA_SESSION_STATE_CHANGED;e->session=active;e->state=XR_SESSION_STATE_READY;return XR_SUCCESS;}
     if(active->ticks>=2 && !active->frameOpen && !active->exit){active->exit=true;e->type=XR_TYPE_EVENT_DATA_SESSION_STATE_CHANGED;e->session=active;e->state=XR_SESSION_STATE_EXITING;return XR_SUCCESS;}
-    if(((std::getenv("D4VR_MOCK_XR_STOP") && active->acquires>=2) || (std::getenv("D4VR_MOCK_XR_STOP_IMAGES") && active->acquires>=1)) && !active->stopSent) {
+    if(std::getenv("D4VR_MOCK_XR_SPACE_CHANGE") && active->frameOpen && !active->spaceSent){
+        active->spaceSent=true;auto changed=reinterpret_cast<XrEventDataReferenceSpaceChangePending*>(out);changed->type=XR_TYPE_EVENT_DATA_REFERENCE_SPACE_CHANGE_PENDING;changed->session=active;
+        changed->referenceSpaceType=XR_REFERENCE_SPACE_TYPE_LOCAL;changed->changeTime=active->ticks*10000000;changed->poseValid=XR_FALSE;return XR_SUCCESS;}
+    if(((std::getenv("D4VR_MOCK_XR_STOP") && active->acquires>=2) || (std::getenv("D4VR_MOCK_XR_STOP_IMAGES") && active->acquires>=1)
+        || (std::getenv("D4VR_MOCK_XR_STOP_SOURCE") && active->frameOpen && active->ticks>=1)) && !active->stopSent) {
         active->stopSent=true;e->type=XR_TYPE_EVENT_DATA_SESSION_STATE_CHANGED;e->session=active;e->state=XR_SESSION_STATE_STOPPING;return XR_SUCCESS;
     }
     return XR_EVENT_UNAVAILABLE;

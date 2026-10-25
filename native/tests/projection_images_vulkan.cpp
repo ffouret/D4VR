@@ -29,7 +29,7 @@ struct Fixture {
         if(gate)vkDestroyEvent(device,gate,nullptr);
         for(auto& e:eyes){if(e.mapped)vkUnmapMemory(device,e.bufferMemory);if(e.buffer)vkDestroyBuffer(device,e.buffer,nullptr);if(e.bufferMemory)vkFreeMemory(device,e.bufferMemory,nullptr);if(e.image)vkDestroyImage(device,e.image,nullptr);if(e.imageMemory)vkFreeMemory(device,e.imageMemory,nullptr);}vkDestroyDevice(device,nullptr);}if(instance)vkDestroyInstance(instance,nullptr);}
     uint32_t type(uint32_t mask,VkMemoryPropertyFlags flags){for(uint32_t i=0;i<memory.memoryTypeCount;++i)if((mask&(1u<<i)) && (memory.memoryTypes[i].propertyFlags&flags)==flags)return i;throw std::runtime_error("No memory type");}
-    void setup(){
+    void setup(bool posePackets=false){
         VkApplicationInfo app{VK_STRUCTURE_TYPE_APPLICATION_INFO};app.pApplicationName="D4VR projection images fixture";app.apiVersion=VK_API_VERSION_1_3;
         VkInstanceCreateInfo ci{VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO};ci.pApplicationInfo=&app;check(vkCreateInstance(&ci,nullptr,&instance));
         uint32_t n=0;check(vkEnumeratePhysicalDevices(instance,&n,nullptr));std::vector<VkPhysicalDevice> devices(n);check(vkEnumeratePhysicalDevices(instance,&n,devices.data()));
@@ -37,7 +37,8 @@ struct Fixture {
         VkPhysicalDeviceProperties2 properties{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2};properties.pNext=&id;vkGetPhysicalDeviceProperties2(physical,&properties);vkGetPhysicalDeviceMemoryProperties(physical,&memory);
         vkGetPhysicalDeviceQueueFamilyProperties(physical,&n,nullptr);std::vector<VkQueueFamilyProperties> queues(n);vkGetPhysicalDeviceQueueFamilyProperties(physical,&n,queues.data());for(;family<n;++family)if(queues[family].queueFlags&VK_QUEUE_GRAPHICS_BIT)break;require(family<n);
         float priority=1;VkDeviceQueueCreateInfo qi{VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO};qi.queueFamilyIndex=family;qi.queueCount=1;qi.pQueuePriorities=&priority;
-        VkDeviceCreateInfo dc{VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO};dc.queueCreateInfoCount=1;dc.pQueueCreateInfos=&qi;check(vkCreateDevice(physical,&dc,nullptr,&device));vkGetDeviceQueue(device,family,0,&queue);
+        VkPhysicalDeviceVulkan12Features features{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES};features.bufferDeviceAddress=features.timelineSemaphore=VK_TRUE;
+        VkDeviceCreateInfo dc{VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO};dc.queueCreateInfoCount=1;dc.pQueueCreateInfos=&qi;if(posePackets)dc.pNext=&features;check(vkCreateDevice(physical,&dc,nullptr,&device));vkGetDeviceQueue(device,family,0,&queue);
         for(auto& e:eyes){
             VkImageCreateInfo im{VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};im.imageType=VK_IMAGE_TYPE_2D;im.format=VK_FORMAT_B8G8R8A8_UNORM;im.extent={extent.width,extent.height,1};im.mipLevels=im.arrayLayers=1;im.samples=VK_SAMPLE_COUNT_1_BIT;im.tiling=VK_IMAGE_TILING_OPTIMAL;im.usage=VK_IMAGE_USAGE_TRANSFER_DST_BIT|VK_IMAGE_USAGE_TRANSFER_SRC_BIT;check(vkCreateImage(device,&im,nullptr,&e.image));
             VkMemoryRequirements r{};vkGetImageMemoryRequirements(device,e.image,&r);VkMemoryAllocateInfo ma{VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};ma.allocationSize=r.size;ma.memoryTypeIndex=type(r.memoryTypeBits,VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);check(vkAllocateMemory(device,&ma,nullptr,&e.imageMemory));check(vkBindImageMemory(device,e.image,e.imageMemory,0));
@@ -85,10 +86,13 @@ struct Fixture {
     }
 };
 }
+#include "deferred_pose_fixture.hpp"
 int main(int argc,char** argv)try {
     if(argc!=2)throw std::runtime_error("Provide one fixture control name");
     std::string mode=argv[1];
-    Fixture f;f.setup();BorrowedBinding binding;binding.instance=f.instance;binding.device=f.device;binding.queue=f.queue;binding.family=f.family;binding.get=vkGetDeviceProcAddr;binding.setLoaderData=loaderData;std::memcpy(binding.uuid.data(),f.id.deviceUUID,VK_UUID_SIZE);
+    bool deferred=mode.rfind("deferred",0)==0;
+    Fixture f;f.setup(deferred);BorrowedBinding binding;binding.instance=f.instance;binding.device=f.device;binding.queue=f.queue;binding.family=f.family;binding.get=vkGetDeviceProcAddr;binding.setLoaderData=loaderData;std::memcpy(binding.uuid.data(),f.id.deviceUUID,VK_UUID_SIZE);
+    if(deferred)return deferredFixture(f,binding,mode);
     ProjectionSource source;source.extent=f.extent;source.format=VK_FORMAT_B8G8R8A8_UNORM;source.flipY=mode=="flip";
     source.record=[&](const ProjectionRequest& r,VkCommandBuffer command,ProjectionFrame& out){return f.record(r,command,out,mode);};
     if(mode.rfind("pump",0)!=0 && mode!="throw-source") {std::cout<<presentProjectionImages(binding,source,1);return 0;}

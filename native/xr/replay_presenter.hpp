@@ -25,7 +25,7 @@ struct ReplaySource {
     std::function<void(const std::array<EyeState,2>&)> update;
     std::function<bool(VkCommandBuffer)> record;
 };
-enum class ProjectionStep { idle, imagesPending, submitted, gpuPending, presented, skipped, stopped, failed };
+enum class ProjectionStep { idle, sourcePending, imagesPending, submitted, gpuPending, presented, skipped, stopped, failed };
 // One private frame in flight. Calls and destruction are serialized by the
 // caller, with exclusive access to the borrowed queue (including runtime calls).
 // advance(false) only drains an existing frame: it never calls xrWaitFrame.
