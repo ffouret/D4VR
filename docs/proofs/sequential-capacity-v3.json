@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "tested_source_commit": "b16bb41eb3d6d574afeee140f399b4c43b5afd8b",
+  "purpose": "Bounded expansion of sequential private pipeline registry after actual 4096-node limit",
+  "synthetic_scene": true,
+  "game_stereo_submitted": false,
+  "layer_sha256": "18ad41eeb25f2ef22899bf8d520ebf35687dc371a9adf374ca2f179102773ce7",
+  "python_tests_passed": 170,
+  "native_tests": {
+    "strict_warnings_as_errors_build": true,
+    "forwarding_tests_passed": true,
+    "registry_capacities_tested": [
+      4096,
+      8192
+    ],
+    "one_extra_node_refused_before_driver_create": true,
+    "all_private_pipelines_released_after_last_lease": true,
+    "removal_does_not_reset_cumulative_creation_budget": true,
+    "zero_or_above_8192_parameters_refused": true,
+    "default_live_limit_512_preserved": true
+  },
+  "limits": {
+    "sequential_maximum_live_nodes": 8192,
+    "sequential_maximum_cumulative_creations": 8192,
+    "default_registry_maximum_live_nodes": 512,
+    "default_registry_maximum_cumulative_creations": 4096,
+    "other_layer_modes_maximum_live_nodes": 512,
+    "other_layer_modes_maximum_cumulative_creations": 512,
+    "per_command_buffer_unique_leases": 4096,
+    "private_image_captures": 4,
+    "private_capture_memory_budget_bytes": 268435456
+  },
+  "gpu_loader_controls": [
+    {
+      "case": "native",
+      "reference_equal_bytes": 1048576,
+      "original_restored_bytes": 262144,
+      "disparities_pixels": [
+        14.607794894025403,
+        7.31257269928156
+      ],
+      "different_pixel_bytes": 3330,
+      "repeated_capture_frames": 4,
+      "sequential_quota_verified": true
+    },
+    {
+      "case": "disabled",
+      "disabled_capture_verified": true,
+      "original_restored_bytes": 262144
+    },
+    {
+      "case": "steam-runtime",
+      "reference_equal_bytes": 1048576,
+      "original_restored_bytes": 262144,
+      "disparities_pixels": [
+        14.607794894025403,
+        7.31257269928156
+      ],
+      "different_pixel_bytes": 3330,
+      "repeated_capture_frames": 4,
+      "sequential_quota_verified": true
+    }
+  ],
+  "khronos_synchronization_validation_loaded": true,
+  "validation_errors_observed_in_these_controls": 0,
+  "counts_do_not_prove_driver_memory_byte_bound": true,
+  "full_game_geometry_coverage_proven": false,
+  "notes": [
+    "The CPU maximum-capacity controls use a simulated driver; WSI GPU controls validate capture and forwarding but do not create 8192 actual GPU pairs.",
+    "Driver memory consumption cannot be inferred from graph count. Actual-game trial and sampled whole-GPU memory are recorded separately.",
+    "Previous SteamVR validation errors remain unresolved; these WSI controls do not start SteamVR."
+  ],
+  "ci": {
+    "run_id": 40221872830,
+    "run_number": 108,
+    "linux_success": true,
+    "windows_success": true,
+    "linux_asan_ubsan_success": true
+  }
+}

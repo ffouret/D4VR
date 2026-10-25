@@ -10,13 +10,13 @@ répond pas à cet objectif.
 
 ## État du projet
 
-Le [quatrième essai réel de vues successives](docs/SEQUENTIAL_CAPTURE.md#quatrième-essai-réel--correction-des-classes-de-ressources)
+Le [cinquième essai réel de vues successives](docs/SEQUENTIAL_CAPTURE.md#cinquième-essai-réel--plafond-de-pipelines-élargi-et-vérifié)
 étend le décalage géométrique observé dans **Diablo IV, en 2560 × 1440** : les
 24 zones de terrain acceptées se décalent entre les yeux et reviennent à leur
-place au même œil. Douze coordonnées restées fixes au précédent essai sont
-retrouvées et se décalent maintenant. La lumière nocturne réduit le nombre de
+place au même œil. La lumière nocturne réduit le nombre de
 zones mesurables ; ce relevé ne prouve pas la couverture complète du monde.
-Le plafond de pipelines privés est atteint et reste à résoudre. Ces images
+Le plafond élargi à 8 192 permet cette fois de conserver jusqu'à 6 445 graphes
+privés, avec zéro refus de budget aux quatre captures. Ces images
 successives ne sont pas encore envoyées à SteamVR et ne constituent pas un jeu
 VR continu avec suivi de tête.
 

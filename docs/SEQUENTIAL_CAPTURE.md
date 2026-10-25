@@ -6,7 +6,8 @@ preuve visible avant la reprise complète de ses ressources. **Une première pai
 réelle de Diablo IV a été capturée**, en 2560 × 1440. Après un second essai
 négatif et deux corrections de sélection, le quatrième essai retrouve un
 décalage dans les 24 zones de terrain mesurables, dont douze auparavant fixes.
-La limite de pipelines est atteinte ; la couverture complète reste à vérifier.
+Le cinquième essai lève la limite de pipelines précédente pour ce relevé ; la
+couverture complète reste à vérifier.
 Ce résultat ne constitue pas encore du Diablo en VR.
 
 ## Sélection et capture
@@ -269,6 +270,53 @@ D3D12 et les erreurs de validation SteamVR précédemment observées restent ouv
 Tous les processus de cet essai sont ensuite sortis. L'exécutable, la bibliothèque
 NVIDIA originale et ses exports correspondent aux références, et les quatre
 hashes de pixels bruts ont été revérifiés avant publication des seuls agrégats.
+
+## Cinquième essai réel : plafond de pipelines élargi et vérifié
+
+Le [correctif borné de capacité](proofs/sequential-capacity-v3.json), testé au
+commit `b16bb41`, autorise au plus 8 192 graphes vivants et 8 192 créations
+cumulées dans le seul mode successif. Les autres modes de la couche restent
+à 512 et la borne indépendante de 4 096 leases uniques par command buffer est
+conservée. Le composant conserve ses paramètres par défaut. Aucune éviction de
+graphe encore utilisé ni allocation sans plafond n'est introduite. Le nombre
+de graphes ne constitue pas une limite en octets de mémoire pilote.
+
+Les tests CPU simulés remplissent 4 096 puis 8 192 nœuds, refusent le suivant
+avant appel pilote et vérifient que la suppression des sources conserve le
+dernier lease, puis libère les ressources. Le budget cumulé ne se réinitialise
+pas après libération. Les paramètres nuls ou supérieurs à 8 192 sont refusés,
+et le défaut de 512 reste vérifié. Les trois contrôles WSI — actif natif,
+désactivé et actif Steam Runtime — conservent les références GPU exactes, sous
+validation de synchronisation. Les contrôles CPU ne créent pas 8 192 paires GPU
+réelles ; leur coût mémoire est examiné séparément pendant l'essai du jeu.
+La CI Linux et Windows passe, avec ASan/UBSan sur Linux, ainsi que 170 tests Python.
+
+La [preuve réelle du cinquième essai](proofs/sequential-diablo-v5.json) utilise
+le même bundle privé de 5 378 shaders. Les quatre captures correspondent aux
+présentations 57349, 57646, 57944 et 58242 et à 699, 688, 686 et 687 dessins
+sélectionnés. Le registre conserve 6 304 à 6 445 graphes, avec **zéro refus de
+budget et zéro échec pilote aux quatre exports**. Les 936 autres refus restent
+sans attribution individuelle ; leur absence de classement empêche toute
+conclusion sur la couverture de tous les dessins.
+
+Le contrôle exploratoire accepte 24 des 28 patches contrastés : les 24 se
+décalent horizontalement entre les yeux, avec une médiane de −16 pixels, et
+retrouvent zéro déplacement au retour au même œil. Vingt-deux retrouvent
+exactement la même disparité dans les deux paires, deux diffèrent de deux
+pixels, soit la résolution de l'analyse. Le décalage vertical entre yeux reste
+nul. Ces observations sont limitées à cette scène, personnage immobile ; elles
+ne prouvent ni tous les objets ni tous les décors.
+
+Le relevé mémoire porte sur le GPU entier, sans attribution exclusive au mod.
+Les 444 échantillons espacés de deux secondes couvrent les quatre exports,
+avec un maximum observé de 19 324 Mio sur 32 607 et au moins 13 283 Mio libres
+dans ces mesures. Un pic entre les échantillons n'est pas exclu. Après sortie de
+tous les processus, la consommation globale revient à 1 832 Mio, pour une base
+de 1 826. L'exécutable, la bibliothèque d'origine et ses exports correspondent
+aux références ; les quatre hashes des pixels bruts sont revérifiés.
+Les images restent successives et ne sont pas soumises à SteamVR. La prochaine
+étape porte sur le transport des vues du jeu vers le casque et sur leur cohérence
+temporelle, avant de revendiquer un rendu VR continu avec suivi de tête.
 
 `tools/sequential_capture.py prepare` vérifie le binaire testé, le bundle de
 shaders déjà validé, la version du jeu et le lanceur Lutris complet. Il crée
