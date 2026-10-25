@@ -5,8 +5,10 @@
 #include <array>
 #include <memory>
 using namespace d4vr::present;
+using namespace d4vr;
 namespace {
 void require(bool b,const char* what){if(!b)throw std::runtime_error(what);}
+CameraPair cameras(uint32_t sequence){auto view=identity();view[3]=(sequence%5)*.125;auto projection=identity();projection[0]=2;return CameraPair({make_eye_state(0,sequence,view,projection),make_eye_state(1,sequence,view,projection)});}
 unsigned readbackBuffers=0,maps=0,readbackCommands=0;
 VKAPI_ATTR VkResult VKAPI_CALL createBuffer(VkDevice d,const VkBufferCreateInfo* i,const VkAllocationCallbacks* a,VkBuffer* b){++readbackBuffers;return vkCreateBuffer(d,i,a,b);}
 VKAPI_ATTR VkResult VKAPI_CALL mapMemory(VkDevice d,VkDeviceMemory m,VkDeviceSize o,VkDeviceSize s,VkMemoryMapFlags f,void** p){++maps;return vkMapMemory(d,m,o,s,f,p);}
@@ -65,11 +67,14 @@ struct Trial {
     }
     GpuFrame produce(unsigned slot,uint64_t seq,bool gated=false){
         auto c=commands[slot];uint32_t eye=uint32_t(seq%2);require(record(c,seq,eye,gated),"Producer capture refused");
+        auto camera=cameras(uint32_t(seq)+100);CameraInterval interval;interval.submitted(1u<<eye,7,seq*10,&camera);
         require(capture->presentedGpu(info,VK_SUCCESS,100+seq,1u<<eye,7).empty(),"Unsubmitted image leased");
-        submit(c,!gated);capture->submitted(f.queue,{c},f.family);initialized=true;
-        if(gated){require(vkGetFenceStatus(f.device,fence)==VK_NOT_READY,"Producer fence was not pending");require(capture->presentedGpu(info,VK_SUCCESS,100+seq,1u<<eye,7).empty(),"Pending producer leased");check(vkSetEvent(f.device,gate));check(vkWaitForFences(f.device,1,&fence,VK_TRUE,UINT64_MAX));}
-        check(vkQueueWaitIdle(f.queue));auto frames=capture->presentedGpu(info,VK_SUCCESS,gated?9999:100+seq,gated?3:1u<<eye,gated?999:7);
+        submit(c,!gated);capture->submitted(f.queue,{c},f.family,seq*10,&camera);initialized=true;camera=cameras(99999);CameraInterval later;later.submitted(1u<<eye,999,99999,&camera);
+        if(gated){require(vkGetFenceStatus(f.device,fence)==VK_NOT_READY,"Producer fence was not pending");require(capture->presentedGpu(info,VK_SUCCESS,100+seq,1u<<eye,7,&interval).empty(),"Pending producer leased");check(vkSetEvent(f.device,gate));check(vkWaitForFences(f.device,1,&fence,VK_TRUE,UINT64_MAX));}
+        check(vkQueueWaitIdle(f.queue));auto frames=capture->presentedGpu(info,VK_SUCCESS,gated?9999:100+seq,gated?3:1u<<eye,gated?999:7,gated?&later:&interval);
         require(frames.size()==1,"Ready GPU image absent");auto frame=frames.front();require(frame.sequence==seq && frame.present==100+seq && frame.eye==eye && frame.selectedMask==(1u<<eye) && frame.selectedDraws==7 && frame.queueFamily==f.family && frame.queue==f.queue,"Image provenance retagged");
+        require(frame.camera.sameDiagnosticPacket() && same_packet(frame.camera.copySubmit.packet,cameras(uint32_t(seq)+100).eye(eye)) && frame.camera.copySubmit.firstSubmission==seq*10
+            && frame.camera.selectedDrawInterval.firstSubmission==seq*10,"Old image retagged with a newer packet/interval or packet bytes lost");
         require(capture->presentedGpu(info,VK_SUCCESS,99999,3,99).empty(),"GPU lease duplicated");require(capture->presented(info,VK_SUCCESS,99,3,99).empty(),"GPU mode exported CPU bytes");
         require(!std::memcmp(static_cast<uint8_t*>(read.mapped)+bytes,static_cast<uint8_t*>(read.mapped)+2*bytes,bytes),"Original source/destination changed");sourceBytes+=bytes;
         return frame;
@@ -101,6 +106,6 @@ int main()try {
     t.negative(41,VK_QUEUE_FAMILY_IGNORED,1,VK_SUCCESS);t.negative(42,t.f.family,3,VK_SUCCESS);t.negative(43,t.f.family,1,VK_ERROR_OUT_OF_DATE_KHR);VkResult failed=VK_ERROR_OUT_OF_DATE_KHR;t.negative(44,t.f.family,1,VK_SUCCESS,&failed);
     auto stats=t.capture->stats();require(stats.slots==4 && stats.allocations==4 && stats.reuses==37 && stats.backpressure==3 && stats.leasesIssued==37 && stats.retireSubmissions==37 && stats.reservedBytes<=256*1024*1024,"Stream exceeded bounds or lost retirement accounting");
     require(!readbackBuffers && !maps && !readbackCommands,"GPU producer allocated or recorded a CPU readback");
-    std::cout<<"{\"gpu_capture_fixture_passed\":true,\"synthetic_scene\":true,\"diablo_rendered\":false,\"actual_steamvr_submission\":false,\"leased_frames\":"<<stats.leasesIssued<<",\"slots\":"<<stats.slots<<",\"allocations\":"<<stats.allocations<<",\"reuses\":"<<stats.reuses<<",\"backpressure\":"<<stats.backpressure<<",\"reserved_bytes\":"<<stats.reservedBytes<<",\"gpu_lease_exact_bytes\":"<<t.verified<<",\"source_preserved_bytes\":"<<t.sourceBytes<<",\"producer_readback_buffers\":"<<readbackBuffers<<",\"producer_maps\":"<<maps<<",\"producer_readback_commands\":"<<readbackCommands<<",\"producer_and_consumer_pending_controls\":true,\"command_reference_retirement_verified\":true,\"stale_lease_refused\":true,\"invalid_provenance_refused\":4}\n";
+    std::cout<<"{\"gpu_capture_fixture_passed\":true,\"synthetic_scene\":true,\"diablo_rendered\":false,\"actual_steamvr_submission\":false,\"leased_frames\":"<<stats.leasesIssued<<",\"slots\":"<<stats.slots<<",\"allocations\":"<<stats.allocations<<",\"reuses\":"<<stats.reuses<<",\"backpressure\":"<<stats.backpressure<<",\"reserved_bytes\":"<<stats.reservedBytes<<",\"gpu_lease_exact_bytes\":"<<t.verified<<",\"source_preserved_bytes\":"<<t.sourceBytes<<",\"producer_readback_buffers\":"<<readbackBuffers<<",\"producer_maps\":"<<maps<<",\"producer_readback_commands\":"<<readbackCommands<<",\"producer_and_consumer_pending_controls\":true,\"command_reference_retirement_verified\":true,\"stale_lease_refused\":true,\"invalid_provenance_refused\":4,\"camera_packet_copies_verified\":37,\"delayed_camera_not_retagged\":true}\n";
     return 0;
 }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}

@@ -5,10 +5,12 @@
 #include <stdexcept>
 #include <iostream>
 using namespace d4vr::present;
+using namespace d4vr;
 namespace {
 void require(bool v){if(!v)throw std::runtime_error("Presentation stream ownership invariant");}
 template<class T>T h(uintptr_t n){return (T)n;}
 uintptr_t next=1000;unsigned allocations=0,readbacks=0,submits=0;bool failSubmit=false;VkDeviceSize imageBytes=64;
+CameraPair pair(unsigned sequence){return CameraPair({make_eye_state(0,sequence,identity(),identity()),make_eye_state(1,sequence,identity(),identity())});}
 struct Fence{bool signaled=false,pending=false;};std::map<VkFence,Fence> fences;
 void complete(){for(auto& entry:fences)if(entry.second.pending){entry.second.pending=false;entry.second.signaled=true;}}
 VKAPI_ATTR VkResult VKAPI_CALL createImage(VkDevice,const VkImageCreateInfo*,const VkAllocationCallbacks*,VkImage* out){*out=h<VkImage>(++next);++allocations;return VK_SUCCESS;}
@@ -48,8 +50,16 @@ int main()try {
         auto queue=h<VkQueue>(5);VkImageBlit region{};region.srcSubresource=region.dstSubresource={VK_IMAGE_ASPECT_COLOR_BIT,0,0,1};region.srcOffsets[1]=region.dstOffsets[1]={1,1,1};
         auto record=[&](uint64_t seq,VkCommandBuffer cmd){return c.record(seq,uint32_t(seq%2),cmd,true,source,VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,dest,VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,1,&region,VK_FILTER_NEAREST);};
         std::vector<GpuFrame> held;
-        for(unsigned i=0;i<4;++i){auto cmd=h<VkCommandBuffer>(100+i);require(record(i+1,cmd));c.submitted(queue,{cmd},0);require(c.presentedGpu(info,VK_SUCCESS,50+i,1u<<((i+1)%2),7).empty());complete();auto ready=c.presentedGpu(info,VK_SUCCESS,999,3,999);require(ready.size()==1 && ready[0].present==50+i && ready[0].selectedDraws==7);held.push_back(ready[0]);c.reset(cmd);}
-        auto cmd=h<VkCommandBuffer>(110);require(!record(5,cmd));require(!c.retire(held[0].lease,h<VkQueue>(6)));require(c.retire(held[0].lease,queue));require(!record(6,cmd));complete();require(record(7,cmd));c.submitted(queue,{cmd},0);complete();auto ready=c.presentedGpu(info,VK_SUCCESS,57,2,7);require(ready.size()==1 && ready[0].image==held[0].image && ready[0].lease!=held[0].lease);require(!c.retire(held[0].lease,queue));require(c.retire(ready[0].lease,queue));c.reset(cmd);
+        for(unsigned i=0;i<4;++i){auto cmd=h<VkCommandBuffer>(100+i);auto camera=pair(100+i);uint32_t eye=(i+1)%2;CameraInterval interval;interval.submitted(1u<<eye,7,1000+i,&camera);
+            require(record(i+1,cmd));c.submitted(queue,{cmd},0,1000+i,&camera);camera=pair(200+i); // Mutate request BEFORE producer completion/presentation.
+            require(c.presentedGpu(info,VK_SUCCESS,50+i,1u<<eye,7,&interval).empty());complete();CameraInterval later;later.submitted(1u<<eye,999,9000+i,&camera);
+            auto ready=c.presentedGpu(info,VK_SUCCESS,999,3,999,&later);require(ready.size()==1 && ready[0].present==50+i && ready[0].selectedDraws==7);
+            require(ready[0].camera.sameDiagnosticPacket() && ready[0].camera.copySubmit.packet.header[2]==100+i && ready[0].camera.copySubmit.firstSubmission==1000+i
+                && ready[0].camera.selectedDrawInterval.packet.header[2]==100+i);held.push_back(ready[0]);c.reset(cmd);}
+        auto cmd=h<VkCommandBuffer>(110);require(!record(5,cmd));require(!c.retire(held[0].lease,h<VkQueue>(6)));require(c.retire(held[0].lease,queue));require(!record(6,cmd));complete();require(record(7,cmd));c.submitted(queue,{cmd},0);complete();auto ready=c.presentedGpu(info,VK_SUCCESS,57,2,7);require(ready.size()==1 && ready[0].image==held[0].image && ready[0].lease!=held[0].lease);
+        require(ready[0].camera.copySubmit.status==CameraStatus::unknown && ready[0].camera.selectedDrawInterval.status==CameraStatus::unknown && !ready[0].camera.sameDiagnosticPacket());
+        require(held[0].camera.copySubmit.packet.header[2]==100); // Generation reuse cannot mutate an already returned value.
+        require(!c.retire(held[0].lease,queue));require(c.retire(ready[0].lease,queue));c.reset(cmd);
         for(unsigned i=1;i<4;++i)require(c.retire(held[i].lease,queue));
         complete();
         // A failed marker never grants/recycles an unfenced GPU image.

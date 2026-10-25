@@ -18,7 +18,7 @@ All methods require caller serialization. This is not a claim that every call on
 
 ## Provenance and limits
 
-The update log records the exact **queued packet sequence**, not the pose of a completed game frame. Captures can arrive later and the original renderer has multiple passes and reused resources. No current camera sequence is assigned retroactively to an older captured image. The current capture API still lacks per-image applied-pose and whole-scene temporal provenance. Both views are still successive; none is sent to OpenXR by this diagnostic.
+The update log records the exact **queued packet sequence**, not the pose of a completed game frame. Captures can arrive later and the original renderer has multiple passes and reused resources. No current camera sequence is assigned retroactively to an older captured image. Capture now carries separate value-owned copy-submit and selected-draw-interval packet observations; see [camera packet evidence](CAMERA_PROVENANCE.md). Whole-scene and actual XR-pose provenance remain unavailable. Both views are still successive; none is sent to OpenXR by this diagnostic.
 
 `FrameOrder` separately rejects duplicate or retrograde capture/presentation IDs per eye. It keeps two fixed high-water marks, preserves the producer's IDs and retires discarded GPU leases too. It does not establish simultaneous stereo, a current XR pose, or a common scene instant.
 

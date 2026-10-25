@@ -56,13 +56,13 @@ struct Capture::Impl {
         if(c.issued && (!c.retiring || c.retireResult!=VK_SUCCESS || GetFenceStatus(device,c.retireFence)!=VK_SUCCESS))return false;
         return true;
     }
-    void match(Copy& c,const VkPresentInfoKHR& info,VkResult result,uint64_t present,uint32_t mask,uint64_t draws) {
+    void match(Copy& c,const VkPresentInfoKHR& info,VkResult result,uint64_t present,uint32_t mask,uint64_t draws,const CameraInterval* camera) {
         if(!c.queued || c.seenPresent)return;
         for(uint32_t i=0;i<info.swapchainCount;++i)if(info.pSwapchains[i]==c.chain && info.pImageIndices[i]==c.index) {
             c.seenPresent=true;c.snapshot.present=present;
             auto accepted=[](VkResult r){return r==VK_SUCCESS || r==VK_SUBOPTIMAL_KHR;};
             c.presentAccepted=accepted(result) && (!info.pResults || accepted(info.pResults[i]));
-            if(c.presentAccepted){c.snapshot.selectedMask=mask;c.snapshot.selectedDraws=draws;}
+            if(c.presentAccepted){c.snapshot.selectedMask=mask;c.snapshot.selectedDraws=draws;if(camera)c.snapshot.camera.selectedDrawInterval=camera->eye(c.snapshot.eye);}
             break;
         }
     }
@@ -163,17 +163,17 @@ bool Capture::record(uint64_t sequence,uint32_t eye,VkCommandBuffer command,bool
     return true;
 }
 void Capture::reset(VkCommandBuffer command){auto& p=*impl;std::lock_guard<std::mutex> lock(p.mutex);for(auto& c:p.copies)if(c->command==command)c->command=VK_NULL_HANDLE;}
-void Capture::submitted(VkQueue queue,const std::vector<VkCommandBuffer>& commands,uint32_t queueFamily){
+void Capture::submitted(VkQueue queue,const std::vector<VkCommandBuffer>& commands,uint32_t queueFamily,uint64_t submission,const CameraPair* camera){
     auto& p=*impl;std::lock_guard<std::mutex> lock(p.mutex);
     for(auto& c:p.copies)if(c->command && !c->queued && std::find(commands.begin(),commands.end(),c->command)!=commands.end()){
-        c->queued=true;c->queue=queue;c->family=queueFamily;c->markerResult=p.QueueSubmit(queue,0,nullptr,c->fence);
+        c->queued=true;c->queue=queue;c->family=queueFamily;c->snapshot.camera.copySubmit=camera_observation(camera,c->snapshot.eye,submission);c->markerResult=p.QueueSubmit(queue,0,nullptr,c->fence);
     }
 }
-std::vector<Snapshot> Capture::presented(const VkPresentInfoKHR& info,VkResult result,uint64_t present,uint32_t mask,uint64_t draws){
+std::vector<Snapshot> Capture::presented(const VkPresentInfoKHR& info,VkResult result,uint64_t present,uint32_t mask,uint64_t draws,const CameraInterval* camera){
     auto& p=*impl;std::lock_guard<std::mutex> lock(p.mutex);std::vector<Snapshot> out;
     if(p.mode!=CaptureMode::cpuSnapshots)return out;
     for(auto& c:p.copies){
-        p.match(*c,info,result,present,mask,draws);
+        p.match(*c,info,result,present,mask,draws,camera);
         if(c->exported || !c->seenPresent || c->markerResult!=VK_SUCCESS || p.GetFenceStatus(p.device,c->fence)!=VK_SUCCESS)continue;
         auto size=size_t(c->snapshot.extent.width)*c->snapshot.extent.height*4;
         c->snapshot.bytes.assign(static_cast<const uint8_t*>(c->mapped),static_cast<const uint8_t*>(c->mapped)+size);
@@ -181,14 +181,14 @@ std::vector<Snapshot> Capture::presented(const VkPresentInfoKHR& info,VkResult r
     }
     return out;
 }
-std::vector<GpuFrame> Capture::presentedGpu(const VkPresentInfoKHR& info,VkResult result,uint64_t present,uint32_t mask,uint64_t draws) {
+std::vector<GpuFrame> Capture::presentedGpu(const VkPresentInfoKHR& info,VkResult result,uint64_t present,uint32_t mask,uint64_t draws,const CameraInterval* camera) {
     auto& p=*impl;std::lock_guard<std::mutex> lock(p.mutex);std::vector<GpuFrame> out;
     if(p.mode!=CaptureMode::gpuStream)return out;
     for(auto& c:p.copies) {
-        p.match(*c,info,result,present,mask,draws);
+        p.match(*c,info,result,present,mask,draws,camera);
         if(c->issued || !p.eligible(*c) || c->markerResult!=VK_SUCCESS || p.GetFenceStatus(p.device,c->fence)!=VK_SUCCESS)continue;
         const auto& s=c->snapshot;c->issued=true;++p.counters.leasesIssued;
-        out.push_back({c->lease,s.sequence,s.present,s.selectedDraws,s.eye,s.selectedMask,c->family,s.format,s.extent,c->image,c->queue});
+        out.push_back({c->lease,s.sequence,s.present,s.selectedDraws,s.eye,s.selectedMask,c->family,s.format,s.extent,c->image,c->queue,s.camera});
     }
     return out;
 }
