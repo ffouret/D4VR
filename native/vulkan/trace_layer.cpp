@@ -218,6 +218,7 @@ struct Device {
     std::array<std::unique_ptr<d4vr::eye::Control>,2> pairEyes;
     std::unique_ptr<d4vr::pipeline::LibraryVariants> pairs;
     std::unique_ptr<d4vr::present::Capture> presentation;
+    bool gpuCaptureDryRun=false;std::atomic<uint64_t> gpuCaptureSequence{0};
     uint32_t selectedIntervalMask=0;uint64_t selectedIntervalDraws=0;
 #ifdef D4VR_LAYER_REPLAY_POC
     std::unique_ptr<d4vr::poc::Device> poc;
@@ -269,6 +270,13 @@ void collectSelected(const Device& d,VkCommandBuffer command,uint32_t& mask,uint
     mask|=found->second.selectedMask;draws+=found->second.selectedDraws;
     if(depth<8)for(auto c:found->second.secondary)collectSelected(d,c,mask,draws,depth+1);
     else if(!found->second.secondary.empty())mask|=4;
+}
+std::string gpuCaptureJson(const d4vr::present::Capture& capture) {
+    const auto s=capture.stats();
+    return "{\"dry_run\":true,\"game_images_read_by_consumer\":false,\"xr_submission\":false,\"slots\":"+std::to_string(s.slots)
+        +",\"reserved_bytes\":"+std::to_string(s.reservedBytes)+",\"allocations\":"+std::to_string(s.allocations)+",\"reuses\":"+std::to_string(s.reuses)
+        +",\"backpressure\":"+std::to_string(s.backpressure)+",\"leases_issued\":"+std::to_string(s.leasesIssued)+",\"retire_submissions\":"+std::to_string(s.retireSubmissions)
+        +",\"outstanding_leases\":"+std::to_string(s.outstandingLeases)+",\"retiring_leases\":"+std::to_string(s.retiringLeases)+"}";
 }
 uint64_t captureRequest(const char* name,uint64_t fallback=0){
     auto directory=std::getenv("D4VR_SEQUENTIAL_CAPTURE_DIR");if(!directory || !*directory)return fallback;
@@ -512,8 +520,9 @@ VKAPI_ATTR VkResult VKAPI_CALL d4CreateDevice(VkPhysicalDevice physical, const V
         reinterpret_cast<PFN_vkGetPhysicalDeviceMemoryProperties>(instance->get(instance->handle,"vkGetPhysicalDeviceMemoryProperties"))(physical,&memory);
         auto formats=reinterpret_cast<PFN_vkGetPhysicalDeviceFormatProperties>(instance->get(instance->handle,"vkGetPhysicalDeviceFormatProperties"));
         if(!formats)throw std::runtime_error("Format properties unavailable");
+        auto gpu=std::getenv("D4VR_GPU_CAPTURE_DRY_RUN");d->gpuCaptureDryRun=gpu && !std::strcmp(gpu,"1");
         d->presentation=std::make_unique<d4vr::present::Capture>(*result,get,memory,[physical,formats](VkFormat f){VkFormatProperties p{};formats(physical,f,&p);
-            constexpr VkFormatFeatureFlags flags=VK_FORMAT_FEATURE_BLIT_DST_BIT|VK_FORMAT_FEATURE_TRANSFER_SRC_BIT|VK_FORMAT_FEATURE_TRANSFER_DST_BIT;return (p.optimalTilingFeatures&flags)==flags;});
+            constexpr VkFormatFeatureFlags flags=VK_FORMAT_FEATURE_BLIT_DST_BIT|VK_FORMAT_FEATURE_TRANSFER_SRC_BIT|VK_FORMAT_FEATURE_TRANSFER_DST_BIT;return (p.optimalTilingFeatures&flags)==flags;},d->gpuCaptureDryRun?d4vr::present::CaptureMode::gpuStream:d4vr::present::CaptureMode::cpuSnapshots);
     }catch(const std::exception& e){logFile.write("\"event\":\"presentation_error\",\"reason\":"+quoted(e.what()));}
     std::ostringstream queues; queues << '[';
     for (uint32_t i = 0; i < info->queueCreateInfoCount; ++i) {
@@ -558,6 +567,7 @@ VKAPI_ATTR void VKAPI_CALL d4DestroyDevice(VkDevice handle, const VkAllocationCa
             ",\"present_calls\":" + std::to_string(d->presents) + ",\"submitted_command_buffers\":" + std::to_string(d->submittedBuffers) + ",\"commands\":" + countsJson(d->totals);
         if (d->eye) record += ",\"eye_control\":" + d->eye->json();
         if (d->pairs) record += ",\"paired_pipelines\":" + pairsJson(*d);
+        if(d->presentation && d->gpuCaptureDryRun)record+=",\"gpu_capture\":"+gpuCaptureJson(*d->presentation);
 #ifdef D4VR_LAYER_REPLAY_POC
         if(d->poc)record+=",\"poc_application_recordings_submitted\":"+std::to_string(d->poc->applicationRecordingsSubmitted())
             +",\"poc_application_draws_submitted\":"+std::to_string(d->poc->applicationDrawsSubmitted());
@@ -843,12 +853,13 @@ VKAPI_ATTR VkResult VKAPI_CALL d4GetSwapchainImagesKHR(VkDevice device,VkSwapcha
 }
 void captureBlit(const std::shared_ptr<Device>& d,VkCommandBuffer command,VkImage source,VkImageLayout src,VkImage destination,VkImageLayout dst,uint32_t count,const VkImageBlit* regions,VkFilter filter){
     if(!d->presentation)return;
-    auto sequence=captureRequest("present.request");if(!sequence)return;
+    if(d->gpuCaptureDryRun && d->presentation->stats().leasesIssued>=128)return;
+    auto sequence=d->gpuCaptureDryRun?++d->gpuCaptureSequence:captureRequest("present.request");if(!sequence)return;
     auto eye=captureRequest("eye.selection",2);if(eye>1)return;bool allowed=false;
     {std::lock_guard<std::mutex> lock(stateMutex);auto c=d->commands.find(command);
         if(c!=d->commands.end()){auto pool=d->commandPools.find(c->second.pool);allowed=c->second.level==VK_COMMAND_BUFFER_LEVEL_PRIMARY
             && c->second.flags==VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT && pool!=d->commandPools.end() && !(pool->second&VK_COMMAND_POOL_CREATE_PROTECTED_BIT);}}
-    try{if(d->presentation->record(sequence,uint32_t(eye),command,allowed,source,src,destination,dst,count,regions,filter))
+    try{if(d->presentation->record(sequence,uint32_t(eye),command,allowed,source,src,destination,dst,count,regions,filter) && !d->gpuCaptureDryRun)
         logFile.write("\"event\":\"presentation_recorded\",\"sequence\":"+std::to_string(sequence)+",\"eye\":"+std::to_string(eye));
     }catch(const std::exception& e){logFile.write("\"event\":\"presentation_error\",\"reason\":"+quoted(e.what()));}
 }
@@ -939,7 +950,13 @@ VKAPI_ATTR VkResult VKAPI_CALL d4QueueSubmit(VkQueue queue, uint32_t n, const Vk
     if (d->frame.enabled || d->presentation) for (uint32_t i = 0; i < n; ++i) for (uint32_t j = 0; j < submits[i].commandBufferCount && frames.size() < 256; ++j) frames.push_back(submits[i].pCommandBuffers[j]);
     auto ticket = frameSubmission(d, queue, frames, buffers);
     auto result = d->QueueSubmit(queue, n, submits, fence);
-    if(result==VK_SUCCESS && d->presentation){d->presentation->submitted(queue,frames);std::lock_guard<std::mutex> lock(stateMutex);if(buffers>frames.size())d->selectedIntervalMask|=4;for(auto c:frames)collectSelected(*d,c,d->selectedIntervalMask,d->selectedIntervalDraws);}
+    if(result==VK_SUCCESS && d->presentation){
+        uint32_t family=VK_QUEUE_FAMILY_IGNORED;
+        {std::lock_guard<std::mutex> lock(stateMutex);auto q=d->queues.find(queue);if(q!=d->queues.end())family=q->second.first;
+            if(buffers>frames.size())d->selectedIntervalMask|=4;
+            for(auto c:frames)collectSelected(*d,c,d->selectedIntervalMask,d->selectedIntervalDraws);}
+        d->presentation->submitted(queue,frames,family);
+    }
     if(result==VK_SUCCESS) { D4_POC(d,for(uint32_t i=0;i<n;++i)for(uint32_t j=0;j<submits[i].commandBufferCount;++j)d->poc->submitted(submits[i].pCommandBuffers[j])); }
     submitted(d, counts, buffers, result); finishFrame(d, ticket, result); return result;
 }
@@ -951,7 +968,13 @@ VKAPI_ATTR VkResult VKAPI_CALL d4QueueSubmit2(VkQueue queue, uint32_t n, const V
     if (d->frame.enabled || d->presentation) for (uint32_t i = 0; i < n; ++i) for (uint32_t j = 0; j < submits[i].commandBufferInfoCount && frames.size() < 256; ++j) frames.push_back(submits[i].pCommandBufferInfos[j].commandBuffer);
     auto ticket = frameSubmission(d, queue, frames, buffers);
     auto result = d->QueueSubmit2(queue, n, submits, fence);
-    if(result==VK_SUCCESS && d->presentation){d->presentation->submitted(queue,frames);std::lock_guard<std::mutex> lock(stateMutex);if(buffers>frames.size())d->selectedIntervalMask|=4;for(auto c:frames)collectSelected(*d,c,d->selectedIntervalMask,d->selectedIntervalDraws);}
+    if(result==VK_SUCCESS && d->presentation){
+        uint32_t family=VK_QUEUE_FAMILY_IGNORED;
+        {std::lock_guard<std::mutex> lock(stateMutex);auto q=d->queues.find(queue);if(q!=d->queues.end())family=q->second.first;
+            if(buffers>frames.size())d->selectedIntervalMask|=4;
+            for(auto c:frames)collectSelected(*d,c,d->selectedIntervalMask,d->selectedIntervalDraws);}
+        d->presentation->submitted(queue,frames,family);
+    }
     if(result==VK_SUCCESS) { D4_POC(d,for(uint32_t i=0;i<n;++i)for(uint32_t j=0;j<submits[i].commandBufferInfoCount;++j)d->poc->submitted(submits[i].pCommandBufferInfos[j].commandBuffer)); }
     submitted(d, counts, buffers, result); finishFrame(d, ticket, result); return result;
 }
@@ -974,7 +997,22 @@ VKAPI_ATTR VkResult VKAPI_CALL d4QueuePresentKHR(VkQueue queue, const VkPresentI
     }
     if (!record.empty()) logFile.write(record);
     writeFrames(ready);
-    if(d->presentation)try{for(const auto& s:d->presentation->presented(*info,result,present,selectedMask,selectedDraws))writePresentation(*d,s);}
+    if(d->presentation)try{
+        if(d->gpuCaptureDryRun) {
+            for(const auto& frame:d->presentation->presentedGpu(*info,result,present,selectedMask,selectedDraws)) {
+                // Exercise only the actual producer and lease retirement. There
+                // is deliberately no XR consumer, image read or invented pose.
+                // QueuePresent already holds this queue's external sync; a
+                // different producer queue cannot safely be submitted here.
+                bool retired=frame.queue==queue && d->presentation->retire(frame.lease,queue);
+                logFile.write("\"event\":\"gpu_capture_lease\",\"dry_run\":true,\"sequence\":"+std::to_string(frame.sequence)
+                    +",\"source_present\":"+std::to_string(frame.present)+",\"eye\":"+std::to_string(frame.eye)+",\"selected_mask\":"+std::to_string(frame.selectedMask)
+                    +",\"selected_draws\":"+std::to_string(frame.selectedDraws)+",\"queue_family\":"+std::to_string(frame.queueFamily)
+                    +",\"width\":"+std::to_string(frame.extent.width)+",\"height\":"+std::to_string(frame.extent.height)
+                    +",\"retirement_submitted\":"+(retired?"true":"false")+",\"game_images_read_by_consumer\":false,\"xr_pose_known\":false,\"xr_submission\":false");
+            }
+        } else for(const auto& s:d->presentation->presented(*info,result,present,selectedMask,selectedDraws))writePresentation(*d,s);
+    }
     catch(const std::exception& e){logFile.write("\"event\":\"presentation_error\",\"reason\":"+quoted(e.what()));}
     return result;
 }

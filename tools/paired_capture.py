@@ -139,7 +139,7 @@ def command(capture: dict) -> list[str]:
     result=host_command()+['/usr/bin/env']
     for key in ('VK_INSTANCE_LAYERS','VK_ADD_LAYER_PATH','VK_LAYER_PATH','VKD3D_SHADER_DUMP_PATH','D4VR_EYE_STATE_FILE',
                 'D4VR_PAIR_LEFT_FILE','D4VR_PAIR_RIGHT_FILE','D4VR_FRAME_TRACE','D4VR_TRACE_XR_BINDING','D4VR_XR_LOADER',
-                'VK_LOADER_DEBUG','VK_LAYER_ENABLES','VK_LAYER_VALIDATE_SYNC'):
+                'VK_LOADER_DEBUG','VK_LAYER_ENABLES','VK_LAYER_VALIDATE_SYNC','D4VR_SEQUENTIAL_CAPTURE_DIR','D4VR_GPU_CAPTURE_DRY_RUN'):
         result+=['-u',key]
     return result+[k+'='+v for k,v in capture['variables'].items()]+['/usr/bin/bash',capture['private_launcher']]
 

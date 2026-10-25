@@ -46,6 +46,13 @@ attentes GPU, avec une seule paire en cours. Douze contrôles supplémentaires
 vérifient ce cycle, les timeouts et les arrêts. Le cadencement XR et le producteur
 réel du jeu demandent encore leur intégration.
 
+Le [producteur de captures GPU réutilisables](docs/GPU_PRESENT_CAPTURE.md) existe
+maintenant dans la couche de présentation. Son essai réel dans Diablo a livré
+114 images avec leur œil et leur présentation d'origine, sans lecture CPU dans
+ce chemin. Le mode diagnostique les retire sans consommateur d'images ni envoi
+XR. Le pool et les lectures GPU sont vérifiés séparément sur des images
+synthétiques ; les poses XR et le raccordement au présentateur restent à faire.
+
 Les [premières observations de buffers et de liaisons de ressources](docs/RESOURCE_BINDINGS.md)
 préparent le raccordement aux dessins du jeu. Elles conservent identités et
 bornes observées, ainsi que les déclarations de layouts et les offsets fournis
