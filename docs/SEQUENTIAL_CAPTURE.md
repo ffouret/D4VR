@@ -4,9 +4,10 @@ Le mode expérimental prépare deux images successives avec deux positions de
 caméra. Il conserve le moteur de rendu original pour obtenir une première
 preuve visible avant la reprise complète de ses ressources. **Une première paire
 réelle de Diablo IV a été capturée**, en 2560 × 1440. Après un second essai
-négatif et la correction du filtre de shaders, le troisième essai retrouve
-un décalage reproductible sur 21 des 36 zones de terrain suivies. La couverture
-reste partielle et ce résultat ne constitue pas encore du Diablo en VR.
+négatif et deux corrections de sélection, le quatrième essai retrouve un
+décalage dans les 24 zones de terrain mesurables, dont douze auparavant fixes.
+La limite de pipelines est atteinte ; la couverture complète reste à vérifier.
+Ce résultat ne constitue pas encore du Diablo en VR.
 
 ## Sélection et capture
 
@@ -212,9 +213,62 @@ restent privés ; le dépôt ne contient que les hashes et résultats agrégés.
 La sélection revient à `2` après les quatre prises. La validation Khronos
 n'est pas activée dans le jeu et aucun nouvel essai SteamVR n'a été effectué.
 
-La suite porte sur les géométries restées fixes, puis sur deux yeux complets au
-même instant et leur envoi à SteamVR avec suivi de tête. Le backend Windows
+## Quatrième essai réel : correction des classes de ressources
+
+Le lecteur DXIL utilisait le numéro de plage d'une ressource sans tenir compte
+de sa classe. Un sampler de numéro 0 pouvait ainsi remplacer les informations
+du constant buffer de numéro 0. Le filtre rejetait alors le shader, même si sa
+projection finale était reconnue algébriquement. Le correctif suit la liste des
+constant buffers référencée par `!dx.resources`, sans parcourir les entrées des
+textures, UAV ou samplers. Une table absente, ambiguë, incomplète ou contenant
+des identifiants de buffers dupliqués ne permet aucune reconnaissance.
+
+La [preuve de cette correction](proofs/dxil-resource-classes-v1.json) comprend
+170 tests Python et le nouveau relevé privé de 5 784 vertex shaders : 5 378
+projections reconnues contre 2 679 auparavant, soit 2 699 ajouts sans retrait.
+Toutes utilisent le buffer principal et l'offset 1 152 déjà vérifiés. Les
+5 378 modules transformés passent spirv-val et les identités sources sont
+contrôlées. Le helper et la couche native restent identiques. Les onze cas de
+référence GPU sont exacts et les buffers de diagnostic restent intacts. Dans
+une trace réelle antérieure, 25 associations de pipelines vertex, réparties
+sur 14 passes dont sept à la résolution principale, correspondent aux ajouts ;
+cette corrélation ne prouve pas à elle seule leur rôle visuel.
+
+La [preuve réelle du quatrième essai](proofs/sequential-diablo-v4.json) teste
+le bundle construit au commit `992d685`. Quatre images 2560 × 1440 du même
+processus/device correspondent aux yeux 0, 1, 0, 1 et aux présentations 40230,
+40527, 40824 et 41122. Elles comptent 666, 673, 672 et 673 dessins sélectionnés.
+Le lancement et l'entrée dans le monde sont effectués de façon autonome par
+l'interface habituelle ; le personnage reste immobile et aucun casque n'est utilisé.
+
+Le même contrôle exploratoire accepte 24 des 27 patches suffisamment contrastés.
+**Les 24 se décalent entre les yeux** : de −6 à −18 pixels dans la première
+paire, de −6 à −16 dans la seconde, avec une médiane de −16. Les 24 retrouvent
+zéro déplacement au retour au même œil ; les déplacements verticaux entre yeux
+sont aussi nuls. Vingt-trois retrouvent exactement la même disparité dans les
+deux paires, le dernier diffère de deux pixels, soit la résolution de l'analyse.
+
+Douze coordonnées auparavant fixes sont retrouvées parmi ces patches : les
+douze se décalent maintenant. La lumière nocturne de cette session réduit le
+contraste par rapport au relevé précédent ; les trois autres coordonnées fixes
+ne sont pas validées ici. Le nombre de patches acceptés ne permet pas de conclure
+à la couverture complète des objets, des zones peu contrastées ou du monde.
+
+Le registre atteint son plafond de **4 096 nœuds privés** et compte 1 403 à
+1 499 refus de budget aux exports. Aucun échec de création pilote n'est relevé.
+Le gain visuel est donc mesuré malgré une nouvelle limite de couverture, qui
+doit être résolue avec une gestion de ressources bornée et testée. Les autres
+refus ne sont pas attribués individuellement par ce relevé.
+
+La sélection originale `2` est rétablie après la prise. La validation Khronos
+n'est pas activée dans le jeu et les images restent successives. La suite porte
+sur cette limite de pipelines et les objets restants, puis sur deux yeux complets
+au même instant et leur envoi à SteamVR avec suivi de tête. Le backend Windows
 D3D12 et les erreurs de validation SteamVR précédemment observées restent ouverts.
+
+Tous les processus de cet essai sont ensuite sortis. L'exécutable, la bibliothèque
+NVIDIA originale et ses exports correspondent aux références, et les quatre
+hashes de pixels bruts ont été revérifiés avant publication des seuls agrégats.
 
 `tools/sequential_capture.py prepare` vérifie le binaire testé, le bundle de
 shaders déjà validé, la version du jeu et le lanceur Lutris complet. Il crée

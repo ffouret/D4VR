@@ -10,20 +10,23 @@ répond pas à cet objectif.
 
 ## État du projet
 
-Le [troisième essai réel de vues successives](docs/SEQUENTIAL_CAPTURE.md#troisième-essai-réel--disparité-reproductible-sur-une-partie-du-terrain)
-montre maintenant **un décalage reproductible sur une partie du terrain de
-Diablo IV**, en 2560 × 1440. Parmi 36 zones suivies, 21 se décalent de 4 à
-18 pixels entre les yeux ; les deux passages gauche/droite donnent exactement
-les mêmes déplacements, avec zéro au retour au même œil. Fabien a aussi vu le
-décalage à l'écran. Quinze zones restent fixes : la couverture est partielle.
-Ces images successives ne sont pas encore envoyées à SteamVR et ne constituent
-pas un jeu VR continu avec suivi de tête.
+Le [quatrième essai réel de vues successives](docs/SEQUENTIAL_CAPTURE.md#quatrième-essai-réel--correction-des-classes-de-ressources)
+étend le décalage géométrique observé dans **Diablo IV, en 2560 × 1440** : les
+24 zones de terrain acceptées se décalent entre les yeux et reviennent à leur
+place au même œil. Douze coordonnées restées fixes au précédent essai sont
+retrouvées et se décalent maintenant. La lumière nocturne réduit le nombre de
+zones mesurables ; ce relevé ne prouve pas la couverture complète du monde.
+Le plafond de pipelines privés est atteint et reste à résoudre. Ces images
+successives ne sont pas encore envoyées à SteamVR et ne constituent pas un jeu
+VR continu avec suivi de tête.
 
-Ce résultat suit la correction du constructeur de bundle : son ancien filtre
-écartait 566 shaders à projection reconnue sans matrice d'objet séparée. Le
-nouveau bundle privé couvre 2 679 candidats, validés par SPIR-V et les références
-GPU sans télémétrie. Le second essai avec l'ancien bundle restait négatif sur
-les 35 zones suivies. Les preuves historiques et les pixels bruts sont conservés.
+Le lecteur DXIL confondait les identifiants de ressources des buffers de caméra
+avec ceux des textures ou samplers. Il suit maintenant uniquement la liste des
+constant buffers dans la table de ressources. Le bundle privé passe de 2 679
+à 5 378 projections reconnues, sans perdre les précédentes ; les modules passent
+SPIR-V et les références GPU sans télémétrie. Les 170 tests Python incluent les
+collisions de classes et les tables ambiguës. Les preuves historiques, dont le
+troisième essai partiel à 21 zones décalées sur 36, et les pixels bruts sont conservés.
 
 La [reprise figée vers SteamVR](docs/FROZEN_REPLAY_XR.md) affiche maintenant les
 images issues de l'interception à 1024 × 1024 par œil : 890 paires suivies en dix

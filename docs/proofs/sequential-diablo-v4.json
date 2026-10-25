@@ -1,0 +1,201 @@
+{
+  "schema_version": 1,
+  "tested_source_commit": "992d685a007916d38a75562f17db27222888c585",
+  "native_layer_source_commit": "d00a0e9386e769cf52a9195117d1356f69c21716",
+  "game_version": "3.2.3.73883",
+  "scope": "Actual Diablo IV repeated sequential eyes after scoping DXIL resource range IDs to their constant-buffer class",
+  "synthetic_scene": false,
+  "game_process_observed": true,
+  "width": 2560,
+  "height": 1440,
+  "format": 44,
+  "layer_sha256": "e354317be5ad3608928579b010a2bb42be064d425d354471a91a23dcb0b20333",
+  "shader_bundle_sha256": "eec657b192baf48c912c414d2e2157b595fe3778ee118fa5318b0ebc3a13f76b",
+  "shader_override_count": 5378,
+  "projection_only_helper": true,
+  "eye_separation_view_units": 0.128,
+  "images": [
+    {
+      "eye": 0,
+      "sequence": 1,
+      "present": 40230,
+      "selected_draw_commands": 666,
+      "selected_eye_mask": 1,
+      "single_eye_interval": true,
+      "pipeline_registry_at_export": {
+        "mode": "sequential_original_render",
+        "private_draws": true,
+        "duplicated_draws": false,
+        "original_arguments_unchanged": false,
+        "source_batches": 6348,
+        "source_outputs": 6348,
+        "library_pairs": 9,
+        "executable_pairs": 4087,
+        "rejected": 2252,
+        "driver_failures": 0,
+        "compile_required": 0,
+        "budget_rejections": 1403,
+        "live_nodes": 4096,
+        "creation_attempts": 4096,
+        "maximum_live_nodes": 4096,
+        "maximum_creation_attempts": 4096
+      },
+      "bytes": 14745600,
+      "pixel_sha256": "f0076afa4c22d98fbad22a46c0fcd0d43372396af0cf805ef8bbdca1c6871a13"
+    },
+    {
+      "eye": 1,
+      "sequence": 2,
+      "present": 40527,
+      "selected_draw_commands": 673,
+      "selected_eye_mask": 2,
+      "single_eye_interval": true,
+      "pipeline_registry_at_export": {
+        "mode": "sequential_original_render",
+        "private_draws": true,
+        "duplicated_draws": false,
+        "original_arguments_unchanged": false,
+        "source_batches": 6361,
+        "source_outputs": 6361,
+        "library_pairs": 9,
+        "executable_pairs": 4087,
+        "rejected": 2265,
+        "driver_failures": 0,
+        "compile_required": 0,
+        "budget_rejections": 1416,
+        "live_nodes": 4096,
+        "creation_attempts": 4096,
+        "maximum_live_nodes": 4096,
+        "maximum_creation_attempts": 4096
+      },
+      "bytes": 14745600,
+      "pixel_sha256": "679fd81269eaf16ad45f0b2f1ec25f6a3b4905789e8774468b933accb1d9cc00"
+    },
+    {
+      "eye": 0,
+      "sequence": 3,
+      "present": 40824,
+      "selected_draw_commands": 672,
+      "selected_eye_mask": 1,
+      "single_eye_interval": true,
+      "pipeline_registry_at_export": {
+        "mode": "sequential_original_render",
+        "private_draws": true,
+        "duplicated_draws": false,
+        "original_arguments_unchanged": false,
+        "source_batches": 6389,
+        "source_outputs": 6389,
+        "library_pairs": 9,
+        "executable_pairs": 4087,
+        "rejected": 2293,
+        "driver_failures": 0,
+        "compile_required": 0,
+        "budget_rejections": 1444,
+        "live_nodes": 4096,
+        "creation_attempts": 4096,
+        "maximum_live_nodes": 4096,
+        "maximum_creation_attempts": 4096
+      },
+      "bytes": 14745600,
+      "pixel_sha256": "aca0868a2d928cddf9e1e25095b837305501fccd6e6f4c18111599887f64b841"
+    },
+    {
+      "eye": 1,
+      "sequence": 4,
+      "present": 41122,
+      "selected_draw_commands": 673,
+      "selected_eye_mask": 2,
+      "single_eye_interval": true,
+      "pipeline_registry_at_export": {
+        "mode": "sequential_original_render",
+        "private_draws": true,
+        "duplicated_draws": false,
+        "original_arguments_unchanged": false,
+        "source_batches": 6450,
+        "source_outputs": 6450,
+        "library_pairs": 9,
+        "executable_pairs": 4087,
+        "rejected": 2354,
+        "driver_failures": 0,
+        "compile_required": 0,
+        "budget_rejections": 1499,
+        "live_nodes": 4096,
+        "creation_attempts": 4096,
+        "maximum_live_nodes": 4096,
+        "maximum_creation_attempts": 4096
+      },
+      "bytes": 14745600,
+      "pixel_sha256": "c9878c95668033f4e3fa219f5131d2686819cb03e302f9047112dd63238cecb3"
+    }
+  ],
+  "same_instant_pair": false,
+  "game_stereo_submitted": false,
+  "new_headset_trial": false,
+  "autonomous_ui_launch_and_world_entry": true,
+  "reproducible_terrain_disparity_observed": true,
+  "all_world_draws_verified": false,
+  "eye_selection_restored_to_original": true,
+  "pipeline_budget_reached": true,
+  "budget_rejections_at_exports": [
+    1403,
+    1416,
+    1444,
+    1499
+  ],
+  "vulkan_validation_enabled_for_game": false,
+  "terrain_patch_observation": {
+    "analysis": "Local mean-centered grayscale patch correspondences in actual captured pixels. Exploratory; no full-scene guarantee.",
+    "captured_scene_synthetic": false,
+    "accepted_patches": 24,
+    "total_contrasted_patches": 27,
+    "image_resize_for_analysis_only": 2,
+    "search_dx_pixels": 80,
+    "search_dy_pixels": 16,
+    "same_instant_pair": false,
+    "all_world_geometry_verified": false,
+    "first_pair": {
+      "median_dx_pixels": -16.0,
+      "median_dy_pixels": 0.0,
+      "dx_range": [
+        -18,
+        -6
+      ]
+    },
+    "same_eye_return": {
+      "median_dx_pixels": 0.0,
+      "median_dy_pixels": 0.0,
+      "dx_range": [
+        0,
+        0
+      ]
+    },
+    "second_pair": {
+      "median_dx_pixels": -16.0,
+      "median_dy_pixels": 0.0,
+      "dx_range": [
+        -16,
+        -6
+      ]
+    },
+    "binocular_nonzero_patches": 24,
+    "unchanged_accepted_patches": 0,
+    "binocular_repeat_disparities_identical_patches": 23,
+    "maximum_repeat_disparity_difference_pixels": 2,
+    "all_accepted_same_eye_displacements_zero": true,
+    "previously_fixed_coordinates_reidentified": 12,
+    "previously_fixed_coordinates_now_nonzero": 12
+  },
+  "comparison_limit": "Night-time lighting reduces contrasted/accepted patches from the preceding daytime trial. Only the twelve reidentified previous fixed coordinates are directly compared; no full-frame or full-world coverage claim.",
+  "raw_pixels_and_game_shaders_published": false,
+  "remaining": [
+    "Resolve the reached private-pipeline budget with bounded, tested resource management",
+    "Verify other objects/regions and low-contrast terrain; 24 accepted patches do not prove the full world",
+    "Produce both complete eyes at the same instant and submit actual game images to SteamVR with head tracking",
+    "Resolve previously observed SteamVR validation errors",
+    "Implement native Windows D3D12 backend"
+  ],
+  "all_owned_processes_exited": true,
+  "original_game_executable_matches_after_exit": true,
+  "original_vendor_library_matches_after_exit": true,
+  "original_exports_match_after_exit": true
+}
