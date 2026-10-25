@@ -70,6 +70,9 @@ captures. Le [bilan agrégé](proofs/real-pass-dependencies-v1.json) ne contient
 aucun journal, shader ou image du jeu. Il ne prouve ni le rôle visible exact des
 passes ni un flux rejouable. La nécessité des valeurs couleur antérieures exige
 encore l'audit des lectures, masques et effets de bord des shaders.
+Le [recensement statique des shaders candidats](SHADER_EFFECTS.md) complète cet
+audit sans résoudre ces LOAD : les états de mélange et ressources liées restent
+inconnus, et les variantes transformées doivent aussi être examinées.
 
 ## Validation de la couche hors du jeu
 

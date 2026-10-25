@@ -55,6 +55,16 @@ jobs:
           python tools/spirv_probe.py work/native-xr-ci/mrt.vert.spv --helper work/native-xr-ci/stereo-transform.spv --tools /usr/bin --output work/native-xr-ci/mrt-instrumented.spv --stereo
           glslangValidator -V --target-env vulkan1.1 native/tests/stereo_mrt_vertex.vert -o work/native-xr-ci/mrt-vertex.spv
           python tools/spirv_probe.py work/native-xr-ci/mrt-vertex.spv --helper work/native-xr-ci/stereo-transform.spv --tools /usr/bin --output work/native-xr-ci/mrt-vertex-instrumented.spv --stereo
+      - name: Fetch pinned SPIR-V grammar for static audit controls
+        if: runner.os == 'Linux'
+        uses: actions/checkout@v4
+        with:
+          repository: KhronosGroup/SPIRV-Headers
+          ref: fbf86836a9b1966586faf7be7bb8a6440e156d62
+          path: work/spirv-headers
+      - name: Verify static shader audit with validated write controls
+        if: runner.os == 'Linux'
+        run: python tools/shader_effects_validate.py --compiler /usr/bin/glslangValidator --validator /usr/bin/spirv-val --grammar work/spirv-headers/include/spirv/unified1/spirv.core.grammar.json --output-directory work/shader-effects-ci
       - name: Verify every Windows export name, ordinal and forwarder
         if: runner.os == 'Windows'
         run: python -c "import pathlib,sys; sys.path.insert(0,'tools'); import probe; probe.validate_probe(pathlib.Path('work/native-ci/probe/Release/sl.interposer.dll'),probe.profile())"

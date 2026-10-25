@@ -2,6 +2,17 @@
 
 Essais du 24 octobre 2026.
 
+## Recensement statique des shaders (25 octobre)
+
+Les 100 tests Python passent. Cinq contrôles originaux compilés passent
+`spirv-val` : texture, input attachment, stores de buffer/image et atomique,
+adresse GPU et télémétrie du helper. Le recensement voit leurs accès attendus
+sans autoriser leur reprise. La CI Linux exécute les contrôles avec une
+grammaire Khronos épinglée et vérifiée par SHA-256 ; Windows exécute les tests
+Python. Les 17 modules candidats privés des passes préparatoires passent
+séparément le validateur. Voir [SHADER_EFFECTS.md](SHADER_EFFECTS.md) pour les
+limites : aucun GPU, nouvel essai du jeu ou rendu VR n'est associé à cet audit.
+
 ## Installation détectée en lecture seule
 
 - L'hôte identifié par son fichier système est Bazzite ; les outils de Codex

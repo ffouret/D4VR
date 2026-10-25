@@ -10,6 +10,11 @@ répond pas à cet objectif.
 
 ## État du projet
 
+Le [recensement statique des accès mémoire](docs/SHADER_EFFECTS.md) prépare
+l'audit des passes préparatoires du jeu. Ses contrôles détectent les écritures
+de buffer, image, adresse GPU et la télémétrie de notre helper. Il n'autorise
+aucune reprise et ne produit pas encore de rendu VR de Diablo.
+
 **État expérimental : transformation géométrique d’un œil fixe pilotée par la
 couche Vulkan et mesurée dans Diablo IV. La chaîne native SteamVR est validée
 séparément en casque. Diablo n'est pas encore rendu en VR.**

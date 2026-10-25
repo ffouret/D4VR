@@ -1,0 +1,231 @@
+{
+  "schema_version": 1,
+  "scope": "synthetic instruction controls and aggregate static census of prior game shader candidates",
+  "repository_parent_commit": "35342916efdedf22838aff0360cdbe13dd9c7b15",
+  "grammar": {
+    "repository": "https://github.com/KhronosGroup/SPIRV-Headers",
+    "commit": "fbf86836a9b1966586faf7be7bb8a6440e156d62",
+    "url": "https://raw.githubusercontent.com/KhronosGroup/SPIRV-Headers/fbf86836a9b1966586faf7be7bb8a6440e156d62/include/spirv/unified1/spirv.core.grammar.json",
+    "sha256": "dd2a7c48d3131c9d0c78ad669ab4765048e6fd63e1fe277a0858f5458febdc68",
+    "bytes": 613698
+  },
+  "source_sha256": {
+    "tools/shader_effects.py": "a253b25dbddcc38a6d43b93f118b134404bce7c9f9e9e734acbe9519654cc980",
+    "tools/shader_effects_validate.py": "aca0cabf10ab1cf50e38e460cb2c9bc9071b3d72730e6e53eb8a3da5c520eda9",
+    "tests/test_shader_effects.py": "b4d7ab65905fcafe86b31c5a7dfc343a4dda8aad066b48e7f03e9d8db6d5777c",
+    "native/tests/shader_effects_fixture.comp": "b21e04447f28c862b3d63e1d2000eb62344c40a0d165e0e7c0fb51a61c90b5ac",
+    "native/tests/shader_effects_fixture.frag": "9aa244b88ebbf09c2a2fd0086143c12887824dd243f60b0a3fa0ab2412d5d078",
+    "native/probe_gpu/stereo_transform.vert": "952f02620522ec2fff405aba5c9407c047a754982f7934a6a62f812a4cfa0250"
+  },
+  "synthetic_validation": {
+    "scope": "original synthetic shader modules only; compiled and validated, never GPU executed",
+    "cases": [
+      {
+        "case": "sampled-fragment",
+        "spirv_val_passed": true,
+        "source_sha256": "9aa244b88ebbf09c2a2fd0086143c12887824dd243f60b0a3fa0ab2412d5d078",
+        "stages": [
+          "pixel"
+        ],
+        "bytes": 532,
+        "sha256": "59a25a6873582a3aa79e1f3a9b43027a10be6f2aaa2e15110b318f0533433019",
+        "instruction_count": 33,
+        "pointer_read_instructions_by_storage": {
+          "UniformConstant": 1
+        },
+        "pointer_write_instructions_by_storage": {
+          "Output": 1
+        },
+        "explicit_external_pointer_write_instructions": 0,
+        "unresolved_pointer_write_instructions": 0,
+        "image_write_instructions": 0,
+        "atomic_instructions": {},
+        "input_attachment_type_declarations": 0,
+        "physical_storage_pointer_type_declarations": 0,
+        "unknown_opcodes": {},
+        "unmodeled_resource_instructions": {},
+        "external_memory_writes_excluded": false,
+        "replay_allowed": false
+      },
+      {
+        "case": "input-attachment",
+        "spirv_val_passed": true,
+        "source_sha256": "9aa244b88ebbf09c2a2fd0086143c12887824dd243f60b0a3fa0ab2412d5d078",
+        "stages": [
+          "pixel"
+        ],
+        "bytes": 536,
+        "sha256": "d02fb24863ac16077f1bcff9f0fac0355ec1e27453b9768813b63ff2969de50a",
+        "instruction_count": 34,
+        "pointer_read_instructions_by_storage": {
+          "UniformConstant": 1
+        },
+        "pointer_write_instructions_by_storage": {
+          "Output": 1
+        },
+        "explicit_external_pointer_write_instructions": 0,
+        "unresolved_pointer_write_instructions": 0,
+        "image_write_instructions": 0,
+        "atomic_instructions": {},
+        "input_attachment_type_declarations": 1,
+        "physical_storage_pointer_type_declarations": 0,
+        "unknown_opcodes": {},
+        "unmodeled_resource_instructions": {},
+        "external_memory_writes_excluded": false,
+        "replay_allowed": false
+      },
+      {
+        "case": "buffer-image-atomic-writes",
+        "spirv_val_passed": true,
+        "source_sha256": "b21e04447f28c862b3d63e1d2000eb62344c40a0d165e0e7c0fb51a61c90b5ac",
+        "stages": [
+          "compute"
+        ],
+        "bytes": 928,
+        "sha256": "7028494760684d234676a951669a1311d926e56fe117b131ea6c5e3b98e711ed",
+        "instruction_count": 55,
+        "pointer_read_instructions_by_storage": {
+          "UniformConstant": 1
+        },
+        "pointer_write_instructions_by_storage": {
+          "StorageBuffer": 1
+        },
+        "explicit_external_pointer_write_instructions": 1,
+        "unresolved_pointer_write_instructions": 0,
+        "image_write_instructions": 1,
+        "atomic_instructions": {
+          "OpAtomicIAdd": 1
+        },
+        "input_attachment_type_declarations": 0,
+        "physical_storage_pointer_type_declarations": 0,
+        "unknown_opcodes": {},
+        "unmodeled_resource_instructions": {},
+        "external_memory_writes_excluded": false,
+        "replay_allowed": false
+      },
+      {
+        "case": "physical-pointer-write",
+        "spirv_val_passed": true,
+        "source_sha256": "b21e04447f28c862b3d63e1d2000eb62344c40a0d165e0e7c0fb51a61c90b5ac",
+        "stages": [
+          "compute"
+        ],
+        "bytes": 716,
+        "sha256": "f18466cd849e0c932ac869e386bcd02972af7aea1547f1b0319e8222388a4de9",
+        "instruction_count": 44,
+        "pointer_read_instructions_by_storage": {
+          "PushConstant": 1
+        },
+        "pointer_write_instructions_by_storage": {
+          "PhysicalStorageBuffer": 1
+        },
+        "explicit_external_pointer_write_instructions": 1,
+        "unresolved_pointer_write_instructions": 0,
+        "image_write_instructions": 0,
+        "atomic_instructions": {},
+        "input_attachment_type_declarations": 0,
+        "physical_storage_pointer_type_declarations": 2,
+        "unknown_opcodes": {},
+        "unmodeled_resource_instructions": {},
+        "external_memory_writes_excluded": false,
+        "replay_allowed": false
+      },
+      {
+        "case": "stereo-helper-telemetry",
+        "spirv_val_passed": true,
+        "source_sha256": "952f02620522ec2fff405aba5c9407c047a754982f7934a6a62f812a4cfa0250",
+        "stages": [
+          "vertex"
+        ],
+        "bytes": 14092,
+        "sha256": "bd0b8f084f28dfebc784c370845e7d6e61939a37ace33d47da2831eb4952792d",
+        "instruction_count": 836,
+        "pointer_read_instructions_by_storage": {
+          "Function": 140,
+          "Input": 1,
+          "PhysicalStorageBuffer": 11
+        },
+        "pointer_write_instructions_by_storage": {
+          "Function": 46,
+          "Output": 1,
+          "PhysicalStorageBuffer": 9
+        },
+        "explicit_external_pointer_write_instructions": 9,
+        "unresolved_pointer_write_instructions": 0,
+        "image_write_instructions": 0,
+        "atomic_instructions": {
+          "OpAtomicIAdd": 3
+        },
+        "input_attachment_type_declarations": 0,
+        "physical_storage_pointer_type_declarations": 6,
+        "unknown_opcodes": {},
+        "unmodeled_resource_instructions": {},
+        "external_memory_writes_excluded": false,
+        "replay_allowed": false
+      }
+    ],
+    "gpu_shader_execution_performed": false,
+    "private_full_proof_sha256": "d3bdf69b1ce1c6389933843550ec07f49e748a8b54bd65d32e3526f002e315fe"
+  },
+  "prior_game_candidate_static_census": [
+    {
+      "capture": 1,
+      "preparatory_scopes": 2,
+      "pipeline_count": 10,
+      "stage_associations": 20,
+      "candidate_modules": 17,
+      "stages_without_candidate": 0,
+      "stages_with_multiple_candidates": 0,
+      "explicit_external_pointer_write_instructions": 0,
+      "unresolved_pointer_write_instructions": 0,
+      "image_write_instructions": 0,
+      "atomic_instructions": 0,
+      "input_attachment_type_declarations": 0,
+      "unknown_opcodes": 0,
+      "unmodeled_resource_instructions": 0,
+      "modules_with_extended_instructions_not_audited": 12,
+      "fragment_candidates_declare_direct_output_location_zero": true,
+      "module_identity_with_game_proven": false,
+      "external_memory_writes_excluded": false,
+      "replay_allowed": false,
+      "private_derived_report_sha256": "5da935332363d66ce732568014c2b3fed52067c0e2ef3fc1f16a453a7160499b"
+    },
+    {
+      "capture": 2,
+      "preparatory_scopes": 1,
+      "pipeline_count": 4,
+      "stage_associations": 8,
+      "candidate_modules": 7,
+      "stages_without_candidate": 0,
+      "stages_with_multiple_candidates": 0,
+      "explicit_external_pointer_write_instructions": 0,
+      "unresolved_pointer_write_instructions": 0,
+      "image_write_instructions": 0,
+      "atomic_instructions": 0,
+      "input_attachment_type_declarations": 0,
+      "unknown_opcodes": 0,
+      "unmodeled_resource_instructions": 0,
+      "modules_with_extended_instructions_not_audited": 5,
+      "fragment_candidates_declare_direct_output_location_zero": true,
+      "module_identity_with_game_proven": false,
+      "external_memory_writes_excluded": false,
+      "replay_allowed": false,
+      "private_derived_report_sha256": "4c2bd58c8c93b8e433b078399d1b59181bf584c845ff9aead3345b5b1cc56829"
+    }
+  ],
+  "private_candidate_module_validation": {
+    "unique_modules_checked": 17,
+    "passed": true,
+    "target_env": "vulkan1.3",
+    "validator_sha256": "20c5998a46f02310f56bf11be238c34d374bb50104b7ccf85bb909f9da883ff9",
+    "private_report_sha256": "e2a325861c6b22df913fcfc4fe486e8957dd084934a1a2567e4988a869d3cc83"
+  },
+  "python_cases": 100,
+  "new_game_capture_performed": false,
+  "new_game_gpu_execution_performed": false,
+  "fixed_function_blend_and_masks_known": false,
+  "bound_descriptor_images_resolved": false,
+  "game_draw_replay_implemented": false,
+  "game_stereo_submitted": false,
+  "raw_game_shaders_or_logs_included": false
+}
