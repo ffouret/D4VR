@@ -24,7 +24,10 @@ Le recensement couvre toutes les fonctions, y compris celles qui sont
 inaccessibles. Les écritures derrière une condition ou un SpecId par défaut
 inactif restent visibles. Les opcodes inconnus et instructions mémoire
 non modélisées sont signalés. Les instructions étendues sont inventoriées,
-sans certifier leurs effets. Aucun binaire n'est exécuté par cet outil.
+sans certifier leurs effets dans le mode historique. L'option
+[`--glsl-grammar`](GLSL_EFFECTS.md) ajoute un modèle explicite de dix-sept
+instructions, dont les écritures par pointeur de Modf/Frexp. Aucun binaire n'est
+exécuté par cet outil.
 
 ## Limites pour la reprise
 
@@ -79,8 +82,10 @@ Chaque module passe séparément `spirv-val --target-env vulkan1.3`.
 Le recensement n'y trouve aucun store explicite vers une classe externe,
 destination de store inconnue, image écrite, instruction atomique, déclaration
 d'input attachment ou opcode inconnu. Les fragments candidats déclarent une
-sortie en location zéro. Douze puis cinq modules utilisent des instructions
-étendues non auditées. Les états de mélange/masques et les ressources réellement
+sortie en location zéro. Dans ce premier recensement, douze puis cinq modules utilisaient des
+instructions étendues non auditées. Le [modèle GLSL ultérieur](GLSL_EFFECTS.md)
+classifie désormais leurs appels connus, sans transformer les autres champs
+de refus en autorisation. Les états de mélange/masques et les ressources réellement
 liées restent inconnus : les deux puis un LOAD non résolus restent inchangés.
 Ces observations ne prouvent ni le rôle visible de ces passes ni leur reprise.
 

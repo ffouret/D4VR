@@ -14,6 +14,7 @@ import frame_trace
 import probe
 import shader_inventory
 from spirv_probe import Module, literal
+from glsl_effects import GLSL450
 
 MAX_SHADER = 16 * 1024 * 1024
 LOCAL_OR_OUTPUT = {'Function','Private','Output'}
@@ -44,7 +45,7 @@ class Grammar:
                 raise ValueError('Grammar disagrees with core memory opcode')
 
 
-def analyze(data: bytes, grammar: Grammar) -> dict:
+def analyze(data: bytes, grammar: Grammar, glsl: GLSL450 | None = None) -> dict:
     if len(data) > MAX_SHADER:
         raise ValueError('Oversized shader')
     module = Module(data)
@@ -70,6 +71,7 @@ def analyze(data: bytes, grammar: Grammar) -> dict:
             types[args[0]] = args[1]
         elif opcode==11:
             if len(args)<2: raise ValueError('Invalid instruction-set import')
+            if args[0] in imports: raise ValueError('Duplicate instruction-set import ID')
             imports[args[0]] = literal(args[1:])
         elif opcode==71 and len(args)==3 and args[1]==30:
             locations[args[0]] = args[2]
@@ -78,6 +80,7 @@ def analyze(data: bytes, grammar: Grammar) -> dict:
             variables.append(args)
     reads, writes, atomics, image_ops, barriers = Counter(),Counter(),Counter(),Counter(),Counter()
     extended, unmodeled = Counter(),Counter()
+    extended_effects,extended_writes,extended_forms = Counter(),Counter(),Counter()
     def storage(pointer):
         return grammar.storage.get(types.get(result_types.get(pointer)),'unknown')
     for opcode,args in module.instructions:
@@ -98,9 +101,17 @@ def analyze(data: bytes, grammar: Grammar) -> dict:
         if kind=='Barrier': barriers[name] += 1
         if kind=='Memory' and opcode not in MEMORY_MODELED: unmodeled[name] += 1
         if kind in ('Reserved','Pipe','Device-Side_Enqueue','Tensor','Graph'): unmodeled[name] += 1
+        if kind=='Extension' and opcode not in (10,11,12):
+            # For example OpExtInstWithForwardRefsKHR is a distinct core form,
+            # not an OpExtInst that can silently inherit this policy's audit.
+            extended_forms[name] += 1;unmodeled[name] += 1
         if opcode==12:
             if len(args)<4: raise ValueError('Invalid extended instruction')
-            extended[(imports.get(args[2],'unknown'),args[3])] += 1
+            instruction_set=imports.get(args[2],'unknown')
+            extended[(instruction_set,args[3])] += 1
+            effect=glsl.classify(instruction_set,args[3],args[4:]) if glsl else {'effect':'unknown','name':None,'written_pointer':None}
+            extended_effects[(instruction_set,args[3],effect['name'],effect['effect'])] += 1
+            if effect['written_pointer'] is not None:extended_writes[storage(effect['written_pointer'])] += 1
     info = shader_inventory.spirv(data)
     return {
         'schema_version':1,'scope':'static census of all module functions, including unreachable code',
@@ -120,7 +131,17 @@ def analyze(data: bytes, grammar: Grammar) -> dict:
         'output_interface_fully_resolved':False,
         'physical_storage_pointer_type_declarations':sum(grammar.storage.get(s)=='PhysicalStorageBuffer' for s in types.values()),
         'extended_instructions':[{'set':s,'instruction':i,'count':n} for (s,i),n in sorted(extended.items())],
-        'extended_instruction_effects_audited':False,
+        'glsl_grammar_sha256':glsl.sha256 if glsl else None,
+        'extended_instruction_policy':'glsl450_memory_v1' if glsl else None,
+        'extended_instruction_effects':[{'set':s,'instruction':op,'name':name,'memory_effect':effect,'count':n}
+            for (s,op,name,effect),n in sorted(extended_effects.items())],
+        'unmodeled_extended_instruction_forms':dict(sorted(extended_forms.items())),
+        'unmodeled_extended_instruction_count':sum(extended_forms.values())+sum(n for (_,_,_,effect),n in extended_effects.items() if effect=='unknown'),
+        'extended_pointer_write_instructions_by_storage':dict(sorted(extended_writes.items())),
+        'extended_external_pointer_write_instructions':sum(n for s,n in extended_writes.items() if s not in LOCAL_OR_OUTPUT and s!='unknown'),
+        'extended_unresolved_pointer_write_instructions':extended_writes['unknown'],
+        'non_atomic_external_pointer_write_instructions':sum(n for s,n in (writes+extended_writes).items() if s not in LOCAL_OR_OUTPUT and s!='unknown'),
+        'extended_instruction_effects_audited':glsl is not None and not extended_forms and not extended_writes['unknown'] and all(e!='unknown' for _,_,_,e in extended_effects),
         'unmodeled_resource_instructions':dict(sorted(unmodeled.items())),
         'unknown_opcodes':dict(sorted(unknown.items())),
         'declared_descriptor_resources':info['declared_resources'],
@@ -129,7 +150,7 @@ def analyze(data: bytes, grammar: Grammar) -> dict:
         'replay_allowed':False,'game_stereo_submitted':False}
 
 
-def audit_frame(data: dict, scopes: list[int], directory: Path, catalog_path: Path, grammar: Grammar) -> dict:
+def audit_frame(data: dict, scopes: list[int], directory: Path, catalog_path: Path, grammar: Grammar, glsl: GLSL450 | None = None) -> dict:
     summary = frame_trace.summarize(data)
     if (not scopes or len(scopes)>64 or len(set(scopes))!=len(scopes)
             or any(type(i) is not int or not 0<=i<len(summary['passes']) for i in scopes)):
@@ -171,7 +192,7 @@ def audit_frame(data: dict, scopes: list[int], directory: Path, catalog_path: Pa
                 row = rows[name]
                 if len(binary)!=row['code_bytes'] or frame_trace.fnv1a64(binary)!=row['fnv1a64']:
                     raise ValueError('Candidate differs from identifier catalog')
-                modules[name] = analyze(binary,grammar)
+                modules[name] = analyze(binary,grammar,glsl)
                 modules[name]['catalog_fingerprint_verified'] = True
             for name in ids:
                 if STAGES.get(s['stage']) not in modules[name]['stages']:
@@ -183,6 +204,8 @@ def audit_frame(data: dict, scopes: list[int], directory: Path, catalog_path: Pa
             'candidate_modules':modules,'candidate_module_count':len(modules),'candidate_bytes':total,
             'metadata_incomplete':summary['truncated'] or bool(summary['missing_command_buffers'] or summary['failed_or_incomplete_submissions']),
             'grammar_sha256':grammar.sha256,'module_identity_with_game_proven':False,
+            'glsl_grammar_sha256':glsl.sha256 if glsl else None,
+            'candidate_modules_with_unresolved_extended_effects':sum(not m['extended_instruction_effects_audited'] for m in modules.values()),
             'external_memory_writes_excluded':False,'fixed_function_blend_and_masks_known':False,
             'bound_descriptor_images_resolved':False,'replay_allowed':False,'game_stereo_submitted':False}
 
@@ -193,10 +216,13 @@ def main():
     parser.add_argument('--shader-directory',type=Path,required=True)
     parser.add_argument('--identifier-catalog',type=Path,required=True)
     parser.add_argument('--grammar',type=Path,required=True);parser.add_argument('--output',type=Path,required=True)
+    parser.add_argument('--glsl-grammar',type=Path)
     args=parser.parse_args()
     if args.grammar.is_symlink() or args.grammar.stat().st_size>2*1024*1024: raise ValueError('Invalid grammar file')
+    if args.glsl_grammar and (args.glsl_grammar.is_symlink() or args.glsl_grammar.stat().st_size>128*1024):raise ValueError('Invalid GLSL grammar file')
+    glsl=GLSL450(args.glsl_grammar.read_bytes()) if args.glsl_grammar else None
     result=audit_frame(frame_trace.read_frame(args.frame),args.scopes,args.shader_directory,
-                       args.identifier_catalog,Grammar(args.grammar.read_bytes()))
+                       args.identifier_catalog,Grammar(args.grammar.read_bytes()),glsl)
     probe.write_json(args.output,result)
     args.output.chmod(0o600)
     print(json.dumps({k:v for k,v in result.items() if k not in ('candidate_modules','stage_associations')},indent=2))

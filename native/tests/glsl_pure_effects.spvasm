@@ -1,0 +1,36 @@
+; Original static audit control: all reviewed pure operations, never GPU executed.
+OpCapability Shader
+%glsl = OpExtInstImport "GLSL.std.450"
+OpMemoryModel Logical GLSL450
+OpEntryPoint Fragment %main "main" %color
+OpExecutionMode %main OriginUpperLeft
+OpDecorate %color Location 0
+%void = OpTypeVoid
+%fn = OpTypeFunction %void
+%float = OpTypeFloat 32
+%int = OpTypeInt 32 1
+%pair = OpTypeStruct %float %float
+%fpair = OpTypeStruct %float %int
+%out = OpTypePointer Output %float
+%color = OpVariable %out Output
+%x = OpConstant %float 1.75
+%main = OpFunction %void None %fn
+%entry = OpLabel
+%a = OpExtInst %float %glsl FAbs %x
+%b = OpExtInst %float %glsl Floor %x
+%c = OpExtInst %float %glsl Fract %x
+%d = OpExtInst %float %glsl Sin %x
+%e = OpExtInst %float %glsl Cos %x
+%f = OpExtInst %float %glsl Exp2 %x
+%g = OpExtInst %float %glsl Log2 %x
+%h = OpExtInst %float %glsl Sqrt %x
+%i = OpExtInst %float %glsl InverseSqrt %x
+%j = OpExtInst %float %glsl Fma %x %x %x
+%k = OpExtInst %float %glsl NMin %x %x
+%l = OpExtInst %float %glsl NMax %x %x
+%m = OpExtInst %float %glsl NClamp %x %x %x
+%n = OpExtInst %pair %glsl ModfStruct %x
+%o = OpExtInst %fpair %glsl FrexpStruct %x
+OpStore %color %m
+OpReturn
+OpFunctionEnd

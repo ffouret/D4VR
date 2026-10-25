@@ -10,6 +10,11 @@ répond pas à cet objectif.
 
 ## État du projet
 
+Le [modèle des effets GLSL](docs/GLSL_EFFECTS.md) classe maintenant les opérations
+étendues des anciens candidats et détecte les écritures par pointeur de
+Modf/Frexp. Les inconnus restent bloquants. Cette analyse statique n'autorise
+aucune reprise du jeu ; ses ressources et dépendances restent à résoudre.
+
 Les [variantes privées neutralisent maintenant la télémétrie du helper](docs/REPLAY_SPECIALIZATION.md)
 par leurs constantes de spécialisation. Les compteurs et le ring restent intacts
 pendant la reprise synthétique, même si la création source fournit des adresses
