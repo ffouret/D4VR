@@ -1,4 +1,5 @@
 #include "library_variants.hpp"
+#include "replay_specialization.hpp"
 #include <algorithm>
 #include <atomic>
 #include <cstring>
@@ -15,21 +16,7 @@ struct Dispatch {
     VkDevice device{};PFN_vkCreateGraphicsPipelines create{};PFN_vkDestroyPipeline destroy{};
     std::atomic<uint32_t> active{0},attempts{0};uint32_t limit=0,maximumCreations=0;
 };
-struct Spec {
-    std::vector<VkSpecializationMapEntry> entries;std::vector<uint8_t> bytes;VkSpecializationInfo info{};
-    Spec(const VkSpecializationInfo* source,VkDeviceAddress address){
-        if(source){
-            require(source->mapEntryCount<=64 && source->dataSize<=4096 && (!source->mapEntryCount || source->pMapEntries) && (!source->dataSize || source->pData));
-            if(source->dataSize){auto p=static_cast<const uint8_t*>(source->pData);bytes.assign(p,p+source->dataSize);}
-            std::set<uint32_t> ids;
-            for(uint32_t i=0;i<source->mapEntryCount;++i){auto e=source->pMapEntries[i];require(e.size && e.offset<=bytes.size() && e.size<=bytes.size()-e.offset && ids.insert(e.constantID).second);
-                if(e.constantID==4)require(e.size==8);else entries.push_back(e);
-            }
-        }
-        auto offset=(bytes.size()+7)&~size_t(7);bytes.resize(offset+8);std::memcpy(bytes.data()+offset,&address,8);entries.push_back({4,uint32_t(offset),8});
-        info={uint32_t(entries.size()),entries.data(),bytes.size(),bytes.data()};
-    }
-};
+using Spec=ReplaySpecialization;
 struct Chain {
     VkPipelineRenderingCreateInfo rendering{};VkPipelineCreateFlags2CreateInfoKHR flags2{};
     VkGraphicsPipelineLibraryCreateInfoEXT gpl{};VkPipelineLibraryCreateInfoKHR libraries{};

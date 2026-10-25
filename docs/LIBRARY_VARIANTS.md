@@ -21,7 +21,9 @@ Le callback `MarkedStage` doit reconnaître un vertex shader **déjà transform�
 avec l'ABI stéréo 1**, par son module ou un identifiant vérifié de ce module.
 Cette identité est fournie par l'adaptateur ; elle n'est pas déduite d'un handle.
 Le module copie les spécialisations du seul stage vertex reconnu et lui donne
-le SpecId 4 de chaque œil. Les autres stages et états sont conservés pendant
+le SpecId 4 de chaque œil. Les IDs 1/2/3 sont forcés à 0/0/1 par le
+[composant commun de reprise](REPLAY_SPECIALIZATION.md) pour désactiver la
+télémétrie du helper. Les autres stages et états sont conservés pendant
 l'appel synchrone, sans déréférencer leurs paramètres CPU après son retour.
 
 Les morceaux possédés par chaque bibliothèque sont suivis séparément : entrée
@@ -44,7 +46,8 @@ Une suppression pendant une création en cours empêche une inscription tardive.
 Le quota compte aussi les nœuds conservés par les leases, pas seulement ceux
 encore indexés. Les limites sont 512 nœuds par défaut (configuration au plus
 4 096), profondeur 8, 4 bibliothèques liées, 16 stages, 8 nœuds pNext et
-64 entrées/4 Kio de spécialisation par stage avant ajout de l'adresse d'œil.
+64 entrées/4 Kio de spécialisation par stage avant ajout des constantes de
+reprise (au plus 68 entrées/4 128 octets en sortie).
 Une seconde limite borne le nombre cumulé d'appels privés : 4 096 par défaut,
 512 dans le diagnostic de couche. Détruire les sources ne réinitialise pas ce
 budget. Les bibliothèques possédant une pré-rastérisation non marquée sont

@@ -24,6 +24,9 @@ def run(args) -> dict:
         raise ValueError('Dynamic state requires recorded replay')
     if args.static_state and (not args.recorded_replay or args.dynamic_state):
         raise ValueError('Static state requires recorded replay without extended dynamic state')
+    if args.replay_telemetry and (not args.recorded_replay or not (args.pipeline_recipes or args.library_pipelines)
+            or args.library_original_live or args.static_state):
+        raise ValueError('Telemetry proof requires private replay variants and an uninstrumented original witness')
     if args.pipeline_recipes and not args.recorded_replay:
         raise ValueError('Pipeline recipes require recorded replay')
     if args.library_pipelines and (not args.recorded_replay or args.pipeline_recipes):
@@ -93,6 +96,8 @@ def run(args) -> dict:
             command.append('--dynamic-state')
         if args.static_state:
             command.append('--static-state')
+        if args.replay_telemetry:
+            command.append('--replay-telemetry')
         if args.pipeline_recipes:
             command.append('--pipeline-recipes')
         if args.library_pipelines:
@@ -157,6 +162,10 @@ def run(args) -> dict:
                     or proof.get('static_bind_overwrites_dynamic_values_verified') is not True
                     or proof.get('declared_dynamic_states') != 0):
                 raise ValueError(f'{name}: complete empty static-state contract was not verified')
+            if args.replay_telemetry and (proof.get('replay_telemetry_disabled_verified') is not True
+                    or proof.get('telemetry_buffers_unchanged_bytes') != 131584
+                    or proof.get('enabled_telemetry_positive_control_words_written',0) <= 0):
+                raise ValueError(f'{name}: diagnostic buffers changed or enabled telemetry control did not write')
             if args.pipeline_recipes and (proof.get('pipeline_recipe_variants_verified') is not True
                     or proof.get('original_shader_modules_destroyed_before_variants') is not True):
                 raise ValueError(f'{name}: recipe-created variants after module destruction were not verified')
@@ -235,6 +244,7 @@ def main() -> int:
     parser.add_argument('--compute',type=Path)
     parser.add_argument('--dynamic-state',action='store_true')
     parser.add_argument('--static-state',action='store_true')
+    parser.add_argument('--replay-telemetry',action='store_true')
     parser.add_argument('--pipeline-recipes',action='store_true')
     parser.add_argument('--library-pipelines',action='store_true')
     parser.add_argument('--library-original-live',action='store_true')

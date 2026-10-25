@@ -1,4 +1,5 @@
 #include "pipeline_recipe.hpp"
+#include "replay_specialization.hpp"
 #include <algorithm>
 #include <cstring>
 #include <set>
@@ -62,12 +63,6 @@ struct Specialization {
         if (source->dataSize) { auto p=static_cast<const uint8_t*>(source->pData);bytes.assign(p,p+source->dataSize); }
         std::set<uint32_t> ids;
         for (const auto& e:entries) require(e.size && e.offset<=bytes.size() && e.size<=bytes.size()-e.offset && ids.insert(e.constantID).second,"Invalid specialization map");
-    }
-    void eye(VkDeviceAddress address) {
-        for (const auto& e:entries) if (e.constantID==4) require(e.size==8,"Stereo specialization type mismatch");
-        entries.erase(std::remove_if(entries.begin(),entries.end(),[](auto e){return e.constantID==4;}),entries.end());
-        auto offset=(bytes.size()+7)&~size_t(7);bytes.resize(offset+8);std::memcpy(bytes.data()+offset,&address,8);
-        entries.push_back({4,static_cast<uint32_t>(offset),8});present=true;
     }
     const VkSpecializationInfo* get() {
         view={static_cast<uint32_t>(entries.size()),entries.empty()?nullptr:entries.data(),bytes.size(),bytes.empty()?nullptr:bytes.data()};return present?&view:nullptr;
@@ -190,12 +185,12 @@ std::unique_ptr<Variants> Recipe::stereo(VkDevice device,PFN_vkGetDeviceProcAddr
         require(h!=VK_NULL_HANDLE,"Successful shader creation returned null");modules.handles[k]=h;
     }
     std::array<std::array<VkPipelineShaderStageCreateInfo,2>,2> stages;
-    std::array<Specialization,2> specs{impl->specs[0],impl->specs[0]};
+    std::array<std::unique_ptr<ReplaySpecialization>,2> specs;
     std::array<VkGraphicsPipelineCreateInfo,2> infos{impl->info,impl->info};
     for (unsigned eye=0;eye<2;++eye) {
-        specs[eye].eye(addresses[eye]);stages[eye]=impl->stages;
+        specs[eye]=std::make_unique<ReplaySpecialization>(impl->stages[0].pSpecializationInfo,addresses[eye]);stages[eye]=impl->stages;
         for (unsigned s=0;s<2;++s) stages[eye][s].module=modules.handles[s];
-        stages[eye][0].pSpecializationInfo=specs[eye].get();infos[eye].pStages=stages[eye].data();
+        stages[eye][0].pSpecializationInfo=&specs[eye]->info;infos[eye].pStages=stages[eye].data();
     }
     auto result=createPipeline(device,VK_NULL_HANDLE,2,infos.data(),nullptr,owned->handles.data());
     if (result!=VK_SUCCESS) throw std::runtime_error("Eye pipeline creation failed: "+std::to_string(result));

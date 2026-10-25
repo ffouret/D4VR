@@ -22,7 +22,8 @@ pipeline layout reste emprunté ; son maintien en vie incombe à l'adaptateur.
 paquets d'œil distinctes, non nulles et alignées à 16 octets. Il vérifie le tag
 ABI 1 et un SpecId 4 uint64, recrée deux modules shader temporaires, puis crée
 les deux pipelines. Les spécialisations originales sont copiées ; SpecId 4 est
-remplacé ou ajouté pour chaque œil. Une utilisation originale de cet ID sans
+remplacé ou ajouté pour chaque œil. Les IDs 1/2/3 du helper sont maintenant
+forcés à 0/0/1 pour [neutraliser sa télémétrie](REPLAY_SPECIALIZATION.md). Une utilisation originale de cet ID sans
 tag stéréo est refusée. Les modules temporaires sont détruits après compilation.
 
 L'objet `Variants` détruit seulement les pipelines qu'il possède. Une création
@@ -57,7 +58,7 @@ d'état potentiellement ignorés. Aucun fallback n'invente une description.
 Une recette limite chaque shader à 4 Mio, les couleurs à 8, les viewports et
 scissors à 16, les bindings à 32, les attributs à 64, les états dynamiques à 32,
 les entrées de spécialisation à 64 et leurs données à 4 Kio par stage avant
-l'ajout du paquet d'œil. Les doublons de stages, états dynamiques et constantes
+l'ajout des constantes de reprise (au plus 68 entrées/4 128 octets en sortie). Les doublons de stages, états dynamiques et constantes
 sont refusés. Le contrôle des octets couvre l'en-tête et les tailles
 d'instructions ; il ne remplace pas `spirv-val` ni la validation du pilote.
 

@@ -33,7 +33,7 @@ std::vector<uint32_t> readCode(const char* path) {
 
 int main(int argc,char** argv) try {
     if (argc < 4) throw std::runtime_error("Usage: stereo_targets_vulkan original.vert.spv stereo.vert.spv mrt.frag.spv [--negative-sync-control] [--preview-directory path]");
-    bool negative = false,split = false,recorded = false,buffered = false,negativeCompute = false,extended = false,recipes = false,libraries = false,libraryOriginalLive = false,stateDecoys = false,staticState = false; std::filesystem::path preview,computePath;
+    bool negative = false,split = false,recorded = false,buffered = false,negativeCompute = false,extended = false,recipes = false,libraries = false,libraryOriginalLive = false,stateDecoys = false,staticState = false,telemetry = false; std::filesystem::path preview,computePath;
     for (int k = 4; k < argc; ++k) {
         if (std::string(argv[k]) == "--negative-sync-control") negative = true;
         else if (std::string(argv[k]) == "--split-passes") split = true;
@@ -46,6 +46,7 @@ int main(int argc,char** argv) try {
         else if (std::string(argv[k]) == "--library-original-live") libraryOriginalLive = true;
         else if (std::string(argv[k]) == "--library-state-decoys") stateDecoys = true;
         else if (std::string(argv[k]) == "--static-state") staticState = true;
+        else if (std::string(argv[k]) == "--replay-telemetry") telemetry = true;
         else if (std::string(argv[k]) == "--compute" && k+1 < argc) computePath = argv[++k];
         else if (std::string(argv[k]) == "--preview-directory" && k+1 < argc) preview = argv[++k];
         else throw std::invalid_argument("Unknown stereo fixture option");
@@ -59,6 +60,7 @@ int main(int argc,char** argv) try {
     if(libraryOriginalLive && !libraries)throw std::invalid_argument("Original GPL witness requires library pipelines");
     if (staticState && (!recorded || extended)) throw std::invalid_argument("Static-state proof requires recorded replay without extended dynamic state");
     if(stateDecoys && (!libraries || (!extended && !staticState)))throw std::invalid_argument("Dynamic state decoys require extended or static GPL replay");
+    if(telemetry && (!recorded || (!recipes && !libraries) || libraryOriginalLive || staticState)) throw std::invalid_argument("Telemetry proof requires private replay variants and an uninstrumented original witness");
     if (!preview.empty()) {
         expect(!std::filesystem::exists(preview),"Use a new preview directory");
         std::filesystem::create_directories(preview);
@@ -88,6 +90,10 @@ int main(int argc,char** argv) try {
     Buffer staging = f.buffer(slotBytes*9,VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     Buffer indices = f.buffer(3*sizeof(uint32_t),VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
     const std::array<uint32_t,3> indexValues{0,1,2}; std::memcpy(indices.mapped,indexValues.data(),sizeof(indexValues));
+    constexpr uint32_t telemetryRingWords=4096;
+    Buffer telemetryCounters{},telemetryRing{};
+    if(telemetry){telemetryCounters=f.buffer(64,VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,true);telemetryRing=f.buffer(telemetryRingWords*4,VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,true);}
+    uint64_t telemetryProtectedBytes=0,telemetryPositiveWrites=0;
     Buffer vertexInput{};
     if (extended) {
         const std::array<float,12> vertices{-.8f,-.8f,91,92,.8f,-.8f,93,94,0,.8f,95,96};
@@ -162,12 +168,18 @@ int main(int argc,char** argv) try {
         VK_DYNAMIC_STATE_BLEND_CONSTANTS,VK_DYNAMIC_STATE_DEPTH_BOUNDS,VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY,VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE,
         VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE,VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE,VK_DYNAMIC_STATE_STENCIL_WRITE_MASK,VK_DYNAMIC_STATE_DEPTH_BIAS,VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE};
     std::function<VkPipeline(const VkGraphicsPipelineCreateInfo&)> libraryBuilder;
-    auto pipeline = [&](VkDeviceAddress address,bool bufferMode = false,bool extendedMode = false,bool writeDepth = true) {
+    auto pipeline = [&](VkDeviceAddress address,bool bufferMode = false,bool extendedMode = false,bool writeDepth = true,bool observe = false) {
         VkPipelineShaderStageCreateInfo stages[2]{};
         for (auto& s : stages) { s.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO; s.pName = "main"; }
-        stages[0].stage = VK_SHADER_STAGE_VERTEX_BIT; stages[0].module = address ? instrumented : vertex;
+        stages[0].stage = VK_SHADER_STAGE_VERTEX_BIT; stages[0].module = (address || observe) ? instrumented : vertex;
         VkSpecializationMapEntry entry{4,0,8}; VkSpecializationInfo specialization{1,&entry,8,&address};
         if (address) stages[0].pSpecializationInfo = &specialization;
+        struct DiagnosticValues{uint64_t shader,control,ring;uint32_t words,padding;uint64_t eye;};
+        DiagnosticValues values{0xd4a0d4a0d4a0d4a0ull,telemetryCounters.address,telemetryRing.address,telemetryRingWords,0,address};
+        static_assert(offsetof(DiagnosticValues,eye)==32);
+        std::array<VkSpecializationMapEntry,5> maps{{{0,0,8},{1,8,8},{2,16,8},{3,24,4},{4,32,8}}};
+        VkSpecializationInfo diagnostic{5,maps.data(),sizeof(values),&values};
+        if(telemetry)stages[0].pSpecializationInfo=&diagnostic;
         stages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT; stages[1].module = fragment;
         VkPipelineVertexInputStateCreateInfo vi{VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO};
         VkVertexInputBindingDescription vertexBinding{0,extendedMode ? 32u : 16u,VK_VERTEX_INPUT_RATE_VERTEX};
@@ -198,7 +210,7 @@ int main(int argc,char** argv) try {
         ci.pColorBlendState = &cb; ci.pDepthStencilState = &ds; ci.pDynamicState = &dy; ci.layout = bufferMode ? bufferLayout : layout;
         if (bufferMode) ci.flags = VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;
         if (libraryBuilder) return libraryBuilder(ci);
-        if (recipes && !address && writeDepth && bufferMode==buffered && extendedMode==extended) {
+        if (recipes && !address && !observe && writeDepth && bufferMode==buffered && extendedMode==extended) {
             recipe=pipeline::Recipe::capture(ci,[&](VkShaderModule module){
                 expect(module==vertex || module==fragment,"Recipe requested unknown module");return module==vertex?originalCode:fragmentCode;
             });
@@ -208,6 +220,7 @@ int main(int argc,char** argv) try {
     auto originalPipeline = pipeline(0);
     auto bufferOriginalPipeline = (buffered || extended) ? pipeline(0,buffered,extended) : VK_NULL_HANDLE;
     auto witnessPipeline = extended ? pipeline(0,false,false,false) : VK_NULL_HANDLE;
+    auto telemetryPositivePipeline=telemetry?pipeline(0,false,false,true,true):VK_NULL_HANDLE;
     if (recipes) {
         expect(bool(recipe),"Original application pipeline recipe missing");
         for(auto s:{vertex,instrumented,fragment})vkDestroyShaderModule(f.device,s,nullptr);
@@ -309,6 +322,10 @@ int main(int argc,char** argv) try {
         upload(0,source,identity());
         for (unsigned eye = 0; eye < 2; ++eye) upload(eye+1,(test.states[eye].header[3]&2) ? source : matrix(test.states[eye].eyeProjection),matrix(test.states[eye].eyeFromGameView));
         for (unsigned epoch = 0; epoch < 2; ++epoch) {
+            if(telemetry){
+                std::memset(telemetryCounters.mapped,0xa5,64);std::memset(telemetryCounters.mapped,0,8);
+                std::memset(telemetryRing.mapped,0xa5,telemetryRingWords*4);
+            }
             check(vkResetCommandPool(f.device,commands,0));
             VkCommandBufferBeginInfo begin{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO}; check(vkBeginCommandBuffer(command,&begin));
             auto copy = [&](const Targets& target,unsigned eye,unsigned slot) {
@@ -322,10 +339,10 @@ int main(int argc,char** argv) try {
                 part(target.eye(eye).depth.handle,VK_IMAGE_ASPECT_STENCIL_BIT,plane*5);
             };
             auto render = [&](const Targets& target,unsigned eye,VkPipeline selected,unsigned set,unsigned slot,
-                              unsigned firstItem = 0,unsigned itemCount = 0,bool continuation = false,bool readback = true) {
+                              unsigned firstItem = 0,unsigned itemCount = 0,bool continuation = false,bool readback = true,bool fresh = false) {
                 stereo::Loads loads;
                 if (continuation) { loads.colors.fill(VK_ATTACHMENT_LOAD_OP_LOAD); loads.depth = loads.stencil = VK_ATTACHMENT_LOAD_OP_LOAD; }
-                target.begin(command,eye,(epoch || continuation) ? stereo::PreviousUse::transferSource : stereo::PreviousUse::discarded,loads);
+                target.begin(command,eye,((epoch || continuation) && !fresh) ? stereo::PreviousUse::transferSource : stereo::PreviousUse::discarded,loads);
                 vkCmdBindPipeline(command,VK_PIPELINE_BIND_POINT_GRAPHICS,selected);
                 vkCmdBindDescriptorSets(command,VK_PIPELINE_BIND_POINT_GRAPHICS,layout,3,1,&sets[set],0,nullptr);
                 VkViewport viewport{0,0,float(width),float(height),0,1}; VkRect2D scissor{{0,0},{width,height}};
@@ -445,11 +462,19 @@ int main(int argc,char** argv) try {
             if (!recorded && !splitThisCase) { render(*eyes,0,eyePipeline[0],0,1); render(*eyes,1,eyePipeline[1],0,2); }
             render(*reference,0,originalPipeline,1,3); render(*reference,1,originalPipeline,2,4);
             copy(*application,0,5);
-            VkMemoryBarrier host{VK_STRUCTURE_TYPE_MEMORY_BARRIER}; host.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT; host.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
-            vkCmdPipelineBarrier(command,VK_PIPELINE_STAGE_TRANSFER_BIT,VK_PIPELINE_STAGE_HOST_BIT,0,1,&host,0,nullptr,0,nullptr);
+            VkMemoryBarrier host{VK_STRUCTURE_TYPE_MEMORY_BARRIER}; host.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT|(telemetry?VK_ACCESS_SHADER_WRITE_BIT:0); host.dstAccessMask = VK_ACCESS_HOST_READ_BIT;
+            vkCmdPipelineBarrier(command,VK_PIPELINE_STAGE_TRANSFER_BIT|(telemetry?VK_PIPELINE_STAGE_VERTEX_SHADER_BIT:0),VK_PIPELINE_STAGE_HOST_BIT,0,1,&host,0,nullptr,0,nullptr);
             check(vkEndCommandBuffer(command));
             VkSubmitInfo submit{VK_STRUCTURE_TYPE_SUBMIT_INFO}; submit.commandBufferCount = 1; submit.pCommandBuffers = &command;
             check(vkQueueSubmit(f.queue,1,&submit,fence)); check(vkWaitForFences(f.device,1,&fence,VK_TRUE,30'000'000'000ull)); check(vkResetFences(f.device,1,&fence));
+            if(telemetry){
+                const auto* counters=static_cast<const uint32_t*>(telemetryCounters.mapped);
+                expect(counters[0]==0 && counters[1]==0,"Private replay wrote diagnostic counters");
+                for(unsigned k=2;k<16;++k)expect(counters[k]==0xa5a5a5a5u,"Private replay damaged counter guards");
+                const auto* ring=static_cast<const uint32_t*>(telemetryRing.mapped);
+                for(unsigned k=0;k<telemetryRingWords;++k)expect(ring[k]==0xa5a5a5a5u,"Private replay wrote diagnostic samples");
+                telemetryProtectedBytes+=64+telemetryRingWords*4;
+            }
             if (buffered) {
                 const auto* projection = static_cast<const uint8_t*>(uniforms[2][0].mapped); const auto* view = static_cast<const uint8_t*>(uniforms[2][1].mapped);
                 std::array<uint32_t,4> expected{word(projection+72*16),word(projection+73*16+4),word(view+56*16+12),word(view+58*16+8)};
@@ -535,6 +560,23 @@ int main(int argc,char** argv) try {
                     expect(bool(output),"Could not export the GPU preview");
                 }
             }
+            if(telemetry && caseIndex==cases.size()-1 && epoch==1){
+                // An independent, intentionally enabled helper must write to
+                // these same addresses. No default-zero or dead-buffer false pass.
+                auto controlTarget=Targets::create(f.device,vkGetDeviceProcAddr,f.memory,config,test.states);
+                check(vkResetCommandPool(f.device,commands,0));check(vkBeginCommandBuffer(command,&begin));
+                render(*controlTarget,0,telemetryPositivePipeline,0,0,0,1,false,false,true);
+                VkMemoryBarrier visible{VK_STRUCTURE_TYPE_MEMORY_BARRIER};visible.srcAccessMask=VK_ACCESS_SHADER_WRITE_BIT;visible.dstAccessMask=VK_ACCESS_HOST_READ_BIT;
+                vkCmdPipelineBarrier(command,VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,VK_PIPELINE_STAGE_HOST_BIT,0,1,&visible,0,nullptr,0,nullptr);
+                check(vkEndCommandBuffer(command));check(vkQueueSubmit(f.queue,1,&submit,fence));
+                check(vkWaitForFences(f.device,1,&fence,VK_TRUE,30'000'000'000ull));check(vkResetFences(f.device,1,&fence));
+                const auto* counters=static_cast<const uint32_t*>(telemetryCounters.mapped);
+                expect(counters[0]==48 && counters[1]==1,"Enabled helper did not produce the expected telemetry sample");
+                for(unsigned k=2;k<16;++k)expect(counters[k]==0xa5a5a5a5u,"Enabled helper damaged counter guards");
+                const auto* ring=static_cast<const uint32_t*>(telemetryRing.mapped);
+                for(unsigned k=0;k<telemetryRingWords;++k)telemetryPositiveWrites+=ring[k]!=0xa5a5a5a5u;
+                expect(telemetryPositiveWrites>0,"Enabled telemetry ring did not change");
+            }
             std::cout << "CASE " << test.name << " epoch=" << epoch << " reference=pass isolation=pass\n";
         }
         if (!variants && !libraryLease) for (auto p : eyePipeline) vkDestroyPipeline(f.device,p,nullptr);
@@ -547,6 +589,7 @@ int main(int argc,char** argv) try {
     vkDestroyPipeline(f.device,originalPipeline,nullptr);
     if (buffered || extended) vkDestroyPipeline(f.device,bufferOriginalPipeline,nullptr);
     if (extended) vkDestroyPipeline(f.device,witnessPipeline,nullptr);
+    if(telemetry)vkDestroyPipeline(f.device,telemetryPositivePipeline,nullptr);
     if (buffered) { vkDestroyPipeline(f.device,computePipeline,nullptr); vkDestroyShaderModule(f.device,computeShader,nullptr); }
     for (auto s : {vertex,instrumented,fragment}) vkDestroyShaderModule(f.device,s,nullptr);
     vkDestroyDescriptorPool(f.device,pool,nullptr); vkDestroyPipelineLayout(f.device,layout,nullptr);
@@ -556,6 +599,7 @@ int main(int argc,char** argv) try {
     for (auto& set : uniforms) for (auto& b : set) release(b);
     release(staging); release(indices);
     if (extended) release(vertexInput);
+    if(telemetry){release(telemetryCounters);release(telemetryRing);}
     if (buffered) { release(descriptorStorage); release(computeOutput); }
     vkDestroyDevice(f.device,nullptr); f.device = VK_NULL_HANDLE; vkDestroyInstance(f.instance,nullptr); f.instance = VK_NULL_HANDLE;
     std::cout << std::setprecision(10) << "{\"stereo_mrt_fixture_passed\":" << ((negative || negativeCompute) ? "false" : "true") << ",\"negative_sync_control\":" << (negative ? "true" : "false")
@@ -580,7 +624,10 @@ int main(int argc,char** argv) try {
         << ",\"complete_static_state_contract_verified\":" << (staticState ? "true" : "false")
         << ",\"static_bind_overwrites_dynamic_values_verified\":" << (staticState ? "true" : "false")
         << ",\"following_draw_depth_write_disabled_verified\":" << (extended ? "true" : "false")
-        << ",\"frozen_scene_cases\":4,\"epochs_per_case\":2,\"eye_renderings\":16,\"submissions\":8,"
+        << ",\"replay_telemetry_disabled_verified\":" << (telemetry?"true":"false")
+        << ",\"telemetry_buffers_unchanged_bytes\":" << telemetryProtectedBytes
+        << ",\"enabled_telemetry_positive_control_words_written\":" << telemetryPositiveWrites
+        << ",\"frozen_scene_cases\":4,\"epochs_per_case\":2,\"eye_renderings\":16,\"submissions\":" << (telemetry?9:8) << ","
         << "\"color_reference_different_bytes\":0,\"color_reference_compared_bytes\":" << result.colorBytes << ",\"depth_reference_compared_texels\":" << result.depthTexels
         << ",\"max_normalized_depth_difference\":" << result.maxDepthError << ",\"stencil_reference_different_bytes\":0,\"stencil_reference_compared_bytes\":" << result.stencilBytes
         << ",\"original_targets_preserved_defined_bytes\":" << result.isolatedBytes << ",\"disparity_pixels_depth_2\":" << result.disparity[0] << ",\"disparity_pixels_depth_4\":" << result.disparity[1]

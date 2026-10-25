@@ -10,6 +10,12 @@ répond pas à cet objectif.
 
 ## État du projet
 
+Les [variantes privées neutralisent maintenant la télémétrie du helper](docs/REPLAY_SPECIALIZATION.md)
+par leurs constantes de spécialisation. Les compteurs et le ring restent intacts
+pendant la reprise synthétique, même si la création source fournit des adresses
+actives ; un contrôle séparé écrit bien aux mêmes adresses. Cela ne remplace pas
+l'audit des effets du shader complet et ne produit pas encore d'images de Diablo.
+
 Le [contrat statique explicite](docs/STATIC_STATE.md) permet de reprendre un
 pipeline dont la liste dynamique complète est vide, avec restauration des
 états. Les contrôles GPU sans déclarations parasites passent. Un contrôle

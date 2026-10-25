@@ -128,7 +128,7 @@ int main()try{
     {Source s;s.entry.offset=8;rejects([&]{s.capture();});}
     {Source s;s.entry.constantID=4;auto r=s.capture();rejects([&]{build(*r);});expect(modules.empty() && pipelines.empty(),"Specialization failure leaked");}
     {Source s;s.vertexCode=shader(true);uint64_t old=0x4000;VkSpecializationMapEntry e{4,0,8};VkSpecializationInfo spec{1,&e,8,&old};s.stages[0].pSpecializationInfo=&spec;
-        auto r=s.capture();verify=[](const auto& c,unsigned eye){auto p=c.pStages[0].pSpecializationInfo;VkDeviceAddress value=0;std::memcpy(&value,static_cast<const char*>(p->pData)+p->pMapEntries[0].offset,8);expect(p->mapEntryCount==1 && p->pMapEntries[0].constantID==4 && value==addresses[eye],"Existing SpecId 4 not replaced exactly once");};auto v=build(*r);verify={};}
+        auto r=s.capture();verify=[](const auto& c,unsigned eye){auto p=c.pStages[0].pSpecializationInfo;unsigned eyes=0;for(unsigned k=0;k<p->mapEntryCount;++k)if(p->pMapEntries[k].constantID==4){VkDeviceAddress value=0;std::memcpy(&value,static_cast<const char*>(p->pData)+p->pMapEntries[k].offset,8);expect(value==addresses[eye],"Existing eye address not replaced");++eyes;}expect(p->mapEntryCount==4 && eyes==1,"Existing SpecId 4 not replaced exactly once");};auto v=build(*r);verify={};}
     {Source s;s.vertexCode.insert(s.vertexCode.end(),{4u<<16|71,2,1,4});rejects([&]{s.capture();});}
     {Source s;s.vi.vertexAttributeDescriptionCount=65;rejects([&]{s.capture();});}
     {Source s;s.rs.pNext=&s.dy;rejects([&]{s.capture();});}

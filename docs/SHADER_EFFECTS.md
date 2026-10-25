@@ -45,6 +45,10 @@ Le helper stéréo contient lui-même une télémétrie par adresse GPU. Le cont
 la retrouve malgré ses adresses de spécialisation nulles par défaut. Un futur
 audit de variantes devra examiner **le shader transformé et ses spécialisations**,
 pas seulement le shader d'origine ; le présent outil ne réduit pas ces branches.
+Les [variantes privées](REPLAY_SPECIALIZATION.md) forcent maintenant les
+constantes 1/2/3 à 0/0/1. Les contrôles GPU valident l'absence d'écriture dans
+les buffers de télémétrie, sans transformer ce recensement en preuve d'absence
+de tout effet externe du shader complet.
 
 ## Utilisation privée
 

@@ -30,10 +30,13 @@ VKAPI_ATTR VkResult VKAPI_CALL originalCreate(VkDevice,VkPipelineCache cache,uin
 VKAPI_ATTR VkResult VKAPI_CALL privateCreate(VkDevice,VkPipelineCache cache,uint32_t n,const VkGraphicsPipelineCreateInfo* info,const VkAllocationCallbacks* allocator,VkPipeline* out) {
     require(n==2 && !cache && !allocator,"Private creation reused application outputs");++privateCreates;
     for (unsigned i=0;i<2;++i) {
-        require(info[i].pStages[0].pSpecializationInfo && info[i].pStages[0].pSpecializationInfo->mapEntryCount==1,"Private eye specialization missing");
-        const auto& spec=*info[i].pStages[0].pSpecializationInfo;uint64_t address=0;
-        std::memcpy(&address,static_cast<const uint8_t*>(spec.pData)+spec.pMapEntries[0].offset,8);
-        require(spec.pMapEntries[0].constantID==4 && address==(i?0x2000u:0x1000u),"Private eye specialization invalid");
+        require(info[i].pStages[0].pSpecializationInfo && info[i].pStages[0].pSpecializationInfo->mapEntryCount==4,"Private replay specialization missing");
+        const auto& spec=*info[i].pStages[0].pSpecializationInfo;unsigned checked=0;
+        for(uint32_t k=0;k<spec.mapEntryCount;++k){auto e=spec.pMapEntries[k];uint64_t v=0;require(e.constantID>=1 && e.constantID<=4 && e.size==(e.constantID==3?4u:8u),"Private ABI type changed");
+            std::memcpy(&v,static_cast<const uint8_t*>(spec.pData)+e.offset,e.size);
+            require(v==(e.constantID==4?(i?0x2000u:0x1000u):e.constantID==3?1u:0u),"Private replay telemetry not disabled or eye invalid");checked|=1u<<e.constantID;
+        }
+        require(checked==30,"Private replay constants duplicated");
         out[i]=(i==0 || privateResult==VK_SUCCESS)?object<VkPipeline>(nextPrivate++):VK_NULL_HANDLE;
         if (out[i]) privatePipelines.insert(out[i]);
     }
