@@ -58,7 +58,7 @@ def validate(args):
                 d,b=sequential_capture.read_image(metadata);reference=(directory/('left-reference.pixels' if d['eye']==0 else 'right-reference.pixels')).read_bytes()
                 if b!=reference:raise ValueError('Captured pixels differ from original rendered reference')
                 registry=d.get('pipeline_registry_at_export',{})
-                if registry.get('maximum_live_nodes')!=4096 or registry.get('budget_rejections')!=0:raise ValueError('Pipeline counters missing from image export')
+                if registry.get('maximum_live_nodes')!=8192 or registry.get('budget_rejections')!=0:raise ValueError('Pipeline counters missing from image export')
                 reference_bytes+=len(b)
                 for channel in (1,2):
                     xs=[i//4%d['width'] for i in range(0,len(b),4) if b[i+channel]>200]
@@ -74,7 +74,7 @@ def validate(args):
         if not trace['trace_loaded'] or any(not d['clean_destroy'] for t in trace['process_traces'] for d in t['devices']):raise ValueError('Loader integration/clean teardown not verified')
         if enabled:
             stats=[d['paired_pipelines'] for t in trace['process_traces'] for d in t['devices'] if 'paired_pipelines' in d]
-            if not stats or any(s.get('mode')!='sequential_original_render' or s.get('maximum_live_nodes')!=4096 or s.get('maximum_creation_attempts')!=4096 or s.get('budget_rejections')!=0 for s in stats):raise ValueError('Explicit sequential pipeline quota not verified')
+            if not stats or any(s.get('mode')!='sequential_original_render' or s.get('maximum_live_nodes')!=8192 or s.get('maximum_creation_attempts')!=8192 or s.get('budget_rejections')!=0 for s in stats):raise ValueError('Explicit sequential pipeline quota not verified')
             entry['sequential_quota_verified']=True
         results.append(entry);print(name+': passed',flush=True)
     report={'purpose':'sequential_presentation_capture','schema_version':1,'layer_sha256':probe.digest(args.layer/vulkan_trace.LIBRARY),

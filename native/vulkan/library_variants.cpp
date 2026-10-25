@@ -75,7 +75,7 @@ struct LibraryVariants::Impl {
     LibraryResult result(LibraryResult r){std::lock_guard<std::mutex> lock(mutex);if(r!=LibraryResult::registered)++counts.rejected;if(r==LibraryResult::driverFailure)++counts.driverFailures;if(r==LibraryResult::compileRequired)++counts.compileRequired;if(r==LibraryResult::budget)++counts.budgetRejections;return r;}
 };
 LibraryVariants::LibraryVariants(VkDevice device,PFN_vkGetDeviceProcAddr get,const std::array<VkDeviceAddress,2>& addresses,MarkedStage marked,uint32_t limit,uint32_t maximumCreations){
-    require(device && get && marked && limit && limit<=4096 && maximumCreations && maximumCreations<=4096 && addresses[0] && addresses[1] && addresses[0]!=addresses[1] && addresses[0]%16==0 && addresses[1]%16==0);
+    require(device && get && marked && limit && limit<=maximumSupportedNodes && maximumCreations && maximumCreations<=maximumSupportedNodes && addresses[0] && addresses[1] && addresses[0]!=addresses[1] && addresses[0]%16==0 && addresses[1]%16==0);
     auto p=std::make_unique<Impl>();p->dispatch=std::make_shared<Dispatch>();p->dispatch->device=device;p->dispatch->limit=limit;p->dispatch->maximumCreations=maximumCreations;p->addresses=addresses;p->marked=std::move(marked);
     p->dispatch->create=reinterpret_cast<PFN_vkCreateGraphicsPipelines>(get(device,"vkCreateGraphicsPipelines"));p->dispatch->destroy=reinterpret_cast<PFN_vkDestroyPipeline>(get(device,"vkDestroyPipeline"));require(p->dispatch->create && p->dispatch->destroy);impl=std::move(p);
 }

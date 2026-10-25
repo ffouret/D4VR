@@ -148,15 +148,29 @@ int main()try{
         expect(registry.observe(h<VkPipeline>(2),d.ci)==LibraryResult::budget && registry.stats().creationAttempts==1 && owned.empty(),"Source destruction reset cumulative compile budget");
         expect(registry.stats().budgetRejections==1,"Cumulative compile budget refusal was not recorded");
     }
-    {
-        LibraryVariants registry(device,get,addresses,marked,4096,4096);Description d(15,false);
-        for(unsigned i=0;i<4096;++i)expect(registry.observe(h<VkPipeline>(100000+i),d.ci)==LibraryResult::registered,"Maximum bounded quota rejected an in-budget node");
+    for(unsigned limit:{4096u,LibraryVariants::maximumSupportedNodes}){
+        LibraryVariants registry(device,get,addresses,marked,limit,limit);Description d(15,false);
+        for(unsigned i=0;i<limit;++i)expect(registry.observe(h<VkPipeline>(100000+i),d.ci)==LibraryResult::registered,"Maximum bounded quota rejected an in-budget node");
         auto lease=registry.lookup(h<VkPipeline>(100000));
-        expect(registry.stats().liveNodes==4096 && owned.size()==8192,"Maximum bounded quota lost private graphs");
-        expect(registry.observe(h<VkPipeline>(104096),d.ci)==LibraryResult::budget && registry.stats().budgetRejections==1,"Maximum bounded quota allowed an extra private create");
-        for(unsigned i=0;i<4096;++i)registry.remove(h<VkPipeline>(100000+i));
+        expect(registry.stats().liveNodes==limit && registry.stats().creationAttempts==limit && owned.size()==2*limit,"Maximum bounded quota lost private graphs");
+        auto before=creates;
+        expect(registry.observe(h<VkPipeline>(100000+limit),d.ci)==LibraryResult::budget && registry.stats().budgetRejections==1 && creates==before,"Maximum bounded quota allowed an extra private create");
+        for(unsigned i=0;i<limit;++i)registry.remove(h<VkPipeline>(100000+i));
         expect(registry.stats().liveNodes==1 && owned.size()==2,"Maximum quota cleanup ignored outstanding lease");
         lease.reset();expect(owned.empty(),"Maximum quota private pipelines leaked");
+        expect(registry.observe(h<VkPipeline>(200000),d.ci)==LibraryResult::budget && registry.stats().creationAttempts==limit && owned.empty() && creates==before,"Released nodes reset the maximum cumulative creation budget");
     }
+    for(auto limits:{std::array<unsigned,2>{0,1},{1,0},{8193,1},{1,8193}}){
+        bool rejected=false;
+        try{LibraryVariants registry(device,get,addresses,marked,limits[0],limits[1]);}
+        catch(const std::invalid_argument&){rejected=true;}
+        expect(rejected,"Invalid or unbounded registry quota accepted");
+    }
+    {
+        LibraryVariants registry(device,get,addresses,marked);Description d(15,false);
+        for(unsigned i=0;i<512;++i)expect(registry.observe(h<VkPipeline>(300000+i),d.ci)==LibraryResult::registered,"Default live quota changed");
+        expect(registry.observe(h<VkPipeline>(300512),d.ci)==LibraryResult::budget,"Default live quota was enlarged");
+    }
+    expect(owned.empty(),"Default quota cleanup leaked");
     std::cout<<"GPL variants: subset ownership, synchronous stage/identifier specialization, per-eye links, leases, reuse, quotas, feedback isolation, partial failures and cancellation: passed\n";return 0;
 }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}

@@ -40,6 +40,7 @@ class LibraryVariants {
     struct Impl;
     std::unique_ptr<Impl> impl;
 public:
+    static constexpr uint32_t maximumSupportedNodes=8192;
     using Lease=std::shared_ptr<const LibraryNode>;
     using MarkedStage=std::function<bool(const VkPipelineShaderStageCreateInfo&)>;
     LibraryVariants(VkDevice,PFN_vkGetDeviceProcAddr,const std::array<VkDeviceAddress,2>&,

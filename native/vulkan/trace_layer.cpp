@@ -497,7 +497,7 @@ VKAPI_ATTR VkResult VKAPI_CALL d4CreateDevice(VkPhysicalDevice physical, const V
             auto classifier = d->pairEyes[0].get();
             // The sequential game trial exhausted the diagnostic quota. Keep
             // the larger, still bounded quota exclusive to this explicit mode.
-            if(auto directory=std::getenv("D4VR_SEQUENTIAL_CAPTURE_DIR");directory && *directory)d->pairLimit=4096;
+            if(auto directory=std::getenv("D4VR_SEQUENTIAL_CAPTURE_DIR");directory && *directory)d->pairLimit=d4vr::pipeline::LibraryVariants::maximumSupportedNodes;
             d->pairs = std::make_unique<d4vr::pipeline::LibraryVariants>(*result,get,
                 std::array<VkDeviceAddress,2>{d->pairEyes[0]->address(),d->pairEyes[1]->address()},
                 [classifier](const auto& stage) { return classifier->marked(stage); },d->pairLimit,d->pairLimit);
