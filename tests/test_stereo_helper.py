@@ -62,3 +62,34 @@ class StereoHelperTests(unittest.TestCase):
             p=Path(root)/'missing'
             with self.assertRaisesRegex(ValueError,'requires stereo'):
                 build(p,p,p,p,3,0,72,helper_no_telemetry=True)
+
+class ProjectionOnlyHelperTests(unittest.TestCase):
+    def module(self,extra=()):
+        m=StereoHelperTests().module()
+        m.header[3]=200
+        m.instructions=[*m.instructions[:-2],(19,[7]),(22,[21,32]),(23,[22,21,4]),(32,[23,7,22]),
+            (5,[10,*string_words('d4vr_stereo(')]),
+            *[(55,[4 if k==0 else 23,100+k]) for k in range(10)],*extra,(253,[]),(56,[])]
+        return m
+    def test_unused_object_arguments_are_proven_separately(self):
+        from stereo_helper import verify_projection_only
+        r=verify_projection_only(self.module().binary())
+        self.assertTrue(r['projection_only_abi_verified']);self.assertEqual(r['unused_object_parameter_indices'],[5,6,7,8])
+        self.assertFalse(r['replay_allowed'])
+    def test_direct_reads_and_pointer_escape_are_rejected(self):
+        from stereo_helper import verify_projection_only
+        for extra in ([(61,[22,50,105])],[(57,[7,50,8,106])],[(62,[107,50])]):
+            with self.subTest(extra=extra),self.assertRaisesRegex(ValueError,'Object-matrix parameter'):
+                verify_projection_only(self.module(extra).binary())
+    def test_wrong_parameter_count_or_type_is_rejected(self):
+        from stereo_helper import verify_projection_only
+        for kind in ('count','uint','vector'):
+            m=self.module()
+            if kind=='count':m.instructions.remove((55,[23,108]))
+            if kind=='uint':next(a for o,a in m.instructions if o==55 and a[1]==100)[0]=23
+            if kind=='vector':next(a for o,a in m.instructions if o==55 and a[1]==101)[0]=4
+            with self.subTest(kind=kind),self.assertRaises(ValueError):verify_projection_only(m.binary())
+    def test_projection_mode_requires_both_opt_ins_before_reading_files(self):
+        for stereo,quiet in ((False,False),(True,False),(False,True)):
+            with self.subTest(stereo=stereo,quiet=quiet),self.assertRaisesRegex(ValueError,'requires stereo and telemetry-free'):
+                p=Path('missing');build(p,p,p,p,3,0,72,stereo=stereo,helper_no_telemetry=quiet,projection_only_helper=True)

@@ -74,6 +74,10 @@ transformés par l'injecteur existant avec le helper sans télémétrie ; leurs
 modules transformés passent également les deux contrôles. Six autres vertex
 sont refusés, faute d'un des buffers uniformes attendus. Aucune liaison ni
 matrice n'est devinée pour contourner ce refus.
+La [construction ultérieure avec la seule projection](PROJECTION_ONLY_HELPER.md)
+prouve que les arguments secondaires sont inutilisés dans le helper, puis
+supprime cette dépendance ajoutée. Elle couvre les dix vertex, sans modifier
+les résultats de la preuve historique liée ici.
 
 Les ensembles se recouvrent : les nombres des relevés ne s'additionnent pas.
 Il s'agit des octets des anciens candidats du catalogue, pas d'une preuve

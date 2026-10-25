@@ -10,10 +10,16 @@ répond pas à cet objectif.
 
 ## État du projet
 
+Le [helper peut maintenant être construit avec la seule projection](docs/PROJECTION_ONLY_HELPER.md),
+après preuve que ses quatre arguments de matrice d'objet sont inutilisés. Les
+dix vertex candidats, dont six auparavant refusés, passent la transformation et
+le contrôle statique d'écritures. Les références GPU synthétiques restent
+exactes ; aucun dessin du jeu n'est encore repris.
+
 Un [contrat d'écritures du module complet](docs/SHADER_WRITE_CONTRACT.md) vérifie
 maintenant les instructions de toutes les fonctions après validation SPIR-V.
-Les dix-sept anciens candidats et quatre vertex transformés satisfont ce
-prérequis statique. Six autres vertex sont refusés par l'injecteur. Les sorties,
+Les dix-sept anciens candidats et les vertex transformés satisfont ce
+prérequis statique. Les sorties,
 ressources, alias et dépendances restent à auditer avant toute reprise du jeu.
 
 Le [helper stéréo peut maintenant être compilé sans télémétrie](docs/STEREO_HELPER.md).

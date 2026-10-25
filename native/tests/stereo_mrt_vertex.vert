@@ -3,7 +3,11 @@
 #extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
 layout(location=0) in vec2 vertex_position;
 layout(set=3,binding=0,std140) uniform FixtureCamera { vec4 rows[113]; } camera;
+#ifdef D4VR_SINGLE_CAMERA_BUFFER
+#define modelview camera
+#else
 layout(set=3,binding=1,std140) uniform FixtureModelView { vec4 rows[80]; } modelview;
+#endif
 layout(push_constant) uniform Item { vec4 center_depth_scale; vec4 color; } item;
 layout(location=0) flat out vec4 tint;
 layout(buffer_reference,std430) readonly buffer OptionalData { float x; };

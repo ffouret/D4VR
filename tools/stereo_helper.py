@@ -15,6 +15,7 @@ VALUE_OPS = {80,120,124,127,129,131,133,136,148,167,170,171,172,
              176,178,186,188,190,199}
 TYPED = {12,41,42,43,44,50,52,54,55,57,59,61,65,245} | VALUE_OPS
 MARKER = 'D4VR_HELPER_NO_TELEMETRY_1'
+PROJECTION_MARKER = 'D4VR_HELPER_PROJECTION_ONLY_1'
 
 
 def verify(data: bytes) -> dict:
@@ -84,3 +85,38 @@ def verify(data: bytes) -> dict:
             'local_or_output_store_instructions':writes,'specialization_ids':[4],
             'telemetry_instructions_absent':True,
             'transformed_module_external_writes_excluded':False,'replay_allowed':False}
+
+
+def verify_projection_only(data: bytes) -> dict:
+    """Require the exact ABI and no use of object arguments in the exported body.
+
+    Run spirv-val first. The word scan is conservative: a literal collision can
+    cause refusal, never approval of a parameter use. No reachability shortcut.
+    """
+    from spirv_probe import Module,literal
+    result=verify(data);module=Module(data)
+    names={a[0]:literal(a[1:]) for o,a in module.instructions if o==5}
+    targets=[i for i,n in names.items() if n.startswith('d4vr_stereo(')]
+    if len(targets)!=1:raise ValueError('Expected one named stereo helper')
+    types={a[0]:(o,a[1:]) for o,a in module.instructions if 19<=o<=39 and o!=39}
+    body=[];parameters=[];active=False
+    for op,a in module.instructions:
+        if op==54:active=a[1]==targets[0]
+        if active:
+            if op==55:parameters.append(a)
+            else:body.append((op,a))
+        if op==56:active=False
+    if len(parameters)!=10:raise ValueError('Expected stereo ABI 1 with ten parameters')
+    for index,(pointer,_) in enumerate(parameters):
+        definition=types.get(pointer)
+        if not definition or definition[0]!=32 or definition[1][0]!=7:
+            raise ValueError('Stereo parameters must be Function pointers')
+        value=types.get(definition[1][1])
+        if index==0:
+            if value!=(21,[32,0]):raise ValueError('Stereo vertex ID must be uint32')
+        elif not value or value[0]!=23 or value[1][1]!=4 or types.get(value[1][0])!=(22,[32]):
+            raise ValueError('Stereo vector parameters must be float4')
+    ignored={a[1] for a in parameters[5:9]}
+    if any(ignored.intersection(a) for _,a in body):
+        raise ValueError('Object-matrix parameter is used by stereo helper')
+    return {**result,'projection_only_abi_verified':True,'unused_object_parameter_indices':[5,6,7,8]}

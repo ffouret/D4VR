@@ -10,6 +10,7 @@ import argparse
 from pathlib import Path
 import struct
 import subprocess
+import tempfile
 
 
 def string_words(value: str) -> list[int]:
@@ -70,7 +71,8 @@ def helper_library(data: bytes, geometry: bool = False, stereo: bool = False) ->
     return module.binary()
 
 
-def instrument(data: bytes, descriptor_set: int, binding: int, first_row: int, secondary_binding: int = 1, secondary_row: int = 56, geometry: bool = False, stereo: bool = False) -> bytes:
+def instrument(data: bytes, descriptor_set: int, binding: int, first_row: int, secondary_binding: int = 1, secondary_row: int = 56, geometry: bool = False, stereo: bool = False, projection_only_helper: bool = False) -> bytes:
+    if projection_only_helper and not stereo:raise ValueError('Projection-only helper requires stereo mode')
     geometry = geometry or stereo
     module = Module(data)
     entries = [args for op, args in module.instructions if op == 15]
@@ -125,9 +127,10 @@ def instrument(data: bytes, descriptor_set: int, binding: int, first_row: int, s
         return target, vector_type
 
     target, vector_type = uniform_source(descriptor_set, binding, first_row)
-    second_target, second_vector_type = uniform_source(descriptor_set, secondary_binding, secondary_row)
-    if vector_type != second_vector_type:
-        raise ValueError("Both observed buffers must use the same float4 type")
+    if not projection_only_helper:
+        second_target, second_vector_type = uniform_source(descriptor_set, secondary_binding, secondary_row)
+        if vector_type != second_vector_type:
+            raise ValueError("Both observed buffers must use the same float4 type")
     declarations = []
 
     def type_id(opcode, arguments):
@@ -191,9 +194,13 @@ def instrument(data: bytes, descriptor_set: int, binding: int, first_row: int, s
         added_decorations.append((71, [vertex, 11, 42]))
         entries[0].append(vertex)
     zero = constant(0)
+    if projection_only_helper:
+        unused_vector=module.allocate()
+        declarations.append((46,[vector_type,unused_vector]))  # Defined zero, never a guessed matrix.
     position_index = constant(position_member) if position_member is not None else None
     row_indices = [(target, constant(first_row + i)) for i in range(4)]
-    row_indices += [(second_target, constant(secondary_row + i)) for i in range(4)]
+    if not projection_only_helper:
+        row_indices += [(second_target, constant(secondary_row + i)) for i in range(4)]
     imported = module.allocate()
     parameters = [module.allocate() for _ in range(vector_arguments + 1)]
     added_decorations.append((71, [imported, 41, *string_words("D4VRStereo_v1" if stereo else "D4VRGeometry_v1" if geometry else "D4VRProbe_v1"), 1]))
@@ -219,6 +226,8 @@ def instrument(data: bytes, descriptor_set: int, binding: int, first_row: int, s
             code.append((65, [uniform_vector_pointer, pointer, buffer, zero, row]))
             code.append((61, [vector_type, value, pointer]))
             code.append((62, [locals_[i + 1], value]))
+        if projection_only_helper:
+            code += [(62,[local,unused_vector]) for local in locals_[5:9]]
         if geometry:
             position_pointer = position_output
             if position_index is not None:
@@ -258,20 +267,26 @@ def instrument(data: bytes, descriptor_set: int, binding: int, first_row: int, s
     return module.binary()
 
 
-def build(original: Path, helper: Path, output: Path, tools: Path, descriptor_set: int, binding: int, first_row: int, secondary_binding: int = 1, secondary_row: int = 56, geometry: bool = False, stereo: bool = False, helper_no_telemetry: bool = False):
+def build(original: Path, helper: Path, output: Path, tools: Path, descriptor_set: int, binding: int, first_row: int, secondary_binding: int = 1, secondary_row: int = 56, geometry: bool = False, stereo: bool = False, helper_no_telemetry: bool = False, projection_only_helper: bool = False):
+    if projection_only_helper and not (stereo and helper_no_telemetry):
+        raise ValueError('Projection-only helper requires stereo and telemetry-free validation')
     if helper_no_telemetry:
         if not stereo:raise ValueError('Telemetry-free helper requires stereo mode')
-        from stereo_helper import verify
-        subprocess.run([str(tools / 'spirv-val'), '--target-env', 'vulkan1.2', str(helper)], check=True, capture_output=True)
-        verify(helper.read_bytes())
+    helper_data=helper.read_bytes()
     output.parent.mkdir(parents=True, exist_ok=True)
     scratch = output.parent / "intermediate" / output.stem
     scratch.mkdir(parents=True, exist_ok=True)
     library = scratch / "helper.spv"
     caller = scratch / "caller.spv"
     linked = scratch / "linked.spv"
-    library.write_bytes(helper_library(helper.read_bytes(), geometry, stereo))
-    caller.write_bytes(instrument(original.read_bytes(), descriptor_set, binding, first_row, secondary_binding, secondary_row, geometry, stereo))
+    if helper_no_telemetry:
+        from stereo_helper import verify,verify_projection_only
+        with tempfile.TemporaryDirectory(prefix='helper-validation-',dir=scratch) as directory:
+            snapshot=Path(directory)/'helper.spv';snapshot.write_bytes(helper_data)
+            subprocess.run([str(tools / 'spirv-val'), '--target-env', 'vulkan1.2', str(snapshot)], check=True, capture_output=True)
+        (verify_projection_only if projection_only_helper else verify)(helper_data)
+    library.write_bytes(helper_library(helper_data, geometry, stereo))
+    caller.write_bytes(instrument(original.read_bytes(), descriptor_set, binding, first_row, secondary_binding, secondary_row, geometry, stereo, projection_only_helper))
     subprocess.run([str(tools / "spirv-link"), "--target-env", "spv1.3", str(caller), str(library), "-o", str(linked)], check=True, capture_output=True)
     subprocess.run([str(tools / "spirv-opt"), "--eliminate-dead-functions", "--eliminate-dead-variables", str(linked), "-o", str(output)], check=True, capture_output=True)
     if stereo:
@@ -281,6 +296,9 @@ def build(original: Path, helper: Path, output: Path, tools: Path, descriptor_se
         if helper_no_telemetry:
             from stereo_helper import MARKER
             module.instructions.insert(index+1, (330, string_words(MARKER)))
+        if projection_only_helper:
+            from stereo_helper import PROJECTION_MARKER
+            module.instructions.insert(index+2, (330, string_words(PROJECTION_MARKER)))
         output.write_bytes(module.binary())
     subprocess.run([str(tools / "spirv-val"), "--target-env", "vulkan1.2", str(output)], check=True, capture_output=True)
     return output
@@ -300,8 +318,9 @@ def main():
     parser.add_argument("--geometry", action="store_true", help="Apply the diagnostic vertex displacement helper")
     parser.add_argument("--stereo", action="store_true", help="Apply the per-eye transform helper controlled by specialization ID 4")
     parser.add_argument("--helper-no-telemetry", action="store_true", help="Require a validated telemetry-free stereo helper; does not audit the original shader")
+    parser.add_argument("--projection-only-helper", action="store_true", help="Omit added model-view buffer reads after proving that the helper's four object parameters are unused")
     args = parser.parse_args()
-    print(build(args.original, args.helper, args.output, args.tools, args.descriptor_set, args.binding, args.first_row, args.secondary_binding, args.secondary_row, args.geometry, args.stereo, args.helper_no_telemetry))
+    print(build(args.original, args.helper, args.output, args.tools, args.descriptor_set, args.binding, args.first_row, args.secondary_binding, args.secondary_row, args.geometry, args.stereo, args.helper_no_telemetry, args.projection_only_helper))
 
 
 if __name__ == "__main__":

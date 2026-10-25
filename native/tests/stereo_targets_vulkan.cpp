@@ -33,7 +33,7 @@ std::vector<uint32_t> readCode(const char* path) {
 
 int main(int argc,char** argv) try {
     if (argc < 4) throw std::runtime_error("Usage: stereo_targets_vulkan original.vert.spv stereo.vert.spv mrt.frag.spv [--negative-sync-control] [--preview-directory path]");
-    bool negative = false,split = false,recorded = false,buffered = false,negativeCompute = false,extended = false,recipes = false,libraries = false,libraryOriginalLive = false,stateDecoys = false,staticState = false,telemetry = false; std::filesystem::path preview,computePath,telemetryControlPath;
+    bool negative = false,split = false,recorded = false,buffered = false,negativeCompute = false,extended = false,recipes = false,libraries = false,libraryOriginalLive = false,stateDecoys = false,staticState = false,telemetry = false,singleCameraBuffer = false; std::filesystem::path preview,computePath,telemetryControlPath;
     for (int k = 4; k < argc; ++k) {
         if (std::string(argv[k]) == "--negative-sync-control") negative = true;
         else if (std::string(argv[k]) == "--split-passes") split = true;
@@ -47,6 +47,7 @@ int main(int argc,char** argv) try {
         else if (std::string(argv[k]) == "--library-state-decoys") stateDecoys = true;
         else if (std::string(argv[k]) == "--static-state") staticState = true;
         else if (std::string(argv[k]) == "--replay-telemetry") telemetry = true;
+        else if (std::string(argv[k]) == "--single-camera-buffer") singleCameraBuffer = true;
         else if (std::string(argv[k]) == "--telemetry-control-shader" && k+1 < argc) telemetryControlPath = argv[++k];
         else if (std::string(argv[k]) == "--compute" && k+1 < argc) computePath = argv[++k];
         else if (std::string(argv[k]) == "--preview-directory" && k+1 < argc) preview = argv[++k];
@@ -166,6 +167,10 @@ int main(int argc,char** argv) try {
         auto p = reinterpret_cast<float*>(static_cast<char*>(uniforms[set][0].mapped)+72*16);
         auto v = reinterpret_cast<float*>(static_cast<char*>(uniforms[set][1].mapped)+56*16);
         for (unsigned k = 0; k < 16; ++k) { p[k] = static_cast<float>(projection[k]); v[k] = static_cast<float>(view[k]); }
+        if(singleCameraBuffer){
+            auto packedView=reinterpret_cast<float*>(static_cast<char*>(uniforms[set][0].mapped)+56*16);
+            std::copy(v,v+16,packedView);
+        }
     };
     const std::vector<VkDynamicState> extendedStates{VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT,VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT,VK_DYNAMIC_STATE_STENCIL_REFERENCE,
         VK_DYNAMIC_STATE_BLEND_CONSTANTS,VK_DYNAMIC_STATE_DEPTH_BOUNDS,VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY,VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE,
@@ -632,6 +637,7 @@ int main(int argc,char** argv) try {
         << ",\"telemetry_buffers_unchanged_bytes\":" << telemetryProtectedBytes
         << ",\"enabled_telemetry_positive_control_words_written\":" << telemetryPositiveWrites
         << ",\"separate_telemetry_control_shader_used\":" << (telemetryControlPath.empty()?"false":"true")
+        << ",\"single_camera_buffer_fixture\":" << (singleCameraBuffer?"true":"false")
         << ",\"frozen_scene_cases\":4,\"epochs_per_case\":2,\"eye_renderings\":16,\"submissions\":" << (telemetry?9:8) << ","
         << "\"color_reference_different_bytes\":0,\"color_reference_compared_bytes\":" << result.colorBytes << ",\"depth_reference_compared_texels\":" << result.depthTexels
         << ",\"max_normalized_depth_difference\":" << result.maxDepthError << ",\"stencil_reference_different_bytes\":0,\"stencil_reference_compared_bytes\":" << result.stencilBytes

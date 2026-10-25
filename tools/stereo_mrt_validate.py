@@ -103,6 +103,8 @@ def run(args) -> dict:
             command.append('--replay-telemetry')
         if args.telemetry_control_shader:
             command += ['--telemetry-control-shader',str(args.telemetry_control_shader.resolve())]
+        if args.single_camera_buffer:
+            command.append('--single-camera-buffer')
         if args.pipeline_recipes:
             command.append('--pipeline-recipes')
         if args.library_pipelines:
@@ -151,6 +153,8 @@ def run(args) -> dict:
                     or proof.get('max_normalized_depth_difference',1) > 4/0xffffff
                     or proof.get('original_targets_preserved_defined_bytes',0) == 0):
                 raise ValueError(f'{name}: stereo target reference/isolation checks did not pass')
+            if proof.get('single_camera_buffer_fixture',False) is not args.single_camera_buffer:
+                raise ValueError(f'{name}: unexpected camera fixture packing')
             if args.split_passes and proof.get('clear_followed_by_load_verified') is not True:
                 raise ValueError(f'{name}: split pass continuation was not verified')
             if args.recorded_replay and (proof.get('recorded_graphics_replay_verified') is not True
@@ -252,6 +256,7 @@ def main() -> int:
     parser.add_argument('--static-state',action='store_true')
     parser.add_argument('--replay-telemetry',action='store_true')
     parser.add_argument('--telemetry-control-shader',type=Path,help='Diagnostic variant used only for the enabled telemetry control')
+    parser.add_argument('--single-camera-buffer',action='store_true',help='Synthetic fixture only: pack view rows56..59 in camera buffer0 as well')
     parser.add_argument('--pipeline-recipes',action='store_true')
     parser.add_argument('--library-pipelines',action='store_true')
     parser.add_argument('--library-original-live',action='store_true')
