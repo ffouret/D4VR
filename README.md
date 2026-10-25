@@ -10,13 +10,16 @@ répond pas à cet objectif.
 
 ## État du projet
 
-La [reprise figée vers SteamVR](docs/FROZEN_REPLAY_XR.md) a maintenant affiché les
-images issues de l'interception : 891 paires avec suivi de tête en dix secondes,
-relief et mouvements confirmés dans le Quest. Cette scène reste synthétique,
-très pixellisée à 256 × 256 par œil, et le contrôle Vulkan signale encore des
-erreurs. Ce premier affichage ne constitue pas un rendu VR de Diablo ni une
-preuve sans erreur de validation. Le mode 1024 × 1024 est maintenant vérifié
-hors casque ; son essai visuel reste à faire.
+La [reprise figée vers SteamVR](docs/FROZEN_REPLAY_XR.md) affiche maintenant les
+images issues de l'interception à 1024 × 1024 par œil : 890 paires suivies en dix
+secondes, image plus nette, relief et mouvements confirmés dans le Quest. Cette
+scène reste synthétique et le contrôle Vulkan signale encore des erreurs dans
+des appels internes à SteamVR. Ce premier affichage ne constitue pas un rendu
+VR de Diablo ni une preuve sans erreur de validation.
+
+Les [premières observations de buffers et de liaisons de ressources](docs/RESOURCE_BINDINGS.md)
+préparent le raccordement aux dessins du jeu. Elles conservent identités et
+bornes observées sans lire les données et sans autoriser de reprise du jeu.
 
 La [preuve d'intégration de la couche Vulkan](docs/LAYER_REPLAY_POC.md) raccorde
 maintenant les commandes d'une application au moteur de reprise : deux passes

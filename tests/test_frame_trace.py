@@ -25,6 +25,38 @@ def sample():
 
 
 class Frames(unittest.TestCase):
+    def test_buffer_observations_preserve_bounds_without_admitting_aliases(self):
+        data=sample();event={'kind':'descriptor_buffers','observed_event_index':0,'operation_count':0,'truncated':False,'pipeline_id':0,'draw_kind':0,
+            'bind_point':0,'first_set':0,'count':1,'layout_identity_captured':False,'indices':[],'offsets':[],
+            'bindings':[{'status':1,'buffer_id':8,'size':4096,'buffer_usage':0,'binding_usage':0,'address_offset':128,'remaining_bytes':3968,'creation_chain_complete':True}]}
+        data['submissions'][0]['commands'][0]['resource_events']=[event]
+        with tempfile.TemporaryDirectory() as directory:
+            p=Path(directory)/'frame.json';p.write_text(json.dumps(data));parsed=frame_trace.read_frame(p);summary=frame_trace.summarize(parsed)
+            self.assertEqual(summary['buffer_address_status_counts'],{'unique_observed_range':1});self.assertFalse(summary['resource_aliases_excluded'])
+            self.assertEqual(summary['observed_descriptor_buffer_ids'],[8])
+            for key,value in [('remaining_bytes',4096),('address_offset',4096),('buffer_id',0),('status',2)]:
+                old=event['bindings'][0][key];event['bindings'][0][key]=value;p.write_text(json.dumps(data))
+                with self.assertRaises(ValueError):frame_trace.read_frame(p)
+                event['bindings'][0][key]=old
+            data['submissions'][0]['result']=-4;self.assertEqual(frame_trace.summarize(data)['observed_descriptor_buffer_ids'],[])
+
+    def test_resource_observation_cannot_claim_contents_or_unbounded_arrays(self):
+        data=sample();event={'kind':'descriptor_offsets','observed_event_index':0,'operation_count':0,'truncated':False,'pipeline_id':0,'draw_kind':0,
+            'bind_point':0,'first_set':0,'count':1,'layout_identity_captured':False,'indices':[0],'offsets':[128],'bindings':[]}
+        data['submissions'][0]['commands'][0]['resource_events']=[event]
+        with tempfile.TemporaryDirectory() as directory:
+            p=Path(directory)/'frame.json'
+            for field in ('descriptor_contents_captured','resource_aliases_excluded'):
+                data[field]=True;p.write_text(json.dumps(data))
+                with self.assertRaises(ValueError):frame_trace.read_frame(p)
+                data[field]=False
+            for key,value in [('observed_event_index',2),('layout_identity_captured',True),('offsets',[128]*33),('indices',[-1])]:
+                old=event[key];event[key]=value;p.write_text(json.dumps(data))
+                with self.assertRaises(ValueError):frame_trace.read_frame(p)
+                event[key]=old
+            data['submissions'][0]['commands'][0]['resource_events']=[event]*2049;p.write_text(json.dumps(data))
+            with self.assertRaises(ValueError):frame_trace.read_frame(p)
+
     def test_pipeline_declarations_are_owned_metadata_not_a_full_state_snapshot(self):
         data=sample();state={'is_library':False,'linked_libraries':False,'own_parts':15,'declarations_complete':True,
             'effective_dynamic_states_known':True,'graphics_state_snapshot_complete':False,

@@ -177,7 +177,9 @@ struct Commands {
     X(CreateGraphicsPipelines) X(CreateComputePipelines) X(DestroyPipeline) \
     X(QueueSubmit) X(QueueSubmit2) X(QueuePresentKHR) \
     X(EndCommandBuffer) X(DeviceWaitIdle) X(CreatePipelineLayout) X(DestroyPipelineLayout) \
-    X(CmdPushConstants) X(CmdSetViewport) X(CmdSetScissor) X(CmdSetStencilReference)
+    X(CmdPushConstants) X(CmdSetViewport) X(CmdSetScissor) X(CmdSetStencilReference) \
+    X(CreateBuffer) X(DestroyBuffer) X(GetBufferDeviceAddress) \
+    X(CmdBindDescriptorBuffersEXT) X(CmdSetDescriptorBufferOffsetsEXT) X(CmdBindDescriptorSets)
 struct Device {
     VkDevice handle{};
     PFN_vkGetDeviceProcAddr get{};
@@ -376,6 +378,7 @@ VKAPI_ATTR VkResult VKAPI_CALL d4CreateDevice(VkPhysicalDevice physical, const V
     D4_ALIAS(CmdDrawIndirectCount) D4_ALIAS(CmdDrawIndexedIndirectCount)
     D4_ALIAS(CmdBeginRenderPass2) D4_ALIAS(CmdBeginRendering) D4_ALIAS(QueueSubmit2)
     D4_ALIAS(CmdEndRenderPass2) D4_ALIAS(CmdEndRendering)
+    D4_ALIAS(GetBufferDeviceAddress)
 #undef D4_ALIAS
     const char* frameEnabled = std::getenv("D4VR_FRAME_TRACE");
     d->frame.enabled = frameEnabled && std::strcmp(frameEnabled, "1") == 0;
@@ -571,6 +574,30 @@ template<class F> void frameCommand(const std::shared_ptr<Device>& d, VkCommandB
     if (!d->frame.enabled) return;
     std::lock_guard<std::mutex> lock(stateMutex);
     auto it = d->commands.find(command); if (it != d->commands.end()) fn(d->frame, it->second.frame);
+}
+VKAPI_ATTR void VKAPI_CALL d4CmdBindDescriptorBuffersEXT(VkCommandBuffer c,uint32_t n,const VkDescriptorBufferBindingInfoEXT* infos) {
+    auto d=deviceFor(c);D4_POC(d,d->poc->unsupported(c));
+    frameCommand(d,c,[&](auto& tracker,auto& f){try{tracker.descriptorBuffers(f,n,infos);}catch(...){tracker.resourceFailure(&f);}});d->CmdBindDescriptorBuffersEXT(c,n,infos);
+}
+VKAPI_ATTR void VKAPI_CALL d4CmdSetDescriptorBufferOffsetsEXT(VkCommandBuffer c,VkPipelineBindPoint point,VkPipelineLayout layout,uint32_t first,uint32_t n,const uint32_t* indices,const VkDeviceSize* offsets) {
+    auto d=deviceFor(c);D4_POC(d,d->poc->unsupported(c));
+    frameCommand(d,c,[&](auto& tracker,auto& f){try{tracker.descriptorOffsets(f,point,first,n,indices,offsets);}catch(...){tracker.resourceFailure(&f);}});d->CmdSetDescriptorBufferOffsetsEXT(c,point,layout,first,n,indices,offsets);
+}
+VKAPI_ATTR void VKAPI_CALL d4CmdBindDescriptorSets(VkCommandBuffer c,VkPipelineBindPoint point,VkPipelineLayout layout,uint32_t first,uint32_t n,const VkDescriptorSet* sets,uint32_t dynamicCount,const uint32_t* offsets) {
+    auto d=deviceFor(c);D4_POC(d,d->poc->unsupported(c));
+    frameCommand(d,c,[&](auto& tracker,auto& f){tracker.classicDescriptors(f,point,first,n);});d->CmdBindDescriptorSets(c,point,layout,first,n,sets,dynamicCount,offsets);
+}
+VKAPI_ATTR VkResult VKAPI_CALL d4CreateBuffer(VkDevice device,const VkBufferCreateInfo* info,const VkAllocationCallbacks* allocator,VkBuffer* buffer) {
+    auto d=deviceFor(device);auto r=d->CreateBuffer(device,info,allocator,buffer);
+    if(r==VK_SUCCESS && d->frame.enabled){std::lock_guard<std::mutex> lock(stateMutex);try{d->frame.buffer(*buffer,*info);}catch(...){d->frame.resourceFailure();}}return r;
+}
+VKAPI_ATTR void VKAPI_CALL d4DestroyBuffer(VkDevice device,VkBuffer buffer,const VkAllocationCallbacks* allocator) {
+    auto d=deviceFor(device);d->DestroyBuffer(device,buffer,allocator);
+    if(d->frame.enabled){std::lock_guard<std::mutex> lock(stateMutex);d->frame.removeBuffer(buffer);}
+}
+VKAPI_ATTR VkDeviceAddress VKAPI_CALL d4GetBufferDeviceAddress(VkDevice device,const VkBufferDeviceAddressInfo* info) {
+    auto d=deviceFor(device);auto address=d->GetBufferDeviceAddress(device,info);
+    if(d->frame.enabled){std::lock_guard<std::mutex> lock(stateMutex);d->frame.bufferAddress(info->buffer,address);}return address;
 }
 VKAPI_ATTR void VKAPI_CALL d4CmdDispatch(VkCommandBuffer command, uint32_t x, uint32_t y, uint32_t z) {
     auto d = deviceFor(command); count(d, command, Dispatch);
@@ -783,6 +810,7 @@ PFN_vkVoidFunction intercepted(const char* name) {
     D4_MATCH_ALIAS(CmdDrawIndirectCount) D4_MATCH_ALIAS(CmdDrawIndexedIndirectCount)
     D4_MATCH_ALIAS(CmdBeginRenderPass2) D4_MATCH_ALIAS(CmdBeginRendering) D4_MATCH_ALIAS(QueueSubmit2)
     D4_MATCH_ALIAS(CmdEndRenderPass2) D4_MATCH_ALIAS(CmdEndRendering)
+    D4_MATCH_ALIAS(GetBufferDeviceAddress)
 #undef D4_MATCH_ALIAS
     return nullptr;
 }

@@ -2,6 +2,7 @@
 // CPU-only metadata. No GPU commands, resource contents or raw handle addresses
 // are emitted. The caller serializes access with the layer's state mutex.
 #include <vulkan/vulkan.h>
+#include "buffer_addresses.hpp"
 #include <algorithm>
 #include <array>
 #include <cstdint>
@@ -54,6 +55,13 @@ struct Attachment {
 };
 using DrawCounts = std::array<uint64_t, 8>; // direct, indexed, indirect, indexed indirect, counts, DGC EXT/NV
 struct Draw { std::shared_ptr<const Pipeline> pipeline; DrawCounts counts{}; };
+struct ResourceEvent {
+    enum Kind { descriptorBuffers,descriptorOffsets,classicDescriptors,drawCommand,dispatchCommand } kind=descriptorBuffers;
+    uint32_t first=0,count=0,drawKind=0;VkPipelineBindPoint point=VK_PIPELINE_BIND_POINT_GRAPHICS;
+    uint64_t pipeline=0;size_t operation=0;bool truncated=false;
+    std::vector<BufferRange> buffers;std::vector<VkBufferUsageFlags> usages;
+    std::vector<uint32_t> indices;std::vector<VkDeviceSize> offsets;
+};
 struct Operation {
     enum Kind { Rendering, LegacyRendering, Compute, Secondary } kind = Rendering;
     VkRect2D area{}; uint32_t layers = 0, viewMask = 0; VkRenderingFlags flags{};
@@ -70,12 +78,14 @@ struct Command {
     std::shared_ptr<Operation> active;
     std::shared_ptr<const Pipeline> graphics, compute;
     bool truncated = false;
+    std::vector<ResourceEvent> resources;
 };
 struct CommandSnapshot {
     uint64_t id = 0, generation = 0;
     unsigned depth = 0;
     bool truncated = false, missing = false;
     std::vector<std::shared_ptr<const Operation>> ops;
+    std::vector<ResourceEvent> resources;
 };
 struct Submission {
     uint32_t family = UINT32_MAX, queue = UINT32_MAX;
@@ -98,6 +108,7 @@ class Tracker {
     uint64_t nextImage = 1, nextView = 1, nextPipeline = 1, nextCommand = 1, lastRequest = 0;
     size_t liveOps = 0, liveDraws = 0;
     size_t declarationWords = 0;
+    size_t liveResourceEvents=0;BufferAddresses bufferRanges;bool resourceFaulted=false;
     unsigned captureCount = 0;
     std::shared_ptr<Capture> current;
     std::vector<std::shared_ptr<Capture>> ready;
@@ -105,6 +116,14 @@ class Tracker {
     std::unordered_map<VkImageView, View> views;
     std::unordered_map<VkShaderModule, Shader> modules;
     std::unordered_map<VkPipeline, std::shared_ptr<const Pipeline>> pipelines;
+
+    ResourceEvent* resource(Command& c,ResourceEvent::Kind kind) {
+        if(!enabled)return nullptr;
+        if(resourceFaulted){c.truncated=true;return nullptr;}
+        if(c.resources.size()>=2048 || liveResourceEvents>=32768){c.truncated=true;return nullptr;}
+        try {c.resources.emplace_back();}catch(...){resourceFailure(&c);return nullptr;}
+        ++liveResourceEvents;auto& e=c.resources.back();e.kind=kind;e.operation=c.ops.size();return &e;
+    }
 
     std::shared_ptr<Operation> append(Command& c, Operation::Kind kind) {
         if (!enabled) return {};
@@ -158,6 +177,10 @@ class Tracker {
         if (capture && capture->closed && capture->pending == 0) ready.push_back(capture);
     }
 public:
+    void resourceFailure(Command* c=nullptr) noexcept {
+        resourceFaulted=true;bufferRanges.invalidate();
+        if(c){liveResourceEvents-=c->resources.size();c->resources.clear();c->truncated=true;}
+    }
     bool enabled = false, hasSwapchain = false;
     uint32_t deviceId = 0;
     std::string identifierAlgorithm;
@@ -166,6 +189,7 @@ public:
     void reset(Command& c) {
         if (!enabled) return;
         for (auto& op : c.ops) { --liveOps; liveDraws -= op->draws.size(); }
+        liveResourceEvents-=c.resources.size();
         auto id = c.id, generation = c.generation + 1; c = {}; c.id = id; c.generation = generation;
     }
     void image(VkImage handle, const VkImageCreateInfo& info) {
@@ -183,6 +207,18 @@ public:
         views[handle] = v;
     }
     void removeView(VkImageView handle) { if (enabled) views.erase(handle); }
+    void buffer(VkBuffer handle,const VkBufferCreateInfo& info) {if(enabled)bufferRanges.created(handle,info);}
+    void removeBuffer(VkBuffer handle) {if(enabled)bufferRanges.destroyed(handle);}
+    void bufferAddress(VkBuffer handle,VkDeviceAddress address) {if(enabled)bufferRanges.addressed(handle,address);}
+    void descriptorBuffers(Command& c,uint32_t n,const VkDescriptorBufferBindingInfoEXT* infos) {
+        auto e=resource(c,ResourceEvent::descriptorBuffers);if(!e)return;e->count=n;e->truncated=n>32 || (n && !infos);if(!infos)return;
+        for(uint32_t i=0;i<std::min(n,32u);++i){auto r=bufferRanges.resolve(infos[i].address);if(infos[i].pNext)r.creationComplete=false;e->buffers.push_back(r);e->usages.push_back(infos[i].usage);}
+    }
+    void descriptorOffsets(Command& c,VkPipelineBindPoint point,uint32_t first,uint32_t n,const uint32_t* indices,const VkDeviceSize* offsets) {
+        auto e=resource(c,ResourceEvent::descriptorOffsets);if(!e)return;e->point=point;e->first=first;e->count=n;e->truncated=n>32 || first>32 || n>32-std::min(first,32u) || (n && (!indices || !offsets));
+        if(n && indices && offsets){e->indices.assign(indices,indices+std::min(n,32u));e->offsets.assign(offsets,offsets+std::min(n,32u));}
+    }
+    void classicDescriptors(Command& c,VkPipelineBindPoint point,uint32_t first,uint32_t n) {auto e=resource(c,ResourceEvent::classicDescriptors);if(e){e->point=point;e->first=first;e->count=n;}}
     void module(VkShaderModule handle, const VkShaderModuleCreateInfo& info) {
         if (enabled && modules.size() < resourceLimit && info.pCode && info.codeSize >= 20)
             modules[handle] = {VkShaderStageFlagBits(0), digest(info.pCode, info.codeSize), info.codeSize, true};
@@ -274,10 +310,12 @@ public:
             found = c.active->draws.emplace(id, Draw{p, {}}).first; ++liveDraws;
         }
         ++found->second.counts[kind];
+        if(auto e=resource(c,ResourceEvent::drawCommand)){e->pipeline=id;e->drawKind=kind;}
     }
     void dispatch(Command& c, uint32_t x, uint32_t y, uint32_t z, bool indirect) {
         auto op = append(c, Operation::Compute); if (!op) return;
         op->compute = c.compute; op->groups = {x,y,z}; op->indirect = indirect;
+        if(auto e=resource(c,ResourceEvent::dispatchCommand))e->pipeline=c.compute?c.compute->id:0;
     }
     void secondary(Command& c, uint32_t count, const VkCommandBuffer* children) {
         auto op = append(c, Operation::Secondary); if (!op) return;
@@ -295,6 +333,7 @@ public:
             auto c = lookup(handle); CommandSnapshot copy; copy.depth = depth;
             if (!c) { copy.missing = true; s.commands.push_back(copy); return; }
             copy.id = c->id; copy.generation = c->generation; copy.truncated = c->truncated;
+            try{copy.resources=c->resources;}catch(...){copy.truncated=true;current->truncated=true;}
             for (auto& op : c->ops) {
                 if (current->operations >= 8192) { copy.truncated = true; current->truncated = true; break; }
                 copy.ops.push_back(op); ++current->operations;
@@ -352,6 +391,7 @@ inline std::string serialize(const Capture& capture) {
         << "\",\"present_before\":" << capture.beforePresent << ",\"present_after\":" << capture.afterPresent
         << ",\"truncated\":" << capture.truncated << ",\"shader_identifier_algorithm\":\"" << capture.identifierAlgorithm
         << "\",\"gpu_execution_order_known\":false,\"replayable_command_stream\":false"
+        << ",\"descriptor_contents_captured\":false,\"resource_aliases_excluded\":false"
         << ",\"legacy_attachment_details_supported\":false,\"game_stereo_submitted\":false,\"pipelines\":[";
     bool comma = false;
     for (auto& item : pipelines) {
@@ -386,7 +426,22 @@ inline std::string serialize(const Capture& capture) {
         for (size_t j = 0; j < s.commands.size(); ++j) {
             auto& c = s.commands[j]; if (j) out << ',';
             out << "{\"id\":" << c.id << ",\"generation\":" << c.generation << ",\"secondary_depth\":" << c.depth
-                << ",\"missing\":" << c.missing << ",\"truncated\":" << c.truncated << ",\"operations\":[";
+                << ",\"missing\":" << c.missing << ",\"truncated\":" << c.truncated << ",\"resource_events\":[";
+            for(size_t k=0;k<c.resources.size();++k) {
+                const auto& e=c.resources[k];if(k)out<<',';
+                static const char* names[]{"descriptor_buffers","descriptor_offsets","classic_descriptors","draw","dispatch"};
+                out<<"{\"kind\":\""<<names[e.kind]<<"\",\"observed_event_index\":"<<k<<",\"operation_count\":"<<e.operation
+                    <<",\"truncated\":"<<e.truncated<<",\"pipeline_id\":"<<e.pipeline<<",\"draw_kind\":"<<e.drawKind
+                    <<",\"bind_point\":"<<e.point<<",\"first_set\":"<<e.first<<",\"count\":"<<e.count<<",\"layout_identity_captured\":false,\"bindings\":[";
+                for(size_t b=0;b<e.buffers.size();++b){const auto& r=e.buffers[b];if(b)out<<',';
+                    out<<"{\"status\":"<<r.status<<",\"buffer_id\":"<<r.id<<",\"size\":"<<r.size<<",\"buffer_usage\":"<<r.usage
+                        <<",\"binding_usage\":"<<e.usages[b]<<",\"address_offset\":"<<r.offset<<",\"remaining_bytes\":"<<r.remaining
+                        <<",\"creation_chain_complete\":"<<r.creationComplete<<'}';
+                }
+                out<<"],\"indices\":[";for(size_t b=0;b<e.indices.size();++b)out<<(b?",":"")<<e.indices[b];
+                out<<"],\"offsets\":[";for(size_t b=0;b<e.offsets.size();++b)out<<(b?",":"")<<e.offsets[b];out<<"]}";
+            }
+            out<<"],\"operations\":[";
             for (size_t k = 0; k < c.ops.size(); ++k) {
                 auto& op = *c.ops[k]; if (k) out << ',';
                 const char* kind = op.kind == Operation::Rendering ? "dynamic_rendering" : op.kind == Operation::LegacyRendering ? "legacy_or_inherited_rendering"

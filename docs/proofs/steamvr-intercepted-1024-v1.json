@@ -1,0 +1,124 @@
+{
+  "schema_version": 1,
+  "synthetic_scene": true,
+  "diablo_rendered": false,
+  "actual_steamvr_submission_observed": true,
+  "clean_hardware_validation": false,
+  "render_extent": [
+    1024,
+    1024
+  ],
+  "tested_artifacts": {
+    "source_commit": "895e449a912f7b2f2603f60a52cacd20eb7d3bb8",
+    "layer_sha256": "f5a6f04359c7a8e34f9b95e76bc0a643821a182e5dfd790e08a56c7a568553da",
+    "client_sha256": "8e87d3149fbce6a59b0aa502c61c9436f085e3950992e96d7fe20eab2cecd499"
+  },
+  "observation": {
+    "schema_version": 1,
+    "synthetic_scene": true,
+    "diablo_rendered": false,
+    "client_returncode": 0,
+    "render_extent": [
+      1024,
+      1024
+    ],
+    "validation_message_counts": {
+      "VUID-VkPhysicalDeviceImageFormatInfo2-tiling-parameter": 150,
+      "SYNC-HAZARD-WRITE-AFTER-WRITE": 6
+    },
+    "xr": {
+      "schema_version": 1,
+      "synthetic_scene": true,
+      "diablo_rendered": false,
+      "runtime": "SteamVR/OpenXR",
+      "preflight_only": false,
+      "session_and_swapchains_created": true,
+      "success": true,
+      "runtime_uuid_matches": true,
+      "required_extensions_enabled": true,
+      "replayed_xr_frames": 890,
+      "tracked_frames": 890,
+      "eye_packet_updates": 890,
+      "head_translation_meters": 0.136751,
+      "eye_separation_meters": 0.0680386,
+      "application_submissions_repeated": 0,
+      "borrowed_vulkan_objects_destroyed": false,
+      "error": ""
+    },
+    "actual_steamvr_submission_observed": true,
+    "clean_validation_proof": false
+  },
+  "user_confirmed_sharper_image_and_correct_stereo_motion": true,
+  "initial_readbacks": {
+    "original": {
+      "defined_bytes": 20971520,
+      "different_bytes": 0,
+      "sha256": "b546554adf88f1aed5ca639860a1d7a752f31c0aa4cc58189c6d8c47c98151db"
+    },
+    "following_original_scope": {
+      "defined_bytes": 20971520,
+      "different_bytes": 0,
+      "sha256": "b546554adf88f1aed5ca639860a1d7a752f31c0aa4cc58189c6d8c47c98151db"
+    },
+    "layer_reports": [
+      {
+        "schema_version": 1,
+        "synthetic_scene": true,
+        "diablo_rendered": false,
+        "width": 1024,
+        "height": 1024,
+        "forwarded_draws": 4,
+        "replayed_scopes": 2,
+        "replayed_draws": 8,
+        "rejected_scopes": 0,
+        "last_rejection": 0,
+        "images_copied": true
+      },
+      {
+        "schema_version": 1,
+        "synthetic_scene": true,
+        "diablo_rendered": false,
+        "width": 1024,
+        "height": 1024,
+        "forwarded_draws": 6,
+        "replayed_scopes": 0,
+        "replayed_draws": 0,
+        "rejected_scopes": 3,
+        "last_rejection": 5,
+        "images_copied": false
+      }
+    ],
+    "left": {
+      "defined_bytes": 20971520,
+      "different_bytes": 0,
+      "sha256": "fc821141867bc33d3b835f7bb03fe1ccec0ab54191bbb580f7193b9aad934e95"
+    },
+    "right": {
+      "defined_bytes": 20971520,
+      "different_bytes": 0,
+      "sha256": "ed78ee50fb6489a5394e48df6c37ea7d9a8d9fb01a0e5f654b22b2a858ce115b"
+    },
+    "different_eye_color_pixels": 57292,
+    "foreground_pixels": [
+      246245,
+      251781
+    ]
+  },
+  "application_recordings_submitted": 2,
+  "application_draws_submitted": 10,
+  "total_observed_device_submissions": 10681,
+  "first_stack_per_error_category": {
+    "VUID-VkPhysicalDeviceImageFormatInfo2-tiling-parameter": [
+      "Khronos validation",
+      "SteamVR vrclient.so",
+      "D4VR XR setup"
+    ],
+    "SYNC-HAZARD-WRITE-AFTER-WRITE": [
+      "Khronos validation",
+      "D4VR transparent poc_CmdCopyImage",
+      "SteamVR vrclient.so",
+      "D4VR XR presentation"
+    ]
+  },
+  "query_pool_and_buffer_destroy_in_use_messages_observed": 0
+}

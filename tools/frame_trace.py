@@ -15,6 +15,36 @@ import probe
 MAX_BYTES = 8 * 1024 * 1024
 DRAW_NAMES = ('draw', 'indexed', 'indirect', 'indexed_indirect', 'indirect_count',
               'indexed_indirect_count', 'generated_ext', 'generated_nv')
+ADDRESS_STATUS=('unknown','unique_observed_range','ambiguous','invalid','incomplete_registry')
+
+def resource_event(event: dict,index: int,operations: int,truncated: bool) -> None:
+    kinds=('descriptor_buffers','descriptor_offsets','classic_descriptors','draw','dispatch')
+    if (event.get('kind') not in kinds or type(event.get('observed_event_index')) is not int or event.get('observed_event_index')!=index
+            or event.get('layout_identity_captured') is not False or type(event.get('truncated')) is not bool):
+        raise ValueError('Invalid resource observation or unsupported layout identity')
+    for key in ('operation_count','pipeline_id','draw_kind','bind_point','first_set','count'):
+        if type(event.get(key)) is not int or not 0<=event[key]<2**64:
+            raise ValueError('Invalid resource observation integer')
+    if not truncated and event['operation_count']>operations:
+        raise ValueError('Resource observation refers outside recorded operations')
+    if event['kind']=='draw' and event['draw_kind']>=8:
+        raise ValueError('Unknown observed draw kind')
+    bindings=event.get('bindings',[]);indices=event.get('indices',[]);offsets=event.get('offsets',[])
+    if len(bindings)>32 or len(indices)>32 or len(indices)!=len(offsets):
+        raise ValueError('Resource observation array budget exceeded')
+    if any(type(x) is not int or not 0<=x<2**32 for x in indices) or any(type(x) is not int or not 0<=x<2**64 for x in offsets):
+        raise ValueError('Invalid descriptor buffer index/offset')
+    for b in bindings:
+        if type(b.get('status')) is not int or b['status'] not in range(len(ADDRESS_STATUS)) or type(b.get('creation_chain_complete')) is not bool:
+            raise ValueError('Invalid observed buffer status')
+        for key in ('buffer_id','size','buffer_usage','binding_usage','address_offset','remaining_bytes'):
+            if type(b.get(key)) is not int or not 0<=b[key]<2**64:
+                raise ValueError('Invalid observed buffer range')
+        if b['status']==1:
+            if not b['buffer_id'] or not b['size'] or b['address_offset']>=b['size'] or b['remaining_bytes']!=b['size']-b['address_offset']:
+                raise ValueError('Observed buffer bounds disagree')
+        elif any(b[key] for key in ('buffer_id','size','address_offset','remaining_bytes')):
+            raise ValueError('Unresolved buffer observation invented an owner')
 
 
 def fnv1a64(data: bytes) -> str:
@@ -53,6 +83,8 @@ def read_frame(path: Path) -> dict:
     data = json.loads(path.read_text(encoding='utf-8'))
     if data.get('schema_version') != 1 or data.get('game_stereo_submitted') is not False:
         raise ValueError('Unsupported metadata schema')
+    if data.get('descriptor_contents_captured',False) is not False or data.get('resource_aliases_excluded',False) is not False:
+        raise ValueError('Resource contents and alias exclusion are not part of this schema')
     if data.get('scope') not in ('single_submission', 'cpu_submission_interval_between_present_calls'):
         raise ValueError('Unknown capture scope')
     algorithm = data.get('shader_identifier_algorithm', '')
@@ -97,6 +129,9 @@ def read_frame(path: Path) -> dict:
             raise ValueError('Command-buffer budget exceeded')
         for command in submit['commands']:
             operations += len(command['operations'])
+            events=command.get('resource_events',[])
+            if len(events)>2048:raise ValueError('Resource event budget exceeded')
+            for index,event in enumerate(events):resource_event(event,index,len(command['operations']),command['truncated'])
             for op in command['operations']:
                 if len(op.get('colors', [])) > 16 or len(op.get('draws', [])) > 512:
                     raise ValueError('Pass metadata budget exceeded')
@@ -192,6 +227,7 @@ def summarize(data: dict, correlation: dict | None = None) -> dict:
     image_writes = defaultdict(list)
     truncated = bool(data['truncated'])
     missing_commands = unknown_pipeline_commands = failed = 0
+    resource_counts=Counter();address_counts=Counter();buffer_ids=set()
     for si, submit in enumerate(data['submissions']):
         if not submit['complete'] or submit['result'] != 0:
             failed += 1
@@ -199,6 +235,11 @@ def summarize(data: dict, correlation: dict | None = None) -> dict:
         for ci, command in enumerate(submit['commands']):
             missing_commands += bool(command['missing'])
             truncated |= bool(command['truncated'])
+            for event in command.get('resource_events',[]):
+                resource_counts[event['kind']]+=1;truncated|=event['truncated']
+                for b in event['bindings']:
+                    address_counts[ADDRESS_STATUS[b['status']]]+=1
+                    if b['buffer_id']:buffer_ids.add(b['buffer_id'])
             for oi, op in enumerate(command['operations']):
                 operations[op['kind']] += 1
                 truncated |= bool(op['truncated'])
@@ -233,6 +274,8 @@ def summarize(data: dict, correlation: dict | None = None) -> dict:
               'present_before': data['present_before'], 'present_after': data['present_after'],
               'submission_count': len(data['submissions']), 'failed_or_incomplete_submissions': failed,
               'operation_counts': dict(operations), 'draw_command_counts': dict(draw_counts),
+              'resource_observation_counts':dict(resource_counts),'buffer_address_status_counts':dict(address_counts),'observed_descriptor_buffer_ids':sorted(buffer_ids),
+              'descriptor_contents_captured':False,'resource_aliases_excluded':False,
               'truncated': truncated, 'missing_command_buffers': missing_commands,
               'draw_commands_with_unknown_pipeline': unknown_pipeline_commands,
               'pipeline_count': len(pipeline_ids), 'passes': passes,

@@ -12,6 +12,7 @@ import subprocess
 
 EXISTING = set('CmdExecuteCommands CmdDraw CmdDrawIndexed CmdDrawIndirect CmdDrawIndexedIndirect CmdDrawIndirectCount CmdDrawIndexedIndirectCount CmdExecuteGeneratedCommandsEXT CmdExecuteGeneratedCommandsNV CmdDispatch CmdDispatchIndirect CmdBeginRenderPass CmdBeginRenderPass2 CmdBeginRendering CmdEndRenderPass CmdEndRenderPass2 CmdEndRendering CmdBindPipeline'.split())
 MODELED = set('CmdPushConstants CmdSetViewport CmdSetScissor CmdSetStencilReference'.split())
+EXISTING.update(('CmdBindDescriptorBuffersEXT','CmdSetDescriptorBufferOffsetsEXT','CmdBindDescriptorSets'))
 
 def generate(compiler: Path, header: Path, output: Path) -> None:
     output.mkdir(parents=True, exist_ok=True)

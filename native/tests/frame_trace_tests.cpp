@@ -104,7 +104,42 @@ int main() try {
     std::array<VkDynamicState,65> excessive{}; dy.dynamicStateCount = 65; dy.pDynamicStates = excessive.data();
     t.graphicsPipeline(linked,graphics); t.bind(c,VK_PIPELINE_BIND_POINT_GRAPHICS,linked); t.begin(c,rendering); t.draw(c,0); t.end(c);
     require(!c.ops.back()->draws.rbegin()->second.pipeline->declarationsComplete && c.ops.back()->draws.rbegin()->second.pipeline->declarations[0].states.size() == 64,"Declaration cap hidden");
-    Tracker disabled; auto off = disabled.command(); disabled.begin(off,rendering); disabled.draw(off,0); require(off.ops.empty(),"Disabled tracker recorded metadata");
+    // Range identity is observed at binding, never inferred from a pointer.
+    BufferAddresses ranges;auto b1=handle<VkBuffer>(100),b2=handle<VkBuffer>(101);
+    VkBufferCreateInfo bi{VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};bi.size=4096;bi.usage=VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
+    ranges.created(b1,bi);ranges.addressed(b1,0x10000);auto known=ranges.resolve(0x10080);
+    require(known.status==BufferRange::uniqueObserved && known.offset==128 && known.remaining==3968 && known.creationComplete,"Observed BDA range or bounds wrong");
+    require(ranges.resolve(0x11000).status==BufferRange::unknown && ranges.resolve(0).status==BufferRange::invalid,"Exclusive range end/null address admitted");
+    bi.size=32;ranges.created(b2,bi);ranges.addressed(b2,0x10080);
+    require(ranges.resolve(0x10088).status==BufferRange::ambiguous && !ranges.resolve(0x10088).id,"Overlapping observed ranges invented a unique owner");
+    require(ranges.resolve(0x10200).id==known.id,"Prefix maximum failed to find a containing earlier range");
+    ranges.destroyed(b2);require(ranges.resolve(0x10088).id==known.id,"Removed alias still live");
+    ranges.destroyed(b1);ranges.created(b1,bi);ranges.addressed(b1,0x10000);
+    require(ranges.resolve(0x10000).id!=known.id,"Recycled buffer handle reused an old identity");
+    VkBufferUsageFlags2CreateInfoKHR usage2{VK_STRUCTURE_TYPE_BUFFER_USAGE_FLAGS_2_CREATE_INFO_KHR};usage2.usage=uint64_t(1)<<40;bi.pNext=&usage2;
+    ranges.created(b1,bi);ranges.addressed(b1,0x20000);require(ranges.resolve(0x20000).usage==(uint64_t(1)<<40),"UsageFlags2 override truncated or ignored");
+    VkBaseInStructure foreign{VK_STRUCTURE_TYPE_APPLICATION_INFO,nullptr};bi.pNext=&foreign;ranges.created(b1,bi);ranges.addressed(b1,0x20000);
+    require(!ranges.resolve(0x20000).creationComplete,"Unknown creation chain reported complete");
+    bi.pNext=nullptr;bi.size=4096;ranges.created(b1,bi);ranges.addressed(b1,UINT64_MAX-4);
+    require(ranges.resolve(UINT64_MAX-3).status==BufferRange::unknown,"Overflowing address range wrapped");
+    BufferAddresses capped(1);capped.created(b1,bi);capped.addressed(b1,0x10000);capped.created(b2,bi);
+    require(capped.resolve(0x10000).status==BufferRange::incompleteRegistry,"Dropped range left a falsely complete registry");
+    Tracker resources(true);auto rc=resources.command();resources.buffer(b1,bi);resources.bufferAddress(b1,0x10000);
+    VkDescriptorBufferBindingInfoEXT db{VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT};db.address=0x10080;db.usage=VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
+    resources.descriptorBuffers(rc,1,&db);uint32_t idx=0;VkDeviceSize offset=256;
+    resources.descriptorOffsets(rc,VK_PIPELINE_BIND_POINT_COMPUTE,2,1,&idx,&offset);db.address=0;offset=999;idx=7;
+    resources.classicDescriptors(rc,VK_PIPELINE_BIND_POINT_GRAPHICS,0,1);resources.dispatch(rc,1,2,3,false);
+    require(rc.resources.size()==4 && rc.resources[0].buffers[0].offset==128 && rc.resources[1].offsets[0]==256 && rc.resources[1].indices[0]==0,"Transient resource arrays were borrowed");
+    auto resourceTicket=resources.submit(1,0,0,0,{primaryHandle},[&](auto)->const Command*{return &rc;});resources.submitted(resourceTicket,VK_SUCCESS);
+    auto resourceReady=resources.takeReady();resources.reset(rc);resources.removeBuffer(b1);resources.buffer(b1,bi);resources.bufferAddress(b1,0x30000);
+    auto resourceJson=serialize(*resourceReady[0]);
+    require(resourceJson.find("\"address_offset\":128")!=std::string::npos && resourceJson.find("\"descriptor_contents_captured\":false")!=std::string::npos
+        && resourceJson.find("\"resource_aliases_excluded\":false")!=std::string::npos,"Resource capture lost lifetime or invented replay admission");
+    for(unsigned i=0;i<2049;++i)resources.classicDescriptors(rc,VK_PIPELINE_BIND_POINT_GRAPHICS,0,1);
+    require(rc.truncated && rc.resources.size()==2048,"Resource event budget ignored");resources.reset(rc);resources.classicDescriptors(rc,VK_PIPELINE_BIND_POINT_GRAPHICS,0,1);
+    require(!rc.truncated && rc.resources.size()==1,"Resource event reset did not recover budget");
+    resources.resourceFailure(&rc);resources.descriptorBuffers(rc,1,&db);require(rc.truncated && rc.resources.empty(),"Resource failure did not close observation");
+    Tracker disabled; auto off = disabled.command(); disabled.begin(off,rendering); disabled.draw(off,0); require(off.ops.empty() && off.resources.empty(),"Disabled tracker recorded metadata");
     std::cout << "Frame metadata: attachment/pipeline lifetime, GPL/inline shaders, DGC, secondary reuse, request boundaries, pending/error submissions, caps: passed\n";
     return 0;
 } catch (const std::exception& e) { std::cerr << e.what() << '\n'; return 1; }

@@ -81,7 +81,11 @@ Le client et la couche acceptent désormais deux résolutions fermées, 256 et
 aux copies. Le nouveau mode contient seize fois plus de pixels par œil, sans
 agrandir une ancienne image. Les [contrôles à ces deux résolutions](proofs/replay-xr-resolution-v1.json)
 couvrent 22 processus GPU sans erreur, dont des références séparées à 1024.
-**Aucun essai visuel en casque à 1024 n'est encore revendiqué.**
+L'[essai suivant à 1024](proofs/steamvr-intercepted-1024-v1.json) a ensuite soumis
+890 paires suivies en dix secondes. Le testeur confirme une image plus nette,
+avec relief et mouvements corrects. Les vues privées initiales et les témoins
+originaux correspondent aux références GPU ; les 890 frames affichées ne font
+pas l'objet d'une comparaison pixel à pixel dans le compositeur.
 
 Le runtime factice soumet aussi du travail asynchrone utilisant un buffer et un
 query pool après la dernière frame. L'adaptateur attend maintenant la queue
@@ -89,16 +93,19 @@ avant de libérer les objets XR, même si sa propre fence a déjà terminé. Les
 compteurs distinguent les deux enregistrements de l'application, contenant dix
 dessins, de la troisième soumission du runtime factice. Les soumissions répétées
 des enregistrements avec dessins seraient comptées à nouveau. Ce contrôle est
-sans erreur ; la correction des destructions signalées par SteamVR reste à
-vérifier lors d'un nouvel essai réel.
+sans erreur. Aucune des deux erreurs de destruction signalées dans le premier
+essai n'a été observée lors de l'essai réel à 1024.
 
 Le client conserve désormais dans le journal privé une pile d'appels pour la
 première erreur de chaque identifiant. Le vérificateur écrit aussi `attempt.json`
 avant de refuser un essai, avec les compteurs XR et les erreurs séparés ; ce
 fichier porte toujours `clean_validation_proof=false`. Seul le chemin strict
-réussi produit `proof.json`. La préparation sans frame tentée sans demander de
-réveiller le casque s'arrête à `xrCreateInstance: -2` : elle ne valide ni n'invalide
-les nouvelles corrections matérielles et n'est pas répétée en boucle.
+réussi produit `proof.json`. Le nouvel essai reste refusé : 150 messages de tiling
+DRM et six conflits WRITE_AFTER_WRITE. Les premières piles de ces deux catégories
+passent par `vrclient.so` ; la copie en cause traverse notre wrapper transparent
+`poc_CmdCopyImage`, tandis que notre présentation émet des blits. Les appels sont
+ainsi localisés dans SteamVR ; leur correction et la validation complète restent
+ouvertes. Aucune erreur n'est filtrée pour fabriquer une preuve sans erreur.
 
 ## Reproduire hors casque
 

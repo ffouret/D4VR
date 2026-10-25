@@ -201,6 +201,12 @@ def run(args) -> dict:
             else:
                 if len(frames) != 1:raise ValueError('Expected one bounded metadata capture')
                 data = frame_trace.read_frame(frames[0]);summary = frame_trace.summarize(data)
+                if args.descriptor_buffers:
+                    observations=summary['resource_observation_counts'];ranges=summary['buffer_address_status_counts']
+                    if (observations.get('descriptor_buffers')!=4 or ranges!={'unique_observed_range':4}
+                            or len(summary['observed_descriptor_buffer_ids'])!=1 or observations.get('descriptor_offsets',0)<8
+                            or not observations.get('classic_descriptors') or not observations.get('dispatch')):
+                        raise ValueError('Descriptor buffer range/offset observations were not captured from the actual fixture')
                 states = summary['pipeline_state_declarations']
                 if not states or any(not p['declarations_complete'] for p in states):
                     raise ValueError('Fixture pipeline declarations were not captured completely')

@@ -1,0 +1,1222 @@
+{
+  "schema_version": 1,
+  "synthetic_scene": true,
+  "diablo_rendered": false,
+  "game_resource_admission": false,
+  "buffer_contents_read_or_written": false,
+  "gpu_controls": {
+    "schema_version": 1,
+    "scope": "original synthetic scene only",
+    "cases": [
+      {
+        "case": "native",
+        "exit_code": 0,
+        "validation_layer_loaded": false,
+        "intentional_sync_hazard_detected": false,
+        "intentional_wrong_compute_offset_detected": false,
+        "fixture": {
+          "stereo_mrt_fixture_passed": true,
+          "negative_sync_control": false,
+          "negative_compute_control": false,
+          "incorrect_compute_samples_detected": 0,
+          "clear_followed_by_load_verified": false,
+          "eye_rendering_passes": 16,
+          "recorded_graphics_replay_verified": true,
+          "captured_scopes_replayed": 8,
+          "frozen_private_command_buffer_replays": 0,
+          "eye_packets_updated_after_completion": false,
+          "captured_draw_copies": 24,
+          "original_state_commands_restored": 92,
+          "following_draw_reference_compared_bytes": 10485760,
+          "forwarded_original_reference_compared_bytes": 10485760,
+          "descriptor_buffer_replay_verified": true,
+          "following_compute_reference_words": 32,
+          "dynamic_state_replay_verified": false,
+          "declared_dynamic_states": 3,
+          "pipeline_recipe_variants_verified": false,
+          "original_shader_modules_destroyed_before_variants": false,
+          "library_pipeline_variants_verified": false,
+          "library_source_modules_destroyed_before_link": false,
+          "source_registry_released_before_render": false,
+          "source_libraries_released_before_render": false,
+          "source_executable_released_before_render": false,
+          "forwarded_original_gpl_witness_verified": false,
+          "gpl_dynamic_state_contract_resolved": false,
+          "gpl_dynamic_state_contract_used_for_replay": false,
+          "gpl_nonowner_dynamic_decoys_verified": false,
+          "gpl_effective_dynamic_state_count": 0,
+          "complete_static_state_contract_verified": false,
+          "static_bind_overwrites_dynamic_values_verified": false,
+          "following_draw_depth_write_disabled_verified": false,
+          "replay_telemetry_disabled_verified": false,
+          "telemetry_buffers_unchanged_bytes": 0,
+          "enabled_telemetry_positive_control_words_written": 0,
+          "separate_telemetry_control_shader_used": false,
+          "single_camera_buffer_fixture": true,
+          "frozen_scene_cases": 4,
+          "epochs_per_case": 2,
+          "eye_renderings": 16,
+          "submissions": 8,
+          "color_reference_different_bytes": 0,
+          "color_reference_compared_bytes": 16777216,
+          "depth_reference_compared_texels": 1048576,
+          "max_normalized_depth_difference": 0,
+          "stencil_reference_different_bytes": 0,
+          "stencil_reference_compared_bytes": 1048576,
+          "original_targets_preserved_defined_bytes": 31457280,
+          "disparity_pixels_depth_2": 7.293567536,
+          "disparity_pixels_depth_4": 3.641939687,
+          "binocular_disocclusion_texels": 2738,
+          "color_formats": [
+            44,
+            64,
+            44,
+            50
+          ],
+          "depth_stencil_format": 129,
+          "game_draw_replay_implemented": false,
+          "game_stereo_submitted": false
+        },
+        "frame_metadata": {
+          "bounded_capture_verified": true,
+          "monolithic_pipeline_count": 4,
+          "linked_pipeline_count": 0,
+          "largest_dynamic_declaration": 3,
+          "clear_value_sets": 48,
+          "graphics_state_snapshot_complete": false
+        },
+        "paired_pipelines": null
+      },
+      {
+        "case": "native-validation",
+        "exit_code": 0,
+        "validation_layer_loaded": true,
+        "intentional_sync_hazard_detected": false,
+        "intentional_wrong_compute_offset_detected": false,
+        "fixture": {
+          "stereo_mrt_fixture_passed": true,
+          "negative_sync_control": false,
+          "negative_compute_control": false,
+          "incorrect_compute_samples_detected": 0,
+          "clear_followed_by_load_verified": false,
+          "eye_rendering_passes": 16,
+          "recorded_graphics_replay_verified": true,
+          "captured_scopes_replayed": 8,
+          "frozen_private_command_buffer_replays": 0,
+          "eye_packets_updated_after_completion": false,
+          "captured_draw_copies": 24,
+          "original_state_commands_restored": 92,
+          "following_draw_reference_compared_bytes": 10485760,
+          "forwarded_original_reference_compared_bytes": 10485760,
+          "descriptor_buffer_replay_verified": true,
+          "following_compute_reference_words": 32,
+          "dynamic_state_replay_verified": false,
+          "declared_dynamic_states": 3,
+          "pipeline_recipe_variants_verified": false,
+          "original_shader_modules_destroyed_before_variants": false,
+          "library_pipeline_variants_verified": false,
+          "library_source_modules_destroyed_before_link": false,
+          "source_registry_released_before_render": false,
+          "source_libraries_released_before_render": false,
+          "source_executable_released_before_render": false,
+          "forwarded_original_gpl_witness_verified": false,
+          "gpl_dynamic_state_contract_resolved": false,
+          "gpl_dynamic_state_contract_used_for_replay": false,
+          "gpl_nonowner_dynamic_decoys_verified": false,
+          "gpl_effective_dynamic_state_count": 0,
+          "complete_static_state_contract_verified": false,
+          "static_bind_overwrites_dynamic_values_verified": false,
+          "following_draw_depth_write_disabled_verified": false,
+          "replay_telemetry_disabled_verified": false,
+          "telemetry_buffers_unchanged_bytes": 0,
+          "enabled_telemetry_positive_control_words_written": 0,
+          "separate_telemetry_control_shader_used": false,
+          "single_camera_buffer_fixture": true,
+          "frozen_scene_cases": 4,
+          "epochs_per_case": 2,
+          "eye_renderings": 16,
+          "submissions": 8,
+          "color_reference_different_bytes": 0,
+          "color_reference_compared_bytes": 16777216,
+          "depth_reference_compared_texels": 1048576,
+          "max_normalized_depth_difference": 0,
+          "stencil_reference_different_bytes": 0,
+          "stencil_reference_compared_bytes": 1048576,
+          "original_targets_preserved_defined_bytes": 31457280,
+          "disparity_pixels_depth_2": 7.293567536,
+          "disparity_pixels_depth_4": 3.641939687,
+          "binocular_disocclusion_texels": 2738,
+          "color_formats": [
+            44,
+            64,
+            44,
+            50
+          ],
+          "depth_stencil_format": 129,
+          "game_draw_replay_implemented": false,
+          "game_stereo_submitted": false
+        },
+        "frame_metadata": {
+          "bounded_capture_verified": true,
+          "monolithic_pipeline_count": 4,
+          "linked_pipeline_count": 0,
+          "largest_dynamic_declaration": 3,
+          "clear_value_sets": 48,
+          "graphics_state_snapshot_complete": false
+        },
+        "paired_pipelines": null
+      },
+      {
+        "case": "sync-negative-control",
+        "exit_code": 0,
+        "validation_layer_loaded": true,
+        "intentional_sync_hazard_detected": true,
+        "intentional_wrong_compute_offset_detected": false,
+        "fixture": {
+          "stereo_mrt_fixture_passed": false,
+          "negative_sync_control": true,
+          "negative_compute_control": false,
+          "incorrect_compute_samples_detected": 0,
+          "clear_followed_by_load_verified": false,
+          "eye_rendering_passes": 16,
+          "recorded_graphics_replay_verified": true,
+          "captured_scopes_replayed": 8,
+          "frozen_private_command_buffer_replays": 0,
+          "eye_packets_updated_after_completion": false,
+          "captured_draw_copies": 24,
+          "original_state_commands_restored": 92,
+          "following_draw_reference_compared_bytes": 10485760,
+          "forwarded_original_reference_compared_bytes": 10485760,
+          "descriptor_buffer_replay_verified": true,
+          "following_compute_reference_words": 32,
+          "dynamic_state_replay_verified": false,
+          "declared_dynamic_states": 3,
+          "pipeline_recipe_variants_verified": false,
+          "original_shader_modules_destroyed_before_variants": false,
+          "library_pipeline_variants_verified": false,
+          "library_source_modules_destroyed_before_link": false,
+          "source_registry_released_before_render": false,
+          "source_libraries_released_before_render": false,
+          "source_executable_released_before_render": false,
+          "forwarded_original_gpl_witness_verified": false,
+          "gpl_dynamic_state_contract_resolved": false,
+          "gpl_dynamic_state_contract_used_for_replay": false,
+          "gpl_nonowner_dynamic_decoys_verified": false,
+          "gpl_effective_dynamic_state_count": 0,
+          "complete_static_state_contract_verified": false,
+          "static_bind_overwrites_dynamic_values_verified": false,
+          "following_draw_depth_write_disabled_verified": false,
+          "replay_telemetry_disabled_verified": false,
+          "telemetry_buffers_unchanged_bytes": 0,
+          "enabled_telemetry_positive_control_words_written": 0,
+          "separate_telemetry_control_shader_used": false,
+          "single_camera_buffer_fixture": true,
+          "frozen_scene_cases": 4,
+          "epochs_per_case": 2,
+          "eye_renderings": 16,
+          "submissions": 8,
+          "color_reference_different_bytes": 0,
+          "color_reference_compared_bytes": 16777216,
+          "depth_reference_compared_texels": 1048576,
+          "max_normalized_depth_difference": 0,
+          "stencil_reference_different_bytes": 0,
+          "stencil_reference_compared_bytes": 1048576,
+          "original_targets_preserved_defined_bytes": 31457280,
+          "disparity_pixels_depth_2": 7.293567536,
+          "disparity_pixels_depth_4": 3.641939687,
+          "binocular_disocclusion_texels": 2738,
+          "color_formats": [
+            44,
+            64,
+            44,
+            50
+          ],
+          "depth_stencil_format": 129,
+          "game_draw_replay_implemented": false,
+          "game_stereo_submitted": false
+        },
+        "frame_metadata": {
+          "bounded_capture_verified": true,
+          "monolithic_pipeline_count": 4,
+          "linked_pipeline_count": 0,
+          "largest_dynamic_declaration": 3,
+          "clear_value_sets": 48,
+          "graphics_state_snapshot_complete": false
+        },
+        "paired_pipelines": null
+      },
+      {
+        "case": "descriptor-offset-negative-control",
+        "exit_code": 0,
+        "validation_layer_loaded": true,
+        "intentional_sync_hazard_detected": false,
+        "intentional_wrong_compute_offset_detected": true,
+        "fixture": {
+          "stereo_mrt_fixture_passed": false,
+          "negative_sync_control": false,
+          "negative_compute_control": true,
+          "incorrect_compute_samples_detected": 8,
+          "clear_followed_by_load_verified": false,
+          "eye_rendering_passes": 16,
+          "recorded_graphics_replay_verified": true,
+          "captured_scopes_replayed": 8,
+          "frozen_private_command_buffer_replays": 0,
+          "eye_packets_updated_after_completion": false,
+          "captured_draw_copies": 24,
+          "original_state_commands_restored": 92,
+          "following_draw_reference_compared_bytes": 10485760,
+          "forwarded_original_reference_compared_bytes": 10485760,
+          "descriptor_buffer_replay_verified": true,
+          "following_compute_reference_words": 32,
+          "dynamic_state_replay_verified": false,
+          "declared_dynamic_states": 3,
+          "pipeline_recipe_variants_verified": false,
+          "original_shader_modules_destroyed_before_variants": false,
+          "library_pipeline_variants_verified": false,
+          "library_source_modules_destroyed_before_link": false,
+          "source_registry_released_before_render": false,
+          "source_libraries_released_before_render": false,
+          "source_executable_released_before_render": false,
+          "forwarded_original_gpl_witness_verified": false,
+          "gpl_dynamic_state_contract_resolved": false,
+          "gpl_dynamic_state_contract_used_for_replay": false,
+          "gpl_nonowner_dynamic_decoys_verified": false,
+          "gpl_effective_dynamic_state_count": 0,
+          "complete_static_state_contract_verified": false,
+          "static_bind_overwrites_dynamic_values_verified": false,
+          "following_draw_depth_write_disabled_verified": false,
+          "replay_telemetry_disabled_verified": false,
+          "telemetry_buffers_unchanged_bytes": 0,
+          "enabled_telemetry_positive_control_words_written": 0,
+          "separate_telemetry_control_shader_used": false,
+          "single_camera_buffer_fixture": true,
+          "frozen_scene_cases": 4,
+          "epochs_per_case": 2,
+          "eye_renderings": 16,
+          "submissions": 8,
+          "color_reference_different_bytes": 0,
+          "color_reference_compared_bytes": 16777216,
+          "depth_reference_compared_texels": 1048576,
+          "max_normalized_depth_difference": 0,
+          "stencil_reference_different_bytes": 0,
+          "stencil_reference_compared_bytes": 1048576,
+          "original_targets_preserved_defined_bytes": 31457280,
+          "disparity_pixels_depth_2": 7.293567536,
+          "disparity_pixels_depth_4": 3.641939687,
+          "binocular_disocclusion_texels": 2738,
+          "color_formats": [
+            44,
+            64,
+            44,
+            50
+          ],
+          "depth_stencil_format": 129,
+          "game_draw_replay_implemented": false,
+          "game_stereo_submitted": false
+        },
+        "frame_metadata": {
+          "bounded_capture_verified": true,
+          "monolithic_pipeline_count": 4,
+          "linked_pipeline_count": 0,
+          "largest_dynamic_declaration": 3,
+          "clear_value_sets": 48,
+          "graphics_state_snapshot_complete": false
+        },
+        "paired_pipelines": null
+      },
+      {
+        "case": "metadata-disabled",
+        "exit_code": 0,
+        "validation_layer_loaded": true,
+        "intentional_sync_hazard_detected": false,
+        "intentional_wrong_compute_offset_detected": false,
+        "fixture": {
+          "stereo_mrt_fixture_passed": true,
+          "negative_sync_control": false,
+          "negative_compute_control": false,
+          "incorrect_compute_samples_detected": 0,
+          "clear_followed_by_load_verified": false,
+          "eye_rendering_passes": 16,
+          "recorded_graphics_replay_verified": true,
+          "captured_scopes_replayed": 8,
+          "frozen_private_command_buffer_replays": 0,
+          "eye_packets_updated_after_completion": false,
+          "captured_draw_copies": 24,
+          "original_state_commands_restored": 92,
+          "following_draw_reference_compared_bytes": 10485760,
+          "forwarded_original_reference_compared_bytes": 10485760,
+          "descriptor_buffer_replay_verified": true,
+          "following_compute_reference_words": 32,
+          "dynamic_state_replay_verified": false,
+          "declared_dynamic_states": 3,
+          "pipeline_recipe_variants_verified": false,
+          "original_shader_modules_destroyed_before_variants": false,
+          "library_pipeline_variants_verified": false,
+          "library_source_modules_destroyed_before_link": false,
+          "source_registry_released_before_render": false,
+          "source_libraries_released_before_render": false,
+          "source_executable_released_before_render": false,
+          "forwarded_original_gpl_witness_verified": false,
+          "gpl_dynamic_state_contract_resolved": false,
+          "gpl_dynamic_state_contract_used_for_replay": false,
+          "gpl_nonowner_dynamic_decoys_verified": false,
+          "gpl_effective_dynamic_state_count": 0,
+          "complete_static_state_contract_verified": false,
+          "static_bind_overwrites_dynamic_values_verified": false,
+          "following_draw_depth_write_disabled_verified": false,
+          "replay_telemetry_disabled_verified": false,
+          "telemetry_buffers_unchanged_bytes": 0,
+          "enabled_telemetry_positive_control_words_written": 0,
+          "separate_telemetry_control_shader_used": false,
+          "single_camera_buffer_fixture": true,
+          "frozen_scene_cases": 4,
+          "epochs_per_case": 2,
+          "eye_renderings": 16,
+          "submissions": 8,
+          "color_reference_different_bytes": 0,
+          "color_reference_compared_bytes": 16777216,
+          "depth_reference_compared_texels": 1048576,
+          "max_normalized_depth_difference": 0,
+          "stencil_reference_different_bytes": 0,
+          "stencil_reference_compared_bytes": 1048576,
+          "original_targets_preserved_defined_bytes": 31457280,
+          "disparity_pixels_depth_2": 7.293567536,
+          "disparity_pixels_depth_4": 3.641939687,
+          "binocular_disocclusion_texels": 2738,
+          "color_formats": [
+            44,
+            64,
+            44,
+            50
+          ],
+          "depth_stencil_format": 129,
+          "game_draw_replay_implemented": false,
+          "game_stereo_submitted": false
+        },
+        "frame_metadata": {
+          "disabled_capture_verified": true
+        },
+        "paired_pipelines": null
+      },
+      {
+        "case": "steam-runtime-validation",
+        "exit_code": 0,
+        "validation_layer_loaded": true,
+        "intentional_sync_hazard_detected": false,
+        "intentional_wrong_compute_offset_detected": false,
+        "fixture": {
+          "stereo_mrt_fixture_passed": true,
+          "negative_sync_control": false,
+          "negative_compute_control": false,
+          "incorrect_compute_samples_detected": 0,
+          "clear_followed_by_load_verified": false,
+          "eye_rendering_passes": 16,
+          "recorded_graphics_replay_verified": true,
+          "captured_scopes_replayed": 8,
+          "frozen_private_command_buffer_replays": 0,
+          "eye_packets_updated_after_completion": false,
+          "captured_draw_copies": 24,
+          "original_state_commands_restored": 92,
+          "following_draw_reference_compared_bytes": 10485760,
+          "forwarded_original_reference_compared_bytes": 10485760,
+          "descriptor_buffer_replay_verified": true,
+          "following_compute_reference_words": 32,
+          "dynamic_state_replay_verified": false,
+          "declared_dynamic_states": 3,
+          "pipeline_recipe_variants_verified": false,
+          "original_shader_modules_destroyed_before_variants": false,
+          "library_pipeline_variants_verified": false,
+          "library_source_modules_destroyed_before_link": false,
+          "source_registry_released_before_render": false,
+          "source_libraries_released_before_render": false,
+          "source_executable_released_before_render": false,
+          "forwarded_original_gpl_witness_verified": false,
+          "gpl_dynamic_state_contract_resolved": false,
+          "gpl_dynamic_state_contract_used_for_replay": false,
+          "gpl_nonowner_dynamic_decoys_verified": false,
+          "gpl_effective_dynamic_state_count": 0,
+          "complete_static_state_contract_verified": false,
+          "static_bind_overwrites_dynamic_values_verified": false,
+          "following_draw_depth_write_disabled_verified": false,
+          "replay_telemetry_disabled_verified": false,
+          "telemetry_buffers_unchanged_bytes": 0,
+          "enabled_telemetry_positive_control_words_written": 0,
+          "separate_telemetry_control_shader_used": false,
+          "single_camera_buffer_fixture": true,
+          "frozen_scene_cases": 4,
+          "epochs_per_case": 2,
+          "eye_renderings": 16,
+          "submissions": 8,
+          "color_reference_different_bytes": 0,
+          "color_reference_compared_bytes": 16777216,
+          "depth_reference_compared_texels": 1048576,
+          "max_normalized_depth_difference": 0,
+          "stencil_reference_different_bytes": 0,
+          "stencil_reference_compared_bytes": 1048576,
+          "original_targets_preserved_defined_bytes": 31457280,
+          "disparity_pixels_depth_2": 7.293567536,
+          "disparity_pixels_depth_4": 3.641939687,
+          "binocular_disocclusion_texels": 2738,
+          "color_formats": [
+            44,
+            64,
+            44,
+            50
+          ],
+          "depth_stencil_format": 129,
+          "game_draw_replay_implemented": false,
+          "game_stereo_submitted": false
+        },
+        "frame_metadata": {
+          "bounded_capture_verified": true,
+          "monolithic_pipeline_count": 4,
+          "linked_pipeline_count": 0,
+          "largest_dynamic_declaration": 3,
+          "clear_value_sets": 48,
+          "graphics_state_snapshot_complete": false
+        },
+        "paired_pipelines": null
+      }
+    ],
+    "input_sha256": {
+      "frozen_targets_fixture": "848a731c7d245c32dabf6083537867290c79a409f4792f189f952ef1786c2042",
+      "single-mrt.spv": "6a4e28a74e9ceb9fe6e35620a5efdf2c260a50c1277f1528db0a1de8a8448ab8",
+      "single-mrt-projection.spv": "58eb6b21f1aef3093c0ad08dfb084ec273e7d9fabfd0c18265eb9426e1175d86",
+      "stereo-mrt.frag.spv": "cb53b181176dbe1ff1834eb025efa126ce634c1447cf23c8e0a7d413efcebc6a",
+      "descriptor-echo.spv": "48c7d03c99aaa655d38b3c5279cab4a88d51c6e15089b7e4cc79c8d741530030"
+    },
+    "sync_validation_negative_control_passed": true,
+    "game_draw_replay_implemented": false,
+    "game_stereo_submitted": false,
+    "trace_layer_sha256": "7674564ce046c3db3b2023ec8e406ad5d972f0828d222de500119b7b6e343514"
+  },
+  "resource_observations": [
+    {
+      "case": "descriptor-offset-negative-control-frames",
+      "counts": {
+        "descriptor_buffers": 4,
+        "descriptor_offsets": 9,
+        "draw": 8,
+        "dispatch": 1,
+        "classic_descriptors": 4
+      },
+      "address_status_counts": {
+        "unique_observed_range": 4
+      },
+      "buffer_id_count": 1,
+      "descriptor_contents_captured": false,
+      "resource_aliases_excluded": false,
+      "raw_metadata_bytes": 40452
+    },
+    {
+      "case": "native-frames",
+      "counts": {
+        "descriptor_buffers": 4,
+        "descriptor_offsets": 8,
+        "draw": 8,
+        "dispatch": 1,
+        "classic_descriptors": 4
+      },
+      "address_status_counts": {
+        "unique_observed_range": 4
+      },
+      "buffer_id_count": 1,
+      "descriptor_contents_captured": false,
+      "resource_aliases_excluded": false,
+      "raw_metadata_bytes": 40214
+    },
+    {
+      "case": "native-validation-frames",
+      "counts": {
+        "descriptor_buffers": 4,
+        "descriptor_offsets": 8,
+        "draw": 8,
+        "dispatch": 1,
+        "classic_descriptors": 4
+      },
+      "address_status_counts": {
+        "unique_observed_range": 4
+      },
+      "buffer_id_count": 1,
+      "descriptor_contents_captured": false,
+      "resource_aliases_excluded": false,
+      "raw_metadata_bytes": 40214
+    },
+    {
+      "case": "steam-runtime-validation-frames",
+      "counts": {
+        "descriptor_buffers": 4,
+        "descriptor_offsets": 8,
+        "draw": 8,
+        "dispatch": 1,
+        "classic_descriptors": 4
+      },
+      "address_status_counts": {
+        "unique_observed_range": 4
+      },
+      "buffer_id_count": 1,
+      "descriptor_contents_captured": false,
+      "resource_aliases_excluded": false,
+      "raw_metadata_bytes": 40214
+    },
+    {
+      "case": "sync-negative-control-frames",
+      "counts": {
+        "descriptor_buffers": 4,
+        "descriptor_offsets": 8,
+        "draw": 8,
+        "dispatch": 1,
+        "classic_descriptors": 4
+      },
+      "address_status_counts": {
+        "unique_observed_range": 4
+      },
+      "buffer_id_count": 1,
+      "descriptor_contents_captured": false,
+      "resource_aliases_excluded": false,
+      "raw_metadata_bytes": 40214
+    }
+  ],
+  "closed_poc_regression": {
+    "schema_version": 1,
+    "actual_loader_interception": true,
+    "synthetic_scene": true,
+    "diablo_rendered": false,
+    "steamvr_submission": false,
+    "render_extent": [
+      1024,
+      1024
+    ],
+    "layer_sha256": "a8f7515cbceb11a490d5d46429743bf1ee95f5fa50796dbdf3a3056fe5ef8665",
+    "client_sha256": "8e87d3149fbce6a59b0aa502c61c9436f085e3950992e96d7fe20eab2cecd499",
+    "cases": [
+      {
+        "original": {
+          "defined_bytes": 20971520,
+          "different_bytes": 0,
+          "sha256": "b546554adf88f1aed5ca639860a1d7a752f31c0aa4cc58189c6d8c47c98151db"
+        },
+        "following_original_scope": {
+          "defined_bytes": 20971520,
+          "different_bytes": 0,
+          "sha256": "b546554adf88f1aed5ca639860a1d7a752f31c0aa4cc58189c6d8c47c98151db"
+        },
+        "layer_reports": [
+          {
+            "schema_version": 1,
+            "synthetic_scene": true,
+            "diablo_rendered": false,
+            "width": 1024,
+            "height": 1024,
+            "forwarded_draws": 4,
+            "replayed_scopes": 2,
+            "replayed_draws": 8,
+            "rejected_scopes": 0,
+            "last_rejection": 0,
+            "images_copied": true
+          },
+          {
+            "schema_version": 1,
+            "synthetic_scene": true,
+            "diablo_rendered": false,
+            "width": 1024,
+            "height": 1024,
+            "forwarded_draws": 6,
+            "replayed_scopes": 0,
+            "replayed_draws": 0,
+            "rejected_scopes": 3,
+            "last_rejection": 5,
+            "images_copied": false
+          }
+        ],
+        "left": {
+          "defined_bytes": 20971520,
+          "different_bytes": 0,
+          "sha256": "fc821141867bc33d3b835f7bb03fe1ccec0ab54191bbb580f7193b9aad934e95"
+        },
+        "right": {
+          "defined_bytes": 20971520,
+          "different_bytes": 0,
+          "sha256": "ed78ee50fb6489a5394e48df6c37ea7d9a8d9fb01a0e5f654b22b2a858ce115b"
+        },
+        "different_eye_color_pixels": 57292,
+        "foreground_pixels": [
+          246245,
+          251781
+        ],
+        "name": "positive",
+        "returncode": 0,
+        "validation_errors": 0
+      },
+      {
+        "original": {
+          "defined_bytes": 20971520,
+          "different_bytes": 0,
+          "sha256": "b546554adf88f1aed5ca639860a1d7a752f31c0aa4cc58189c6d8c47c98151db"
+        },
+        "following_original_scope": {
+          "defined_bytes": 20971520,
+          "different_bytes": 0,
+          "sha256": "b546554adf88f1aed5ca639860a1d7a752f31c0aa4cc58189c6d8c47c98151db"
+        },
+        "layer_reports": [
+          {
+            "schema_version": 1,
+            "synthetic_scene": true,
+            "diablo_rendered": false,
+            "width": 1024,
+            "height": 1024,
+            "forwarded_draws": 4,
+            "replayed_scopes": 0,
+            "replayed_draws": 0,
+            "rejected_scopes": 2,
+            "last_rejection": 1,
+            "images_copied": false
+          },
+          {
+            "schema_version": 1,
+            "synthetic_scene": true,
+            "diablo_rendered": false,
+            "width": 1024,
+            "height": 1024,
+            "forwarded_draws": 6,
+            "replayed_scopes": 0,
+            "replayed_draws": 0,
+            "rejected_scopes": 3,
+            "last_rejection": 5,
+            "images_copied": false
+          }
+        ],
+        "name": "unsupported-command",
+        "returncode": 0,
+        "validation_errors": 0
+      },
+      {
+        "original": {
+          "defined_bytes": 20971520,
+          "different_bytes": 0,
+          "sha256": "b546554adf88f1aed5ca639860a1d7a752f31c0aa4cc58189c6d8c47c98151db"
+        },
+        "following_original_scope": {
+          "defined_bytes": 20971520,
+          "different_bytes": 0,
+          "sha256": "b546554adf88f1aed5ca639860a1d7a752f31c0aa4cc58189c6d8c47c98151db"
+        },
+        "layer_reports": [],
+        "name": "unrecognized-shader",
+        "returncode": 0,
+        "validation_errors": 0
+      },
+      {
+        "original": {
+          "defined_bytes": 20971520,
+          "different_bytes": 0,
+          "sha256": "b546554adf88f1aed5ca639860a1d7a752f31c0aa4cc58189c6d8c47c98151db"
+        },
+        "following_original_scope": {
+          "defined_bytes": 20971520,
+          "different_bytes": 0,
+          "sha256": "b546554adf88f1aed5ca639860a1d7a752f31c0aa4cc58189c6d8c47c98151db"
+        },
+        "layer_reports": [],
+        "name": "disabled",
+        "returncode": 0,
+        "validation_errors": 0
+      },
+      {
+        "original": {
+          "defined_bytes": 20971520,
+          "different_bytes": 0,
+          "sha256": "b546554adf88f1aed5ca639860a1d7a752f31c0aa4cc58189c6d8c47c98151db"
+        },
+        "following_original_scope": {
+          "defined_bytes": 20971520,
+          "different_bytes": 0,
+          "sha256": "b546554adf88f1aed5ca639860a1d7a752f31c0aa4cc58189c6d8c47c98151db"
+        },
+        "layer_reports": [],
+        "name": "wrong-client",
+        "returncode": 0,
+        "validation_errors": 0
+      },
+      {
+        "original": {
+          "defined_bytes": 20971520,
+          "different_bytes": 0,
+          "sha256": "b546554adf88f1aed5ca639860a1d7a752f31c0aa4cc58189c6d8c47c98151db"
+        },
+        "following_original_scope": {
+          "defined_bytes": 20971520,
+          "different_bytes": 0,
+          "sha256": "b546554adf88f1aed5ca639860a1d7a752f31c0aa4cc58189c6d8c47c98151db"
+        },
+        "layer_reports": [
+          {
+            "schema_version": 1,
+            "synthetic_scene": true,
+            "diablo_rendered": false,
+            "width": 1024,
+            "height": 1024,
+            "forwarded_draws": 4,
+            "replayed_scopes": 2,
+            "replayed_draws": 8,
+            "rejected_scopes": 0,
+            "last_rejection": 0,
+            "images_copied": true
+          },
+          {
+            "schema_version": 1,
+            "synthetic_scene": true,
+            "diablo_rendered": false,
+            "width": 1024,
+            "height": 1024,
+            "forwarded_draws": 6,
+            "replayed_scopes": 0,
+            "replayed_draws": 0,
+            "rejected_scopes": 3,
+            "last_rejection": 5,
+            "images_copied": false
+          }
+        ],
+        "left": {
+          "defined_bytes": 20971520,
+          "different_bytes": 0,
+          "sha256": "fc821141867bc33d3b835f7bb03fe1ccec0ab54191bbb580f7193b9aad934e95"
+        },
+        "right": {
+          "defined_bytes": 20971520,
+          "different_bytes": 0,
+          "sha256": "ed78ee50fb6489a5394e48df6c37ea7d9a8d9fb01a0e5f654b22b2a858ce115b"
+        },
+        "different_eye_color_pixels": 57292,
+        "foreground_pixels": [
+          246245,
+          251781
+        ],
+        "xr_loader_failure_preserved_originals": true,
+        "xr_report": {
+          "schema_version": 1,
+          "synthetic_scene": true,
+          "diablo_rendered": false,
+          "runtime": "",
+          "preflight_only": false,
+          "session_and_swapchains_created": false,
+          "success": false,
+          "runtime_uuid_matches": false,
+          "required_extensions_enabled": false,
+          "replayed_xr_frames": 0,
+          "tracked_frames": 0,
+          "eye_packet_updates": 0,
+          "head_translation_meters": 0,
+          "eye_separation_meters": 0,
+          "application_submissions_repeated": 0,
+          "borrowed_vulkan_objects_destroyed": false,
+          "error": "OpenXR loader unavailable"
+        },
+        "name": "xr-loader-unavailable",
+        "returncode": 0,
+        "validation_errors": 0
+      },
+      {
+        "original": {
+          "defined_bytes": 20971520,
+          "different_bytes": 0,
+          "sha256": "b546554adf88f1aed5ca639860a1d7a752f31c0aa4cc58189c6d8c47c98151db"
+        },
+        "following_original_scope": {
+          "defined_bytes": 20971520,
+          "different_bytes": 0,
+          "sha256": "b546554adf88f1aed5ca639860a1d7a752f31c0aa4cc58189c6d8c47c98151db"
+        },
+        "layer_reports": [
+          {
+            "schema_version": 1,
+            "synthetic_scene": true,
+            "diablo_rendered": false,
+            "width": 1024,
+            "height": 1024,
+            "forwarded_draws": 4,
+            "replayed_scopes": 2,
+            "replayed_draws": 8,
+            "rejected_scopes": 0,
+            "last_rejection": 0,
+            "images_copied": true
+          },
+          {
+            "schema_version": 1,
+            "synthetic_scene": true,
+            "diablo_rendered": false,
+            "width": 1024,
+            "height": 1024,
+            "forwarded_draws": 6,
+            "replayed_scopes": 0,
+            "replayed_draws": 0,
+            "rejected_scopes": 3,
+            "last_rejection": 5,
+            "images_copied": false
+          }
+        ],
+        "left": {
+          "defined_bytes": 20971520,
+          "different_bytes": 0,
+          "sha256": "fc821141867bc33d3b835f7bb03fe1ccec0ab54191bbb580f7193b9aad934e95"
+        },
+        "right": {
+          "defined_bytes": 20971520,
+          "different_bytes": 0,
+          "sha256": "ed78ee50fb6489a5394e48df6c37ea7d9a8d9fb01a0e5f654b22b2a858ce115b"
+        },
+        "different_eye_color_pixels": 57292,
+        "foreground_pixels": [
+          246245,
+          251781
+        ],
+        "name": "steam-runtime",
+        "returncode": 0,
+        "validation_errors": 0
+      },
+      {
+        "original": {
+          "defined_bytes": 20971520,
+          "different_bytes": 0,
+          "sha256": "b546554adf88f1aed5ca639860a1d7a752f31c0aa4cc58189c6d8c47c98151db"
+        },
+        "following_original_scope": {
+          "defined_bytes": 20971520,
+          "different_bytes": 0,
+          "sha256": "b546554adf88f1aed5ca639860a1d7a752f31c0aa4cc58189c6d8c47c98151db"
+        },
+        "layer_reports": [
+          {
+            "schema_version": 1,
+            "synthetic_scene": true,
+            "diablo_rendered": false,
+            "width": 1024,
+            "height": 1024,
+            "forwarded_draws": 4,
+            "replayed_scopes": 2,
+            "replayed_draws": 8,
+            "rejected_scopes": 0,
+            "last_rejection": 0,
+            "images_copied": true
+          },
+          {
+            "schema_version": 1,
+            "synthetic_scene": true,
+            "diablo_rendered": false,
+            "width": 1024,
+            "height": 1024,
+            "forwarded_draws": 6,
+            "replayed_scopes": 0,
+            "replayed_draws": 0,
+            "rejected_scopes": 3,
+            "last_rejection": 5,
+            "images_copied": false
+          }
+        ],
+        "left": {
+          "defined_bytes": 20971520,
+          "different_bytes": 0,
+          "sha256": "fc821141867bc33d3b835f7bb03fe1ccec0ab54191bbb580f7193b9aad934e95"
+        },
+        "right": {
+          "defined_bytes": 20971520,
+          "different_bytes": 0,
+          "sha256": "ed78ee50fb6489a5394e48df6c37ea7d9a8d9fb01a0e5f654b22b2a858ce115b"
+        },
+        "different_eye_color_pixels": 57292,
+        "foreground_pixels": [
+          246245,
+          251781
+        ],
+        "mock_runtime": true,
+        "actual_steamvr_submission": false,
+        "xr_report": {
+          "schema_version": 1,
+          "synthetic_scene": true,
+          "diablo_rendered": false,
+          "runtime": "D4VR mock XR (no SteamVR)",
+          "preflight_only": false,
+          "session_and_swapchains_created": false,
+          "success": false,
+          "runtime_uuid_matches": true,
+          "required_extensions_enabled": true,
+          "replayed_xr_frames": 0,
+          "tracked_frames": 0,
+          "eye_packet_updates": 0,
+          "head_translation_meters": 0,
+          "eye_separation_meters": 0,
+          "application_submissions_repeated": 0,
+          "borrowed_vulkan_objects_destroyed": false,
+          "error": "xrCreateSession borrowed device: -6"
+        },
+        "total_observed_device_submissions": 2,
+        "application_recordings_submitted": 2,
+        "name": "xr-mock-session-failure",
+        "returncode": 0,
+        "validation_errors": 0
+      },
+      {
+        "original": {
+          "defined_bytes": 20971520,
+          "different_bytes": 0,
+          "sha256": "b546554adf88f1aed5ca639860a1d7a752f31c0aa4cc58189c6d8c47c98151db"
+        },
+        "following_original_scope": {
+          "defined_bytes": 20971520,
+          "different_bytes": 0,
+          "sha256": "b546554adf88f1aed5ca639860a1d7a752f31c0aa4cc58189c6d8c47c98151db"
+        },
+        "layer_reports": [
+          {
+            "schema_version": 1,
+            "synthetic_scene": true,
+            "diablo_rendered": false,
+            "width": 1024,
+            "height": 1024,
+            "forwarded_draws": 4,
+            "replayed_scopes": 2,
+            "replayed_draws": 8,
+            "rejected_scopes": 0,
+            "last_rejection": 0,
+            "images_copied": true
+          },
+          {
+            "schema_version": 1,
+            "synthetic_scene": true,
+            "diablo_rendered": false,
+            "width": 1024,
+            "height": 1024,
+            "forwarded_draws": 6,
+            "replayed_scopes": 0,
+            "replayed_draws": 0,
+            "rejected_scopes": 3,
+            "last_rejection": 5,
+            "images_copied": false
+          }
+        ],
+        "left": {
+          "defined_bytes": 20971520,
+          "different_bytes": 0,
+          "sha256": "fc821141867bc33d3b835f7bb03fe1ccec0ab54191bbb580f7193b9aad934e95"
+        },
+        "right": {
+          "defined_bytes": 20971520,
+          "different_bytes": 0,
+          "sha256": "ed78ee50fb6489a5394e48df6c37ea7d9a8d9fb01a0e5f654b22b2a858ce115b"
+        },
+        "different_eye_color_pixels": 57292,
+        "foreground_pixels": [
+          246245,
+          251781
+        ],
+        "mock_runtime": true,
+        "actual_steamvr_submission": false,
+        "xr_report": {
+          "schema_version": 1,
+          "synthetic_scene": true,
+          "diablo_rendered": false,
+          "runtime": "D4VR mock XR (no SteamVR)",
+          "preflight_only": true,
+          "session_and_swapchains_created": true,
+          "success": true,
+          "runtime_uuid_matches": true,
+          "required_extensions_enabled": true,
+          "replayed_xr_frames": 0,
+          "tracked_frames": 0,
+          "eye_packet_updates": 0,
+          "head_translation_meters": 0,
+          "eye_separation_meters": 0,
+          "application_submissions_repeated": 0,
+          "borrowed_vulkan_objects_destroyed": false,
+          "error": ""
+        },
+        "total_observed_device_submissions": 2,
+        "application_recordings_submitted": 2,
+        "name": "xr-mock-preflight",
+        "returncode": 0,
+        "validation_errors": 0
+      },
+      {
+        "original": {
+          "defined_bytes": 20971520,
+          "different_bytes": 0,
+          "sha256": "b546554adf88f1aed5ca639860a1d7a752f31c0aa4cc58189c6d8c47c98151db"
+        },
+        "following_original_scope": {
+          "defined_bytes": 20971520,
+          "different_bytes": 0,
+          "sha256": "b546554adf88f1aed5ca639860a1d7a752f31c0aa4cc58189c6d8c47c98151db"
+        },
+        "layer_reports": [
+          {
+            "schema_version": 1,
+            "synthetic_scene": true,
+            "diablo_rendered": false,
+            "width": 1024,
+            "height": 1024,
+            "forwarded_draws": 4,
+            "replayed_scopes": 2,
+            "replayed_draws": 8,
+            "rejected_scopes": 0,
+            "last_rejection": 0,
+            "images_copied": true
+          },
+          {
+            "schema_version": 1,
+            "synthetic_scene": true,
+            "diablo_rendered": false,
+            "width": 1024,
+            "height": 1024,
+            "forwarded_draws": 6,
+            "replayed_scopes": 0,
+            "replayed_draws": 0,
+            "rejected_scopes": 3,
+            "last_rejection": 5,
+            "images_copied": false
+          }
+        ],
+        "left": {
+          "defined_bytes": 20971520,
+          "different_bytes": 0,
+          "sha256": "fc821141867bc33d3b835f7bb03fe1ccec0ab54191bbb580f7193b9aad934e95"
+        },
+        "right": {
+          "defined_bytes": 20971520,
+          "different_bytes": 0,
+          "sha256": "ed78ee50fb6489a5394e48df6c37ea7d9a8d9fb01a0e5f654b22b2a858ce115b"
+        },
+        "different_eye_color_pixels": 57292,
+        "foreground_pixels": [
+          246245,
+          251781
+        ],
+        "mock_runtime": true,
+        "actual_steamvr_submission": false,
+        "xr_report": {
+          "schema_version": 1,
+          "synthetic_scene": true,
+          "diablo_rendered": false,
+          "runtime": "D4VR mock XR (no SteamVR)",
+          "preflight_only": false,
+          "session_and_swapchains_created": true,
+          "success": true,
+          "runtime_uuid_matches": true,
+          "required_extensions_enabled": true,
+          "replayed_xr_frames": 2,
+          "tracked_frames": 2,
+          "eye_packet_updates": 2,
+          "head_translation_meters": 0.025,
+          "eye_separation_meters": 0.064,
+          "application_submissions_repeated": 0,
+          "borrowed_vulkan_objects_destroyed": false,
+          "error": ""
+        },
+        "total_observed_device_submissions": 3,
+        "application_recordings_submitted": 2,
+        "name": "xr-mock-frames",
+        "returncode": 0,
+        "validation_errors": 0
+      },
+      {
+        "original": {
+          "defined_bytes": 20971520,
+          "different_bytes": 0,
+          "sha256": "b546554adf88f1aed5ca639860a1d7a752f31c0aa4cc58189c6d8c47c98151db"
+        },
+        "following_original_scope": {
+          "defined_bytes": 20971520,
+          "different_bytes": 0,
+          "sha256": "b546554adf88f1aed5ca639860a1d7a752f31c0aa4cc58189c6d8c47c98151db"
+        },
+        "layer_reports": [
+          {
+            "schema_version": 1,
+            "synthetic_scene": true,
+            "diablo_rendered": false,
+            "width": 1024,
+            "height": 1024,
+            "forwarded_draws": 4,
+            "replayed_scopes": 2,
+            "replayed_draws": 8,
+            "rejected_scopes": 0,
+            "last_rejection": 0,
+            "images_copied": true
+          },
+          {
+            "schema_version": 1,
+            "synthetic_scene": true,
+            "diablo_rendered": false,
+            "width": 1024,
+            "height": 1024,
+            "forwarded_draws": 6,
+            "replayed_scopes": 0,
+            "replayed_draws": 0,
+            "rejected_scopes": 3,
+            "last_rejection": 5,
+            "images_copied": false
+          }
+        ],
+        "left": {
+          "defined_bytes": 20971520,
+          "different_bytes": 0,
+          "sha256": "fc821141867bc33d3b835f7bb03fe1ccec0ab54191bbb580f7193b9aad934e95"
+        },
+        "right": {
+          "defined_bytes": 20971520,
+          "different_bytes": 0,
+          "sha256": "ed78ee50fb6489a5394e48df6c37ea7d9a8d9fb01a0e5f654b22b2a858ce115b"
+        },
+        "different_eye_color_pixels": 57292,
+        "foreground_pixels": [
+          246245,
+          251781
+        ],
+        "mock_runtime": true,
+        "actual_steamvr_submission": false,
+        "xr_report": {
+          "schema_version": 1,
+          "synthetic_scene": true,
+          "diablo_rendered": false,
+          "runtime": "D4VR mock XR (no SteamVR)",
+          "preflight_only": false,
+          "session_and_swapchains_created": true,
+          "success": true,
+          "runtime_uuid_matches": true,
+          "required_extensions_enabled": true,
+          "replayed_xr_frames": 2,
+          "tracked_frames": 2,
+          "eye_packet_updates": 2,
+          "head_translation_meters": 0.025,
+          "eye_separation_meters": 0.064,
+          "application_submissions_repeated": 0,
+          "borrowed_vulkan_objects_destroyed": false,
+          "error": ""
+        },
+        "total_observed_device_submissions": 3,
+        "application_recordings_submitted": 2,
+        "name": "xr-mock-steam-runtime",
+        "returncode": 0,
+        "validation_errors": 0
+      }
+    ]
+  },
+  "strict_cpu_tests_passed": [
+    "frame_resource_tests",
+    "trace_resource_tests"
+  ],
+  "local_sanitizer_runtime_available": false,
+  "python_tests_passed": 143,
+  "source_sha256": {
+    ".github/workflows/checks.yml": "b0014aca2d463e1876c079c692c16cdc730331823c071d774d0462b2cab801ef",
+    "native/tests/frame_trace_tests.cpp": "15de4a1102a3acd6a3d763aa8e27be4ef3ebb92ac27339eddccae90779966a3c",
+    "native/tests/vulkan_trace_tests.cpp": "895f804affb9d74ac02cafe142acb8ca75074acf5fffad4e3332d33c08b282f5",
+    "native/vulkan/buffer_addresses.hpp": "13f4b18341921dd26c30f508cd976539fbd3c374b5a75ddeb74fdef5ed9c0219",
+    "native/vulkan/frame_trace.hpp": "57ab578b8d2a0f6d19e4dae257f60d4ac164603dc225d9a8fd9b22f1a24bcdd4",
+    "native/vulkan/trace_layer.cpp": "a61b3e8f1332fe65c7b5af4eb1d89c52219582cea3d53898d4010d40ea50df9a",
+    "tests/test_frame_trace.py": "7a6b6d97da0ced612d9153d5cf3845a75efa5548523252bc798e9162339c4ebf",
+    "tools/frame_trace.py": "2364d266c5a639c12a114e8061fdff456736e66b2b49fccf5ab76ac3c82e70e4",
+    "tools/layer_poc_codegen.py": "a1cb1cbf651369bb96dfc7b76f761b55b6ad28f85cac4acd538166d6f4c00e9e",
+    "tools/stereo_mrt_validate.py": "63782454d9d5562551c79f51e6eb6d93f6987e0397bd5e0d10573d342694a658"
+  }
+}

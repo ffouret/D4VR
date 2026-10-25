@@ -21,6 +21,10 @@ uint32_t originalCreates=0,privateCreates=0,originalDestroys=0;
 uintptr_t nextPrivate=1000;
 std::set<VkPipeline> privatePipelines;
 VkResult privateResult=VK_SUCCESS;
+const VkBufferCreateInfo* expectedBufferInfo{};const VkBufferDeviceAddressInfo* expectedAddressInfo{};
+const VkDescriptorBufferBindingInfoEXT* expectedBindingInfo{};const uint32_t* expectedIndices{};const VkDeviceSize* expectedOffsets{};
+const VkDescriptorSet* expectedSets{};VkPipelineLayout expectedLayout{};VkBuffer expectedBuffer{};
+VkResult bufferResult=VK_SUCCESS;unsigned bufferCreates=0,bufferDestroys=0,addressQueries=0,bufferBinds=0,offsetBinds=0,classicBinds=0;
 template<class T> T object(uintptr_t value) { return reinterpret_cast<T>(value); }
 VKAPI_ATTR VkResult VKAPI_CALL originalCreate(VkDevice,VkPipelineCache cache,uint32_t n,const VkGraphicsPipelineCreateInfo* info,const VkAllocationCallbacks* allocator,VkPipeline* out) {
     require(n==3 && cache==expectedCache && info==expectedGraphics && allocator==expectedAllocator,"Original pipeline arguments changed");
@@ -63,12 +67,25 @@ VKAPI_ATTR VkResult VKAPI_CALL submit2(VkQueue, uint32_t n, const VkSubmitInfo2*
 VKAPI_ATTR VkResult VKAPI_CALL begin(VkCommandBuffer, const VkCommandBufferBeginInfo*) { return VK_SUCCESS; }
 VKAPI_ATTR VkResult VKAPI_CALL resetPool(VkDevice, VkCommandPool, VkCommandPoolResetFlags) { return VK_SUCCESS; }
 VKAPI_ATTR void VKAPI_CALL destroyPool(VkDevice, VkCommandPool, const VkAllocationCallbacks*) {}
+VKAPI_ATTR VkResult VKAPI_CALL createBuffer(VkDevice,const VkBufferCreateInfo* info,const VkAllocationCallbacks* allocator,VkBuffer* out) {
+    require(info==expectedBufferInfo && allocator==expectedAllocator,"Buffer create arguments changed");++bufferCreates;if(bufferResult==VK_SUCCESS)*out=expectedBuffer;return bufferResult;
+}
+VKAPI_ATTR void VKAPI_CALL destroyBuffer(VkDevice,VkBuffer buffer,const VkAllocationCallbacks* allocator) {require(buffer==expectedBuffer && allocator==expectedAllocator,"Buffer destroy arguments changed");++bufferDestroys;}
+VKAPI_ATTR VkDeviceAddress VKAPI_CALL bufferAddress(VkDevice,const VkBufferDeviceAddressInfo* info) {require(info==expectedAddressInfo,"Address query arguments changed");++addressQueries;return 0x40000;}
+VKAPI_ATTR void VKAPI_CALL bindBuffers(VkCommandBuffer c,uint32_t n,const VkDescriptorBufferBindingInfoEXT* infos) {require(c==expectedCommand && n==1 && infos==expectedBindingInfo,"Descriptor buffer bind arguments changed");++bufferBinds;}
+VKAPI_ATTR void VKAPI_CALL bindOffsets(VkCommandBuffer c,VkPipelineBindPoint point,VkPipelineLayout layout,uint32_t first,uint32_t n,const uint32_t* indices,const VkDeviceSize* offsets) {
+    require(c==expectedCommand && point==VK_PIPELINE_BIND_POINT_GRAPHICS && layout==expectedLayout && first==2 && n==1 && indices==expectedIndices && offsets==expectedOffsets,"Descriptor offsets changed");++offsetBinds;
+}
+VKAPI_ATTR void VKAPI_CALL bindSets(VkCommandBuffer c,VkPipelineBindPoint point,VkPipelineLayout layout,uint32_t first,uint32_t n,const VkDescriptorSet* sets,uint32_t dynamicCount,const uint32_t* offsets) {
+    require(c==expectedCommand && point==VK_PIPELINE_BIND_POINT_COMPUTE && layout==expectedLayout && first==1 && n==1 && sets==expectedSets && !dynamicCount && !offsets,"Classic descriptor arguments changed");++classicBinds;
+}
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL proc(VkDevice, const char* name) {
     if (std::strcmp(name,"vkCreateGraphicsPipelines")==0) return reinterpret_cast<PFN_vkVoidFunction>(privateCreate);
     if (std::strcmp(name,"vkDestroyPipeline")==0) return reinterpret_cast<PFN_vkVoidFunction>(pipelineDestroy);
     if (std::strcmp(name, "vkCmdDraw") == 0) return reinterpret_cast<PFN_vkVoidFunction>(draw);
     if (std::strcmp(name, "vkCmdExecuteGeneratedCommandsEXT") == 0) return reinterpret_cast<PFN_vkVoidFunction>(generated);
     if (std::strcmp(name, "vkQueueSubmit2KHR") == 0) return reinterpret_cast<PFN_vkVoidFunction>(submit2);
+    if(std::strcmp(name,"vkGetBufferDeviceAddressKHR")==0)return reinterpret_cast<PFN_vkVoidFunction>(bufferAddress);
     return nullptr;
 }
 } // namespace
@@ -149,6 +166,23 @@ int main() try {
         && privatePipelines.empty() && d->pairs->stats().compileRequired==1,"Private compile failure changed original result or leaked a partial output");
     privateResult=VK_SUCCESS;d4CreateGraphicsPipelines(handle,expectedCache,3,infos,&allocator,outputs);
     require(privatePipelines.size()==2,"Private teardown test did not create a graph");
+    d->CreateBuffer=createBuffer;d->DestroyBuffer=destroyBuffer;d->GetBufferDeviceAddress=bufferAddress;
+    d->CmdBindDescriptorBuffersEXT=bindBuffers;d->CmdSetDescriptorBufferOffsetsEXT=bindOffsets;d->CmdBindDescriptorSets=bindSets;
+    require(d4GetDeviceProcAddr(handle,"vkGetBufferDeviceAddressKHR")==reinterpret_cast<PFN_vkVoidFunction>(d4GetBufferDeviceAddress),"BDA KHR alias missing");
+    d->frame.enabled=true;d->commands[primary].frame=d->frame.command();expectedCommand=primary;
+    VkBufferCreateInfo bi{VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};bi.size=4096;bi.usage=VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;expectedBufferInfo=&bi;expectedBuffer=object<VkBuffer>(777);
+    VkBuffer created{};require(d4CreateBuffer(handle,&bi,expectedAllocator,&created)==VK_SUCCESS && created==expectedBuffer,"Buffer create result changed");
+    VkBufferDeviceAddressInfo addressInfo{VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO};addressInfo.buffer=created;expectedAddressInfo=&addressInfo;
+    require(d4GetBufferDeviceAddress(handle,&addressInfo)==0x40000,"Original BDA result changed");
+    VkDescriptorBufferBindingInfoEXT binding{VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT};binding.address=0x40020;binding.usage=bi.usage;expectedBindingInfo=&binding;
+    uint32_t index=0;VkDeviceSize offset=64;expectedIndices=&index;expectedOffsets=&offset;expectedLayout=object<VkPipelineLayout>(778);
+    d4CmdBindDescriptorBuffersEXT(primary,1,&binding);d4CmdSetDescriptorBufferOffsetsEXT(primary,VK_PIPELINE_BIND_POINT_GRAPHICS,expectedLayout,2,1,&index,&offset);
+    VkDescriptorSet set=object<VkDescriptorSet>(779);expectedSets=&set;d4CmdBindDescriptorSets(primary,VK_PIPELINE_BIND_POINT_COMPUTE,expectedLayout,1,1,&set,0,nullptr);
+    auto& events=d->commands[primary].frame.resources;require(events.size()==3 && events[0].buffers[0].status==d4vr::frame::BufferRange::uniqueObserved && events[0].buffers[0].offset==32,"Layer did not resolve actual forwarded address");
+    d4DestroyBuffer(handle,created,expectedAllocator);bufferResult=VK_ERROR_OUT_OF_DEVICE_MEMORY;
+    require(d4CreateBuffer(handle,&bi,expectedAllocator,&created)==bufferResult,"Failed buffer create result changed");d4CmdBindDescriptorBuffersEXT(primary,1,&binding);
+    require(events.back().buffers[0].status==d4vr::frame::BufferRange::unknown,"Failed creation or destroyed handle remained addressable");
+    require(bufferCreates==2 && bufferDestroys==1 && addressQueries==1 && bufferBinds==2 && offsetBinds==1 && classicBinds==1,"Resource API was not forwarded exactly once");
     d4DestroyDevice(handle,nullptr);
     std::cout << "Vulkan forwarding, DGC, aliases, secondary/reused command buffers, errors and reset lifetime: passed\n";
     return 0;
