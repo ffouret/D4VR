@@ -1,6 +1,7 @@
 #pragma once
 #include <vulkan/vulkan.h>
 #include "../core/eye_state.hpp"
+#include "eye_packet_update.hpp"
 #include <memory>
 #include <string>
 #include <vector>
@@ -32,7 +33,10 @@ class Control {
 public:
     ~Control();
     static std::unique_ptr<Control> create(VkDevice device,PFN_vkGetDeviceProcAddr get,
-        const VkPhysicalDeviceMemoryProperties& memory,const EyeState& state);
+        const VkPhysicalDeviceMemoryProperties& memory,const EyeState& state,uint32_t updateFamily=VK_QUEUE_FAMILY_IGNORED);
+    // Default controls are immutable. An explicit real queue family enables a
+    // GPU-update target at the SAME address; no pipelines are rebuilt per pose.
+    UpdateTarget updateTarget() const;
     void module(VkShaderModule handle,const VkShaderModuleCreateInfo& info);
     void removeModule(VkShaderModule handle);
     void identifier(VkShaderModule handle,const VkShaderModuleIdentifierEXT& identifier);

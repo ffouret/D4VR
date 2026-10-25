@@ -1,6 +1,7 @@
 // Real X11 WSI + loader interception. Xlib is loaded dynamically so this
 // optional Linux diagnostic needs no X11 development package or linker input.
 #include "vulkan_fixture.hpp"
+#include "../core/eye_state.hpp"
 #include <dlfcn.h>
 #include <array>
 #include <filesystem>
@@ -35,7 +36,9 @@ void text(const std::filesystem::path& p,const std::string& value){auto tmp=p;tm
 int main(int argc,char** argv)try{
     if(argc!=4)throw std::invalid_argument("Usage: present_layer_fixture vertex.spv fragment.spv private-directory");
     auto directory=std::filesystem::path(argv[3]);if(!std::filesystem::is_directory(directory))throw std::invalid_argument("Private directory missing");
-    Window window;Fixture f(true,false,false,false,false,"D4VR presentation selection fixture",false,{"VK_KHR_surface","VK_KHR_xlib_surface"},{VK_KHR_SWAPCHAIN_EXTENSION_NAME});
+    auto updateOption=std::getenv("D4VR_GPU_CAMERA_UPDATES");bool cameraUpdates=updateOption && !std::strcmp(updateOption,"1");
+    Window window;Fixture f(true,false,false,false,false,"D4VR presentation selection fixture",cameraUpdates,{"VK_KHR_surface","VK_KHR_xlib_surface"},{VK_KHR_SWAPCHAIN_EXTENSION_NAME},{},cameraUpdates?5:1);
+    std::array<VkQueue,5> readerQueues{};if(cameraUpdates)for(unsigned i=0;i<5;++i)vkGetDeviceQueue(f.device,f.family,i,&readerQueues[i]);
     auto createSurface=reinterpret_cast<CreateSurface>(vkGetInstanceProcAddr(f.instance,"vkCreateXlibSurfaceKHR"));if(!createSurface)throw std::runtime_error("Xlib Vulkan surface unavailable");
     XlibSurfaceInfo si{VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR,nullptr,0,window.display,window.window};VkSurfaceKHR surface{};check(createSurface(f.instance,&si,nullptr,&surface));
     VkBool32 supported=false;check(vkGetPhysicalDeviceSurfaceSupportKHR(f.physical,f.family,surface,&supported));if(!supported)throw std::runtime_error("Graphics queue cannot present");
@@ -76,6 +79,11 @@ int main(int argc,char** argv)try{
     VkFenceCreateInfo fi{VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};VkFence fence{};check(vkCreateFence(f.device,&fi,nullptr,&fence));auto golden=f.buffer(VkDeviceSize(extent.width)*extent.height*4,VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     text(directory/"eye.selection","2\n");
     for(unsigned frame=0;frame<64;++frame){
+        if(cameraUpdates && (frame==12 || frame==40 || frame==52)){
+            std::array<d4vr::EyeState,2> pair;for(unsigned eye=0;eye<2;++eye){auto view=d4vr::identity();view[3]=(eye?-.064:.064)+(frame==12?.125:frame==40?-.125:0);
+                pair[eye]=d4vr::make_eye_state(eye,frame==12?2:frame==40?3:4,view,d4vr::identity(),true,1.784022,3.171595,.00001,true);}
+            auto tmp=directory/"camera-pair.tmp";std::ofstream out(tmp,std::ios::binary);out.write(reinterpret_cast<const char*>(pair.data()),sizeof(pair));out.close();std::filesystem::rename(tmp,directory/"camera-pair.bin");
+        }
         if(frame==4 || frame==36)text(directory/"eye.selection","0\n");
         if(frame==20 || frame==52)text(directory/"eye.selection","1\n");
         if(frame==60)text(directory/"eye.selection","2\n");
@@ -95,13 +103,15 @@ int main(int argc,char** argv)try{
         transition(images[index],VK_IMAGE_LAYOUT_UNDEFINED,VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,0,VK_ACCESS_TRANSFER_WRITE_BIT,VK_PIPELINE_STAGE_TRANSFER_BIT,VK_PIPELINE_STAGE_TRANSFER_BIT);
         VkImageBlit region{};region.srcSubresource=region.dstSubresource={VK_IMAGE_ASPECT_COLOR_BIT,0,0,1};region.srcOffsets[1]=region.dstOffsets[1]={int32_t(extent.width),int32_t(extent.height),1};vkCmdBlitImage(command,source,VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,images[index],VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,1,&region,VK_FILTER_LINEAR);
         transition(images[index],VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,VK_ACCESS_TRANSFER_WRITE_BIT,0,VK_PIPELINE_STAGE_TRANSFER_BIT,VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
-        if(frame==0 || frame==8 || frame==28 || frame==63){VkBufferImageCopy copy{};copy.imageSubresource={VK_IMAGE_ASPECT_COLOR_BIT,0,0,1};copy.imageExtent=ici.extent;vkCmdCopyImageToBuffer(command,source,VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,golden.handle,1,&copy);
+        bool save=frame==0 || frame==8 || frame==28 || frame==63 || (cameraUpdates && (frame==16 || frame==44 || frame==56));
+        if(save){VkBufferImageCopy copy{};copy.imageSubresource={VK_IMAGE_ASPECT_COLOR_BIT,0,0,1};copy.imageExtent=ici.extent;vkCmdCopyImageToBuffer(command,source,VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,golden.handle,1,&copy);
             VkMemoryBarrier host{VK_STRUCTURE_TYPE_MEMORY_BARRIER};host.srcAccessMask=VK_ACCESS_TRANSFER_WRITE_BIT;host.dstAccessMask=VK_ACCESS_HOST_READ_BIT;vkCmdPipelineBarrier(command,VK_PIPELINE_STAGE_TRANSFER_BIT,VK_PIPELINE_STAGE_HOST_BIT,0,1,&host,0,nullptr,0,nullptr);}
         check(vkEndCommandBuffer(command));VkPipelineStageFlags wait=VK_PIPELINE_STAGE_TRANSFER_BIT;VkSubmitInfo submit{VK_STRUCTURE_TYPE_SUBMIT_INFO};submit.waitSemaphoreCount=1;submit.pWaitSemaphores=&acquired;submit.pWaitDstStageMask=&wait;submit.commandBufferCount=1;submit.pCommandBuffers=&command;submit.signalSemaphoreCount=1;submit.pSignalSemaphores=&finished[index];
         check(vkQueueSubmit(f.queue,1,&submit,fence));VkPresentInfoKHR present{VK_STRUCTURE_TYPE_PRESENT_INFO_KHR};present.waitSemaphoreCount=1;present.pWaitSemaphores=&finished[index];present.swapchainCount=1;present.pSwapchains=&chain;present.pImageIndices=&index;
         auto presented=vkQueuePresentKHR(f.queue,&present);if(presented!=VK_SUBOPTIMAL_KHR)check(presented);
         check(vkWaitForFences(f.device,1,&fence,VK_TRUE,30'000'000'000ull));check(vkResetFences(f.device,1,&fence));
-        if(frame==0 || frame==8 || frame==28 || frame==63){std::ofstream out(directory/(frame==0?"mono-before.pixels":frame==8?"left-reference.pixels":frame==28?"right-reference.pixels":"mono-after.pixels"),std::ios::binary);out.write(static_cast<const char*>(golden.mapped),std::streamsize(extent.width)*extent.height*4);}
+        if(cameraUpdates){for(unsigned i=1;i<5;++i)check(vkQueueSubmit(readerQueues[i],0,nullptr,VK_NULL_HANDLE));check(vkDeviceWaitIdle(f.device));}
+        if(save){auto name=frame==0?"mono-before.pixels":frame==8?"left-reference.pixels":frame==28?"right-reference.pixels":frame==16?"camera-plus.pixels":frame==44?"camera-minus.pixels":frame==56?"camera-restored-right.pixels":"mono-after.pixels";std::ofstream out(directory/name,std::ios::binary);out.write(static_cast<const char*>(golden.mapped),std::streamsize(extent.width)*extent.height*4);}
     }
     check(vkDeviceWaitIdle(f.device));vkDestroyCommandPool(f.device,pool,nullptr);vkDestroyPipeline(f.device,pipeline,nullptr);vkDestroyPipelineLayout(f.device,layout,nullptr);vkDestroyShaderModule(f.device,vertex,nullptr);vkDestroyShaderModule(f.device,fragment,nullptr);
     for(auto s:finished)vkDestroySemaphore(f.device,s,nullptr);

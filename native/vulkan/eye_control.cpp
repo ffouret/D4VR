@@ -63,7 +63,7 @@ Specialization::Specialization(const VkSpecializationInfo* original,VkDeviceAddr
 #define D4_EYE_FUNCTIONS(X) X(CreateBuffer) X(DestroyBuffer) X(GetBufferMemoryRequirements) X(AllocateMemory) X(FreeMemory) \
     X(BindBufferMemory) X(MapMemory) X(UnmapMemory) X(GetBufferDeviceAddress)
 struct Control::Impl {
-    VkDevice device{}; VkBuffer buffer{}; VkDeviceMemory memory{}; VkDeviceAddress address{}; EyeState state;
+    VkDevice device{}; VkBuffer buffer{}; VkDeviceMemory memory{}; VkDeviceAddress address{}; EyeState state;uint32_t updateFamily=VK_QUEUE_FAMILY_IGNORED;VkBufferUsageFlags usage=0;
 #define D4_FIELD(name) PFN_vk##name name{};
     D4_EYE_FUNCTIONS(D4_FIELD)
 #undef D4_FIELD
@@ -96,9 +96,10 @@ struct Control::Impl {
 Control::Control(std::unique_ptr<Impl> state): impl(std::move(state)) {}
 Control::~Control() = default;
 std::unique_ptr<Control> Control::create(VkDevice device,PFN_vkGetDeviceProcAddr get,
-    const VkPhysicalDeviceMemoryProperties& memory,const EyeState& state) {
+    const VkPhysicalDeviceMemoryProperties& memory,const EyeState& state,uint32_t updateFamily) {
     validate_eye_state(state);
-    auto p = std::make_unique<Impl>(); p->device = device; p->state = state;
+    if(updateFamily!=VK_QUEUE_FAMILY_IGNORED && updateFamily>=VK_QUEUE_FAMILY_FOREIGN_EXT)throw std::invalid_argument("Invalid GPU eye packet queue family");
+    auto p = std::make_unique<Impl>(); p->device = device; p->state = state;p->updateFamily=updateFamily;
 #define D4_LOAD(name) p->name = reinterpret_cast<PFN_vk##name>(get(device,"vk" #name));
     D4_EYE_FUNCTIONS(D4_LOAD)
 #undef D4_LOAD
@@ -109,6 +110,8 @@ std::unique_ptr<Control> Control::create(VkDevice device,PFN_vkGetDeviceProcAddr
     auto check = [](VkResult result) { if (result != VK_SUCCESS) throw std::runtime_error("Eye control Vulkan error " + std::to_string(result)); };
     VkBufferCreateInfo buffer{VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO}; buffer.size = sizeof(state);
     buffer.usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    if(updateFamily!=VK_QUEUE_FAMILY_IGNORED)buffer.usage|=VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    p->usage=buffer.usage;
     check(p->CreateBuffer(device,&buffer,nullptr,&p->buffer));
     VkMemoryRequirements req{}; p->GetBufferMemoryRequirements(device,p->buffer,&req);
     uint32_t type = 0;
@@ -162,8 +165,13 @@ std::unique_ptr<GraphicsEdits> Control::graphics(uint32_t count,const VkGraphics
 }
 bool Control::marked(const VkPipelineShaderStageCreateInfo& stage) const { return impl->marked(stage); }
 VkDeviceAddress Control::address() const { return impl->address; }
+UpdateTarget Control::updateTarget() const {
+    if(impl->updateFamily==VK_QUEUE_FAMILY_IGNORED)return {};
+    return {impl->buffer,sizeof(EyeState),impl->address,impl->usage,impl->updateFamily,impl->state.identity[0]};
+}
 std::string Control::json() const {
-    std::ostringstream s; s << "{\"enabled\":true,\"mode\":\"immutable_per_launch\",\"eye\":" << impl->state.identity[0]
+    std::ostringstream s; s << "{\"enabled\":true,\"mode\":\"" << (impl->updateFamily==VK_QUEUE_FAMILY_IGNORED?"immutable_per_launch":"gpu_update_target")
+        << "\",\"gpu_update_family\":" << impl->updateFamily << ",\"eye\":" << impl->state.identity[0]
         << ",\"sequence\":" << impl->state.header[2] << ",\"source_projection\":" << ((impl->state.header[3]&2) ? "true" : "false")
         << ",\"prepared_stage_overrides\":" << impl->changedStages.load() << '}'; return s.str();
 }

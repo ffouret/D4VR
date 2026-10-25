@@ -12,6 +12,7 @@
 #include <mutex>
 #include <sstream>
 #include <string>
+#include <sys/stat.h>
 #include <unordered_map>
 #include <unistd.h>
 #include <vector>
@@ -19,6 +20,8 @@
 #include "eye_control.hpp"
 #include "library_variants.hpp"
 #include "present_capture.hpp"
+#include "boundary_updates.hpp"
+#include "../core/frame_order.hpp"
 #ifdef D4VR_LAYER_REPLAY_POC
 #include "layer_poc.hpp"
 #define D4_POC(d, ...) if ((d)->poc) { try { __VA_ARGS__; } catch (...) { if((d)->poc)(d)->poc->disable(); } }
@@ -187,7 +190,7 @@ struct Commands {
     X(CreateImage) X(DestroyImage) X(CreateImageView) X(DestroyImageView) \
     X(CreateShaderModule) X(DestroyShaderModule) X(GetShaderModuleIdentifierEXT) X(GetShaderModuleCreateInfoIdentifierEXT) \
     X(CreateGraphicsPipelines) X(CreateComputePipelines) X(DestroyPipeline) \
-    X(QueueSubmit) X(QueueSubmit2) X(QueuePresentKHR) \
+    X(QueueSubmit) X(QueueSubmit2) X(QueueBindSparse) X(QueuePresentKHR) \
     X(EndCommandBuffer) X(DeviceWaitIdle) X(CreatePipelineLayout) X(DestroyPipelineLayout) \
     X(CmdPushConstants) X(CmdSetViewport) X(CmdSetScissor) X(CmdSetStencilReference) \
     X(CreateBuffer) X(DestroyBuffer) X(GetBufferDeviceAddress) \
@@ -218,7 +221,12 @@ struct Device {
     std::array<std::unique_ptr<d4vr::eye::Control>,2> pairEyes;
     std::unique_ptr<d4vr::pipeline::LibraryVariants> pairs;
     std::unique_ptr<d4vr::present::Capture> presentation;
-    bool gpuCaptureDryRun=false;std::atomic<uint64_t> gpuCaptureSequence{0};
+    // This diagnostic serializes the graphics submission boundaries, not the
+    // game recording threads. Queue waits belonging to the app remain intact.
+    std::unique_ptr<d4vr::eye::BoundaryUpdates> cameraUpdates;
+    std::mutex cameraMutex;uint32_t cameraFamily=VK_QUEUE_FAMILY_IGNORED;
+    bool cameraFault=false;uint64_t cameraReadErrors=0;
+    bool gpuCaptureDryRun=false;std::atomic<uint64_t> gpuCaptureSequence{0};d4vr::FrameOrder gpuFrameOrder;
     uint32_t selectedIntervalMask=0;uint64_t selectedIntervalDraws=0;
 #ifdef D4VR_LAYER_REPLAY_POC
     std::unique_ptr<d4vr::poc::Device> poc;
@@ -277,6 +285,36 @@ std::string gpuCaptureJson(const d4vr::present::Capture& capture) {
         +",\"reserved_bytes\":"+std::to_string(s.reservedBytes)+",\"allocations\":"+std::to_string(s.allocations)+",\"reuses\":"+std::to_string(s.reuses)
         +",\"backpressure\":"+std::to_string(s.backpressure)+",\"leases_issued\":"+std::to_string(s.leasesIssued)+",\"retire_submissions\":"+std::to_string(s.retireSubmissions)
         +",\"outstanding_leases\":"+std::to_string(s.outstandingLeases)+",\"retiring_leases\":"+std::to_string(s.retiringLeases)+"}";
+}
+std::string cameraJson(const d4vr::eye::BoundaryUpdates& updates){
+    auto s=updates.stats();return "{\"updates\":"+std::to_string(s.updates)+",\"packet_sequence\":"+std::to_string(s.packetSequence)
+        +",\"registered_queues\":"+std::to_string(s.registeredQueues)+",\"cross_queue_waits\":"+std::to_string(s.waits)+",\"markers\":"+std::to_string(s.markers)
+        +",\"busy_boundaries\":"+std::to_string(s.busyBoundaries)+",\"uncovered_boundaries\":"+std::to_string(s.uncoveredBoundaries)
+        +",\"marker_backpressure\":"+std::to_string(s.markerBackpressure)+",\"xr_pose_known\":false}";
+}
+// Single atomic-renamed file, no mismatched left/right revisions, no open/read
+// on the submit path. Missing or malformed requests leave the last pair intact.
+void cameraRequest(Device& d){
+    auto directory=std::getenv("D4VR_SEQUENTIAL_CAPTURE_DIR");if(!directory || !*directory)return;
+    auto path=std::string(directory)+"/camera-pair.bin";int fd=open(path.c_str(),O_RDONLY|O_CLOEXEC|O_NOFOLLOW|O_NONBLOCK);if(fd<0)return;
+    std::array<d4vr::EyeState,2> pair;struct stat st{};bool valid=fstat(fd,&st)==0 && S_ISREG(st.st_mode) && st.st_size==sizeof(pair);size_t offset=0;
+    while(valid && offset<sizeof(pair)){auto n=read(fd,reinterpret_cast<char*>(pair.data())+offset,sizeof(pair)-offset);if(n<=0){valid=false;break;}offset+=size_t(n);}close(fd);
+    try{if(!valid)throw std::invalid_argument("Camera pair file size/type");d.cameraUpdates->request(pair);}
+    catch(const std::exception& e){if(++d.cameraReadErrors<=4)logFile.write("\"event\":\"camera_request_rejected\",\"reason\":"+quoted(e.what()));}
+}
+bool cameraQueue(const std::shared_ptr<Device>& d,VkQueue q){
+    if(!d->cameraUpdates)return false;
+    std::lock_guard<std::mutex> lock(stateMutex);auto found=d->queues.find(q);return found!=d->queues.end() && found->second.first==d->cameraFamily;
+}
+bool cameraBefore(Device& d,VkQueue q){
+    if(d.cameraFault)return false;
+    try{auto old=d.cameraUpdates->stats().updates;d.cameraUpdates->before(q);auto s=d.cameraUpdates->stats();
+        if(s.updates!=old && (s.updates<=16 || s.updates%64==0))logFile.write("\"event\":\"camera_update_queued\",\"diagnostic\":"+cameraJson(*d.cameraUpdates));
+        return true;}
+    catch(const std::exception& e){d.cameraFault=true;logFile.write("\"event\":\"camera_update_fatal\",\"reason\":"+quoted(e.what()));return false;}
+}
+void cameraAfter(Device& d,VkQueue q){
+    try{d.cameraUpdates->after(q);}catch(const std::exception& e){d.cameraFault=true;logFile.write("\"event\":\"camera_update_fatal\",\"reason\":"+quoted(e.what()));}
 }
 uint64_t captureRequest(const char* name,uint64_t fallback=0){
     auto directory=std::getenv("D4VR_SEQUENTIAL_CAPTURE_DIR");if(!directory || !*directory)return fallback;
@@ -500,8 +538,25 @@ VKAPI_ATTR VkResult VKAPI_CALL d4CreateDevice(VkPhysicalDevice physical, const V
             auto left = d4vr::eye::readPacket(pairLeft),right = d4vr::eye::readPacket(pairRight);
             if (left.identity[0] != 0 || right.identity[0] != 1 || left.header[2] != right.header[2])
                 throw std::invalid_argument("Paired packets require left/right identities and matching sequences");
-            d->pairEyes[0] = d4vr::eye::Control::create(*result,get,memory,left);
-            d->pairEyes[1] = d4vr::eye::Control::create(*result,get,memory,right);
+            auto dynamic=std::getenv("D4VR_GPU_CAMERA_UPDATES");bool mutablePair=dynamic && !std::strcmp(dynamic,"1");uint32_t updateFamily=VK_QUEUE_FAMILY_IGNORED,updateQueues=0;
+            if(mutablePair){
+                auto directory=std::getenv("D4VR_SEQUENTIAL_CAPTURE_DIR");if(!directory || !*directory)throw std::invalid_argument("Camera updates require explicit sequential diagnostic");
+                bool timeline=false;for(auto p=static_cast<const VkBaseInStructure*>(info->pNext);p;p=p->pNext){
+                    if(p->sType==VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES)timeline|=reinterpret_cast<const VkPhysicalDeviceVulkan12Features*>(p)->timelineSemaphore;
+                    if(p->sType==VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES)timeline|=reinterpret_cast<const VkPhysicalDeviceTimelineSemaphoreFeatures*>(p)->timelineSemaphore;
+                }
+                if(!timeline)throw std::invalid_argument("Enabled timeline semaphore feature required");
+                for(uint32_t i=0;i<info->queueCreateInfoCount;++i){const auto& q=info->pQueueCreateInfos[i];if(q.queueFamilyIndex>=d->queueFamilies.size())throw std::invalid_argument("Unknown graphics queue family");
+                    if(!(d->queueFamilies[q.queueFamilyIndex].queueFlags&VK_QUEUE_GRAPHICS_BIT))continue;
+                    if(q.flags || (updateFamily!=VK_QUEUE_FAMILY_IGNORED && updateFamily!=q.queueFamilyIndex))throw std::invalid_argument("Multiple/protected graphics families unsupported");
+                    updateFamily=q.queueFamilyIndex;updateQueues+=q.queueCount;
+                }
+                if(!updateQueues || updateQueues>8)throw std::invalid_argument("Camera graphics queue budget");
+            }
+            d->pairEyes[0] = d4vr::eye::Control::create(*result,get,memory,left,updateFamily);
+            d->pairEyes[1] = d4vr::eye::Control::create(*result,get,memory,right,updateFamily);
+            if(mutablePair){d->cameraUpdates=std::make_unique<d4vr::eye::BoundaryUpdates>(d4vr::eye::UpdateBinding{*result,get,setLoaderData,updateFamily,updateQueues,true},
+                std::array<d4vr::eye::UpdateTarget,2>{d->pairEyes[0]->updateTarget(),d->pairEyes[1]->updateTarget()},std::array<d4vr::EyeState,2>{left,right});d->cameraFamily=updateFamily;}
             auto classifier = d->pairEyes[0].get();
             // The sequential game trial exhausted the diagnostic quota. Keep
             // the larger, still bounded quota exclusive to this explicit mode.
@@ -511,11 +566,11 @@ VKAPI_ATTR VkResult VKAPI_CALL d4CreateDevice(VkPhysicalDevice physical, const V
                 [classifier](const auto& stage) { return classifier->marked(stage); },d->pairLimit,d->pairLimit);
         } else d->eye = d4vr::eye::Control::create(*result,get,memory,d4vr::eye::readPacket(eyeFile));
     } catch (const std::exception& error) {
-        d->pairs.reset(); for (auto& packet : d->pairEyes) packet.reset();
+        d->pairs.reset();d->cameraUpdates.reset(); for (auto& packet : d->pairEyes) packet.reset();
         logFile.write("\"event\":" + quoted(pairRequested ? "paired_pipeline_error" : "eye_control_error") + ",\"device\":" + std::to_string(d->id) + ",\"reason\":" + quoted(error.what()));
     }
     if(auto directory=std::getenv("D4VR_SEQUENTIAL_CAPTURE_DIR");directory && *directory)try {
-        if(!d->pairs)throw std::invalid_argument("Sequential capture requires both immutable eye packets");
+        if(!d->pairs)throw std::invalid_argument("Sequential capture requires both eye packets");
         VkPhysicalDeviceMemoryProperties memory{};
         reinterpret_cast<PFN_vkGetPhysicalDeviceMemoryProperties>(instance->get(instance->handle,"vkGetPhysicalDeviceMemoryProperties"))(physical,&memory);
         auto formats=reinterpret_cast<PFN_vkGetPhysicalDeviceFormatProperties>(instance->get(instance->handle,"vkGetPhysicalDeviceFormatProperties"));
@@ -536,11 +591,13 @@ VKAPI_ATTR VkResult VKAPI_CALL d4CreateDevice(VkPhysicalDevice physical, const V
         ",\"queues\":" + queues.str() + ",\"extensions\":" + extensions(info->enabledExtensionCount, info->ppEnabledExtensionNames));
     if (d->eye) logFile.write("\"event\":\"eye_control\",\"device\":" + std::to_string(d->id) + ",\"control\":" + d->eye->json());
     if (d->pairs) logFile.write("\"event\":\"paired_pipelines\",\"device\":" + std::to_string(d->id) + ",\"diagnostic\":" + pairsJson(*d));
+    if(d->cameraUpdates)logFile.write("\"event\":\"camera_updates_enabled\",\"family\":"+std::to_string(d->cameraFamily)+",\"diagnostic\":"+cameraJson(*d->cameraUpdates));
     return status;
 }
 VKAPI_ATTR void VKAPI_CALL d4GetDeviceQueue(VkDevice handle, uint32_t family, uint32_t index, VkQueue* queue) {
     auto d = deviceFor(handle); d->GetDeviceQueue(handle, family, index, queue);
     if (*queue) { std::lock_guard<std::mutex> lock(stateMutex); d->queues[*queue] = {family, index}; }
+    if(*queue && d->cameraUpdates && family==d->cameraFamily){std::lock_guard<std::mutex> lock(d->cameraMutex);d->cameraUpdates->registerQueue(*queue);}
     D4_POC(d,
         const char* value=std::getenv("D4VR_POC_XR_SECONDS");
         if(value && *value && family<d->queueFamilies.size() && (d->queueFamilies[family].queueFlags&VK_QUEUE_GRAPHICS_BIT)) {
@@ -557,6 +614,7 @@ VKAPI_ATTR void VKAPI_CALL d4GetDeviceQueue(VkDevice handle, uint32_t family, ui
 VKAPI_ATTR void VKAPI_CALL d4GetDeviceQueue2(VkDevice handle, const VkDeviceQueueInfo2* info, VkQueue* queue) {
     auto d = deviceFor(handle); d->GetDeviceQueue2(handle, info, queue);
     if (*queue) { std::lock_guard<std::mutex> lock(stateMutex); d->queues[*queue] = {info->queueFamilyIndex, info->queueIndex}; }
+    if(*queue && d->cameraUpdates && info->queueFamilyIndex==d->cameraFamily){std::lock_guard<std::mutex> lock(d->cameraMutex);d->cameraUpdates->registerQueue(*queue);}
 }
 VKAPI_ATTR void VKAPI_CALL d4DestroyDevice(VkDevice handle, const VkAllocationCallbacks* allocator) {
     auto d = deviceFor(handle);
@@ -568,13 +626,14 @@ VKAPI_ATTR void VKAPI_CALL d4DestroyDevice(VkDevice handle, const VkAllocationCa
         if (d->eye) record += ",\"eye_control\":" + d->eye->json();
         if (d->pairs) record += ",\"paired_pipelines\":" + pairsJson(*d);
         if(d->presentation && d->gpuCaptureDryRun)record+=",\"gpu_capture\":"+gpuCaptureJson(*d->presentation);
+        if(d->cameraUpdates)record+=",\"camera_updates\":"+cameraJson(*d->cameraUpdates);
 #ifdef D4VR_LAYER_REPLAY_POC
         if(d->poc)record+=",\"poc_application_recordings_submitted\":"+std::to_string(d->poc->applicationRecordingsSubmitted())
             +",\"poc_application_draws_submitted\":"+std::to_string(d->poc->applicationDrawsSubmitted());
 #endif
         devices.erase(key(handle));
     }
-    logFile.write(record); D4_POC(d,d->poc.reset()); d->presentation.reset(); d->commands.clear();d->pairs.reset(); for (auto& packet : d->pairEyes) packet.reset(); d->eye.reset(); d->DestroyDevice(handle, allocator);
+    logFile.write(record); D4_POC(d,d->poc.reset());if(d->cameraUpdates){d->DeviceWaitIdle(handle);d->cameraUpdates.reset();} d->presentation.reset(); d->commands.clear();d->pairs.reset(); for (auto& packet : d->pairEyes) packet.reset(); d->eye.reset(); d->DestroyDevice(handle, allocator);
 }
 VKAPI_ATTR VkResult VKAPI_CALL d4CreateCommandPool(VkDevice device,const VkCommandPoolCreateInfo* info,const VkAllocationCallbacks* allocator,VkCommandPool* pool){
     auto d=deviceFor(device);auto r=d->CreateCommandPool(device,info,allocator,pool);
@@ -944,12 +1003,14 @@ VKAPI_ATTR void VKAPI_CALL d4DestroyPipeline(VkDevice device, VkPipeline pipelin
 }
 VKAPI_ATTR VkResult VKAPI_CALL d4QueueSubmit(VkQueue queue, uint32_t n, const VkSubmitInfo* submits, VkFence fence) {
     auto d = deviceFor(queue); Counts counts{}; uint64_t buffers = 0;
+    std::unique_lock<std::mutex> cameraLock(d->cameraMutex,std::defer_lock);bool tracked=cameraQueue(d,queue);if(tracked){cameraLock.lock();if(!cameraBefore(*d,queue))return VK_ERROR_UNKNOWN;}
     std::vector<VkCommandBuffer> frames;
     maybeAttach(d, queue);
     { std::lock_guard<std::mutex> lock(stateMutex); for (uint32_t i = 0; i < n; ++i) for (uint32_t j = 0; j < submits[i].commandBufferCount; ++j) { ++buffers; collect(*d, submits[i].pCommandBuffers[j], counts); } }
     if (d->frame.enabled || d->presentation) for (uint32_t i = 0; i < n; ++i) for (uint32_t j = 0; j < submits[i].commandBufferCount && frames.size() < 256; ++j) frames.push_back(submits[i].pCommandBuffers[j]);
     auto ticket = frameSubmission(d, queue, frames, buffers);
     auto result = d->QueueSubmit(queue, n, submits, fence);
+    if(tracked && result==VK_SUCCESS)cameraAfter(*d,queue);
     if(result==VK_SUCCESS && d->presentation){
         uint32_t family=VK_QUEUE_FAMILY_IGNORED;
         {std::lock_guard<std::mutex> lock(stateMutex);auto q=d->queues.find(queue);if(q!=d->queues.end())family=q->second.first;
@@ -962,12 +1023,14 @@ VKAPI_ATTR VkResult VKAPI_CALL d4QueueSubmit(VkQueue queue, uint32_t n, const Vk
 }
 VKAPI_ATTR VkResult VKAPI_CALL d4QueueSubmit2(VkQueue queue, uint32_t n, const VkSubmitInfo2* submits, VkFence fence) {
     auto d = deviceFor(queue); Counts counts{}; uint64_t buffers = 0;
+    std::unique_lock<std::mutex> cameraLock(d->cameraMutex,std::defer_lock);bool tracked=cameraQueue(d,queue);if(tracked){cameraLock.lock();if(!cameraBefore(*d,queue))return VK_ERROR_UNKNOWN;}
     std::vector<VkCommandBuffer> frames;
     maybeAttach(d, queue);
     { std::lock_guard<std::mutex> lock(stateMutex); for (uint32_t i = 0; i < n; ++i) for (uint32_t j = 0; j < submits[i].commandBufferInfoCount; ++j) { ++buffers; collect(*d, submits[i].pCommandBufferInfos[j].commandBuffer, counts); } }
     if (d->frame.enabled || d->presentation) for (uint32_t i = 0; i < n; ++i) for (uint32_t j = 0; j < submits[i].commandBufferInfoCount && frames.size() < 256; ++j) frames.push_back(submits[i].pCommandBufferInfos[j].commandBuffer);
     auto ticket = frameSubmission(d, queue, frames, buffers);
     auto result = d->QueueSubmit2(queue, n, submits, fence);
+    if(tracked && result==VK_SUCCESS)cameraAfter(*d,queue);
     if(result==VK_SUCCESS && d->presentation){
         uint32_t family=VK_QUEUE_FAMILY_IGNORED;
         {std::lock_guard<std::mutex> lock(stateMutex);auto q=d->queues.find(queue);if(q!=d->queues.end())family=q->second.first;
@@ -978,9 +1041,17 @@ VKAPI_ATTR VkResult VKAPI_CALL d4QueueSubmit2(VkQueue queue, uint32_t n, const V
     if(result==VK_SUCCESS) { D4_POC(d,for(uint32_t i=0;i<n;++i)for(uint32_t j=0;j<submits[i].commandBufferInfoCount;++j)d->poc->submitted(submits[i].pCommandBufferInfos[j].commandBuffer)); }
     submitted(d, counts, buffers, result); finishFrame(d, ticket, result); return result;
 }
+VKAPI_ATTR VkResult VKAPI_CALL d4QueueBindSparse(VkQueue queue,uint32_t count,const VkBindSparseInfo* info,VkFence fence){
+    auto d=deviceFor(queue);std::unique_lock<std::mutex> lock(d->cameraMutex,std::defer_lock);bool tracked=cameraQueue(d,queue);if(tracked){lock.lock();if(!cameraBefore(*d,queue))return VK_ERROR_UNKNOWN;}
+    auto result=d->QueueBindSparse(queue,count,info,fence);if(tracked && result==VK_SUCCESS)cameraAfter(*d,queue);return result;
+}
 VKAPI_ATTR VkResult VKAPI_CALL d4QueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* info) {
     auto d = deviceFor(queue);
+    bool tracked=cameraQueue(d,queue);
+    if(tracked){std::lock_guard<std::mutex> lock(d->cameraMutex);d->cameraUpdates->uncovered(queue);}
     auto result = d->QueuePresentKHR(queue, info);
+    std::unique_lock<std::mutex> cameraLock(d->cameraMutex,std::defer_lock);if(d->cameraUpdates)cameraLock.lock();
+    if(tracked)cameraAfter(*d,queue);
     std::string record;
     const auto request = d->frame.enabled ? frameRequest() : 0;
     std::vector<std::shared_ptr<d4vr::frame::Capture>> ready;
@@ -990,6 +1061,7 @@ VKAPI_ATTR VkResult VKAPI_CALL d4QueuePresentKHR(VkQueue queue, const VkPresentI
         if (d->presents <= 8 || (d->presents % 600 == 0 && d->presents <= 144000)) {
             record = "\"event\":\"present\",\"device\":" + std::to_string(d->id) + ",\"present_call\":" + std::to_string(d->presents) +
                 ",\"result\":" + std::to_string(result) + ",\"interval_commands\":" + countsJson(d->interval) + ",\"total_commands\":" + countsJson(d->totals);
+            if(d->cameraUpdates)record+=",\"camera_updates\":"+cameraJson(*d->cameraUpdates);
         }
         d->interval = {};
         selectedMask=d->selectedIntervalMask;selectedDraws=d->selectedIntervalDraws;present=d->presents;d->selectedIntervalMask=0;d->selectedIntervalDraws=0;
@@ -1004,16 +1076,21 @@ VKAPI_ATTR VkResult VKAPI_CALL d4QueuePresentKHR(VkQueue queue, const VkPresentI
                 // is deliberately no XR consumer, image read or invented pose.
                 // QueuePresent already holds this queue's external sync; a
                 // different producer queue cannot safely be submitted here.
+                d4vr::FrameOrder::Result order=d4vr::FrameOrder::Result::invalid;
+                if(frame.queue==queue){std::lock_guard<std::mutex> lock(stateMutex);order=d->gpuFrameOrder.observe(frame.eye,frame.sequence,frame.present);}
                 bool retired=frame.queue==queue && d->presentation->retire(frame.lease,queue);
                 logFile.write("\"event\":\"gpu_capture_lease\",\"dry_run\":true,\"sequence\":"+std::to_string(frame.sequence)
                     +",\"source_present\":"+std::to_string(frame.present)+",\"eye\":"+std::to_string(frame.eye)+",\"selected_mask\":"+std::to_string(frame.selectedMask)
                     +",\"selected_draws\":"+std::to_string(frame.selectedDraws)+",\"queue_family\":"+std::to_string(frame.queueFamily)
                     +",\"width\":"+std::to_string(frame.extent.width)+",\"height\":"+std::to_string(frame.extent.height)
+                    +",\"delivery_monotonic_for_eye\":"+(order==d4vr::FrameOrder::Result::accepted?"true":"false")
+                    +",\"late_delivery_discarded\":"+(order==d4vr::FrameOrder::Result::stale?"true":"false")
                     +",\"retirement_submitted\":"+(retired?"true":"false")+",\"game_images_read_by_consumer\":false,\"xr_pose_known\":false,\"xr_submission\":false");
             }
         } else for(const auto& s:d->presentation->presented(*info,result,present,selectedMask,selectedDraws))writePresentation(*d,s);
     }
     catch(const std::exception& e){logFile.write("\"event\":\"presentation_error\",\"reason\":"+quoted(e.what()));}
+    if(d->cameraUpdates && !d->cameraFault && (result==VK_SUCCESS || result==VK_SUBOPTIMAL_KHR)){cameraRequest(*d);d->cameraUpdates->boundary();}
     return result;
 }
 #ifdef D4VR_LAYER_REPLAY_POC

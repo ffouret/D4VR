@@ -40,7 +40,7 @@ def validate(args):
                 variables['D4VR_PAIR_'+side.upper()+'_FILE']=str(file)
             variables['D4VR_SEQUENTIAL_CAPTURE_DIR']=str(directory)
         command=paired_capture.host_command()+['/usr/bin/env']
-        for key in ('VK_LAYER_PATH','VK_INSTANCE_LAYERS','VK_ADD_LAYER_PATH','D4VR_TRACE_XR_BINDING','D4VR_FRAME_TRACE','D4VR_EYE_STATE_FILE','D4VR_PAIR_LEFT_FILE','D4VR_PAIR_RIGHT_FILE','D4VR_SEQUENTIAL_CAPTURE_DIR','D4VR_GPU_CAPTURE_DRY_RUN'):command+=['-u',key]
+        for key in ('VK_LAYER_PATH','VK_INSTANCE_LAYERS','VK_ADD_LAYER_PATH','D4VR_TRACE_XR_BINDING','D4VR_FRAME_TRACE','D4VR_EYE_STATE_FILE','D4VR_PAIR_LEFT_FILE','D4VR_PAIR_RIGHT_FILE','D4VR_SEQUENTIAL_CAPTURE_DIR','D4VR_GPU_CAPTURE_DRY_RUN','D4VR_GPU_CAMERA_UPDATES'):command+=['-u',key]
         command+=[k+'='+v for k,v in variables.items()]
         if in_runtime:command+=[str(args.runtime.resolve()),'--batch','--']
         command+=[str(args.fixture.resolve()),*(str(p) for p in shaders),str(directory)]

@@ -16,7 +16,7 @@ def validate(a):
     def run(name,fixture,args=(),variables=None,runtime=False):
         directory=a.output/name;directory.mkdir(mode=0o700)
         command=paired_capture.host_command()+['/usr/bin/env']
-        for key in ('VK_LAYER_PATH','VK_INSTANCE_LAYERS','VK_ADD_LAYER_PATH','D4VR_TRACE_XR_BINDING','D4VR_FRAME_TRACE','D4VR_EYE_STATE_FILE','D4VR_PAIR_LEFT_FILE','D4VR_PAIR_RIGHT_FILE','D4VR_SEQUENTIAL_CAPTURE_DIR','D4VR_GPU_CAPTURE_DRY_RUN','D4VR_XR_LOADER','D4VR_TRACE_DIR'):
+        for key in ('VK_LAYER_PATH','VK_INSTANCE_LAYERS','VK_ADD_LAYER_PATH','D4VR_TRACE_XR_BINDING','D4VR_FRAME_TRACE','D4VR_EYE_STATE_FILE','D4VR_PAIR_LEFT_FILE','D4VR_PAIR_RIGHT_FILE','D4VR_SEQUENTIAL_CAPTURE_DIR','D4VR_GPU_CAPTURE_DRY_RUN','D4VR_GPU_CAMERA_UPDATES','D4VR_XR_LOADER','D4VR_TRACE_DIR'):
             command+=['-u',key]
         variables=variables or {}
         command += [k+'='+v for k,v in variables.items()]

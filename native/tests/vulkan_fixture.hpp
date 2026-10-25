@@ -16,7 +16,7 @@ struct Fixture {
     VkPhysicalDeviceMemoryProperties memory{}; uint32_t family{};
     Fixture(bool dynamic, bool identifiers,bool descriptorBuffers = false,bool extended = false,bool libraries = false,const char* appName = "D4VR observer fixture",bool timeline = false,
             const std::vector<const char*>& instanceExtensions = {},const std::vector<const char*>& deviceExtensions = {},
-            const std::vector<const char*>& instanceLayers = {}) {
+            const std::vector<const char*>& instanceLayers = {},uint32_t queueCount = 1) {
         VkApplicationInfo app{VK_STRUCTURE_TYPE_APPLICATION_INFO}; app.pApplicationName = appName; app.apiVersion = dynamic ? VK_API_VERSION_1_3 : VK_API_VERSION_1_2;
         VkInstanceCreateInfo create{VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO}; create.pApplicationInfo = &app;
         create.enabledExtensionCount=uint32_t(instanceExtensions.size());create.ppEnabledExtensionNames=instanceExtensions.data();
@@ -34,7 +34,8 @@ struct Fixture {
         std::vector<VkQueueFamilyProperties> families(count); vkGetPhysicalDeviceQueueFamilyProperties(physical, &count, families.data());
         for (; family < count; ++family) if (families[family].queueFlags & VK_QUEUE_GRAPHICS_BIT) break;
         if (family == count) throw std::runtime_error("No graphics queue");
-        float priority = 1; VkDeviceQueueCreateInfo q{VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO}; q.queueFamilyIndex = family; q.queueCount = 1; q.pQueuePriorities = &priority;
+        if (!queueCount || queueCount > families[family].queueCount) throw std::runtime_error("Requested graphics queues unavailable");
+        std::vector<float> priorities(queueCount,1.f); VkDeviceQueueCreateInfo q{VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO}; q.queueFamilyIndex = family; q.queueCount = queueCount; q.pQueuePriorities = priorities.data();
         VkPhysicalDeviceFeatures features{}; features.shaderInt64 = VK_TRUE; features.vertexPipelineStoresAndAtomics = VK_TRUE;
         features.depthBounds = extended;
         VkPhysicalDeviceVulkan12Features features12{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES}; features12.bufferDeviceAddress = VK_TRUE;
