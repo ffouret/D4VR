@@ -4,9 +4,17 @@
 #include "pipeline_recipe.hpp"
 #include "../xr/replay_presenter.hpp"
 #include <string>
+#include <cstdlib>
+#include <stdexcept>
 
 namespace d4vr::poc {
 inline constexpr const char* clientName = "D4VR layer replay POC";
+inline uint32_t resolution() {
+    const char* value=std::getenv("D4VR_POC_RESOLUTION");
+    if(!value || !*value || std::string(value)=="256")return 256;
+    if(std::string(value)=="1024")return 1024;
+    throw std::invalid_argument("Closed POC resolution must be 256 or 1024");
+}
 struct Snapshot { std::string name; std::vector<uint8_t> bytes; };
 class Device {
     struct Impl; std::unique_ptr<Impl> impl;
@@ -33,6 +41,10 @@ public:
     void endRendering(VkCommandBuffer);
     void end(VkCommandBuffer);
     void submitted(VkCommandBuffer);
+    // Closed client recordings containing original draws, excluding runtime
+    // transfer-only command buffers submitted through the public device API.
+    uint64_t applicationRecordingsSubmitted() const;
+    uint64_t applicationDrawsSubmitted() const;
     std::vector<Snapshot> completed(); // Only after successful DeviceWaitIdle.
 };
 } // namespace d4vr::poc

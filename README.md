@@ -15,15 +15,16 @@ images issues de l'interception : 891 paires avec suivi de tête en dix secondes
 relief et mouvements confirmés dans le Quest. Cette scène reste synthétique,
 très pixellisée à 256 × 256 par œil, et le contrôle Vulkan signale encore des
 erreurs. Ce premier affichage ne constitue pas un rendu VR de Diablo ni une
-preuve sans erreur de validation.
+preuve sans erreur de validation. Le mode 1024 × 1024 est maintenant vérifié
+hors casque ; son essai visuel reste à faire.
 
 La [preuve d'intégration de la couche Vulkan](docs/LAYER_REPLAY_POC.md) raccorde
 maintenant les commandes d'une application au moteur de reprise : deux passes
 originales produisent deux vues privées, comparées exactement à des références
 GPU. L'image originale et la passe suivante restent identiques. Ce premier
 chemin traverse réellement le chargeur Vulkan ; son admission est limitée aux
-octets exacts de notre scène synthétique. Il ne reprend pas encore Diablo et
-ne reprend pas encore les ressources du jeu. La preuve initiale décrite sur
+octets exacts de notre scène synthétique. Il ne reprend pas encore Diablo.
+La preuve initiale décrite sur
 cette page précède le raccordement SteamVR ci-dessus.
 
 Le [helper peut maintenant être construit avec la seule projection](docs/PROJECTION_ONLY_HELPER.md),

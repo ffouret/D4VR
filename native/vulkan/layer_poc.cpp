@@ -9,7 +9,6 @@
 
 namespace d4vr::poc {
 namespace {
-constexpr VkDeviceSize texels=256*256,plane=texels*4,eyeBytes=5*plane+texels;
 void checked(VkResult r) { if(r!=VK_SUCCESS) throw std::runtime_error("POC Vulkan error "+std::to_string(r)); }
 template<size_t N> bool same(const VkShaderModuleCreateInfo& i,const uint32_t (&data)[N]) {
     return !i.pNext && !i.flags && i.codeSize==sizeof(data) && i.pCode && !std::memcmp(i.pCode,data,sizeof(data));
@@ -20,6 +19,9 @@ template<size_t N> std::vector<uint32_t> words(const uint32_t (&data)[N]) { retu
     X(BindBufferMemory) X(MapMemory) X(UnmapMemory) X(CmdCopyImageToBuffer) X(CmdPipelineBarrier)
 struct Device::Impl {
     VkDevice device; PFN_vkGetDeviceProcAddr get; VkPhysicalDeviceMemoryProperties memory;
+    stereo::Config config;
+    VkDeviceSize texels,plane,eyeBytes;
+    uint64_t applicationRecordings=0,applicationDraws=0;
 #define FIELD(n) PFN_vk##n n{};
     D4_POC_FUNCTIONS(FIELD)
 #undef FIELD
@@ -49,7 +51,9 @@ struct Device::Impl {
     uint32_t sequence=0; bool disabled=false;
     std::function<std::string(const xr::ReplaySource&)> present;
     bool presented=false;
-    Impl(VkDevice d,PFN_vkGetDeviceProcAddr g,const VkPhysicalDeviceMemoryProperties& m):device(d),get(g),memory(m) {}
+    Impl(VkDevice d,PFN_vkGetDeviceProcAddr g,const VkPhysicalDeviceMemoryProperties& m):device(d),get(g),memory(m) {
+        auto side=resolution();config.extent={side,side};texels=VkDeviceSize(side)*side;plane=texels*4;eyeBytes=5*plane+texels;
+    }
     bool attachment(VkImageView handle,VkFormat format,VkImageAspectFlags aspect) const {
         auto v=views.find(handle); if(v==views.end()) return false;
         const auto& vi=v->second; auto i=images.find(vi.image);if(i==images.end()) return false;
@@ -60,7 +64,7 @@ struct Device::Impl {
             && vi.components.r==VK_COMPONENT_SWIZZLE_IDENTITY && vi.components.g==VK_COMPONENT_SWIZZLE_IDENTITY
             && vi.components.b==VK_COMPONENT_SWIZZLE_IDENTITY && vi.components.a==VK_COMPONENT_SWIZZLE_IDENTITY
             && !im.pNext && !im.flags && im.imageType==VK_IMAGE_TYPE_2D && im.format==format
-            && im.extent.width==256 && im.extent.height==256 && im.extent.depth==1 && im.arrayLayers==1
+            && im.extent.width==config.extent.width && im.extent.height==config.extent.height && im.extent.depth==1 && im.arrayLayers==1
             && im.mipLevels==1 && im.samples==VK_SAMPLE_COUNT_1_BIT && im.sharingMode==VK_SHARING_MODE_EXCLUSIVE;
     }
     Recording* record(VkCommandBuffer c) { auto it=recordings.find(c);return it==recordings.end()?nullptr:it->second.get(); }
@@ -134,7 +138,7 @@ void Device::begin(VkCommandBuffer command,const VkCommandBufferBeginInfo& info)
     auto projection=Matrix4{1.784022,0,0,0,0,3.171595,0,0,0,0,-1.001001,-.1001001,0,0,-1,0};
     std::array<EyeState,2> states;
     for(unsigned eye=0;eye<2;++eye) { auto v=identity();v[3]=eye?-.032:.032;states[eye]=make_eye_state(eye,1,v,projection); }
-    r->targets=stereo::Targets::create(p.device,p.get,p.memory,stereo::Config{},states);
+    r->targets=stereo::Targets::create(p.device,p.get,p.memory,p.config,states);
     r->graphics=std::make_unique<replay::Graphics>(p.device,p.get,command,*r->targets,stereo::PreviousUse::discarded);
     for(const auto& entry:p.pipelines) {
         auto source=entry.second;
@@ -142,14 +146,14 @@ void Device::begin(VkCommandBuffer command,const VkCommandBufferBeginInfo& info)
         auto contract=source->contract;contract.eyes=variant->handles();r->graphics->pipeline(contract);
         r->sources.push_back(source);r->variants.push_back(std::move(variant));
     }
-    VkBufferCreateInfo bi{VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};bi.size=2*eyeBytes;bi.usage=VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    VkBufferCreateInfo bi{VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};bi.size=2*p.eyeBytes;bi.usage=VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     checked(p.CreateBuffer(p.device,&bi,nullptr,&r->buffer));VkMemoryRequirements requirements{};p.GetBufferMemoryRequirements(p.device,r->buffer,&requirements);
     uint32_t type=0;for(;type<p.memory.memoryTypeCount;++type) if((requirements.memoryTypeBits&(1u<<type))
         && (p.memory.memoryTypes[type].propertyFlags&(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT|VK_MEMORY_PROPERTY_HOST_COHERENT_BIT))==(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT|VK_MEMORY_PROPERTY_HOST_COHERENT_BIT))break;
     if(type==p.memory.memoryTypeCount)throw std::runtime_error("POC coherent staging unavailable");
     VkMemoryAllocateInfo ai{VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};ai.allocationSize=requirements.size;ai.memoryTypeIndex=type;
     checked(p.AllocateMemory(p.device,&ai,nullptr,&r->memory));checked(p.BindBufferMemory(p.device,r->buffer,r->memory,0));
-    checked(p.MapMemory(p.device,r->memory,0,2*eyeBytes,0,&r->mapped));std::memset(r->mapped,0,2*eyeBytes);
+    checked(p.MapMemory(p.device,r->memory,0,2*p.eyeBytes,0,&r->mapped));std::memset(r->mapped,0,2*p.eyeBytes);
     p.recordings.emplace(command,std::move(r));
 }
 replay::Graphics* Device::recording(VkCommandBuffer c) { auto r=impl->record(c);return r?r->graphics.get():nullptr; }
@@ -170,29 +174,38 @@ void Device::end(VkCommandBuffer c) {
     auto& p=*impl;auto r=p.record(c);if(!r)return;r->ended=true;
     if(r->active || !r->graphics->stats().replayedScopes)return;
     for(unsigned eye=0;eye<2;++eye)for(unsigned k=0;k<6;++k) {
-        VkBufferImageCopy copy{};copy.bufferOffset=eye*eyeBytes+(k<5?k*plane:5*plane);
+        VkBufferImageCopy copy{};copy.bufferOffset=eye*p.eyeBytes+(k<5?k*p.plane:5*p.plane);
         copy.imageSubresource={k<4?VkImageAspectFlags(VK_IMAGE_ASPECT_COLOR_BIT):k==4?VkImageAspectFlags(VK_IMAGE_ASPECT_DEPTH_BIT):VkImageAspectFlags(VK_IMAGE_ASPECT_STENCIL_BIT),0,0,1};
-        copy.imageExtent={256,256,1};auto image=k<4?r->targets->eye(eye).colors[k].handle:r->targets->eye(eye).depth.handle;
+        copy.imageExtent={p.config.extent.width,p.config.extent.height,1};auto image=k<4?r->targets->eye(eye).colors[k].handle:r->targets->eye(eye).depth.handle;
         p.CmdCopyImageToBuffer(c,image,VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,r->buffer,1,&copy);
     }
     VkMemoryBarrier barrier{VK_STRUCTURE_TYPE_MEMORY_BARRIER};barrier.srcAccessMask=VK_ACCESS_TRANSFER_WRITE_BIT;barrier.dstAccessMask=VK_ACCESS_HOST_READ_BIT;
     p.CmdPipelineBarrier(c,VK_PIPELINE_STAGE_TRANSFER_BIT,VK_PIPELINE_STAGE_HOST_BIT,0,1,&barrier,0,nullptr,0,nullptr);r->copied=true;
 }
-void Device::submitted(VkCommandBuffer c) { auto r=impl->record(c);if(r && r->ended)r->submitted=true; }
+void Device::submitted(VkCommandBuffer c) {
+    auto r=impl->record(c);if(r && r->ended) {
+        r->submitted=true;auto draws=r->graphics->stats().forwardedDraws;
+        if(draws){++impl->applicationRecordings;impl->applicationDraws+=draws;}
+    }
+}
+uint64_t Device::applicationRecordingsSubmitted() const { return impl->applicationRecordings; }
+uint64_t Device::applicationDrawsSubmitted() const { return impl->applicationDraws; }
 std::vector<Snapshot> Device::completed() {
+    auto& p=*impl;
     std::vector<Snapshot> out;
     for(auto& entry:impl->recordings) {
         auto& r=*entry.second;if(!r.submitted || r.exported)continue;r.exported=true;
         auto s=r.graphics->stats();auto base="poc-command-"+std::to_string(r.id);
-        std::ostringstream report;report<<"{\"schema_version\":1,\"synthetic_scene\":true,\"diablo_rendered\":false,\"width\":256,\"height\":256,\"forwarded_draws\":"<<s.forwardedDraws
+        std::ostringstream report;report<<"{\"schema_version\":1,\"synthetic_scene\":true,\"diablo_rendered\":false,\"width\":"<<p.config.extent.width<<",\"height\":"<<p.config.extent.height<<",\"forwarded_draws\":"<<s.forwardedDraws
             <<",\"replayed_scopes\":"<<s.replayedScopes<<",\"replayed_draws\":"<<s.replayedDraws<<",\"rejected_scopes\":"<<s.rejectedScopes<<",\"last_rejection\":"<<static_cast<unsigned>(s.lastRejection)<<",\"images_copied\":"<<(r.copied?"true":"false")<<"}\n";
         auto text=report.str();out.push_back({base+".json",{text.begin(),text.end()}});
         if(!r.copied)continue;
         auto bytes=static_cast<const uint8_t*>(r.mapped);
-        out.push_back({base+".bin",{bytes,bytes+2*eyeBytes}});
+        out.push_back({base+".bin",{bytes,bytes+2*p.eyeBytes}});
         for(unsigned eye=0;eye<2;++eye) {
-            std::string header="P6\n256 256\n255\n";std::vector<uint8_t> ppm(header.begin(),header.end());
-            for(unsigned k=0;k<texels;++k) {const auto* pixel=bytes+eye*eyeBytes+k*4;ppm.insert(ppm.end(),{pixel[2],pixel[1],pixel[0]});}
+            std::string header="P6\n"+std::to_string(p.config.extent.width)+" "+std::to_string(p.config.extent.height)+"\n255\n";std::vector<uint8_t> ppm(header.begin(),header.end());
+            ppm.reserve(header.size()+3*p.texels);
+            for(VkDeviceSize k=0;k<p.texels;++k) {const auto* pixel=bytes+eye*p.eyeBytes+k*4;ppm.insert(ppm.end(),{pixel[2],pixel[1],pixel[0]});}
             out.push_back({base+(eye?"-right.ppm":"-left.ppm"),std::move(ppm)});
         }
     }

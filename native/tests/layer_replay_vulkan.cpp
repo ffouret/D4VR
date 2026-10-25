@@ -6,22 +6,36 @@
 #include "poc_shader_code.hpp"
 #include <array>
 #include <cstdlib>
+#include <cstdio>
+#include <execinfo.h>
+#include <mutex>
+#include <set>
 #include <filesystem>
 
 using namespace d4vr;
 namespace {
 struct Item { std::array<float,4> position,color; };
-constexpr VkDeviceSize texels=256*256,plane=4*texels,slot=5*plane+texels;
+VKAPI_ATTR VkBool32 VKAPI_CALL validationMessage(VkDebugUtilsMessageSeverityFlagBitsEXT,VkDebugUtilsMessageTypeFlagsEXT,
+        const VkDebugUtilsMessengerCallbackDataEXT* data,void*) {
+    std::fprintf(stderr,"D4VR validation [ %s ]: %s\n",data->pMessageIdName?data->pMessageIdName:"unknown",data->pMessage?data->pMessage:"");
+    // First stack for each ID only. Paths/addresses remain in the private log;
+    // these distinguish presenter calls from calls made inside the runtime.
+    try {static std::mutex mutex;static std::set<int32_t> seen;std::lock_guard<std::mutex> lock(mutex);
+        if(seen.size()<16 && seen.insert(data->messageIdNumber).second){void* frames[32];auto n=backtrace(frames,32);backtrace_symbols_fd(frames,n,2);}
+    }catch(...) {}
+    return VK_FALSE;
+}
 template<size_t N> VkShaderModule shader(Fixture& f,const uint32_t (&data)[N]) {
     VkShaderModuleCreateInfo ci{VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO};ci.codeSize=sizeof(data);ci.pCode=data;
     VkShaderModule out{};check(vkCreateShaderModule(f.device,&ci,nullptr,&out));return out;
 }
 void copy(Fixture& f,VkCommandBuffer c,const stereo::Targets& t,unsigned eye,VkBuffer staging,unsigned target) {
+    auto extent=t.config().extent;VkDeviceSize texels=VkDeviceSize(extent.width)*extent.height,plane=4*texels,slot=5*plane+texels;
     t.transitionForReadback(c,eye);
     for(unsigned k=0;k<6;++k) {
         VkBufferImageCopy b{};b.bufferOffset=target*slot+(k<5?k*plane:5*plane);
         b.imageSubresource={k<4?VkImageAspectFlags(VK_IMAGE_ASPECT_COLOR_BIT):k==4?VkImageAspectFlags(VK_IMAGE_ASPECT_DEPTH_BIT):VkImageAspectFlags(VK_IMAGE_ASPECT_STENCIL_BIT),0,0,1};
-        b.imageExtent={256,256,1};vkCmdCopyImageToBuffer(c,k<4?t.eye(eye).colors[k].handle:t.eye(eye).depth.handle,VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,staging,1,&b);
+        b.imageExtent={extent.width,extent.height,1};vkCmdCopyImageToBuffer(c,k<4?t.eye(eye).colors[k].handle:t.eye(eye).depth.handle,VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,staging,1,&b);
     }
     (void)f;
 }
@@ -34,7 +48,7 @@ int main(int argc,char** argv) try {
     // Literal names returned by SteamVR's legacy external-device binding. They
     // remain necessary to that contract even when their functionality is core.
     const std::vector<const char*> instanceExtensions{"VK_KHR_external_memory_capabilities","VK_KHR_get_physical_device_properties2",
-        "VK_KHR_external_fence_capabilities","VK_KHR_surface","VK_KHR_external_semaphore_capabilities"};
+        "VK_KHR_external_fence_capabilities","VK_KHR_surface","VK_KHR_external_semaphore_capabilities",VK_EXT_DEBUG_UTILS_EXTENSION_NAME};
     const std::vector<const char*> deviceExtensions{"VK_KHR_external_memory","VK_KHR_external_semaphore","VK_KHR_timeline_semaphore",
         "VK_KHR_dedicated_allocation","VK_KHR_get_memory_requirements2","VK_KHR_external_memory_fd","VK_KHR_external_semaphore_fd","VK_KHR_image_format_list"};
     // Select layers on this application's instance. An environment-wide layer
@@ -44,12 +58,20 @@ int main(int argc,char** argv) try {
     const char* explicitLayers=std::getenv("D4VR_POC_EXPLICIT_LAYERS");
     if(explicitLayers && std::string(explicitLayers)=="1")layers={"VK_LAYER_D4VR_replay_poc","VK_LAYER_KHRONOS_validation"};
     Fixture f(true,false,false,false,false,wrong?"D4VR other client":poc::clientName,true,instanceExtensions,deviceExtensions,layers);
+    auto createMessenger=reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(vkGetInstanceProcAddr(f.instance,"vkCreateDebugUtilsMessengerEXT"));
+    auto destroyMessenger=reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(vkGetInstanceProcAddr(f.instance,"vkDestroyDebugUtilsMessengerEXT"));
+    if(!createMessenger || !destroyMessenger)throw std::runtime_error("Private validation messenger dispatch unavailable");
+    VkDebugUtilsMessengerCreateInfoEXT debug{VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT};debug.messageSeverity=VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+    debug.messageType=VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT|VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT|VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;debug.pfnUserCallback=validationMessage;
+    VkDebugUtilsMessengerEXT messenger{};check(createMessenger(f.instance,&debug,nullptr,&messenger));
+    const auto side=poc::resolution();stereo::Config config;config.extent={side,side};
+    const VkDeviceSize texels=VkDeviceSize(side)*side,plane=4*texels,slot=5*plane+texels;
     auto projection=Matrix4{1.784022,0,0,0,0,3.171595,0,0,0,0,-1.001001,-.1001001,0,0,-1,0};
     std::array<EyeState,2> states;
     for(unsigned k=0;k<2;++k) {auto view=identity();view[3]=k?-.032:.032;states[k]=make_eye_state(k,1,view,projection);}
-    auto original=stereo::Targets::create(f.device,vkGetDeviceProcAddr,f.memory,{},states);
-    auto references=stereo::Targets::create(f.device,vkGetDeviceProcAddr,f.memory,{},states);
-    auto baseline=stereo::Targets::create(f.device,vkGetDeviceProcAddr,f.memory,{},states);
+    auto original=stereo::Targets::create(f.device,vkGetDeviceProcAddr,f.memory,config,states);
+    auto references=stereo::Targets::create(f.device,vkGetDeviceProcAddr,f.memory,config,states);
+    auto baseline=stereo::Targets::create(f.device,vkGetDeviceProcAddr,f.memory,config,states);
     auto vertex=shader(f,poc::code::vertex),stereoVertex=shader(f,poc::code::stereo);
     VkShaderModule fragment{};
     if(unknownShader) {
@@ -64,7 +86,7 @@ int main(int argc,char** argv) try {
         VkPipelineShaderStageCreateInfo stages[2]{};
         for(unsigned k=0;k<2;++k) {stages[k].sType=VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;stages[k].stage=k?VK_SHADER_STAGE_FRAGMENT_BIT:VK_SHADER_STAGE_VERTEX_BIT;stages[k].module=k?fragment:vs;stages[k].pName="main";}
         VkSpecializationMapEntry entry{4,0,8};VkSpecializationInfo spec{1,&entry,8,&address};if(address)stages[0].pSpecializationInfo=&spec;
-        stereo::Config config;VkPipelineRenderingCreateInfo rendering{VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO};rendering.colorAttachmentCount=4;rendering.pColorAttachmentFormats=config.colors.data();rendering.depthAttachmentFormat=rendering.stencilAttachmentFormat=config.depth;
+        VkPipelineRenderingCreateInfo rendering{VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO};rendering.colorAttachmentCount=4;rendering.pColorAttachmentFormats=config.colors.data();rendering.depthAttachmentFormat=rendering.stencilAttachmentFormat=config.depth;
         VkPipelineVertexInputStateCreateInfo vi{VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO};VkPipelineInputAssemblyStateCreateInfo ia{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO};ia.topology=VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         VkPipelineViewportStateCreateInfo vp{VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO};vp.viewportCount=vp.scissorCount=1;
         VkPipelineRasterizationStateCreateInfo rs{VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO};rs.polygonMode=VK_POLYGON_MODE_FILL;rs.cullMode=VK_CULL_MODE_NONE;rs.lineWidth=1;
@@ -83,7 +105,7 @@ int main(int argc,char** argv) try {
     VkCommandPoolCreateInfo pci{VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};pci.queueFamilyIndex=f.family;VkCommandPool pool{};check(vkCreateCommandPool(f.device,&pci,nullptr,&pool));
     VkCommandBufferAllocateInfo ai{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};ai.commandPool=pool;ai.level=VK_COMMAND_BUFFER_LEVEL_PRIMARY;ai.commandBufferCount=2;std::array<VkCommandBuffer,2> commands{};check(vkAllocateCommandBuffers(f.device,&ai,commands.data()));
     auto staging=f.buffer(5*slot,VK_BUFFER_USAGE_TRANSFER_DST_BIT);
-    auto state=[&](VkCommandBuffer c,VkPipeline p) {vkCmdBindPipeline(c,VK_PIPELINE_BIND_POINT_GRAPHICS,p);VkViewport v{0,0,256,256,0,1};VkRect2D s{{0,0},{256,256}};vkCmdSetViewport(c,0,1,&v);vkCmdSetScissor(c,0,1,&s);};
+    auto state=[&](VkCommandBuffer c,VkPipeline p) {vkCmdBindPipeline(c,VK_PIPELINE_BIND_POINT_GRAPHICS,p);VkViewport v{0,0,float(side),float(side),0,1};VkRect2D s{{0,0},{side,side}};vkCmdSetViewport(c,0,1,&v);vkCmdSetScissor(c,0,1,&s);};
     auto scene=[&](VkCommandBuffer c,VkPipelineLayout pl) {
         std::array<Item,2> scene{{{{-.22f,0,2,.62f},{.9f,.15f,.08f,1}},{{.22f,.08f,4,.95f},{.08f,.4f,.95f,1}}}};
         for(auto item:scene) {vkCmdPushConstants(c,pl,VK_SHADER_STAGE_VERTEX_BIT,0,sizeof(item),&item);item={};vkCmdDraw(c,3,1,0,0);}
@@ -111,6 +133,6 @@ int main(int argc,char** argv) try {
     vkDestroyCommandPool(f.device,pool,nullptr);for(auto p:eyes)vkDestroyPipeline(f.device,p,nullptr);vkDestroyPipeline(f.device,source,nullptr);vkDestroyPipeline(f.device,mono,nullptr);
     original.reset();references.reset();baseline.reset();vkDestroyPipelineLayout(f.device,layout,nullptr);vkDestroyPipelineLayout(f.device,referenceLayout,nullptr);
     vkUnmapMemory(f.device,staging.memory);vkDestroyBuffer(f.device,staging.handle,nullptr);vkFreeMemory(f.device,staging.memory,nullptr);
-    vkDestroyDevice(f.device,nullptr);vkDestroyInstance(f.instance,nullptr);
+    vkDestroyDevice(f.device,nullptr);destroyMessenger(f.instance,messenger,nullptr);vkDestroyInstance(f.instance,nullptr);
     std::cout<<"Layer replay application readback complete\n";return 0;
 } catch(const std::exception& e) {std::cerr<<e.what()<<'\n';return 1;}

@@ -74,6 +74,32 @@ problèmes. Pour Diablo restent l'identité active des shaders, les ressources e
 alias, les producteurs LOAD et la fermeture des états. Le backend D3D12 Windows
 reste à développer ; les composants communs gardent leurs tests Windows.
 
+## Préparation à 1024 × 1024
+
+Le client et la couche acceptent désormais deux résolutions fermées, 256 et
+1024, appliquées à la vraie rastérisation, aux viewport/scissor, aux cibles et
+aux copies. Le nouveau mode contient seize fois plus de pixels par œil, sans
+agrandir une ancienne image. Les [contrôles à ces deux résolutions](proofs/replay-xr-resolution-v1.json)
+couvrent 22 processus GPU sans erreur, dont des références séparées à 1024.
+**Aucun essai visuel en casque à 1024 n'est encore revendiqué.**
+
+Le runtime factice soumet aussi du travail asynchrone utilisant un buffer et un
+query pool après la dernière frame. L'adaptateur attend maintenant la queue
+avant de libérer les objets XR, même si sa propre fence a déjà terminé. Les
+compteurs distinguent les deux enregistrements de l'application, contenant dix
+dessins, de la troisième soumission du runtime factice. Les soumissions répétées
+des enregistrements avec dessins seraient comptées à nouveau. Ce contrôle est
+sans erreur ; la correction des destructions signalées par SteamVR reste à
+vérifier lors d'un nouvel essai réel.
+
+Le client conserve désormais dans le journal privé une pile d'appels pour la
+première erreur de chaque identifiant. Le vérificateur écrit aussi `attempt.json`
+avant de refuser un essai, avec les compteurs XR et les erreurs séparés ; ce
+fichier porte toujours `clean_validation_proof=false`. Seul le chemin strict
+réussi produit `proof.json`. La préparation sans frame tentée sans demander de
+réveiller le casque s'arrête à `xrCreateInstance: -2` : elle ne valide ni n'invalide
+les nouvelles corrections matérielles et n'est pas répétée en boucle.
+
 ## Reproduire hors casque
 
 ```sh
@@ -82,6 +108,7 @@ cmake --build work/layer-poc --parallel 2
 python3 tools/layer_poc_validate.py \
   --layer work/layer-poc --client work/layer-poc/d4vr_layer_replay_client \
   --mock-loader work/layer-poc/libd4vr_replay_xr_mock.so \
+  --resolution 1024 \
   --validation-layer /chemin/vers/la-couche-khronos \
   --runtime /chemin/vers/SteamLinuxRuntime_4/run \
   --output work/nouvelle-preuve-privee

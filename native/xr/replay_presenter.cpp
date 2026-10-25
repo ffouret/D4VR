@@ -48,7 +48,9 @@ struct Presenter {
     uint32_t frames=0,tracked=0,poseUpdates=0;double movement=0,separation=0;std::string runtime;
     Presenter(const BorrowedBinding& b,const ReplaySource& s):binding(b),source(s) {}
     ~Presenter() {
-        if(pending && vkQueueWaitIdle)vkQueueWaitIdle(binding.queue);
+        // xrEndFrame can enqueue runtime work after our own fence completed.
+        // Complete that borrowed-queue work before freeing any XR image/session.
+        if(session && vkQueueWaitIdle)vkQueueWaitIdle(binding.queue);
         if(fence && vkDestroyFence)vkDestroyFence(binding.device,fence,nullptr);
         if(pool && vkDestroyCommandPool)vkDestroyCommandPool(binding.device,pool,nullptr);
         if(frameOpen && xrEndFrame) {XrFrameEndInfo end{XR_TYPE_FRAME_END_INFO};end.displayTime=displayTime;end.environmentBlendMode=XR_ENVIRONMENT_BLEND_MODE_OPAQUE;xrEndFrame(session,&end);}

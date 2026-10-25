@@ -488,6 +488,10 @@ VKAPI_ATTR void VKAPI_CALL d4DestroyDevice(VkDevice handle, const VkAllocationCa
             ",\"present_calls\":" + std::to_string(d->presents) + ",\"submitted_command_buffers\":" + std::to_string(d->submittedBuffers) + ",\"commands\":" + countsJson(d->totals);
         if (d->eye) record += ",\"eye_control\":" + d->eye->json();
         if (d->pairs) record += ",\"paired_pipelines\":" + pairsJson(*d);
+#ifdef D4VR_LAYER_REPLAY_POC
+        if(d->poc)record+=",\"poc_application_recordings_submitted\":"+std::to_string(d->poc->applicationRecordingsSubmitted())
+            +",\"poc_application_draws_submitted\":"+std::to_string(d->poc->applicationDrawsSubmitted());
+#endif
         devices.erase(key(handle));
     }
     logFile.write(record); D4_POC(d,d->poc.reset()); d->pairs.reset(); for (auto& packet : d->pairEyes) packet.reset(); d->eye.reset(); d->DestroyDevice(handle, allocator);

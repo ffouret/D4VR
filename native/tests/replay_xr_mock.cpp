@@ -18,7 +18,10 @@
 #undef assert
 #define assert(x) do { if(!(x))std::abort(); } while(false)
 struct XrInstance_T {};
-struct XrSession_T { XrGraphicsBindingVulkanKHR binding;unsigned frames=0;bool ready=false,exit=false; };
+struct XrSession_T {
+    XrGraphicsBindingVulkanKHR binding;unsigned frames=0;bool ready=false,exit=false;
+    VkQueue queue{};VkCommandPool pool{};VkQueryPool query{};VkBuffer buffer{};VkDeviceMemory memory{};VkFence fence{};
+};
 struct XrSpace_T {};
 struct XrSwapchain_T { VkDevice device{};VkImage image{};VkDeviceMemory memory{};bool acquired=false; };
 namespace { XrInstance_T instance;XrSession active{};unsigned swapchains=0; }
@@ -45,9 +48,19 @@ XR_FN(xrCreateSession)(XrInstance,const XrSessionCreateInfo* info,XrSession* out
     VkQueue queue{};vkGetDeviceQueue(b.device,b.queueFamilyIndex,b.queueIndex,&queue);assert(queue);
     std::fputs("D4VR mock XR queue reentry completed\n",stderr);
     if(std::getenv("D4VR_MOCK_XR_FAIL_SESSION"))return XR_ERROR_INITIALIZATION_FAILED;
-    active=new XrSession_T{b};*out=active;return XR_SUCCESS;
+    active=new XrSession_T{b};active->queue=queue;*out=active;return XR_SUCCESS;
 }
-XR_FN(xrDestroySession)(XrSession s) { assert(s==active && !swapchains);delete s;active=nullptr;return XR_SUCCESS; }
+XR_FN(xrDestroySession)(XrSession s) {
+    assert(s==active && !swapchains);auto d=s->binding.device;
+    // No wait here: the presenter must complete work enqueued by xrEndFrame,
+    // including this runtime's own query/buffer use, before destroying session.
+    if(s->query)vkDestroyQueryPool(d,s->query,nullptr);
+    if(s->buffer)vkDestroyBuffer(d,s->buffer,nullptr);
+    if(s->memory)vkFreeMemory(d,s->memory,nullptr);
+    if(s->fence)vkDestroyFence(d,s->fence,nullptr);
+    if(s->pool)vkDestroyCommandPool(d,s->pool,nullptr);
+    delete s;active=nullptr;return XR_SUCCESS;
+}
 XR_FN(xrEnumerateSwapchainFormats)(XrSession,uint32_t capacity,uint32_t* count,int64_t* out) { *count=1;if(capacity)out[0]=VK_FORMAT_B8G8R8A8_UNORM;return XR_SUCCESS; }
 XR_FN(xrCreateSwapchain)(XrSession s,const XrSwapchainCreateInfo* info,XrSwapchain* out) {
     auto e=new XrSwapchain_T;e->device=s->binding.device;
@@ -86,6 +99,20 @@ XR_FN(xrEndFrame)(XrSession s,const XrFrameEndInfo* info) {
         auto p=reinterpret_cast<const XrCompositionLayerProjection*>(info->layers[0]);assert(p->viewCount==2);
         for(unsigned i=0;i<2;++i)assert(!p->views[i].subImage.swapchain->acquired);
         ++s->frames;std::fputs("D4VR mock XR projection frame completed\n",stderr);
+        if(s->frames==2) {
+            auto d=s->binding.device;
+            VkQueryPoolCreateInfo qi{VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO};qi.queryType=VK_QUERY_TYPE_TIMESTAMP;qi.queryCount=1;assert(vkCreateQueryPool(d,&qi,nullptr,&s->query)==VK_SUCCESS);
+            VkBufferCreateInfo bi{VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};bi.size=16;bi.usage=VK_BUFFER_USAGE_TRANSFER_DST_BIT;assert(vkCreateBuffer(d,&bi,nullptr,&s->buffer)==VK_SUCCESS);
+            VkMemoryRequirements req{};vkGetBufferMemoryRequirements(d,s->buffer,&req);uint32_t type=0;while(!(req.memoryTypeBits&(1u<<type)))++type;
+            VkMemoryAllocateInfo ma{VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};ma.allocationSize=req.size;ma.memoryTypeIndex=type;assert(vkAllocateMemory(d,&ma,nullptr,&s->memory)==VK_SUCCESS);assert(vkBindBufferMemory(d,s->buffer,s->memory,0)==VK_SUCCESS);
+            VkCommandPoolCreateInfo pi{VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};pi.queueFamilyIndex=s->binding.queueFamilyIndex;assert(vkCreateCommandPool(d,&pi,nullptr,&s->pool)==VK_SUCCESS);
+            VkCommandBufferAllocateInfo ai{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};ai.commandPool=s->pool;ai.level=VK_COMMAND_BUFFER_LEVEL_PRIMARY;ai.commandBufferCount=1;VkCommandBuffer command{};assert(vkAllocateCommandBuffers(d,&ai,&command)==VK_SUCCESS);
+            VkCommandBufferBeginInfo begin{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};begin.flags=VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;assert(vkBeginCommandBuffer(command,&begin)==VK_SUCCESS);
+            vkCmdResetQueryPool(command,s->query,0,1);vkCmdWriteTimestamp(command,VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,s->query,0);vkCmdFillBuffer(command,s->buffer,0,16,0x12345678);assert(vkEndCommandBuffer(command)==VK_SUCCESS);
+            VkFenceCreateInfo fi{VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};assert(vkCreateFence(d,&fi,nullptr,&s->fence)==VK_SUCCESS);
+            VkSubmitInfo submit{VK_STRUCTURE_TYPE_SUBMIT_INFO};submit.commandBufferCount=1;submit.pCommandBuffers=&command;assert(vkQueueSubmit(s->queue,1,&submit,s->fence)==VK_SUCCESS);
+            std::fputs("D4VR mock XR asynchronous runtime work submitted\n",stderr);
+        }
     }return XR_SUCCESS;
 }
 XR_FN(xrAcquireSwapchainImage)(XrSwapchain s,const XrSwapchainImageAcquireInfo*,uint32_t* index) { assert(!s->acquired);s->acquired=true;*index=0;return XR_SUCCESS; }
