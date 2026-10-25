@@ -53,9 +53,12 @@ def validate(args):
         if before!=after:raise ValueError('Original image changed after restoring original pipelines')
         if enabled:
             pair=sequential_capture.pair(directory,require_game=False);centers={};reference_bytes=0
+            if pair.get('repeated_eye_selections_verified') is not True:raise ValueError('Repeated left/right images missing')
             for metadata in directory.glob('image-*.json'):
                 d,b=sequential_capture.read_image(metadata);reference=(directory/('left-reference.pixels' if d['eye']==0 else 'right-reference.pixels')).read_bytes()
                 if b!=reference:raise ValueError('Captured pixels differ from original rendered reference')
+                registry=d.get('pipeline_registry_at_export',{})
+                if registry.get('maximum_live_nodes')!=4096 or registry.get('budget_rejections')!=0:raise ValueError('Pipeline counters missing from image export')
                 reference_bytes+=len(b)
                 for channel in (1,2):
                     xs=[i//4%d['width'] for i in range(0,len(b),4) if b[i+channel]>200]
@@ -63,12 +66,16 @@ def validate(args):
                     centers[(d['eye'],channel)]=sum(xs)/len(xs)
             disparities=[centers[(0,c)]-centers[(1,c)] for c in (1,2)]
             if disparities[1]<=0 or not 1.7<disparities[0]/disparities[1]<2.3:raise ValueError('Depth-dependent geometric disparity not verified')
-            entry={'case':name,'reference_equal_bytes':reference_bytes,'original_restored_bytes':len(before),'disparities_pixels':disparities,'different_pixel_bytes':pair['different_pixel_bytes']}
+            entry={'case':name,'reference_equal_bytes':reference_bytes,'original_restored_bytes':len(before),'disparities_pixels':disparities,'different_pixel_bytes':pair['different_pixel_bytes'],'repeated_capture_frames':4}
         else:
             if list(directory.glob('image-*.json')) or (directory/'left-reference.pixels').read_bytes()!=before or (directory/'right-reference.pixels').read_bytes()!=before:raise ValueError('Disabled capture changed pixels or wrote an image')
             entry={'case':name,'disabled_capture_verified':True,'original_restored_bytes':len(before)}
         trace=vulkan_trace.report(directory)
         if not trace['trace_loaded'] or any(not d['clean_destroy'] for t in trace['process_traces'] for d in t['devices']):raise ValueError('Loader integration/clean teardown not verified')
+        if enabled:
+            stats=[d['paired_pipelines'] for t in trace['process_traces'] for d in t['devices'] if 'paired_pipelines' in d]
+            if not stats or any(s.get('mode')!='sequential_original_render' or s.get('maximum_live_nodes')!=4096 or s.get('maximum_creation_attempts')!=4096 or s.get('budget_rejections')!=0 for s in stats):raise ValueError('Explicit sequential pipeline quota not verified')
+            entry['sequential_quota_verified']=True
         results.append(entry);print(name+': passed',flush=True)
     report={'purpose':'sequential_presentation_capture','schema_version':1,'layer_sha256':probe.digest(args.layer/vulkan_trace.LIBRARY),
         'wsi_loader_capture_passed':True,'original_pixels_restored':True,'synthetic_scene':True,'game_stereo_submitted':False,'cases':results}

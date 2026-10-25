@@ -84,6 +84,7 @@ def read_image(path: Path) -> tuple[dict,bytes]:
     if path.is_symlink():raise ValueError('Image manifest symlink refused')
     d=json.loads(path.read_text());eye=d.get('eye');w,h=d.get('width'),d.get('height')
     if (type(eye) is not int or eye not in (0,1) or type(w) is not int or type(h) is not int or not 0<w<=4096 or not 0<h<=4096
+            or type(d.get('sequence')) is not int or d['sequence']<=0 or type(d.get('present')) is not int or d['present']<=0
             or d.get('format') not in (37,43,44,50,58,64) or d.get('bytes')!=w*h*4 or d.get('single_eye_interval') is not True
             or d.get('selected_eye_mask')!=1<<eye or d.get('selected_draw_commands',0)<=0 or d.get('scope')!='original_presentation_blit'
             or d.get('same_instant_pair') is not False or d.get('game_stereo_submitted') is not False):
@@ -119,17 +120,20 @@ def pair(output: Path,require_game: bool=True) -> dict:
     for path in output.glob('image-*.json'):
         match=re.fullmatch(r'image-(\d+)-(\d+)-(\d+)\.json',path.name)
         if not match:continue
-        d,b=read_image(path);groups.setdefault(match.group(1,2),{})[d['eye']]=(path,d,b)
-    candidates=[(key,value) for key,value in groups.items() if set(value)=={0,1}]
+        d,b=read_image(path)
+        if int(match.group(3))!=d['sequence']:raise ValueError('Image filename/request sequence mismatch')
+        groups.setdefault(match.group(1,2),[]).append((path,d,b))
+    candidates=[(key,sorted(value,key=lambda x:x[1]['sequence'])) for key,value in groups.items() if {x[1]['eye'] for x in value}=={0,1}]
     if len(candidates)!=1:raise ValueError('Expected one complete pair from the same process/device')
     key,images=candidates[0]
+    if len(images) not in (2,4) or [x[1]['eye'] for x in images] != [0,1]*(len(images)//2):raise ValueError('Expected left/right or repeated left/right captures')
     if require_game:
         observed=json.loads((output/'process-observations.json').read_text())['observations']
         pids={str(p['pid']) for row in observed for p in row['processes'] if 'diablo iv.exe' in p['names']}
         if key[0] not in pids:raise ValueError('Captured process was not observed as Diablo IV.exe')
-    left,right=images[0],images[1]
-    if any(left[1][k]!=right[1][k] for k in ('width','height','format')):raise ValueError('Eye formats/extents differ')
-    if left[1]['sequence']>=right[1]['sequence'] or left[1]['present']>=right[1]['present']:raise ValueError('Eye order is invalid')
+    left,right=images[:2]
+    if any(left[1][k]!=x[1][k] for k in ('width','height','format') for x in images[1:]):raise ValueError('Eye formats/extents differ')
+    if any(a[1]['sequence']>=b[1]['sequence'] or a[1]['present']>=b[1]['present'] for a,b in zip(images,images[1:])):raise ValueError('Eye order is invalid')
     width,height=left[1]['width'],left[1]['height'];colors=[rgba(x[2],x[1]['format']) for x in (left,right)]
     for name,color in zip(('left','right'),colors):png(output/(name+'.png'),width,height,color)
     joined=b''.join(colors[0][y*width*4:(y+1)*width*4]+colors[1][y*width*4:(y+1)*width*4] for y in range(height))
@@ -138,18 +142,25 @@ def pair(output: Path,require_game: bool=True) -> dict:
         'width':width,'height':height,'format':left[1]['format'],'same_instant_pair':False,'game_stereo_submitted':False,
         'different_pixel_bytes':sum(a!=b for a,b in zip(left[2],right[2])),
         'images':[{'metadata':str(x[0]),'eye':x[1]['eye'],'sha256':hashlib.sha256(x[2]).hexdigest(),'selected_draw_commands':x[1]['selected_draw_commands']} for x in (left,right)]}
+    if len(images)==4:
+        report['repeat_images']=[]
+        for x,name in zip(images[2:],('left','right')):
+            png(output/('repeat-'+name+'.png'),width,height,rgba(x[2],x[1]['format']))
+            report['repeat_images'].append({'metadata':str(x[0]),'eye':x[1]['eye'],'sha256':hashlib.sha256(x[2]).hexdigest()})
+        report['repeated_eye_selections_verified']=True
+        report['stationary_scene_proven']=False
     probe.write_json(output/'pair.json',report);return report
 
 
-def request_pair(output: Path):
+def request_pair(output: Path,repeat: bool=False):
     session=json.loads((output/'capture.json').read_text())
     if session['purpose']!='sequential_diablo_capture':raise ValueError('Not a prepared Diablo session')
     try:
-        for eye in (0,1):
+        for sequence,eye in enumerate((0,1,0,1) if repeat else (0,1),1):
             atomic(output/'eye.selection',str(eye)+'\n');time.sleep(2)
-            atomic(output/'present.request',str(eye+1)+'\n');deadline=time.monotonic()+15
+            atomic(output/'present.request',str(sequence)+'\n');deadline=time.monotonic()+15
             while time.monotonic()<deadline:
-                found=[p for p in output.glob('image-*.json') if json.loads(p.read_text()).get('sequence')==eye+1]
+                found=[p for p in output.glob('image-*.json') if json.loads(p.read_text()).get('sequence')==sequence]
                 if found:
                     if len(found)!=1:raise ValueError('Multiple processes captured the same request')
                     read_image(found[0]);break
@@ -165,10 +176,11 @@ def main():
     for key in ('game-dir','launcher','shader-bundle','layer','output'):p.add_argument('--'+key,type=Path,required=True)
     for mode in ('launch','request','report'):
         p=sub.add_parser(mode);p.add_argument('--output',type=Path,required=True)
+        if mode=='request':p.add_argument('--repeat',action='store_true',help='Repeat left/right once for temporal consistency inspection')
     args=parser.parse_args()
     if args.mode=='prepare':result=prepare(args.game_dir,args.launcher,args.shader_bundle,args.layer,args.output)
     elif args.mode=='launch':launch(args.output);return
-    elif args.mode=='request':result=request_pair(args.output)
+    elif args.mode=='request':result=request_pair(args.output,args.repeat)
     else:result=pair(args.output)
     print(json.dumps(result,indent=2))
 

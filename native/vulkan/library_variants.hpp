@@ -24,7 +24,7 @@ public:
     const DynamicStates& dynamicStates() const;
 };
 enum class LibraryResult { registered,unsupported,unknownLibrary,unmarkedExecutable,budget,driverFailure,compileRequired,duplicateSource,unmarkedPreRaster };
-struct LibraryStats { uint64_t libraries=0,executables=0,rejected=0,driverFailures=0,compileRequired=0;uint32_t liveNodes=0,creationAttempts=0; };
+struct LibraryStats { uint64_t libraries=0,executables=0,rejected=0,driverFailures=0,compileRequired=0,budgetRejections=0;uint32_t liveNodes=0,creationAttempts=0; };
 
 // Synchronous pipeline adapter: observe() runs AFTER forwarding the original
 // create, before returning to its caller, while all input pointers/modules and

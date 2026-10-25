@@ -99,6 +99,7 @@ int main()try{
         expect(registry.observe(h<VkPipeline>(10),d.ci)==LibraryResult::duplicateSource,"Duplicate source accepted");
         Description missing(0,false,{h<VkPipeline>(55)});expect(registry.observe(h<VkPipeline>(11),missing.ci)==LibraryResult::unknownLibrary,"Unknown source library guessed");
         Description overlap(1,true,{h<VkPipeline>(10)});expect(registry.observe(h<VkPipeline>(12),overlap.ci)==LibraryResult::unsupported,"Overlapping subset ownership accepted");
+        expect(registry.stats().budgetRejections==1,"Non-budget refusals were misclassified as quota failures");
     }
     expect(owned.empty(),"Quota test leaked");
     for(auto error:{VK_ERROR_OUT_OF_DEVICE_MEMORY,VK_PIPELINE_COMPILE_REQUIRED}){
@@ -145,6 +146,17 @@ int main()try{
         LibraryVariants registry(device,get,addresses,marked,4,1);Description d(1);
         expect(registry.observe(h<VkPipeline>(1),d.ci)==LibraryResult::registered,"Cumulative budget first creation failed");registry.remove(h<VkPipeline>(1));
         expect(registry.observe(h<VkPipeline>(2),d.ci)==LibraryResult::budget && registry.stats().creationAttempts==1 && owned.empty(),"Source destruction reset cumulative compile budget");
+        expect(registry.stats().budgetRejections==1,"Cumulative compile budget refusal was not recorded");
+    }
+    {
+        LibraryVariants registry(device,get,addresses,marked,4096,4096);Description d(15,false);
+        for(unsigned i=0;i<4096;++i)expect(registry.observe(h<VkPipeline>(100000+i),d.ci)==LibraryResult::registered,"Maximum bounded quota rejected an in-budget node");
+        auto lease=registry.lookup(h<VkPipeline>(100000));
+        expect(registry.stats().liveNodes==4096 && owned.size()==8192,"Maximum bounded quota lost private graphs");
+        expect(registry.observe(h<VkPipeline>(104096),d.ci)==LibraryResult::budget && registry.stats().budgetRejections==1,"Maximum bounded quota allowed an extra private create");
+        for(unsigned i=0;i<4096;++i)registry.remove(h<VkPipeline>(100000+i));
+        expect(registry.stats().liveNodes==1 && owned.size()==2,"Maximum quota cleanup ignored outstanding lease");
+        lease.reset();expect(owned.empty(),"Maximum quota private pipelines leaked");
     }
     std::cout<<"GPL variants: subset ownership, synchronous stage/identifier specialization, per-eye links, leases, reuse, quotas, feedback isolation, partial failures and cancellation: passed\n";return 0;
 }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}

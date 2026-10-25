@@ -48,5 +48,23 @@ class SequentialImages(unittest.TestCase):
         self.assertEqual(capture.rgba(struct.pack('<I',1023|(512<<10)|(3<<30)),64),bytes([255,128,0,255]))
         self.assertEqual(capture.rgba(struct.pack('<I',(1023<<20)|(512<<10)|(3<<30)),58),bytes([255,128,0,255]))
 
+    def test_repeated_eyes_preserve_first_pair_and_require_ordered_metadata(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            directory=Path(tmp);first=[sample(directory,i) for i in (0,1)]
+            for eye,(p,d) in enumerate(first):
+                dest=directory/f'image-99-1-{eye+3}.json';row={**d,'sequence':eye+3,'present':12+eye}
+                dest.write_text(json.dumps(row));dest.with_suffix('.pixels').write_bytes(p.with_suffix('.pixels').read_bytes())
+            result=capture.pair(directory,False)
+            self.assertEqual(result['images'][0]['metadata'],str(first[0][0]));self.assertTrue(result['repeated_eye_selections_verified']);self.assertFalse(result['stationary_scene_proven'])
+            self.assertEqual(len(result['repeat_images']),2);self.assertTrue((directory/'repeat-right.png').exists())
+            p=directory/'image-99-1-3.json';d=json.loads(p.read_text());d['sequence']=9;p.write_text(json.dumps(d))
+            with self.assertRaises(ValueError):capture.pair(directory,False)
+
+    def test_incomplete_repeat_does_not_silently_overwrite_first_eye(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            directory=Path(tmp);p,d=sample(directory,0);sample(directory,1)
+            extra=directory/'image-99-1-3.json';extra.write_text(json.dumps({**d,'sequence':3,'present':12}));extra.with_suffix('.pixels').write_bytes(p.with_suffix('.pixels').read_bytes())
+            with self.assertRaises(ValueError):capture.pair(directory,False)
+
 
 if __name__=='__main__':unittest.main()

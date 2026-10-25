@@ -223,6 +223,7 @@ struct Device {
     std::unique_ptr<d4vr::poc::Device> poc;
 #endif
     std::atomic<uint64_t> pairBatches{0},pairOutputs{0};
+    uint32_t pairLimit=512;
     uint64_t eyePipelineRecords = 0;
     Counts totals{}, interval{};
     uint64_t submissions = 0, presents = 0, submittedBuffers = 0;
@@ -233,8 +234,8 @@ std::string pairsJson(const Device& d) {
         ",\"duplicated_draws\":false,\"original_arguments_unchanged\":"+(d.presentation?"false":"true")+",\"source_batches\":" + std::to_string(d.pairBatches.load()) +
         ",\"source_outputs\":" + std::to_string(d.pairOutputs.load()) + ",\"library_pairs\":" + std::to_string(s.libraries) +
         ",\"executable_pairs\":" + std::to_string(s.executables) + ",\"rejected\":" + std::to_string(s.rejected) +
-        ",\"driver_failures\":" + std::to_string(s.driverFailures) + ",\"compile_required\":" + std::to_string(s.compileRequired) +
-        ",\"live_nodes\":" + std::to_string(s.liveNodes) + ",\"creation_attempts\":" + std::to_string(s.creationAttempts) + ",\"maximum_live_nodes\":512,\"maximum_creation_attempts\":512}";
+        ",\"driver_failures\":" + std::to_string(s.driverFailures) + ",\"compile_required\":" + std::to_string(s.compileRequired) + ",\"budget_rejections\":" + std::to_string(s.budgetRejections) +
+        ",\"live_nodes\":" + std::to_string(s.liveNodes) + ",\"creation_attempts\":" + std::to_string(s.creationAttempts) + ",\"maximum_live_nodes\":"+std::to_string(d.pairLimit)+",\"maximum_creation_attempts\":"+std::to_string(d.pairLimit)+"}";
 }
 std::unordered_map<void*, std::shared_ptr<Instance>> instances;
 std::unordered_map<void*, std::shared_ptr<Device>> devices;
@@ -286,6 +287,7 @@ void writePresentation(const Device& d,const d4vr::present::Snapshot& s){
     std::ostringstream json;json<<"{\"schema_version\":1,\"sequence\":"<<s.sequence<<",\"eye\":"<<s.eye<<",\"present\":"<<s.present<<",\"width\":"<<s.extent.width<<",\"height\":"<<s.extent.height
         <<",\"format\":"<<s.format<<",\"bytes\":"<<s.bytes.size()<<",\"selected_draw_commands\":"<<s.selectedDraws<<",\"selected_eye_mask\":"<<s.selectedMask
         <<",\"single_eye_interval\":"<<((s.selectedDraws && s.selectedMask==(1u<<s.eye))?"true":"false")
+        <<",\"pipeline_registry_at_export\":"<<pairsJson(d)
         <<",\"scope\":\"original_presentation_blit\",\"all_world_draws_verified\":false,\"same_instant_pair\":false,\"game_stereo_submitted\":false}\n";
     auto text=json.str();if(writePrivate(base+".json",text.data(),text.size()))logFile.write("\"event\":\"presentation_capture\",\"sequence\":"+std::to_string(s.sequence)+",\"eye\":"+std::to_string(s.eye));
 }
@@ -493,9 +495,12 @@ VKAPI_ATTR VkResult VKAPI_CALL d4CreateDevice(VkPhysicalDevice physical, const V
             d->pairEyes[0] = d4vr::eye::Control::create(*result,get,memory,left);
             d->pairEyes[1] = d4vr::eye::Control::create(*result,get,memory,right);
             auto classifier = d->pairEyes[0].get();
+            // The sequential game trial exhausted the diagnostic quota. Keep
+            // the larger, still bounded quota exclusive to this explicit mode.
+            if(auto directory=std::getenv("D4VR_SEQUENTIAL_CAPTURE_DIR");directory && *directory)d->pairLimit=4096;
             d->pairs = std::make_unique<d4vr::pipeline::LibraryVariants>(*result,get,
                 std::array<VkDeviceAddress,2>{d->pairEyes[0]->address(),d->pairEyes[1]->address()},
-                [classifier](const auto& stage) { return classifier->marked(stage); },512,512);
+                [classifier](const auto& stage) { return classifier->marked(stage); },d->pairLimit,d->pairLimit);
         } else d->eye = d4vr::eye::Control::create(*result,get,memory,d4vr::eye::readPacket(eyeFile));
     } catch (const std::exception& error) {
         d->pairs.reset(); for (auto& packet : d->pairEyes) packet.reset();

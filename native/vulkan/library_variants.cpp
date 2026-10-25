@@ -72,7 +72,7 @@ const DynamicStates& LibraryNode::dynamicStates()const{return impl->dynamics;}
 struct LibraryVariants::Impl {
     std::shared_ptr<Dispatch> dispatch;std::array<VkDeviceAddress,2> addresses;MarkedStage marked;
     mutable std::mutex mutex;std::unordered_map<VkPipeline,Lease> nodes;std::unordered_map<VkPipeline,bool> pending;LibraryStats counts;
-    LibraryResult result(LibraryResult r){std::lock_guard<std::mutex> lock(mutex);if(r!=LibraryResult::registered)++counts.rejected;if(r==LibraryResult::driverFailure)++counts.driverFailures;if(r==LibraryResult::compileRequired)++counts.compileRequired;return r;}
+    LibraryResult result(LibraryResult r){std::lock_guard<std::mutex> lock(mutex);if(r!=LibraryResult::registered)++counts.rejected;if(r==LibraryResult::driverFailure)++counts.driverFailures;if(r==LibraryResult::compileRequired)++counts.compileRequired;if(r==LibraryResult::budget)++counts.budgetRejections;return r;}
 };
 LibraryVariants::LibraryVariants(VkDevice device,PFN_vkGetDeviceProcAddr get,const std::array<VkDeviceAddress,2>& addresses,MarkedStage marked,uint32_t limit,uint32_t maximumCreations){
     require(device && get && marked && limit && limit<=4096 && maximumCreations && maximumCreations<=4096 && addresses[0] && addresses[1] && addresses[0]!=addresses[1] && addresses[0]%16==0 && addresses[1]%16==0);
@@ -90,7 +90,7 @@ LibraryResult LibraryVariants::observe(VkPipeline source,const VkGraphicsPipelin
         {
             std::lock_guard<std::mutex> lock(p.mutex);
             if(p.nodes.count(source) || p.pending.count(source)){++p.counts.rejected;return LibraryResult::duplicateSource;}
-            if(p.pending.size()>=p.dispatch->limit){++p.counts.rejected;return LibraryResult::budget;}
+            if(p.pending.size()>=p.dispatch->limit){++p.counts.rejected;++p.counts.budgetRejections;return LibraryResult::budget;}
             p.pending.emplace(source,false);
         }
         struct Pending {Impl& p;VkPipeline source;~Pending(){std::lock_guard<std::mutex> lock(p.mutex);p.pending.erase(source);}} pending{p,source};

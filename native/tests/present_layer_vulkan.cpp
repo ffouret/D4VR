@@ -75,11 +75,11 @@ int main(int argc,char** argv)try{
     std::vector<VkSemaphore> finished(images.size());for(auto& s:finished)check(vkCreateSemaphore(f.device,&sem,nullptr,&s));
     VkFenceCreateInfo fi{VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};VkFence fence{};check(vkCreateFence(f.device,&fi,nullptr,&fence));auto golden=f.buffer(VkDeviceSize(extent.width)*extent.height*4,VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     text(directory/"eye.selection","2\n");
-    for(unsigned frame=0;frame<40;++frame){
-        if(frame==4)text(directory/"eye.selection","0\n");
-        if(frame==20)text(directory/"eye.selection","1\n");
-        if(frame==36)text(directory/"eye.selection","2\n");
-        if(frame==8 || frame==28)text(directory/"present.request",frame==8?"1\n":"2\n");
+    for(unsigned frame=0;frame<64;++frame){
+        if(frame==4 || frame==36)text(directory/"eye.selection","0\n");
+        if(frame==20 || frame==52)text(directory/"eye.selection","1\n");
+        if(frame==60)text(directory/"eye.selection","2\n");
+        if(frame==8 || frame==28 || frame==44 || frame==56)text(directory/"present.request",frame==8?"1\n":frame==28?"2\n":frame==44?"3\n":"4\n");
         uint32_t index=0;auto acquiredResult=vkAcquireNextImageKHR(f.device,chain,UINT64_MAX,acquired,VK_NULL_HANDLE,&index);
         if(acquiredResult!=VK_SUBOPTIMAL_KHR)check(acquiredResult);
         check(vkResetCommandPool(f.device,pool,0));
@@ -95,18 +95,18 @@ int main(int argc,char** argv)try{
         transition(images[index],VK_IMAGE_LAYOUT_UNDEFINED,VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,0,VK_ACCESS_TRANSFER_WRITE_BIT,VK_PIPELINE_STAGE_TRANSFER_BIT,VK_PIPELINE_STAGE_TRANSFER_BIT);
         VkImageBlit region{};region.srcSubresource=region.dstSubresource={VK_IMAGE_ASPECT_COLOR_BIT,0,0,1};region.srcOffsets[1]=region.dstOffsets[1]={int32_t(extent.width),int32_t(extent.height),1};vkCmdBlitImage(command,source,VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,images[index],VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,1,&region,VK_FILTER_LINEAR);
         transition(images[index],VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,VK_ACCESS_TRANSFER_WRITE_BIT,0,VK_PIPELINE_STAGE_TRANSFER_BIT,VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
-        if(frame==0 || frame==8 || frame==28 || frame==39){VkBufferImageCopy copy{};copy.imageSubresource={VK_IMAGE_ASPECT_COLOR_BIT,0,0,1};copy.imageExtent=ici.extent;vkCmdCopyImageToBuffer(command,source,VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,golden.handle,1,&copy);
+        if(frame==0 || frame==8 || frame==28 || frame==63){VkBufferImageCopy copy{};copy.imageSubresource={VK_IMAGE_ASPECT_COLOR_BIT,0,0,1};copy.imageExtent=ici.extent;vkCmdCopyImageToBuffer(command,source,VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,golden.handle,1,&copy);
             VkMemoryBarrier host{VK_STRUCTURE_TYPE_MEMORY_BARRIER};host.srcAccessMask=VK_ACCESS_TRANSFER_WRITE_BIT;host.dstAccessMask=VK_ACCESS_HOST_READ_BIT;vkCmdPipelineBarrier(command,VK_PIPELINE_STAGE_TRANSFER_BIT,VK_PIPELINE_STAGE_HOST_BIT,0,1,&host,0,nullptr,0,nullptr);}
         check(vkEndCommandBuffer(command));VkPipelineStageFlags wait=VK_PIPELINE_STAGE_TRANSFER_BIT;VkSubmitInfo submit{VK_STRUCTURE_TYPE_SUBMIT_INFO};submit.waitSemaphoreCount=1;submit.pWaitSemaphores=&acquired;submit.pWaitDstStageMask=&wait;submit.commandBufferCount=1;submit.pCommandBuffers=&command;submit.signalSemaphoreCount=1;submit.pSignalSemaphores=&finished[index];
         check(vkQueueSubmit(f.queue,1,&submit,fence));VkPresentInfoKHR present{VK_STRUCTURE_TYPE_PRESENT_INFO_KHR};present.waitSemaphoreCount=1;present.pWaitSemaphores=&finished[index];present.swapchainCount=1;present.pSwapchains=&chain;present.pImageIndices=&index;
         auto presented=vkQueuePresentKHR(f.queue,&present);if(presented!=VK_SUBOPTIMAL_KHR)check(presented);
         check(vkWaitForFences(f.device,1,&fence,VK_TRUE,30'000'000'000ull));check(vkResetFences(f.device,1,&fence));
-        if(frame==0 || frame==8 || frame==28 || frame==39){std::ofstream out(directory/(frame==0?"mono-before.pixels":frame==8?"left-reference.pixels":frame==28?"right-reference.pixels":"mono-after.pixels"),std::ios::binary);out.write(static_cast<const char*>(golden.mapped),std::streamsize(extent.width)*extent.height*4);}
+        if(frame==0 || frame==8 || frame==28 || frame==63){std::ofstream out(directory/(frame==0?"mono-before.pixels":frame==8?"left-reference.pixels":frame==28?"right-reference.pixels":"mono-after.pixels"),std::ios::binary);out.write(static_cast<const char*>(golden.mapped),std::streamsize(extent.width)*extent.height*4);}
     }
     check(vkDeviceWaitIdle(f.device));vkDestroyCommandPool(f.device,pool,nullptr);vkDestroyPipeline(f.device,pipeline,nullptr);vkDestroyPipelineLayout(f.device,layout,nullptr);vkDestroyShaderModule(f.device,vertex,nullptr);vkDestroyShaderModule(f.device,fragment,nullptr);
     for(auto s:finished)vkDestroySemaphore(f.device,s,nullptr);
     vkDestroySemaphore(f.device,acquired,nullptr);vkDestroyFence(f.device,fence,nullptr);vkUnmapMemory(f.device,golden.memory);vkDestroyBuffer(f.device,golden.handle,nullptr);vkFreeMemory(f.device,golden.memory,nullptr);
     vkDestroyImageView(f.device,view,nullptr);vkDestroyImage(f.device,source,nullptr);vkFreeMemory(f.device,memory,nullptr);vkDestroySwapchainKHR(f.device,chain,nullptr);vkDestroyDevice(f.device,nullptr);vkDestroySurfaceKHR(f.instance,surface,nullptr);vkDestroyInstance(f.instance,nullptr);
-    std::cout<<"{\"presentation_layer_fixture_passed\":true,\"frames\":40,\"game_stereo_submitted\":false}\n";
+    std::cout<<"{\"presentation_layer_fixture_passed\":true,\"frames\":64,\"game_stereo_submitted\":false}\n";
     return 0;
 }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}

@@ -89,6 +89,32 @@ du jeu sans erreur. Aucune image n'a été envoyée au casque lors de cet essai.
 Les pixels réels restent privés, hors dépôt ; seuls hashes et résultats agrégés
 sont publiés.
 
+## Correction préparée après ce relevé
+
+Le mode successif utilise désormais un plafond explicite de 4 096 nœuds et
+4 096 tentatives de création, avec un compteur séparé `budget_rejections`.
+Chaque manifeste d'image contient aussi les compteurs du registre au moment
+de l'export, même si le programme ne détruit pas explicitement son device.
+Les autres modes conservent leur quota précédent. Ce changement supprime le
+plafond de 512 du premier essai ; il ne prouve pas encore que tous les dessins
+du jeu seront couverts. Le pilote conserve la gestion de ses allocations
+internes, dont le coût ne se déduit pas du seul nombre de pipelines.
+
+`request --repeat` prend gauche/droite puis gauche/droite, dans la limite des
+quatre captures privées. Le rapport conserve la première paire et identifie
+les deux images suivantes explicitement, sans écraser silencieusement un œil.
+Les séquences, formats et ordres de présentation doivent correspondre. La
+répétition prépare une inspection de la stabilité du décor ; elle ne prouve pas
+automatiquement son immobilité.
+
+La [preuve de cette correction](proofs/sequential-coverage-v2.json) couvre
+164 tests Python, les tests natifs de relais et de propriété, y compris 4 096
+paires simulées sans GPU avec libération différée par lease. Le client WSI
+effectue maintenant quatre captures : 1 048 576 octets égaux aux références
+dans chaque cas actif natif et Steam Runtime, sous validation de synchronisation.
+Ces essais supplémentaires restent synthétiques ; le premier essai réel
+ci-dessus utilise toujours l'ancien binaire `24e19a9`.
+
 ## Procédure d'essai privée
 
 `tools/sequential_capture.py prepare` vérifie le binaire testé, le bundle de
