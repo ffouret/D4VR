@@ -11,7 +11,7 @@
 
 template<class Render> int d4vr_test_stereo_gpu(uint32_t width, uint32_t height, void* cameraMemory,
     void* modelMemory, void* counterMemory, void* ringMemory, uint64_t shaderId,
-    VkPipeline original, VkPipeline stereo, VkPipeline nullAddress, Render render) {
+    VkPipeline original, VkPipeline stereo, VkPipeline nullAddress, Render render,bool telemetryEnabled=true) {
     using namespace d4vr;
     auto camera = reinterpret_cast<float*>(static_cast<char*>(cameraMemory) + 72*16);
     auto model = reinterpret_cast<float*>(static_cast<char*>(modelMemory) + 56*16);
@@ -52,9 +52,12 @@ template<class Render> int d4vr_test_stereo_gpu(uint32_t width, uint32_t height,
         ++telemetrySamples;
     };
     auto draw = [&](const EyeState& state,bool applied,VkPipeline selected = VK_NULL_HANDLE) {
-        counters[0] = counters[1] = 0;
+        counters[0] = counters[1] = telemetryEnabled?0:0xc0ffeeu;
+        if(!telemetryEnabled)std::fill(ring,ring+8192,0xa5a5a5a5u);
         auto bytes = render(selected ? selected : stereo,&state);
-        telemetry(state,applied,selected != nullAddress); return bytes;
+        if(telemetryEnabled)telemetry(state,applied,selected != nullAddress);
+        else expect(counters[0]==0xc0ffeeu && counters[1]==0xc0ffeeu && std::all_of(ring,ring+8192,[](auto v){return v==0xa5a5a5a5u;}),"Telemetry-free stereo modified diagnostic buffers");
+        return bytes;
     };
     auto checked = [&](const EyeState& state) {
         auto savedCamera = asMatrix(camera), savedModel = asMatrix(model);
@@ -128,6 +131,7 @@ template<class Render> int d4vr_test_stereo_gpu(uint32_t width, uint32_t height,
     expect(draw(state,false) == baseline,"Non-target source projection changed the image");
     std::cout << "{\"stereo_gpu_fixture_passed\":true,\"packet_gpu_updates_verified\":true,\"independent_reference_images_verified\":true,"
               << "\"reference_cases\":" << referenceCases << ",\"telemetry_samples\":" << telemetrySamples
+              << ",\"telemetry_disabled_and_buffers_preserved\":"<<(telemetryEnabled?"false":"true")
               << ",\"max_reference_different_bytes\":" << maxDifferentBytes << ",\"eye_separation_view_units\":0.064,\"disparity_pixels_depth_2\":" << disparities[0]
               << ",\"disparity_pixels_depth_4\":" << disparities[1]
               << ",\"head_translation_rotation_verified\":true,\"asymmetric_projection_verified\":true,\"source_jitter_depth_changes_verified\":true,\"inactive_and_non_target_unchanged\":true,\"game_stereo_proven\":false}\n";

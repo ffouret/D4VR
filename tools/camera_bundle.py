@@ -17,19 +17,32 @@ import probe
 import spirv_probe
 
 
+def select_candidates(candidates: dict,projection_only: bool=False) -> list[dict]:
+    selected=[]
+    for candidate in candidates['shaders']:
+        final=candidate.get('final_clip_matrix')
+        if not final or (final['buffer']['space'],final['buffer']['register'],final['byte_offset'])!=(0,0,1152):continue
+        if projection_only:selected.append(candidate);continue
+        chain=candidate.get('input_matrix_chain',[])
+        if chain and (chain[0]['buffer']['space'],chain[0]['buffer']['register'],chain[0]['byte_offset'])==(0,1,896):selected.append(candidate)
+    return selected
+
+
 def build(args) -> dict:
+    projection_only=getattr(args,'projection_only_helper',False)
+    if projection_only and not args.stereo:raise ValueError('Projection-only construction requires stereo mode')
     if args.output.exists() and any(args.output.iterdir()):
         raise ValueError("Use an empty directory for this observer bundle")
     args.output.mkdir(parents=True, exist_ok=True)
     args.output.chmod(0o700)
     validation = args.output / "validation"
     patched_fixture = validation / "fixture.observed.spv"
-    spirv_probe.build(args.fixture_vertex, args.helper, patched_fixture, args.tools, 3, 0, 72, 1, 56, args.geometry, args.stereo)
+    spirv_probe.build(args.fixture_vertex, args.helper, patched_fixture, args.tools, 3, 0, 72, 1, 56, args.geometry, args.stereo,projection_only,projection_only)
     bridge = Path("/run/host/usr/bin/flatpak-spawn")
     command = [str(bridge), "--host"] if bridge.exists() else []
     command += [str(p.resolve()) for p in (args.gpu_fixture, args.fixture_vertex, patched_fixture, args.fixture_fragment)]
     if args.stereo:
-        command.append("--stereo")
+        command.append("--stereo-no-telemetry" if projection_only else "--stereo")
     elif args.geometry:
         command.append("--geometry")
     result = subprocess.run(command, check=True, capture_output=True, text=True, timeout=60)
@@ -39,22 +52,14 @@ def build(args) -> dict:
     if args.stereo:
         valid = (proof.get('stereo_gpu_fixture_passed') is True and proof.get('packet_gpu_updates_verified') is True
                  and proof.get('independent_reference_images_verified') is True and proof.get('inactive_and_non_target_unchanged') is True)
+        if projection_only:valid=valid and proof.get('telemetry_disabled_and_buffers_preserved') is True and proof.get('telemetry_samples')==0
     if not valid or (not args.stereo and proof.get("gpu_fixture_passed") is not True):
         raise ValueError("GPU diagnostic fixture did not pass")
     (validation / "gpu-result.json").write_text(json.dumps(proof, indent=2) + "\n", encoding="utf-8")
     inventory = json.loads(args.inventory.read_text(encoding="utf-8"))
     identities = {s["file"]: s["sha256"] for s in inventory["shaders"]}
     candidates = json.loads(args.candidates.read_text(encoding="utf-8"))
-    selected = []
-    for candidate in candidates["shaders"]:
-        final = candidate.get("final_clip_matrix")
-        chain = candidate.get("input_matrix_chain", [])
-        if not final or not chain:
-            continue
-        upstream = chain[0]
-        if ((final["buffer"]["space"], final["buffer"]["register"], final["byte_offset"]) == (0, 0, 1152)
-                and (upstream["buffer"]["space"], upstream["buffer"]["register"], upstream["byte_offset"]) == (0, 1, 896)):
-            selected.append(candidate)
+    selected = select_candidates(candidates,projection_only)
     if not selected:
         raise ValueError("No statically matched projection/input-transform pair")
     overrides = args.output / "overrides"
@@ -70,7 +75,7 @@ def build(args) -> dict:
         if probe.digest(original_spirv) != identities.get(original_spirv.name):
             raise ValueError("SPIR-V identity differs from captured inventory")
         output = overrides / original_spirv.name
-        spirv_probe.build(original_spirv, args.helper, output, args.tools, 3, 0, 72, 1, 56, args.geometry, args.stereo)
+        spirv_probe.build(original_spirv, args.helper, output, args.tools, 3, 0, 72, 1, 56, args.geometry, args.stereo,projection_only,projection_only)
         return {"file": output.name, "original_sha256": identities[original_spirv.name],
                 "override_sha256": probe.digest(output)}
 
@@ -95,6 +100,9 @@ def build(args) -> dict:
         manifest.update(purpose='eye_transform_diagnostic',eye_state_abi=1,eye_state_specialization_id=4,
                         projection_filter_vertical_fov_degrees=35,projection_filter_aspect_ratio=16/9,
                         maximum_matrix_samples=0,matrices_per_sample=0,stereo_telemetry=True,maximum_stereo_samples=1024)
+    if projection_only:
+        manifest.update(projection_only_helper=True,helper_no_telemetry=True,uniform_bindings=[0],matrix_byte_offsets=[1152],
+                        stereo_telemetry=False,maximum_stereo_samples=0,selection_requires_input_matrix_chain=False)
     probe.write_json(args.output / "bundle.json", manifest)
     return {k: v for k, v in manifest.items() if k != "entries"} | {"validated_shaders": len(entries)}
 
@@ -107,6 +115,7 @@ def main():
     modes = parser.add_mutually_exclusive_group()
     modes.add_argument("--geometry", action="store_true", help="Build the visible vertex displacement test")
     modes.add_argument("--stereo", action="store_true", help="Build the controlled per-eye geometry helper")
+    parser.add_argument('--projection-only-helper',action='store_true',help='Use the verified telemetry-free stereo helper without requiring an object-matrix binding')
     print(json.dumps(build(parser.parse_args()), indent=2))
 
 

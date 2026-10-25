@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "scope": "Offline selection and construction correction; no new real-game stereo result",
+  "real_game_stereo_validated": false,
+  "game_stereo_submitted": false,
+  "previous_terrain_control": "35 matched terrain patches had zero measurable eye displacement at 2px analysis resolution",
+  "old_override_count": 2113,
+  "new_override_count": 2679,
+  "newly_covered_projection_candidates": 566,
+  "new_candidates_without_direct_input_chain": 551,
+  "new_candidates_with_input_chain_in_primary_buffer": 15,
+  "older_real_frame_correlation": {
+    "newly_covered_vertex_pipeline_associations": 28,
+    "rendering_scopes_using_those_associations": 20,
+    "main_resolution_scopes_using_them": 11,
+    "scene_role_not_visually_proven": true
+  },
+  "construction": {
+    "all_2679_transformed_modules_spirv_validated": true,
+    "source_fingerprints_checked": true,
+    "runtime_fingerprint_checked": true,
+    "helper_projection_only_contract_verified": true,
+    "helper_sha256": "104c868b52025cb8c60b976ee891945cfba35ff859e23f2d2f71d023f385dd6e",
+    "new_object_matrix_reads": 0,
+    "helper_external_telemetry_writes": false,
+    "original_shader_accesses_preserved": true,
+    "source_projection_gate_unchanged": true,
+    "bundle_sha256": "66b8134a81a6a4bfcb7b5df95ef975bda45f92d6f0ec3439c9d63910a02f9cff"
+  },
+  "cpu_tests": 167,
+  "gpu_controls": [
+    {
+      "case": "native",
+      "stereo_gpu_fixture_passed": true,
+      "packet_gpu_updates_verified": true,
+      "independent_reference_images_verified": true,
+      "reference_cases": 11,
+      "telemetry_samples": 0,
+      "telemetry_disabled_and_buffers_preserved": true,
+      "max_reference_different_bytes": 0,
+      "eye_separation_view_units": 0.064,
+      "disparity_pixels_depth_2": 7.29788,
+      "disparity_pixels_depth_4": 3.65839,
+      "head_translation_rotation_verified": true,
+      "asymmetric_projection_verified": true,
+      "source_jitter_depth_changes_verified": true,
+      "inactive_and_non_target_unchanged": true,
+      "game_stereo_proven": false
+    },
+    {
+      "case": "steam-runtime",
+      "stereo_gpu_fixture_passed": true,
+      "packet_gpu_updates_verified": true,
+      "independent_reference_images_verified": true,
+      "reference_cases": 11,
+      "telemetry_samples": 0,
+      "telemetry_disabled_and_buffers_preserved": true,
+      "max_reference_different_bytes": 0,
+      "eye_separation_view_units": 0.064,
+      "disparity_pixels_depth_2": 7.29788,
+      "disparity_pixels_depth_4": 3.65839,
+      "head_translation_rotation_verified": true,
+      "asymmetric_projection_verified": true,
+      "source_jitter_depth_changes_verified": true,
+      "inactive_and_non_target_unchanged": true,
+      "game_stereo_proven": false
+    },
+    {
+      "case": "legacy-control",
+      "stereo_gpu_fixture_passed": true,
+      "packet_gpu_updates_verified": true,
+      "independent_reference_images_verified": true,
+      "reference_cases": 11,
+      "telemetry_samples": 18,
+      "telemetry_disabled_and_buffers_preserved": false,
+      "max_reference_different_bytes": 0,
+      "eye_separation_view_units": 0.064,
+      "disparity_pixels_depth_2": 7.29788,
+      "disparity_pixels_depth_4": 3.65839,
+      "head_translation_rotation_verified": true,
+      "asymmetric_projection_verified": true,
+      "source_jitter_depth_changes_verified": true,
+      "inactive_and_non_target_unchanged": true,
+      "game_stereo_proven": false
+    },
+    {
+      "case": "telemetry-positive-detected",
+      "expected_buffer_write_refusal": true,
+      "exit_code": 1
+    }
+  ],
+  "source_sha256": {
+    "tools/camera_bundle.py": "7a667500127fa9b792bc643bbde38fb5c8a5db5baf0839a726a29aaecbeb2c61",
+    "native/tests/gpu_probe_vulkan.cpp": "c00b4ca4494376aff24f8b6520b649ee835920acdda84b2167d10784e45341ae",
+    "native/tests/stereo_gpu_checks.hpp": "053d53ce8556cc26e289b9123cf00cba800631d74e4a6e9b84770ed05f0c0b8d",
+    "tests/test_camera_bundle_selection.py": "830c43fadf9f2a94d9534b2f5d4bbcbc8806c2e2945f1fcdff6b9b2fc1bd0ccd"
+  },
+  "remaining": [
+    "A fresh real-game repeated capture to test whether the missing projection candidates explain the stationary terrain",
+    "Other unsupported position paths and complete geometric coverage remain unresolved",
+    "No actual game images submitted to SteamVR, continuous game stereo/head tracking or Windows D3D12 backend yet"
+  ]
+}

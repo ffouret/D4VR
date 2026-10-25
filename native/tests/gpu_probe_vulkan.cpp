@@ -16,13 +16,14 @@
 
 int main(int argc, char** argv) try {
     if (argc < 4) throw std::runtime_error("Usage: gpu_probe_vulkan original.spv probed.spv fragment.spv [--geometry|--stereo|--eye-bridge] [--dynamic] [--identifiers]");
-    bool geometry = false, dynamic = false, identifiers = false, stereo = false, bridge = false;
+    bool geometry = false, dynamic = false, identifiers = false, stereo = false, bridge = false,telemetryEnabled=true;
     for (int i = 4; i < argc; ++i) {
         auto arg = std::string(argv[i]);
         if (arg == "--geometry") geometry = true;
         else if (arg == "--dynamic") dynamic = true;
         else if (arg == "--identifiers") { identifiers = true; dynamic = true; }
         else if (arg == "--stereo") { stereo = true; geometry = true; dynamic = true; }
+        else if (arg == "--stereo-no-telemetry") { stereo = true; geometry = true; dynamic = true;telemetryEnabled=false; }
         else if (arg == "--eye-bridge") { bridge = true; geometry = true; dynamic = true; }
         else throw std::runtime_error("Unknown option: " + arg);
     }
@@ -191,7 +192,7 @@ int main(int argc, char** argv) try {
     }
     if (stereo) {
         int result = d4vr_test_stereo_gpu(width,height,uniform.mapped,second_uniform.mapped,control.mapped,ring.mapped,
-                                        values.shader,original_pipeline,observer_pipeline,null_state_pipeline,render);
+                                        values.shader,original_pipeline,observer_pipeline,null_state_pipeline,render,telemetryEnabled);
         cleanup(); return result;
     }
     if (geometry) {

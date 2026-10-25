@@ -20,6 +20,12 @@ Un défaut de transparence des PNG, qui masquait le décor dans certains lecteur
 est corrigé ; les pixels bruts sont conservés. Aucune image du jeu n'est encore
 envoyée à SteamVR. Les preuves de relief vérifiées restent synthétiques.
 
+Le [constructeur de bundle a depuis été corrigé](docs/SEQUENTIAL_CAPTURE.md) :
+son ancien filtre écartait 566 shaders à projection reconnue sans matrice d'objet
+séparée. Le nouveau bundle privé couvre 2 679 candidats ; il passe la validation
+SPIR-V et les références GPU sans télémétrie. Son effet sur le terrain réel reste
+à vérifier lors d'un nouvel essai du jeu.
+
 La [reprise figée vers SteamVR](docs/FROZEN_REPLAY_XR.md) affiche maintenant les
 images issues de l'interception à 1024 × 1024 par œil : 890 paires suivies en dix
 secondes, image plus nette, relief et mouvements confirmés dans le Quest. Cette

@@ -155,6 +155,28 @@ présentation du résultat comme une réussite VR.
 
 ## Procédure d'essai privée
 
+Le constructeur propose maintenant `camera_bundle.py --stereo
+--projection-only-helper`. Le filtre précédent exigeait à la fois la projection
+finale dans le buffer principal et une matrice d'objet dans un second buffer.
+Il écartait 566 candidats dont la projection finale était pourtant reconnue :
+551 sans chaîne d'entrée directement reconnue et 15 avec une matrice dans le
+buffer principal. Le helper n'utilise pas ses arguments d'objet ; le mode avec
+projection seule, déjà contrôlé séparément, permet de supprimer cette exigence.
+
+Le [nouveau bundle privé validé](proofs/projection-bundle-coverage-v1.json)
+contient 2 679 modules transformés, tous vérifiés par spirv-val. Les identités
+sources et le runtime restent vérifiés. Aucun accès ajouté ne lit une matrice
+d'objet ; les accès du shader original restent présents. Le filtre de projection
+numérique n'est pas modifié et les positions non reconnues restent hors sélection.
+Les 167 tests Python incluent une régression de sélection sans second buffer.
+La fixture GPU vérifie onze images contre des références indépendantes, les
+paquets invalides, le jitter et les changements de pose. Dans le nouveau mode,
+les buffers de diagnostic restent intacts. Le contrôle historique conserve sa
+télémétrie et un témoin négatif détecte bien un shader qui écrit dans ces buffers.
+Les quatre processus utilisent la validation de synchronisation, dont un dans
+Steam Runtime. Ces contrôles sont synthétiques : le correctif n'a pas encore
+été essayé dans le jeu et ne prouve pas la cause du terrain immobile.
+
 `tools/sequential_capture.py prepare` vérifie le binaire testé, le bundle de
 shaders déjà validé, la version du jeu et le lanceur Lutris complet. Il crée
 un lanceur et des caches privés hors du jeu, avec sélection originale `2`.
