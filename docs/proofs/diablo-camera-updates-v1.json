@@ -1,0 +1,1091 @@
+{
+  "schema_version": 1,
+  "scope": "Actual Diablo IV camera packet changes during one stationary game session, same selected eye; three successive captures.",
+  "synthetic_scene": false,
+  "tested_source_commit": "e8b270276fb0ee24fa6094575f16881d3cbee64f",
+  "layer_sha256": "468e25ceddc8e758fe4dd843d6d03e9999dbbf907ea0b6fb9d5d7b6bf3670e6b",
+  "private_shader_bundle_sha256": "eec657b192baf48c912c414d2e2157b595fe3778ee118fa5318b0ebc3a13f76b",
+  "render_extent": [
+    2560,
+    1440
+  ],
+  "game_version": "3.2.3.73883",
+  "selected_eye": 0,
+  "translation_delta_view_units": 0.128,
+  "actual_xr_pose_source": false,
+  "same_instant_pair": false,
+  "actual_steamvr_submission": false,
+  "continuous_immersive_game": false,
+  "camera_update_sequences": [
+    4,
+    5,
+    6,
+    7
+  ],
+  "camera_sequence_roles": {
+    "4": "initial matrices, no visual change requested",
+    "5": "lateral translation added to both camera packets",
+    "6": "initial matrices restored",
+    "7": "initial matrices reaffirmed after original pipeline selection restored"
+  },
+  "camera_update_queued_events": [
+    {
+      "schema_version": 1,
+      "elapsed_ms": 208302,
+      "event": "camera_update_queued",
+      "diagnostic": {
+        "updates": 1,
+        "packet_sequence": 4,
+        "registered_queues": 5,
+        "cross_queue_waits": 0,
+        "markers": 167249,
+        "busy_boundaries": 0,
+        "uncovered_boundaries": 0,
+        "marker_backpressure": 199316,
+        "xr_pose_known": false
+      }
+    },
+    {
+      "schema_version": 1,
+      "elapsed_ms": 241593,
+      "event": "camera_update_queued",
+      "diagnostic": {
+        "updates": 2,
+        "packet_sequence": 5,
+        "registered_queues": 5,
+        "cross_queue_waits": 0,
+        "markers": 205622,
+        "busy_boundaries": 0,
+        "uncovered_boundaries": 0,
+        "marker_backpressure": 247235,
+        "xr_pose_known": false
+      }
+    },
+    {
+      "schema_version": 1,
+      "elapsed_ms": 242288,
+      "event": "camera_update_queued",
+      "diagnostic": {
+        "updates": 3,
+        "packet_sequence": 6,
+        "registered_queues": 5,
+        "cross_queue_waits": 0,
+        "markers": 206263,
+        "busy_boundaries": 8,
+        "uncovered_boundaries": 32,
+        "marker_backpressure": 248286,
+        "xr_pose_known": false
+      }
+    },
+    {
+      "schema_version": 1,
+      "elapsed_ms": 242985,
+      "event": "camera_update_queued",
+      "diagnostic": {
+        "updates": 4,
+        "packet_sequence": 7,
+        "registered_queues": 5,
+        "cross_queue_waits": 0,
+        "markers": 206890,
+        "busy_boundaries": 21,
+        "uncovered_boundaries": 62,
+        "marker_backpressure": 249369,
+        "xr_pose_known": false
+      }
+    }
+  ],
+  "last_sampled_camera_stats": {
+    "updates": 4,
+    "packet_sequence": 7,
+    "registered_queues": 5,
+    "cross_queue_waits": 0,
+    "markers": 359078,
+    "busy_boundaries": 21,
+    "uncovered_boundaries": 62,
+    "marker_backpressure": 440006,
+    "xr_pose_known": false
+  },
+  "request_observations": [
+    {
+      "packet_sequence": 5,
+      "request_until_log_observed_seconds": 0.031678281986387447,
+      "is_display_or_headtracking_latency": false
+    },
+    {
+      "packet_sequence": 6,
+      "request_until_log_observed_seconds": 0.2813391999807209,
+      "is_display_or_headtracking_latency": false
+    }
+  ],
+  "captures": [
+    {
+      "schema_version": 1,
+      "sequence": 1,
+      "eye": 0,
+      "present": 19834,
+      "width": 2560,
+      "height": 1440,
+      "format": 44,
+      "bytes": 14745600,
+      "selected_draw_commands": 713,
+      "selected_eye_mask": 1,
+      "single_eye_interval": true,
+      "pipeline_registry_at_export": {
+        "mode": "sequential_original_render",
+        "private_draws": true,
+        "duplicated_draws": false,
+        "original_arguments_unchanged": false,
+        "source_batches": 3641,
+        "source_outputs": 3641,
+        "library_pairs": 9,
+        "executable_pairs": 2973,
+        "rejected": 659,
+        "driver_failures": 0,
+        "compile_required": 0,
+        "budget_rejections": 0,
+        "live_nodes": 2982,
+        "creation_attempts": 2982,
+        "maximum_live_nodes": 8192,
+        "maximum_creation_attempts": 8192
+      },
+      "scope": "original_presentation_blit",
+      "all_world_draws_verified": false,
+      "same_instant_pair": false,
+      "game_stereo_submitted": false,
+      "raw_pixel_sha256": "6c36fccb6ce07d4bea0aace76868bf22c4e55eea875ce0b098b77a2091e1ea20",
+      "copy_submit_packet_provenance_available": false,
+      "xr_pose_known": false
+    },
+    {
+      "schema_version": 1,
+      "sequence": 2,
+      "eye": 0,
+      "present": 25822,
+      "width": 2560,
+      "height": 1440,
+      "format": 44,
+      "bytes": 14745600,
+      "selected_draw_commands": 704,
+      "selected_eye_mask": 1,
+      "single_eye_interval": true,
+      "pipeline_registry_at_export": {
+        "mode": "sequential_original_render",
+        "private_draws": true,
+        "duplicated_draws": false,
+        "original_arguments_unchanged": false,
+        "source_batches": 4209,
+        "source_outputs": 4209,
+        "library_pairs": 9,
+        "executable_pairs": 3465,
+        "rejected": 735,
+        "driver_failures": 0,
+        "compile_required": 0,
+        "budget_rejections": 0,
+        "live_nodes": 3474,
+        "creation_attempts": 3474,
+        "maximum_live_nodes": 8192,
+        "maximum_creation_attempts": 8192
+      },
+      "scope": "original_presentation_blit",
+      "all_world_draws_verified": false,
+      "same_instant_pair": false,
+      "game_stereo_submitted": false,
+      "raw_pixel_sha256": "f3e9a911c3c63a3314064a018b920b3f39f6df33bdf4f684032d7223aca70dd8",
+      "copy_submit_packet_provenance_available": false,
+      "xr_pose_known": false
+    },
+    {
+      "schema_version": 1,
+      "sequence": 3,
+      "eye": 0,
+      "present": 25913,
+      "width": 2560,
+      "height": 1440,
+      "format": 44,
+      "bytes": 14745600,
+      "selected_draw_commands": 722,
+      "selected_eye_mask": 1,
+      "single_eye_interval": true,
+      "pipeline_registry_at_export": {
+        "mode": "sequential_original_render",
+        "private_draws": true,
+        "duplicated_draws": false,
+        "original_arguments_unchanged": false,
+        "source_batches": 4223,
+        "source_outputs": 4223,
+        "library_pairs": 9,
+        "executable_pairs": 3479,
+        "rejected": 735,
+        "driver_failures": 0,
+        "compile_required": 0,
+        "budget_rejections": 0,
+        "live_nodes": 3488,
+        "creation_attempts": 3488,
+        "maximum_live_nodes": 8192,
+        "maximum_creation_attempts": 8192
+      },
+      "scope": "original_presentation_blit",
+      "all_world_draws_verified": false,
+      "same_instant_pair": false,
+      "game_stereo_submitted": false,
+      "raw_pixel_sha256": "3ce45f69450174092829adb496946a63fecd34c9523c52c548ce778223be2353",
+      "copy_submit_packet_provenance_available": false,
+      "xr_pose_known": false
+    }
+  ],
+  "patch_analysis": {
+    "summary": {
+      "analysis": "Local mean-centered grayscale patch correspondences in actual captured pixels. Exploratory; no full-scene guarantee.",
+      "captured_scene_synthetic": false,
+      "accepted_patches": 27,
+      "total_contrasted_patches": 28,
+      "image_resize_for_analysis_only": 2,
+      "search_dx_pixels": 80,
+      "search_dy_pixels": 16,
+      "same_instant_pair": false,
+      "all_world_geometry_verified": false,
+      "shift_from_before": {
+        "median_dx_pixels": 16,
+        "median_dy_pixels": 0,
+        "dx_range": [
+          6,
+          16
+        ]
+      },
+      "return_to_before": {
+        "median_dx_pixels": 0,
+        "median_dy_pixels": 0,
+        "dx_range": [
+          0,
+          0
+        ]
+      },
+      "shift_from_restored": {
+        "median_dx_pixels": 16,
+        "median_dy_pixels": 0,
+        "dx_range": [
+          6,
+          18
+        ]
+      }
+    },
+    "patches": [
+      {
+        "xy": [
+          744,
+          200
+        ],
+        "shift_from_before": {
+          "dx": 6,
+          "dy": 0,
+          "mae": 0.6613910870470638,
+          "contrast": 2.9995835068721357,
+          "uniqueness": 3.2795969773299727
+        },
+        "return_to_before": {
+          "dx": 0,
+          "dy": 0,
+          "mae": 0.46563931695127087,
+          "contrast": 2.9995835068721357,
+          "uniqueness": 4.83363148479427
+        },
+        "shift_from_restored": {
+          "dx": 6,
+          "dy": 0,
+          "mae": 0.7830070803831737,
+          "contrast": 2.8413161182840474,
+          "uniqueness": 2.6914893617021276
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          1704,
+          200
+        ],
+        "shift_from_before": {
+          "dx": 14,
+          "dy": 0,
+          "mae": 1.277800916284883,
+          "contrast": 3.2186588921282793,
+          "uniqueness": 2.4439374185136873
+        },
+        "return_to_before": {
+          "dx": 0,
+          "dy": 0,
+          "mae": 0.42982090795501904,
+          "contrast": 3.2186588921282793,
+          "uniqueness": 7.1666666666666625
+        },
+        "shift_from_restored": {
+          "dx": 14,
+          "dy": 0,
+          "mae": 1.1045397750937125,
+          "contrast": 3.241982507288629,
+          "uniqueness": 2.7654600301659085
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          1896,
+          200
+        ],
+        "shift_from_before": {
+          "dx": 14,
+          "dy": 0,
+          "mae": 1.484381507705123,
+          "contrast": 4.270720533111204,
+          "uniqueness": 2.797979797979798
+        },
+        "return_to_before": {
+          "dx": 0,
+          "dy": 0,
+          "mae": 0.5422740524781313,
+          "contrast": 4.270720533111204,
+          "uniqueness": 8.308755760368706
+        },
+        "shift_from_restored": {
+          "dx": 14,
+          "dy": 0,
+          "mae": 1.399416909620992,
+          "contrast": 4.314868804664723,
+          "uniqueness": 3.0285714285714267
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          744,
+          360
+        ],
+        "shift_from_before": {
+          "dx": 6,
+          "dy": 0,
+          "mae": 0.7371928363182022,
+          "contrast": 2.9945855893377766,
+          "uniqueness": 3.336723163841803
+        },
+        "return_to_before": {
+          "dx": 0,
+          "dy": 0,
+          "mae": 0.38567263640149957,
+          "contrast": 2.9945855893377766,
+          "uniqueness": 6.099352051835857
+        },
+        "shift_from_restored": {
+          "dx": 6,
+          "dy": 0,
+          "mae": 0.5947521865889235,
+          "contrast": 3.123698458975428,
+          "uniqueness": 4.2366946778711325
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          1128,
+          360
+        ],
+        "shift_from_before": {
+          "dx": 14,
+          "dy": 0,
+          "mae": 0.8688046647230319,
+          "contrast": 2.767180341524365,
+          "uniqueness": 2.253116011505274
+        },
+        "return_to_before": {
+          "dx": 0,
+          "dy": 0,
+          "mae": 0.6264056643065392,
+          "contrast": 2.767180341524365,
+          "uniqueness": 2.945478723404254
+        },
+        "shift_from_restored": {
+          "dx": 14,
+          "dy": 0,
+          "mae": 0.7863390254060808,
+          "contrast": 2.709704289879217,
+          "uniqueness": 2.322033898305084
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          1320,
+          360
+        ],
+        "shift_from_before": {
+          "dx": 14,
+          "dy": 0,
+          "mae": 0.6730528946272376,
+          "contrast": 2.6472303206997085,
+          "uniqueness": 2.9764851485148562
+        },
+        "return_to_before": {
+          "dx": 0,
+          "dy": 0,
+          "mae": 0.6538942107455219,
+          "contrast": 2.6472303206997085,
+          "uniqueness": 3.132484076433124
+        },
+        "shift_from_restored": {
+          "dx": 14,
+          "dy": 0,
+          "mae": 0.8029987505206165,
+          "contrast": 2.812161599333611,
+          "uniqueness": 2.788381742738588
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          1512,
+          360
+        ],
+        "shift_from_before": {
+          "dx": 14,
+          "dy": 0,
+          "mae": 0.6122448979591837,
+          "contrast": 3.2703040399833405,
+          "uniqueness": 4.688435374149661
+        },
+        "return_to_before": {
+          "dx": 0,
+          "dy": 0,
+          "mae": 0.3523531861724268,
+          "contrast": 3.2703040399833405,
+          "uniqueness": 8.307328605200977
+        },
+        "shift_from_restored": {
+          "dx": 14,
+          "dy": 0,
+          "mae": 0.5905872553102863,
+          "contrast": 3.3069554352353183,
+          "uniqueness": 4.916784203102972
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          1704,
+          360
+        ],
+        "shift_from_before": {
+          "dx": 14,
+          "dy": 0,
+          "mae": 0.8604748021657641,
+          "contrast": 2.5597667638483967,
+          "uniqueness": 3.190706679574058
+        },
+        "return_to_before": {
+          "dx": 0,
+          "dy": 0,
+          "mae": 0.4698042482299031,
+          "contrast": 2.5597667638483967,
+          "uniqueness": 6.031914893617037
+        },
+        "shift_from_restored": {
+          "dx": 14,
+          "dy": 0,
+          "mae": 0.8188254893794251,
+          "contrast": 2.5664306538942108,
+          "uniqueness": 3.412004069175993
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          1896,
+          360
+        ],
+        "shift_from_before": {
+          "dx": 14,
+          "dy": 0,
+          "mae": 1.1820074968763017,
+          "contrast": 3.3802582257392753,
+          "uniqueness": 2.7991543340380547
+        },
+        "return_to_before": {
+          "dx": 0,
+          "dy": 0,
+          "mae": 0.4981257809246149,
+          "contrast": 3.3802582257392753,
+          "uniqueness": 6.981605351170567
+        },
+        "shift_from_restored": {
+          "dx": 14,
+          "dy": 0,
+          "mae": 1.157850895460225,
+          "contrast": 3.4635568513119535,
+          "uniqueness": 2.7899280575539565
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          936,
+          520
+        ],
+        "shift_from_before": {
+          "dx": 14,
+          "dy": -2,
+          "mae": 4.186588921282797,
+          "contrast": 20.87463556851312,
+          "uniqueness": 1.4035017906884208
+        },
+        "return_to_before": {
+          "dx": 0,
+          "dy": 0,
+          "mae": 0.5531028738025849,
+          "contrast": 20.87463556851312,
+          "uniqueness": 9.082831325301164
+        },
+        "shift_from_restored": {
+          "dx": 14,
+          "dy": -2,
+          "mae": 4.320699708454808,
+          "contrast": 20.787172011661806,
+          "uniqueness": 1.324272219009062
+        },
+        "accepted": false
+      },
+      {
+        "xy": [
+          1512,
+          520
+        ],
+        "shift_from_before": {
+          "dx": 14,
+          "dy": 0,
+          "mae": 0.9371095376926282,
+          "contrast": 3.9875052061640983,
+          "uniqueness": 3.2088888888888887
+        },
+        "return_to_before": {
+          "dx": 0,
+          "dy": 0,
+          "mae": 0.4156601416076651,
+          "contrast": 3.9875052061640983,
+          "uniqueness": 7.152304609218408
+        },
+        "shift_from_restored": {
+          "dx": 14,
+          "dy": 0,
+          "mae": 0.9371095376926277,
+          "contrast": 3.82923781757601,
+          "uniqueness": 3.1048888888888895
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          1704,
+          520
+        ],
+        "shift_from_before": {
+          "dx": 14,
+          "dy": 0,
+          "mae": 1.184506455643482,
+          "contrast": 2.46064139941691,
+          "uniqueness": 1.7151898734177216
+        },
+        "return_to_before": {
+          "dx": 0,
+          "dy": 0,
+          "mae": 0.6772178259058729,
+          "contrast": 2.46064139941691,
+          "uniqueness": 3.178351783517834
+        },
+        "shift_from_restored": {
+          "dx": 14,
+          "dy": 0,
+          "mae": 1.062057476051645,
+          "contrast": 2.527280299875052,
+          "uniqueness": 1.9513725490196083
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          1896,
+          520
+        ],
+        "shift_from_before": {
+          "dx": 14,
+          "dy": 0,
+          "mae": 0.8804664723032067,
+          "contrast": 4.790503956684716,
+          "uniqueness": 4.771050141911071
+        },
+        "return_to_before": {
+          "dx": 0,
+          "dy": 0,
+          "mae": 0.562265722615578,
+          "contrast": 4.790503956684716,
+          "uniqueness": 7.368888888888876
+        },
+        "shift_from_restored": {
+          "dx": 14,
+          "dy": 0,
+          "mae": 0.8129945855893379,
+          "contrast": 4.857142857142857,
+          "uniqueness": 5.1905737704918025
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          1512,
+          680
+        ],
+        "shift_from_before": {
+          "dx": 14,
+          "dy": 0,
+          "mae": 1.2594752186588922,
+          "contrast": 2.069137859225323,
+          "uniqueness": 1.5773809523809523
+        },
+        "return_to_before": {
+          "dx": 0,
+          "dy": 0,
+          "mae": 0.7047063723448558,
+          "contrast": 2.069137859225323,
+          "uniqueness": 2.751773049645392
+        },
+        "shift_from_restored": {
+          "dx": 14,
+          "dy": 0,
+          "mae": 1.248646397334444,
+          "contrast": 2.2215743440233235,
+          "uniqueness": 1.611074049366244
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          1704,
+          680
+        ],
+        "shift_from_before": {
+          "dx": 16,
+          "dy": 0,
+          "mae": 1.4410662224073303,
+          "contrast": 4.6897126197417744,
+          "uniqueness": 2.844508670520231
+        },
+        "return_to_before": {
+          "dx": 0,
+          "dy": 0,
+          "mae": 0.5481049562682206,
+          "contrast": 4.6897126197417744,
+          "uniqueness": 7.595744680851076
+        },
+        "shift_from_restored": {
+          "dx": 16,
+          "dy": 0,
+          "mae": 1.41774260724698,
+          "contrast": 4.7605164514785505,
+          "uniqueness": 2.9200940070505297
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          1896,
+          680
+        ],
+        "shift_from_before": {
+          "dx": 16,
+          "dy": 0,
+          "mae": 1.1428571428571428,
+          "contrast": 3.6418159100374847,
+          "uniqueness": 2.7922740524781346
+        },
+        "return_to_before": {
+          "dx": 0,
+          "dy": 0,
+          "mae": 0.6005830903790098,
+          "contrast": 3.6418159100374847,
+          "uniqueness": 5.073509015256579
+        },
+        "shift_from_restored": {
+          "dx": 16,
+          "dy": 0,
+          "mae": 1.1686797167846736,
+          "contrast": 3.4394002498958764,
+          "uniqueness": 2.645759087669279
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          2088,
+          680
+        ],
+        "shift_from_before": {
+          "dx": 16,
+          "dy": 0,
+          "mae": 1.119533527696793,
+          "contrast": 3.2086630570595585,
+          "uniqueness": 2.6614583333333335
+        },
+        "return_to_before": {
+          "dx": 0,
+          "dy": 0,
+          "mae": 0.521449396084962,
+          "contrast": 3.2086630570595585,
+          "uniqueness": 5.571884984025587
+        },
+        "shift_from_restored": {
+          "dx": 16,
+          "dy": 0,
+          "mae": 1.0204081632653055,
+          "contrast": 3.0653894210745527,
+          "uniqueness": 2.7387755102040825
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          1128,
+          840
+        ],
+        "shift_from_before": {
+          "dx": 16,
+          "dy": 0,
+          "mae": 1.2744689712619741,
+          "contrast": 3.2136609745939193,
+          "uniqueness": 2.3104575163398695
+        },
+        "return_to_before": {
+          "dx": 0,
+          "dy": 0,
+          "mae": 0.5714285714285714,
+          "contrast": 3.2136609745939193,
+          "uniqueness": 5.648688046647232
+        },
+        "shift_from_restored": {
+          "dx": 16,
+          "dy": 0,
+          "mae": 1.1970012494793838,
+          "contrast": 3.093710953769263,
+          "uniqueness": 2.4258872651356986
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          1320,
+          840
+        ],
+        "shift_from_before": {
+          "dx": 16,
+          "dy": 0,
+          "mae": 0.8454810495626821,
+          "contrast": 3.19783423573511,
+          "uniqueness": 2.747783251231527
+        },
+        "return_to_before": {
+          "dx": 0,
+          "dy": 0,
+          "mae": 0.6064139941690974,
+          "contrast": 3.19783423573511,
+          "uniqueness": 3.960164835164828
+        },
+        "shift_from_restored": {
+          "dx": 16,
+          "dy": 0,
+          "mae": 0.8779675135360263,
+          "contrast": 3.1953352769679304,
+          "uniqueness": 2.8358633776091096
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          1512,
+          840
+        ],
+        "shift_from_before": {
+          "dx": 16,
+          "dy": 0,
+          "mae": 0.8271553519366924,
+          "contrast": 2.8821324448146606,
+          "uniqueness": 3.113796576032227
+        },
+        "return_to_before": {
+          "dx": 0,
+          "dy": 0,
+          "mae": 0.5689296126613924,
+          "contrast": 2.8821324448146606,
+          "uniqueness": 4.06588579795021
+        },
+        "shift_from_restored": {
+          "dx": 16,
+          "dy": 0,
+          "mae": 0.8313202832153288,
+          "contrast": 2.8779675135360265,
+          "uniqueness": 3.047094188376748
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          1704,
+          840
+        ],
+        "shift_from_before": {
+          "dx": 16,
+          "dy": 0,
+          "mae": 0.6938775510204082,
+          "contrast": 3.650145772594753,
+          "uniqueness": 4.869147659063626
+        },
+        "return_to_before": {
+          "dx": 0,
+          "dy": 0,
+          "mae": 0.7047063723448558,
+          "contrast": 3.650145772594753,
+          "uniqueness": 5.056737588652486
+        },
+        "shift_from_restored": {
+          "dx": 16,
+          "dy": 0,
+          "mae": 0.7538525614327356,
+          "contrast": 3.7592669720949607,
+          "uniqueness": 4.462983425414369
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          1896,
+          840
+        ],
+        "shift_from_before": {
+          "dx": 16,
+          "dy": 0,
+          "mae": 0.748854643898376,
+          "contrast": 2.8696376509787584,
+          "uniqueness": 4.094549499443825
+        },
+        "return_to_before": {
+          "dx": 0,
+          "dy": 0,
+          "mae": 0.6897126197417743,
+          "contrast": 2.8696376509787584,
+          "uniqueness": 4.147342995169082
+        },
+        "shift_from_restored": {
+          "dx": 16,
+          "dy": 0,
+          "mae": 0.8371511870054146,
+          "contrast": 2.700541441066222,
+          "uniqueness": 3.5572139303482575
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          2088,
+          840
+        ],
+        "shift_from_before": {
+          "dx": 16,
+          "dy": 0,
+          "mae": 0.6772178259058729,
+          "contrast": 4.1532694710537275,
+          "uniqueness": 4.972939729397291
+        },
+        "return_to_before": {
+          "dx": 0,
+          "dy": 0,
+          "mae": 0.5714285714285714,
+          "contrast": 4.1532694710537275,
+          "uniqueness": 5.89067055393586
+        },
+        "shift_from_restored": {
+          "dx": 16,
+          "dy": 0,
+          "mae": 0.8213244481466057,
+          "contrast": 4.1532694710537275,
+          "uniqueness": 4.0993914807302225
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          744,
+          1000
+        ],
+        "shift_from_before": {
+          "dx": 16,
+          "dy": 0,
+          "mae": 2.1865889212827985,
+          "contrast": 13.894210745522699,
+          "uniqueness": 2.3291428571428567
+        },
+        "return_to_before": {
+          "dx": 0,
+          "dy": 0,
+          "mae": 0.7255310287380269,
+          "contrast": 13.894210745522699,
+          "uniqueness": 6.228473019517786
+        },
+        "shift_from_restored": {
+          "dx": 16,
+          "dy": 0,
+          "mae": 2.0999583506872117,
+          "contrast": 13.77426072469804,
+          "uniqueness": 2.349464498214996
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          936,
+          1000
+        ],
+        "shift_from_before": {
+          "dx": 16,
+          "dy": 0,
+          "mae": 2.4114952103290292,
+          "contrast": 3.815077051228655,
+          "uniqueness": 1.552331606217617
+        },
+        "return_to_before": {
+          "dx": 0,
+          "dy": 0,
+          "mae": 0.7263640149937528,
+          "contrast": 3.815077051228655,
+          "uniqueness": 5.016055045871557
+        },
+        "shift_from_restored": {
+          "dx": 16,
+          "dy": 0,
+          "mae": 2.5297792586422325,
+          "contrast": 4.026655560183257,
+          "uniqueness": 1.5001646361540995
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          1128,
+          1000
+        ],
+        "shift_from_before": {
+          "dx": 16,
+          "dy": 0,
+          "mae": 1.0862140774677218,
+          "contrast": 4.436484798000833,
+          "uniqueness": 2.8274539877300615
+        },
+        "return_to_before": {
+          "dx": 0,
+          "dy": 0,
+          "mae": 0.8438150770512288,
+          "contrast": 4.436484798000833,
+          "uniqueness": 3.7107601184600183
+        },
+        "shift_from_restored": {
+          "dx": 16,
+          "dy": 0,
+          "mae": 1.1020408163265305,
+          "contrast": 4.346522282382341,
+          "uniqueness": 2.5827664399092973
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          1320,
+          1000
+        ],
+        "shift_from_before": {
+          "dx": 16,
+          "dy": 0,
+          "mae": 1.0187421907538519,
+          "contrast": 3.089546022490629,
+          "uniqueness": 2.4914145543744906
+        },
+        "return_to_before": {
+          "dx": 0,
+          "dy": 0,
+          "mae": 0.7863390254060802,
+          "contrast": 3.089546022490629,
+          "uniqueness": 3.3442796610169516
+        },
+        "shift_from_restored": {
+          "dx": 16,
+          "dy": 0,
+          "mae": 1.0637234485630986,
+          "contrast": 3.1436901291128696,
+          "uniqueness": 2.282693813625685
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          1704,
+          1000
+        ],
+        "shift_from_before": {
+          "dx": 16,
+          "dy": 0,
+          "mae": 1.0329029571012072,
+          "contrast": 2.126613910870471,
+          "uniqueness": 2.075806451612905
+        },
+        "return_to_before": {
+          "dx": 0,
+          "dy": 0,
+          "mae": 0.631403581840902,
+          "contrast": 2.126613910870471,
+          "uniqueness": 3.7506596306068465
+        },
+        "shift_from_restored": {
+          "dx": 18,
+          "dy": 0,
+          "mae": 1.0720533111203667,
+          "contrast": 2.1874219075385257,
+          "uniqueness": 2.1554001554001556
+        },
+        "accepted": true
+      }
+    ]
+  },
+  "accepted_world_patches": 27,
+  "all_accepted_world_patches_shifted": true,
+  "all_accepted_world_patches_returned_to_original_coordinates": true,
+  "matching_shift_against_before_and_restored": 26,
+  "error_events_observed": 0,
+  "in_game_vulkan_validation_enabled": false,
+  "device_destroy_trace_observed": false,
+  "final_fence_and_marker_counters_measured": false,
+  "all_owned_processes_exited": true,
+  "eye_selection_restored": true,
+  "original_game_and_vendor_files_and_exports_verified": true,
+  "named_exports": 262,
+  "launcher_exit_code": 0,
+  "ci": {
+    "commit": "e8b270276fb0ee24fa6094575f16881d3cbee64f",
+    "run_id": 40238042573,
+    "run_number": 120,
+    "linux": "success",
+    "windows": "success",
+    "linux_asan_ubsan": "success"
+  },
+  "limits": [
+    "Partial terrain evidence only; full world, animations, effects and UI compatibility are not established.",
+    "All three images use the same eye and were captured at different presentations.",
+    "The first image predates the second monitoring attempt; its view matrices equal the restored matrices.",
+    "Camera packet update log and capture timestamps are external evidence, not per-image GPU-applied-pose provenance.",
+    "Request-to-log polling observations are not display/headtracking latency measurements.",
+    "Four completion markers per graphics queue impose diagnostic overhead and frequent marker backpressure. Boundaries with missing coverage or pending work skip the new pair; no VR cadence is proven.",
+    "Actual game registered five graphics queues, but zero cross-queue camera waits were needed in this session; multiqueue readers were exercised by the separate five-queue synthetic GPU/WSI controls.",
+    "No game shaders, raw captures or private logs are included in the repository.",
+    "Windows native D3D12 integration, OpenXR pose feeding and game-to-SteamVR bridge remain absent."
+  ]
+}
