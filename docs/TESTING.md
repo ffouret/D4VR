@@ -182,3 +182,12 @@ Steam Runtime avec validation Vulkan. Les tests sans pilote couvrent aussi
 les tableaux réutilisés, offsets 64 bits, changement de type de liaison,
 invalidation après rebind et restauration indépendante du calcul. Cela reste
 une preuve synthétique UBO, sans reprise des heaps réels du jeu.
+
+Le mode d'états dynamiques déclare douze états de la table principale VKD3D de
+référence. Les positions proviennent d'un vertex buffer à stride dynamique de
+16 octets. Les vues et le flux original correspondent aux références ; un dessin
+suivant sans rebind conserve l'écriture de profondeur désactivée. Les trois
+contrôles positifs et les deux négatifs passent, dont Steam Runtime avec
+validation Vulkan. Le test C++ ajoute complétude et invalidation des états.
+Ce relevé de sources ne remplace pas une capture des états effectivement utilisés
+par Diablo. [Procédure et limites](DYNAMIC_STATE.md).

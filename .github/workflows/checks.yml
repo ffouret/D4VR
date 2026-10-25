@@ -53,6 +53,8 @@ jobs:
           glslangValidator -V --target-env vulkan1.2 native/tests/descriptor_echo.comp -o work/native-xr-ci/descriptor-echo.spv
           spirv-val --target-env vulkan1.2 work/native-xr-ci/descriptor-echo.spv
           python tools/spirv_probe.py work/native-xr-ci/mrt.vert.spv --helper work/native-xr-ci/stereo-transform.spv --tools /usr/bin --output work/native-xr-ci/mrt-instrumented.spv --stereo
+          glslangValidator -V --target-env vulkan1.1 native/tests/stereo_mrt_vertex.vert -o work/native-xr-ci/mrt-vertex.spv
+          python tools/spirv_probe.py work/native-xr-ci/mrt-vertex.spv --helper work/native-xr-ci/stereo-transform.spv --tools /usr/bin --output work/native-xr-ci/mrt-vertex-instrumented.spv --stereo
       - name: Verify every Windows export name, ordinal and forwarder
         if: runner.os == 'Windows'
         run: python -c "import pathlib,sys; sys.path.insert(0,'tools'); import probe; probe.validate_probe(pathlib.Path('work/native-ci/probe/Release/sl.interposer.dll'),probe.profile())"

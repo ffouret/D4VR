@@ -14,7 +14,7 @@ struct Buffer { VkBuffer handle; VkDeviceMemory memory; void* mapped; VkDeviceAd
 struct Fixture {
     VkInstance instance{}; VkPhysicalDevice physical{}; VkDevice device{}; VkQueue queue{};
     VkPhysicalDeviceMemoryProperties memory{}; uint32_t family{};
-    Fixture(bool dynamic, bool identifiers,bool descriptorBuffers = false) {
+    Fixture(bool dynamic, bool identifiers,bool descriptorBuffers = false,bool extended = false) {
         VkApplicationInfo app{VK_STRUCTURE_TYPE_APPLICATION_INFO}; app.pApplicationName = "D4VR observer fixture"; app.apiVersion = dynamic ? VK_API_VERSION_1_3 : VK_API_VERSION_1_2;
         VkInstanceCreateInfo create{VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO}; create.pApplicationInfo = &app;
         check(vkCreateInstance(&create, nullptr, &instance));
@@ -32,6 +32,7 @@ struct Fixture {
         if (family == count) throw std::runtime_error("No graphics queue");
         float priority = 1; VkDeviceQueueCreateInfo q{VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO}; q.queueFamilyIndex = family; q.queueCount = 1; q.pQueuePriorities = &priority;
         VkPhysicalDeviceFeatures features{}; features.shaderInt64 = VK_TRUE; features.vertexPipelineStoresAndAtomics = VK_TRUE;
+        features.depthBounds = extended;
         VkPhysicalDeviceVulkan12Features features12{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES}; features12.bufferDeviceAddress = VK_TRUE;
         VkPhysicalDeviceVulkan13Features features13{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES}; features13.dynamicRendering = VK_TRUE;
         VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT idFeature{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MODULE_IDENTIFIER_FEATURES_EXT}; idFeature.shaderModuleIdentifier = VK_TRUE;

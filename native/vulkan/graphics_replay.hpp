@@ -1,6 +1,7 @@
 #pragma once
 #include "stereo_targets.hpp"
 #include <memory>
+#include <vector>
 
 namespace d4vr::replay {
 enum class DescriptorMode { sets,buffers };
@@ -16,6 +17,9 @@ struct Pipeline {
     VkShaderStageFlags pushStages = VK_SHADER_STAGE_VERTEX_BIT;
     uint32_t viewports = 1,scissors = 1;
     VkStencilFaceFlags stencilReference = 0;
+    // Empty preserves the original viewport/scissor/stencil contract. Otherwise
+    // this is the complete audited list from VkPipelineDynamicStateCreateInfo.
+    std::vector<VkDynamicState> dynamicStates;
     bool externalWritesExcluded = false,attachmentInputAliasesExcluded = false;
 };
 enum class Rejection {
@@ -47,7 +51,7 @@ class Graphics {
     std::unique_ptr<Impl> impl;
 public:
     Graphics(VkDevice,PFN_vkGetDeviceProcAddr,VkCommandBuffer,stereo::Targets&,
-             stereo::PreviousUse initialUse,DescriptorLimits = {});
+             stereo::PreviousUse initialUse,DescriptorLimits = {},bool extendedDynamic = false);
     ~Graphics();
     void pipeline(const Pipeline&);
     void unsupported() noexcept;
@@ -61,9 +65,21 @@ public:
     void push(VkPipelineLayout,VkShaderStageFlags,uint32_t offset,uint32_t size,const void*);
     void viewport(uint32_t first,uint32_t count,const VkViewport*);
     void scissor(uint32_t first,uint32_t count,const VkRect2D*);
+    void viewportWithCount(uint32_t,const VkViewport*);
+    void scissorWithCount(uint32_t,const VkRect2D*);
+    void blendConstants(const float*);
+    void depthBounds(float minimum,float maximum);
+    void depthBias(float constant,float clamp,float slope);
+    void depthBiasEnable(VkBool32);
+    void depthWriteEnable(VkBool32);
+    void primitiveRestartEnable(VkBool32);
+    void primitiveTopology(VkPrimitiveTopology);
+    void stencilWriteMask(VkStencilFaceFlags,uint32_t);
     void stencilReference(VkStencilFaceFlags,uint32_t);
     void index(VkBuffer,VkDeviceSize,VkIndexType);
     void vertices(uint32_t first,uint32_t count,const VkBuffer*,const VkDeviceSize*);
+    void vertices2(uint32_t first,uint32_t count,const VkBuffer*,const VkDeviceSize* offsets,
+                   const VkDeviceSize* sizes,const VkDeviceSize* strides);
     void beginRendering(const VkRenderingInfo&,const stereo::Config& observedSignature);
     bool endRendering();
     void draw(uint32_t vertices,uint32_t instances,uint32_t firstVertex,uint32_t firstInstance);

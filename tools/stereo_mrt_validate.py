@@ -15,6 +15,8 @@ def run(args) -> dict:
         inputs.append(args.compute)
     if args.descriptor_buffers and (not args.recorded_replay or not args.compute):
         raise ValueError('Descriptor buffers require recorded replay and the compute echo shader')
+    if args.dynamic_state and not args.recorded_replay:
+        raise ValueError('Dynamic state requires recorded replay')
     if not all(p.is_file() for p in inputs) or args.output.exists():
         raise ValueError('Provide the built fixture/shaders and a new private output directory')
     manifest = json.loads((args.validation_layer/'VkLayer_khronos_validation.json').read_text())
@@ -49,6 +51,8 @@ def run(args) -> dict:
             command.append('--recorded-replay')
         if args.descriptor_buffers:
             command.append('--descriptor-buffers')
+        if args.dynamic_state:
+            command.append('--dynamic-state')
         if negative:
             command.append('--negative-sync-control')
         if negative_compute:
@@ -92,6 +96,9 @@ def run(args) -> dict:
             if args.descriptor_buffers and (proof.get('descriptor_buffer_replay_verified') is not True
                     or proof.get('following_compute_reference_words') != 32):
                 raise ValueError(f'{name}: descriptor-buffer replay and following compute restoration were not verified')
+            if args.dynamic_state and (proof.get('dynamic_state_replay_verified') is not True
+                    or proof.get('declared_dynamic_states') != 12 or proof.get('following_draw_depth_write_disabled_verified') is not True):
+                raise ValueError(f'{name}: dynamic-state replay and following-draw depth restoration were not verified')
         results.append({'case':name,'exit_code':result.returncode,'validation_layer_loaded':loaded,
                         'intentional_sync_hazard_detected':hazard,
                         'intentional_wrong_compute_offset_detected':negative_compute and proof.get('incorrect_compute_samples_detected') == 8,'fixture':proof})
@@ -112,6 +119,7 @@ def main() -> int:
     parser.add_argument('--recorded-replay',action='store_true')
     parser.add_argument('--descriptor-buffers',action='store_true')
     parser.add_argument('--compute',type=Path)
+    parser.add_argument('--dynamic-state',action='store_true')
     args = parser.parse_args(); run(args); return 0
 
 

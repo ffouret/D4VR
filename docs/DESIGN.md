@@ -144,6 +144,12 @@ maintenant couverts par une fixture UBO. Les variantes de descripteurs non
 couvertes, états dynamiques étendus et dépendances des scopes réels doivent
 être traités avant de permettre leur reprise.
 
+La [preuve d'états dynamiques](DYNAMIC_STATE.md) couvre maintenant douze états
+de la table principale upstream, avec des positions réellement lues dans un
+vertex buffer. Elle ne remplace pas le relevé des déclarations des pipelines
+du jeu : trois états de cette table et la variante `vkCmdSetDepthBias2EXT`
+restent refusés, et les modifications locales du runtime ne sont pas reconstruites.
+
 ## Critères d'acceptation de la première version jouable
 
 - Les deux yeux reçoivent des vues distinctes, cohérentes dans le temps.

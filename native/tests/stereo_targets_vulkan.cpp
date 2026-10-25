@@ -25,13 +25,14 @@ float number(const uint8_t* p) { float v; std::memcpy(&v,p,4); return v; }
 
 int main(int argc,char** argv) try {
     if (argc < 4) throw std::runtime_error("Usage: stereo_targets_vulkan original.vert.spv stereo.vert.spv mrt.frag.spv [--negative-sync-control] [--preview-directory path]");
-    bool negative = false,split = false,recorded = false,buffered = false,negativeCompute = false; std::filesystem::path preview,computePath;
+    bool negative = false,split = false,recorded = false,buffered = false,negativeCompute = false,extended = false; std::filesystem::path preview,computePath;
     for (int k = 4; k < argc; ++k) {
         if (std::string(argv[k]) == "--negative-sync-control") negative = true;
         else if (std::string(argv[k]) == "--split-passes") split = true;
         else if (std::string(argv[k]) == "--recorded-replay") recorded = true;
         else if (std::string(argv[k]) == "--descriptor-buffers") buffered = true;
         else if (std::string(argv[k]) == "--negative-compute-control") negativeCompute = true;
+        else if (std::string(argv[k]) == "--dynamic-state") extended = true;
         else if (std::string(argv[k]) == "--compute" && k+1 < argc) computePath = argv[++k];
         else if (std::string(argv[k]) == "--preview-directory" && k+1 < argc) preview = argv[++k];
         else throw std::invalid_argument("Unknown stereo fixture option");
@@ -39,11 +40,12 @@ int main(int argc,char** argv) try {
     if ((negative || negativeCompute) && !preview.empty()) throw std::invalid_argument("Negative control cannot export previews");
     if (buffered && (!recorded || computePath.empty())) throw std::invalid_argument("Descriptor-buffer proof requires recorded replay and a compute echo shader");
     if (negativeCompute && !buffered) throw std::invalid_argument("Compute negative control requires descriptor buffers");
+    if (extended && !recorded) throw std::invalid_argument("Dynamic-state proof requires recorded replay");
     if (!preview.empty()) {
         expect(!std::filesystem::exists(preview),"Use a new preview directory");
         std::filesystem::create_directories(preview);
     }
-    Fixture f(true,false,buffered);
+    Fixture f(true,false,buffered,extended);
     VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptorProperties{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_PROPERTIES_EXT};
     PFN_vkGetDescriptorSetLayoutSizeEXT getLayoutSize{}; PFN_vkGetDescriptorSetLayoutBindingOffsetEXT getBindingOffset{};
     PFN_vkGetDescriptorEXT getDescriptor{}; PFN_vkCmdSetDescriptorBufferOffsetsEXT setBufferOffsets{};
@@ -68,6 +70,11 @@ int main(int argc,char** argv) try {
     Buffer staging = f.buffer(slotBytes*9,VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     Buffer indices = f.buffer(3*sizeof(uint32_t),VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
     const std::array<uint32_t,3> indexValues{0,1,2}; std::memcpy(indices.mapped,indexValues.data(),sizeof(indexValues));
+    Buffer vertexInput{};
+    if (extended) {
+        const std::array<float,12> vertices{-.8f,-.8f,91,92,.8f,-.8f,93,94,0,.8f,95,96};
+        vertexInput = f.buffer(sizeof(vertices),VK_BUFFER_USAGE_VERTEX_BUFFER_BIT); std::memcpy(vertexInput.mapped,vertices.data(),sizeof(vertices));
+    }
     auto vertex = f.shader(argv[1]),instrumented = f.shader(argv[2]),fragment = f.shader(argv[3]);
     std::array<VkDescriptorSetLayout,4> layouts{};
     std::array<VkDescriptorSetLayoutBinding,2> bindings{{{0,VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,1,VK_SHADER_STAGE_VERTEX_BIT,nullptr},
@@ -129,7 +136,10 @@ int main(int argc,char** argv) try {
         auto v = reinterpret_cast<float*>(static_cast<char*>(uniforms[set][1].mapped)+56*16);
         for (unsigned k = 0; k < 16; ++k) { p[k] = static_cast<float>(projection[k]); v[k] = static_cast<float>(view[k]); }
     };
-    auto pipeline = [&](VkDeviceAddress address,bool bufferMode = false) {
+    const std::vector<VkDynamicState> extendedStates{VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT,VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT,VK_DYNAMIC_STATE_STENCIL_REFERENCE,
+        VK_DYNAMIC_STATE_BLEND_CONSTANTS,VK_DYNAMIC_STATE_DEPTH_BOUNDS,VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY,VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE,
+        VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE,VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE,VK_DYNAMIC_STATE_STENCIL_WRITE_MASK,VK_DYNAMIC_STATE_DEPTH_BIAS,VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE};
+    auto pipeline = [&](VkDeviceAddress address,bool bufferMode = false,bool extendedMode = false,bool writeDepth = true) {
         VkPipelineShaderStageCreateInfo stages[2]{};
         for (auto& s : stages) { s.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO; s.pName = "main"; }
         stages[0].stage = VK_SHADER_STAGE_VERTEX_BIT; stages[0].module = address ? instrumented : vertex;
@@ -137,16 +147,22 @@ int main(int argc,char** argv) try {
         if (address) stages[0].pSpecializationInfo = &specialization;
         stages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT; stages[1].module = fragment;
         VkPipelineVertexInputStateCreateInfo vi{VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO};
+        VkVertexInputBindingDescription vertexBinding{0,extendedMode ? 32u : 16u,VK_VERTEX_INPUT_RATE_VERTEX};
+        VkVertexInputAttributeDescription attribute{0,0,VK_FORMAT_R32G32_SFLOAT,0};
+        if (extended) { vi.vertexBindingDescriptionCount = 1; vi.pVertexBindingDescriptions = &vertexBinding; vi.vertexAttributeDescriptionCount = 1; vi.pVertexAttributeDescriptions = &attribute; }
         VkPipelineInputAssemblyStateCreateInfo ia{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO}; ia.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         VkPipelineViewportStateCreateInfo vp{VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO}; vp.viewportCount = vp.scissorCount = 1;
+        if (extendedMode) vp.viewportCount = vp.scissorCount = 0;
         VkPipelineRasterizationStateCreateInfo rs{VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO}; rs.polygonMode = VK_POLYGON_MODE_FILL; rs.lineWidth = 1;
         VkPipelineMultisampleStateCreateInfo ms{VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO}; ms.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
         std::array<VkPipelineColorBlendAttachmentState,4> colors{}; for (auto& c : colors) c.colorWriteMask = 15;
         VkPipelineColorBlendStateCreateInfo cb{VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO}; cb.attachmentCount = 4; cb.pAttachments = colors.data();
-        VkPipelineDepthStencilStateCreateInfo ds{VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO}; ds.depthTestEnable = ds.depthWriteEnable = VK_TRUE; ds.depthCompareOp = VK_COMPARE_OP_LESS;
+        VkPipelineDepthStencilStateCreateInfo ds{VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO}; ds.depthTestEnable = VK_TRUE; ds.depthWriteEnable = writeDepth; ds.depthCompareOp = VK_COMPARE_OP_LESS;
+        ds.depthBoundsTestEnable = extended; ds.minDepthBounds = 0; ds.maxDepthBounds = 1;
         ds.stencilTestEnable = VK_TRUE; ds.front = {VK_STENCIL_OP_KEEP,VK_STENCIL_OP_REPLACE,VK_STENCIL_OP_KEEP,VK_COMPARE_OP_ALWAYS,255,255,0}; ds.back = ds.front;
         std::array<VkDynamicState,3> dynamic{VK_DYNAMIC_STATE_VIEWPORT,VK_DYNAMIC_STATE_SCISSOR,VK_DYNAMIC_STATE_STENCIL_REFERENCE};
         VkPipelineDynamicStateCreateInfo dy{VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO}; dy.dynamicStateCount = static_cast<uint32_t>(dynamic.size()); dy.pDynamicStates = dynamic.data();
+        if (extendedMode) { dy.dynamicStateCount = static_cast<uint32_t>(extendedStates.size()); dy.pDynamicStates = extendedStates.data(); }
         VkPipelineRenderingCreateInfo rendering{VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO}; rendering.colorAttachmentCount = 4; rendering.pColorAttachmentFormats = config.colors.data();
         rendering.depthAttachmentFormat = rendering.stencilAttachmentFormat = config.depth;
         VkGraphicsPipelineCreateInfo ci{VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO}; ci.pNext = &rendering; ci.stageCount = 2; ci.pStages = stages;
@@ -156,7 +172,8 @@ int main(int argc,char** argv) try {
         VkPipeline out{}; check(vkCreateGraphicsPipelines(f.device,VK_NULL_HANDLE,1,&ci,nullptr,&out)); return out;
     };
     auto originalPipeline = pipeline(0);
-    auto bufferOriginalPipeline = buffered ? pipeline(0,true) : VK_NULL_HANDLE;
+    auto bufferOriginalPipeline = (buffered || extended) ? pipeline(0,buffered,extended) : VK_NULL_HANDLE;
+    auto witnessPipeline = extended ? pipeline(0,false,false,false) : VK_NULL_HANDLE;
     VkCommandPoolCreateInfo cpi{VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO}; cpi.queueFamilyIndex = f.family;
     VkCommandPool commands{}; check(vkCreateCommandPool(f.device,&cpi,nullptr,&commands));
     VkCommandBufferAllocateInfo cai{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO}; cai.commandPool = commands; cai.commandBufferCount = 1;
@@ -198,7 +215,7 @@ int main(int argc,char** argv) try {
             expect(handles.insert(target->eye(eye).depth.handle).second,"Stereo depth images alias");
             expect(addresses.insert(target->eye(eye).packetAddress).second,"Eye packets alias");
         }
-        std::array<VkPipeline,2> eyePipeline{pipeline(eyes->eye(0).packetAddress,buffered),pipeline(eyes->eye(1).packetAddress,buffered)};
+        std::array<VkPipeline,2> eyePipeline{pipeline(eyes->eye(0).packetAddress,buffered,extended),pipeline(eyes->eye(1).packetAddress,buffered,extended)};
         upload(0,source,identity());
         for (unsigned eye = 0; eye < 2; ++eye) upload(eye+1,(test.states[eye].header[3]&2) ? source : matrix(test.states[eye].eyeProjection),matrix(test.states[eye].eyeFromGameView));
         for (unsigned epoch = 0; epoch < 2; ++epoch) {
@@ -223,6 +240,7 @@ int main(int argc,char** argv) try {
                 vkCmdBindDescriptorSets(command,VK_PIPELINE_BIND_POINT_GRAPHICS,layout,3,1,&sets[set],0,nullptr);
                 VkViewport viewport{0,0,float(width),float(height),0,1}; VkRect2D scissor{{0,0},{width,height}};
                 vkCmdSetViewport(command,0,1,&viewport); vkCmdSetScissor(command,0,1,&scissor);
+                if (extended) { VkDeviceSize offset = 0; vkCmdBindVertexBuffers(command,0,1,&vertexInput.handle,&offset); }
                 for (unsigned item = firstItem; item < (itemCount ? firstItem+itemCount : test.count); ++item) {
                     vkCmdSetStencilReference(command,VK_STENCIL_FACE_FRONT_AND_BACK,item+1);
                     vkCmdPushConstants(command,layout,VK_SHADER_STAGE_VERTEX_BIT,0,sizeof(Item),&test.scene[item]);
@@ -233,11 +251,12 @@ int main(int argc,char** argv) try {
             bool splitThisCase = split && test.count == 2;
             if (recorded) {
                 replay::Graphics recorder(f.device,vkGetDeviceProcAddr,command,*eyes,epoch ? stereo::PreviousUse::transferSource : stereo::PreviousUse::discarded,
-                    buffered ? replay::DescriptorLimits{std::min(32u,descriptorProperties.maxDescriptorBufferBindings),descriptorProperties.descriptorBufferOffsetAlignment} : replay::DescriptorLimits{});
+                    buffered ? replay::DescriptorLimits{std::min(32u,descriptorProperties.maxDescriptorBufferBindings),descriptorProperties.descriptorBufferOffsetAlignment} : replay::DescriptorLimits{},extended);
                 auto recordedLayout = buffered ? bufferLayout : layout;
-                replay::Pipeline contract; contract.original = buffered ? bufferOriginalPipeline : originalPipeline; contract.eyes = eyePipeline; contract.layout = recordedLayout;
+                replay::Pipeline contract; contract.original = (buffered || extended) ? bufferOriginalPipeline : originalPipeline; contract.eyes = eyePipeline; contract.layout = recordedLayout;
                 contract.descriptorSets = 1u<<3; contract.pushBytes = sizeof(Item); contract.stencilReference = VK_STENCIL_FACE_FRONT_AND_BACK;
                 contract.descriptors = buffered ? replay::DescriptorMode::buffers : replay::DescriptorMode::sets;
+                if (extended) { contract.dynamicStates = extendedStates; contract.vertexBindings = 1; }
                 contract.externalWritesExcluded = contract.attachmentInputAliasesExcluded = true; recorder.pipeline(contract);
                 // Commands before BeginRendering must seed the replayed scope.
                 recorder.bindPipeline(contract.original);
@@ -249,7 +268,16 @@ int main(int argc,char** argv) try {
                     index = 99; computeOffset = graphicsOffset = 1;
                 } else recorder.bindDescriptors(layout,3,1,&sets[0]);
                 VkViewport vp{0,0,float(width),float(height),0,1}; VkRect2D sc{{0,0},{width,height}};
-                recorder.viewport(0,1,&vp); recorder.scissor(0,1,&sc); recorder.index(indices.handle,0,VK_INDEX_TYPE_UINT32);
+                if (extended) {
+                    recorder.viewportWithCount(1,&vp); recorder.scissorWithCount(1,&sc);
+                    float constants[]{.125f,.375f,.625f,.875f}; recorder.blendConstants(constants); std::fill(constants,constants+4,0);
+                    recorder.depthBounds(0,1); recorder.depthBias(2.25f,0,.125f); recorder.depthBiasEnable(VK_FALSE);
+                    recorder.primitiveTopology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP); recorder.primitiveRestartEnable(VK_FALSE);
+                    recorder.stencilWriteMask(VK_STENCIL_FACE_FRONT_BIT,255); recorder.stencilWriteMask(VK_STENCIL_FACE_BACK_BIT,127);
+                    VkBuffer buffer = vertexInput.handle; VkDeviceSize offset = 0,size = 48,stride = 16;
+                    recorder.vertices2(0,1,&buffer,&offset,&size,&stride); buffer = VK_NULL_HANDLE; size = stride = 0;
+                } else { recorder.viewport(0,1,&vp); recorder.scissor(0,1,&sc); }
+                recorder.index(indices.handle,0,VK_INDEX_TYPE_UINT32);
                 vp.width = 1; sc.extent.width = 1; // Transient CPU arrays may be reused immediately.
                 auto capturedPass = [&](unsigned first,unsigned count,bool continuation) {
                     stereo::Loads loads; if (continuation) { loads.colors.fill(VK_ATTACHMENT_LOAD_OP_LOAD); loads.depth = loads.stencil = VK_ATTACHMENT_LOAD_OP_LOAD; }
@@ -257,12 +285,14 @@ int main(int argc,char** argv) try {
                     auto info = application->rendering(0,loads); recorder.beginRendering(info.info,config);
                     for (unsigned item = first; item < first+count; ++item) {
                         recorder.stencilReference(VK_STENCIL_FACE_FRONT_AND_BACK,item+1);
+                        if (extended) recorder.depthWriteEnable(VK_TRUE);
                         Item scratch = test.scene[item];
                         recorder.push(recordedLayout,VK_SHADER_STAGE_VERTEX_BIT,0,16,&scratch);
                         recorder.push(recordedLayout,VK_SHADER_STAGE_VERTEX_BIT,16,16,reinterpret_cast<const uint8_t*>(&scratch)+16);
                         scratch = {}; // The tape must retain the original bytes.
                         recorder.drawIndexed(3,1,0,0,0);
                     }
+                    if (extended) recorder.depthWriteEnable(VK_FALSE);
                     expect(recorder.endRendering(),"Recorded scene scope was not replayed");
                     application->transitionForReadback(command,0);
                 };
@@ -285,10 +315,11 @@ int main(int argc,char** argv) try {
                 }
                 // Independent witness reference using the original shader.
                 witness->begin(command,1,epoch ? stereo::PreviousUse::transferSource : stereo::PreviousUse::discarded);
-                vkCmdBindPipeline(command,VK_PIPELINE_BIND_POINT_GRAPHICS,originalPipeline);
+                vkCmdBindPipeline(command,VK_PIPELINE_BIND_POINT_GRAPHICS,extended ? witnessPipeline : originalPipeline);
                 vkCmdBindDescriptorSets(command,VK_PIPELINE_BIND_POINT_GRAPHICS,layout,3,1,&sets[0],0,nullptr);
                 VkViewport restoredVp{0,0,float(width),float(height),0,1}; VkRect2D restoredSc{{0,0},{width,height}};
                 vkCmdSetViewport(command,0,1,&restoredVp); vkCmdSetScissor(command,0,1,&restoredSc);
+                if (extended) { VkDeviceSize offset = 0; vkCmdBindVertexBuffers(command,0,1,&vertexInput.handle,&offset); }
                 vkCmdBindIndexBuffer(command,indices.handle,0,VK_INDEX_TYPE_UINT32);
                 vkCmdSetStencilReference(command,VK_STENCIL_FACE_FRONT_AND_BACK,test.count);
                 vkCmdPushConstants(command,layout,VK_SHADER_STAGE_VERTEX_BIT,0,sizeof(Item),&test.scene[test.count-1]);
@@ -394,7 +425,9 @@ int main(int argc,char** argv) try {
     check(vkDeviceWaitIdle(f.device));
     vkDestroyFence(f.device,fence,nullptr); vkDestroyCommandPool(f.device,commands,nullptr);
     vkDestroyPipeline(f.device,originalPipeline,nullptr);
-    if (buffered) { vkDestroyPipeline(f.device,bufferOriginalPipeline,nullptr); vkDestroyPipeline(f.device,computePipeline,nullptr); vkDestroyShaderModule(f.device,computeShader,nullptr); }
+    if (buffered || extended) vkDestroyPipeline(f.device,bufferOriginalPipeline,nullptr);
+    if (extended) vkDestroyPipeline(f.device,witnessPipeline,nullptr);
+    if (buffered) { vkDestroyPipeline(f.device,computePipeline,nullptr); vkDestroyShaderModule(f.device,computeShader,nullptr); }
     for (auto s : {vertex,instrumented,fragment}) vkDestroyShaderModule(f.device,s,nullptr);
     vkDestroyDescriptorPool(f.device,pool,nullptr); vkDestroyPipelineLayout(f.device,layout,nullptr);
     for (auto l : layouts) vkDestroyDescriptorSetLayout(f.device,l,nullptr);
@@ -402,6 +435,7 @@ int main(int argc,char** argv) try {
     auto release = [&](Buffer& b) { vkUnmapMemory(f.device,b.memory); vkDestroyBuffer(f.device,b.handle,nullptr); vkFreeMemory(f.device,b.memory,nullptr); };
     for (auto& set : uniforms) for (auto& b : set) release(b);
     release(staging); release(indices);
+    if (extended) release(vertexInput);
     if (buffered) { release(descriptorStorage); release(computeOutput); }
     vkDestroyDevice(f.device,nullptr); f.device = VK_NULL_HANDLE; vkDestroyInstance(f.instance,nullptr); f.instance = VK_NULL_HANDLE;
     std::cout << std::setprecision(10) << "{\"stereo_mrt_fixture_passed\":" << ((negative || negativeCompute) ? "false" : "true") << ",\"negative_sync_control\":" << (negative ? "true" : "false")
@@ -412,6 +446,8 @@ int main(int argc,char** argv) try {
         << ",\"following_draw_reference_compared_bytes\":" << witnessComparedBytes
         << ",\"forwarded_original_reference_compared_bytes\":" << originalComparedBytes
         << ",\"descriptor_buffer_replay_verified\":" << (buffered ? "true" : "false") << ",\"following_compute_reference_words\":" << computeWords
+        << ",\"dynamic_state_replay_verified\":" << (extended ? "true" : "false") << ",\"declared_dynamic_states\":" << (extended ? extendedStates.size() : 3)
+        << ",\"following_draw_depth_write_disabled_verified\":" << (extended ? "true" : "false")
         << ",\"frozen_scene_cases\":4,\"epochs_per_case\":2,\"eye_renderings\":16,\"submissions\":8,"
         << "\"color_reference_different_bytes\":0,\"color_reference_compared_bytes\":" << result.colorBytes << ",\"depth_reference_compared_texels\":" << result.depthTexels
         << ",\"max_normalized_depth_difference\":" << result.maxDepthError << ",\"stencil_reference_different_bytes\":0,\"stencil_reference_compared_bytes\":" << result.stencilBytes

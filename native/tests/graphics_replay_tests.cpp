@@ -19,6 +19,11 @@ struct Driver {
     std::array<VkDeviceSize,32> vertexOffsets{};
     VkBuffer index{}; VkDeviceSize indexOffset{}; VkIndexType indexType{};
     uint32_t front = 0,back = 0;
+    std::array<float,4> blend{}; std::array<float,2> bounds{}; std::array<float,3> bias{};
+    VkBool32 biasEnabled = 0,depthWrite = 0,restart = 0;
+    VkPrimitiveTopology topology{}; uint32_t frontWrite = 0,backWrite = 0,viewportCount = 0,scissorCount = 0;
+    std::array<VkDeviceSize,32> vertexSizes{},vertexStrides{};
+    bool nullSizes = false,nullStrides = false;
 } driver;
 struct DrawEvent { Driver state; std::array<int64_t,5> arguments; bool indexed; };
 std::vector<DrawEvent> drawEvents;
@@ -41,9 +46,24 @@ VKAPI_ATTR void VKAPI_CALL push(VkCommandBuffer,VkPipelineLayout,VkShaderStageFl
 VKAPI_ATTR void VKAPI_CALL viewport(VkCommandBuffer,uint32_t first,uint32_t count,const VkViewport* values) { std::copy(values,values+count,driver.viewports.begin()+first); }
 VKAPI_ATTR void VKAPI_CALL scissor(VkCommandBuffer,uint32_t first,uint32_t count,const VkRect2D* values) { std::copy(values,values+count,driver.scissors.begin()+first); }
 VKAPI_ATTR void VKAPI_CALL stencil(VkCommandBuffer,VkStencilFaceFlags faces,uint32_t value) { if (faces&1) driver.front = value; if (faces&2) driver.back = value; }
+VKAPI_ATTR void VKAPI_CALL viewportCount(VkCommandBuffer command,uint32_t count,const VkViewport* values) { viewport(command,0,count,values); driver.viewportCount = count; }
+VKAPI_ATTR void VKAPI_CALL scissorCount(VkCommandBuffer command,uint32_t count,const VkRect2D* values) { scissor(command,0,count,values); driver.scissorCount = count; }
+VKAPI_ATTR void VKAPI_CALL blend(VkCommandBuffer,const float* values) { std::copy(values,values+4,driver.blend.begin()); }
+VKAPI_ATTR void VKAPI_CALL bounds(VkCommandBuffer,float a,float b) { driver.bounds = {a,b}; }
+VKAPI_ATTR void VKAPI_CALL bias(VkCommandBuffer,float a,float b,float c) { driver.bias = {a,b,c}; }
+VKAPI_ATTR void VKAPI_CALL biasEnable(VkCommandBuffer,VkBool32 value) { driver.biasEnabled = value; }
+VKAPI_ATTR void VKAPI_CALL depthWrite(VkCommandBuffer,VkBool32 value) { driver.depthWrite = value; }
+VKAPI_ATTR void VKAPI_CALL restart(VkCommandBuffer,VkBool32 value) { driver.restart = value; }
+VKAPI_ATTR void VKAPI_CALL topology(VkCommandBuffer,VkPrimitiveTopology value) { driver.topology = value; }
+VKAPI_ATTR void VKAPI_CALL stencilWrite(VkCommandBuffer,VkStencilFaceFlags faces,uint32_t value) { if (faces&1) driver.frontWrite = value; if (faces&2) driver.backWrite = value; }
 VKAPI_ATTR void VKAPI_CALL index(VkCommandBuffer,VkBuffer b,VkDeviceSize offset,VkIndexType type) { driver.index = b; driver.indexOffset = offset; driver.indexType = type; }
 VKAPI_ATTR void VKAPI_CALL vertices(VkCommandBuffer,uint32_t first,uint32_t count,const VkBuffer* buffers,const VkDeviceSize* offsets) {
     std::copy(buffers,buffers+count,driver.vertices.begin()+first); std::copy(offsets,offsets+count,driver.vertexOffsets.begin()+first);
+}
+VKAPI_ATTR void VKAPI_CALL vertices2(VkCommandBuffer cb,uint32_t first,uint32_t count,const VkBuffer* buffers,const VkDeviceSize* offsets,const VkDeviceSize* sizes,const VkDeviceSize* strides) {
+    vertices(cb,first,count,buffers,offsets); driver.nullSizes = !sizes; driver.nullStrides = !strides;
+    for (unsigned k = 0; k < count; ++k) { driver.vertexSizes[first+k] = sizes ? sizes[k] : VK_WHOLE_SIZE;
+        if (strides) driver.vertexStrides[first+k] = strides[k]; }
 }
 VKAPI_ATTR void VKAPI_CALL beginReplay(VkCommandBuffer cb,const VkRenderingInfo* info) { begin(cb,info); ++begins; }
 VKAPI_ATTR void VKAPI_CALL endReplay(VkCommandBuffer) { ++ends; }
@@ -56,6 +76,9 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL getReplay(VkDevice device,const char* n
     ENTRY(CmdBindIndexBuffer,index) ENTRY(CmdBindVertexBuffers,vertices) ENTRY(CmdBeginRendering,beginReplay)
     ENTRY(CmdEndRendering,endReplay) ENTRY(CmdDraw,draw) ENTRY(CmdDrawIndexed,indexed)
     ENTRY(CmdBindDescriptorBuffersEXT,descriptorBuffers) ENTRY(CmdSetDescriptorBufferOffsetsEXT,bufferOffsets)
+    ENTRY(CmdSetViewportWithCount,viewportCount) ENTRY(CmdSetScissorWithCount,scissorCount) ENTRY(CmdSetBlendConstants,blend)
+    ENTRY(CmdSetDepthBounds,bounds) ENTRY(CmdSetDepthBias,bias) ENTRY(CmdSetDepthBiasEnable,biasEnable) ENTRY(CmdSetDepthWriteEnable,depthWrite)
+    ENTRY(CmdSetPrimitiveRestartEnable,restart) ENTRY(CmdSetPrimitiveTopology,topology) ENTRY(CmdSetStencilWriteMask,stencilWrite) ENTRY(CmdBindVertexBuffers2,vertices2)
 #undef ENTRY
     return get(device,name);
 }
@@ -71,6 +94,10 @@ void same(const Driver& a,const Driver& b,bool pipeline = true) {
     assert(std::memcmp(a.scissors.data(),b.scissors.data(),sizeof(a.scissors)) == 0);
     assert(a.vertices == b.vertices && a.vertexOffsets == b.vertexOffsets);
     assert(a.index == b.index && a.indexOffset == b.indexOffset && a.indexType == b.indexType && a.front == b.front && a.back == b.back);
+    assert(a.blend == b.blend && a.bounds == b.bounds && a.bias == b.bias && a.biasEnabled == b.biasEnabled && a.depthWrite == b.depthWrite);
+    assert(a.restart == b.restart && a.topology == b.topology && a.frontWrite == b.frontWrite && a.backWrite == b.backWrite);
+    assert(a.viewportCount == b.viewportCount && a.scissorCount == b.scissorCount && a.vertexSizes == b.vertexSizes && a.vertexStrides == b.vertexStrides);
+    assert(a.nullSizes == b.nullSizes && a.nullStrides == b.nullStrides);
 }
 struct Rig {
     VkDevice device = reinterpret_cast<VkDevice>(0xf000);
@@ -79,7 +106,7 @@ struct Rig {
     std::unique_ptr<d4vr::stereo::Targets> eyes,application;
     d4vr::replay::Pipeline policy;
     std::unique_ptr<d4vr::replay::Graphics> replay;
-    Rig(bool audited = true,bool registered = true,bool descriptorMode = false) {
+    Rig(bool audited = true,bool registered = true,bool descriptorMode = false,bool extended = false) {
         driver = {}; drawEvents.clear(); begins = ends = 0;
         VkPhysicalDeviceMemoryProperties memory{}; memory.memoryTypeCount = 1;
         memory.memoryTypes[0].propertyFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
@@ -87,13 +114,27 @@ struct Rig {
         eyes = d4vr::stereo::Targets::create(device,getReplay,memory,config,states);
         application = d4vr::stereo::Targets::create(device,getReplay,memory,config,states);
         replay = std::make_unique<d4vr::replay::Graphics>(device,getReplay,command,*eyes,d4vr::stereo::PreviousUse::discarded,
-            descriptorMode ? d4vr::replay::DescriptorLimits{8,64} : d4vr::replay::DescriptorLimits{});
+            descriptorMode ? d4vr::replay::DescriptorLimits{8,64} : d4vr::replay::DescriptorLimits{},extended);
         policy.original = make<VkPipeline>(); policy.eyes = {make<VkPipeline>(),make<VkPipeline>()}; policy.layout = make<VkPipelineLayout>();
         policy.descriptorSets = (1u<<3)|(1u<<4); policy.vertexBindings = (1u<<5)|(1u<<6); policy.pushBytes = 32;
         policy.viewports = policy.scissors = 2; policy.stencilReference = VK_STENCIL_FACE_FRONT_AND_BACK;
         policy.descriptors = descriptorMode ? d4vr::replay::DescriptorMode::buffers : d4vr::replay::DescriptorMode::sets;
         policy.externalWritesExcluded = policy.attachmentInputAliasesExcluded = audited;
+        if (extended) policy.dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT,VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT,VK_DYNAMIC_STATE_STENCIL_REFERENCE,
+            VK_DYNAMIC_STATE_BLEND_CONSTANTS,VK_DYNAMIC_STATE_DEPTH_BOUNDS,VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY,VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE,
+            VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE,VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE,VK_DYNAMIC_STATE_STENCIL_WRITE_MASK,VK_DYNAMIC_STATE_DEPTH_BIAS,VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE};
         if (registered) replay->pipeline(policy);
+    }
+    void extendedState(bool skipDepthWrite = false,bool skipStrides = false) {
+        VkViewport vp[2]{{0,0,256,256,0,1},{1,2,32,64,.25f,.75f}}; VkRect2D sc[2]{{{0,0},{256,256}},{{2,4},{30,60}}};
+        replay->viewportWithCount(2,vp); replay->scissorWithCount(2,sc); vp[0].width = 1; sc[0].extent.width = 1;
+        float constants[]{.125f,.375f,.625f,.875f}; replay->blendConstants(constants); std::fill(constants,constants+4,0);
+        replay->depthBounds(.125f,.875f); replay->depthBias(1.25f,0,-.5f); replay->depthBiasEnable(VK_FALSE);
+        if (!skipDepthWrite) replay->depthWriteEnable(VK_TRUE);
+        replay->primitiveRestartEnable(VK_FALSE); replay->primitiveTopology(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP);
+        replay->stencilWriteMask(VK_STENCIL_FACE_FRONT_BIT,0x3f); replay->stencilWriteMask(VK_STENCIL_FACE_BACK_BIT,0x7f);
+        VkBuffer buffers[]{driver.vertices[5],driver.vertices[6]}; VkDeviceSize offsets[]{256,512},sizes[]{1024,2048},strides[]{16,32};
+        replay->vertices2(5,2,buffers,offsets,sizes,skipStrides ? nullptr : strides); sizes[0] = strides[0] = 0; buffers[0] = {};
     }
     void state(bool omitPushTail = false,bool omitViewport = false,bool omitIndex = false) {
         replay->bindPipeline(policy.original);
@@ -142,6 +183,25 @@ int main() {
         r.begin(true); r.replay->draw(5,3,2,1); assert(r.replay->endRendering());
         auto stats = r.replay->stats(); assert(stats.replayedScopes == 2 && stats.rejectedScopes == 0 && stats.replayedDraws == 4 && stats.forwardedDraws == 2);
     }
+    assert(empty());
+    { Rig r(true,true,true,true); r.state(); r.extendedState(); auto expected = driver;
+      r.begin(); r.replay->drawIndexed(11,2,3,-4,9); r.replay->depthWriteEnable(VK_FALSE); auto finalState = driver;
+      assert(r.replay->endRendering()); for (unsigned k = 0; k < 3; ++k) same(drawEvents[k].state,expected,k == 0); same(driver,finalState);
+      VkBuffer buffers[]{driver.vertices[5]}; VkDeviceSize offsets[]{256}; r.replay->vertices2(5,1,buffers,offsets,nullptr,nullptr);
+      finalState = driver; r.begin(true); r.replay->draw(3,1,0,0); assert(r.replay->endRendering()); same(driver,finalState); }
+    assert(empty());
+    for (unsigned failure = 0; failure < 3; ++failure) {
+        Rig r(true,true,false,true); r.state(); r.extendedState(failure == 0,failure == 1);
+        if (failure == 2) { auto baked = r.policy; baked.original = make<VkPipeline>(); baked.dynamicStates.clear(); baked.viewports = baked.scissors = 0; baked.stencilReference = 0;
+            r.replay->pipeline(baked); r.replay->bindPipeline(baked.original); r.replay->bindPipeline(r.policy.original); }
+        r.begin(); r.replay->drawIndexed(3,1,0,0,0); assert(!r.replay->endRendering() && drawEvents.size() == 1);
+        assert(r.replay->stats().lastRejection == Rejection::incompleteState);
+    }
+    assert(empty());
+    { Rig r(true,false,false,true); r.policy.dynamicStates = {VK_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR}; rejected([&] { r.replay->pipeline(r.policy); }); }
+    assert(empty());
+    { Rig r; r.state(); r.replay->bindPipeline(make<VkPipeline>()); r.state(); r.begin(); r.replay->draw(3,1,0,0);
+      assert(!r.replay->endRendering() && r.replay->stats().lastRejection == Rejection::unknownPipeline && drawEvents.size() == 1); }
     assert(empty());
     { Rig r; rejected([&] { r.replay->bindDescriptorBuffers(0,nullptr); });
       assert(r.replay->stats().lastRejection == Rejection::unsupportedCommand); }

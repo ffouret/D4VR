@@ -10,6 +10,8 @@ Les [mesures agrégées et empreintes des sources](proofs/graphics-replay-v1.jso
 permettent de rattacher les résultats ci-dessous au binaire de contrôle testé.
 La [preuve des descriptor buffers](proofs/descriptor-replay-v1.json) complète
 ce premier relevé avec un calcul témoin après la reprise.
+Les [états dynamiques supplémentaires](DYNAMIC_STATE.md) ajoutent les compteurs,
+strides et changements de profondeur, avec contrats de pipeline explicites.
 
 ## Enregistrement et émission
 

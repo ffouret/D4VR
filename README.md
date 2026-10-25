@@ -187,6 +187,13 @@ au flux de Diablo. Les variantes de descripteurs/états propres à VKD3D, les d�
 passes du jeu et la soumission SteamVR restent à implémenter.
 Voir [la preuve de reprise et ses limites](docs/GRAPHICS_REPLAY.md).
 
+La reprise couvre aussi douze états de la table principale de VKD3D, avec
+viewports/scissors à compteur, strides dynamiques et valeurs requises par
+pipeline. La fixture lit de vrais sommets et vérifie un dessin suivant dont
+l'écriture de profondeur reste désactivée sans rebind. Les trois autres états
+et les variantes non couvertes restent refusés.
+[Audit, preuve GPU et limites](docs/DYNAMIC_STATE.md).
+
 ## Commandes du prototype
 
 | Action | Quest Touch | Clavier |
