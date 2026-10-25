@@ -246,3 +246,14 @@ régressions de pixels et dix-huit du mode ancien à un œil restent séparées.
 Les paires de la couche ne sont jamais utilisées pour dessiner. Les 101 tests
 Python passent. La transmission des créations originales partielles et les
 échecs privés sont testés sans pilote. [Contrat et preuves](PAIRED_PIPELINES.md).
+
+
+Le contrat dynamique des nœuds GPL est calculé par propriétaire pour quatorze
+états reconnus. Deux groupes de six validations GPU utilisent cette liste pour
+la reprise, avec des déclarations parasites ignorées : les douze états attendus
+et les références couleur/profondeur/stencil restent exacts. Cinq régressions
+des recettes monolithiques passent aussi. Les métadonnées de trame gardent leurs
+listes GPL brutes et leur ancien flag inconnu ; le nouveau contrat ne constitue
+pas un audit des ressources ni un nouveau rendu de Diablo. Le test C++ est
+ajouté aux contrôles Windows et ASan/UBSan Linux.
+[Contrat, reproduction et limites](GPL_DYNAMIC_STATES.md).

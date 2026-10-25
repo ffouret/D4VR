@@ -3,6 +3,7 @@
 #include <array>
 #include <functional>
 #include <memory>
+#include "dynamic_states.hpp"
 
 namespace d4vr::pipeline {
 // A lease keeps the private linked graph alive. The caller must retain it until
@@ -18,6 +19,9 @@ public:
     uint32_t parts() const;
     bool library() const;
     bool stereoVertex() const;
+    // A known list describes declaration ownership only, never resource safety
+    // or replay eligibility. A complete static pipeline legitimately has no values.
+    const DynamicStates& dynamicStates() const;
 };
 enum class LibraryResult { registered,unsupported,unknownLibrary,unmarkedExecutable,budget,driverFailure,compileRequired,duplicateSource,unmarkedPreRaster };
 struct LibraryStats { uint64_t libraries=0,executables=0,rejected=0,driverFailures=0,compileRequired=0;uint32_t liveNodes=0,creationAttempts=0; };

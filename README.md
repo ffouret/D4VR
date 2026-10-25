@@ -10,6 +10,12 @@ répond pas à cet objectif.
 
 ## État du projet
 
+Le [calcul des déclarations dynamiques GPL](docs/GPL_DYNAMIC_STATES.md) filtre
+les états par propriétaire et conserve le contrat dans les graphes privés. La
+fixture reprend maintenant ses dessins avec cette liste calculée, y compris
+avec des déclarations parasites : les références GPU restent exactes. Ce
+résultat reste synthétique et ne raccorde aucun dessin du jeu.
+
 Le [lanceur isolé de paires](docs/PAIRED_CAPTURE.md) prépare les deux paquets,
 vérifie le préfixe et les empreintes, borne la session et ferme ses seuls
 processus marqués. Ses essais ouvrent Battle.net ; aucun nouveau processus ou

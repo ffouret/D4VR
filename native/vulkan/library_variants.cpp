@@ -71,6 +71,7 @@ struct Chain {
 struct LibraryNode::Impl {
     std::shared_ptr<Dispatch> dispatch;std::array<VkPipeline,2> handles{};
     std::vector<std::shared_ptr<const LibraryNode>> children;
+    DynamicStates dynamics;
     uint32_t parts=0,depth=0;bool library=false,stereo=false,reserved=false;
     ~Impl(){for(auto h:handles)if(h)dispatch->destroy(dispatch->device,h,nullptr);if(reserved)--dispatch->active;}
 };
@@ -80,6 +81,7 @@ const std::array<VkPipeline,2>& LibraryNode::handles()const{return impl->handles
 uint32_t LibraryNode::parts()const{return impl->parts;}
 bool LibraryNode::library()const{return impl->library;}
 bool LibraryNode::stereoVertex()const{return impl->stereo;}
+const DynamicStates& LibraryNode::dynamicStates()const{return impl->dynamics;}
 struct LibraryVariants::Impl {
     std::shared_ptr<Dispatch> dispatch;std::array<VkDeviceAddress,2> addresses;MarkedStage marked;
     mutable std::mutex mutex;std::unordered_map<VkPipeline,Lease> nodes;std::unordered_map<VkPipeline,bool> pending;LibraryStats counts;
@@ -129,6 +131,8 @@ LibraryResult LibraryVariants::observe(VkPipeline source,const VkGraphicsPipelin
         // A library owning an unmarked pre-raster stage can never contribute
         // a target vertex. Do not compile two unusable copies of it.
         if(data->library && (chain.ownParts&2u) && selected.empty())return p.result(LibraryResult::unmarkedPreRaster);
+        data->dynamics=DynamicStates::capture(chain.ownParts,original.pDynamicState);
+        for(const auto& child:data->children)data->dynamics.include(child->dynamicStates());
         auto active=p.dispatch->active.load();
         do{if(active>=p.dispatch->limit)return p.result(LibraryResult::budget);}while(!p.dispatch->active.compare_exchange_weak(active,active+1));
         data->reserved=true;

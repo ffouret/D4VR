@@ -47,13 +47,15 @@ struct Description {
     VkPipelineLibraryCreateInfoKHR libraries{VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR};
     std::vector<VkPipeline> children;
     VkPipelineShaderStageCreateInfo stages[2]{};
+    VkPipelineDynamicStateCreateInfo dynamics{VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO};
     uint32_t value=17;VkSpecializationMapEntry entry{9,0,4};VkSpecializationInfo spec{1,&entry,4,&value};
     explicit Description(uint32_t parts,bool library=true,std::vector<VkPipeline> links={}):children(std::move(links)){
         gpl.flags=parts;gpl.pNext=children.empty()?nullptr:&libraries;libraries.libraryCount=uint32_t(children.size());libraries.pLibraries=children.empty()?nullptr:children.data();
         ci.pNext=&gpl;ci.flags=library?VK_PIPELINE_CREATE_LIBRARY_BIT_KHR|VK_PIPELINE_CREATE_RETAIN_LINK_TIME_OPTIMIZATION_INFO_BIT_EXT:VK_PIPELINE_CREATE_LINK_TIME_OPTIMIZATION_BIT_EXT;
         ci.layout=h<VkPipelineLayout>(77);ci.basePipelineHandle=h<VkPipeline>(1);ci.basePipelineIndex=99;
         ci.stageCount=0xffffffff;ci.pStages=h<const VkPipelineShaderStageCreateInfo*>(1);
-        ci.pVertexInputState=h<const VkPipelineVertexInputStateCreateInfo*>(1);ci.pViewportState=h<const VkPipelineViewportStateCreateInfo*>(1);ci.pDynamicState=h<const VkPipelineDynamicStateCreateInfo*>(1);
+        ci.pVertexInputState=h<const VkPipelineVertexInputStateCreateInfo*>(1);ci.pViewportState=h<const VkPipelineViewportStateCreateInfo*>(1);
+        ci.pDynamicState=parts?&dynamics:h<const VkPipelineDynamicStateCreateInfo*>(1);
         if(parts&6u){
             stages[0].sType=stages[1].sType=VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
             stages[0].stage=VK_SHADER_STAGE_VERTEX_BIT;stages[0].module=h<VkShaderModule>(10);stages[0].pName="main";stages[0].pSpecializationInfo=&spec;
@@ -83,6 +85,7 @@ int main()try{
         inspect=[](const auto& ci,unsigned){expect(!ci.stageCount && !ci.pStages && !ci.pVertexInputState && !ci.pViewportState && !ci.pDynamicState,"Ignored link-only pointers accessed/retained");};
         expect(registry.observe(h<VkPipeline>(4),link.ci)==LibraryResult::registered,"Executable graph failed");inspect={};
         lease=registry.lookup(h<VkPipeline>(4));expect(lease && !lease->library() && lease->stereoVertex() && lease->parts()==15,"Executable coverage/stereo identity missing");
+        expect(lease->dynamicStates().complete() && lease->dynamicStates().values.empty(),"Static owned state contract was not retained by linked graph");
         expect(observedChildren[0]==vi,"Wrong per-eye child graph linked");
         for(unsigned i=1;i<=4;++i)registry.remove(h<VkPipeline>(i));
         expect(registry.stats().liveNodes==4 && owned.size()==8,"Graph released despite outstanding lease");
@@ -127,6 +130,17 @@ int main()try{
         expect(registry.observe(h<VkPipeline>(2),d.ci)==LibraryResult::unsupported,"Flags2 library/full-set conflict ignored");
     }
     expect(owned.empty(),"Final private pipelines leaked");
+    {
+        LibraryVariants registry(device,get,addresses,marked);
+        std::vector<VkDynamicState> dynamic{VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT,VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT,VK_DYNAMIC_STATE_BLEND_CONSTANTS};
+        Description shader(6);shader.dynamics.dynamicStateCount=uint32_t(dynamic.size());shader.dynamics.pDynamicStates=dynamic.data();
+        expect(registry.observe(h<VkPipeline>(1),shader.ci)==LibraryResult::registered,"Dynamic shader library not registered");
+        dynamic.assign(64,VK_DYNAMIC_STATE_BLEND_CONSTANTS);dynamic.clear();
+        add(registry,h<VkPipeline>(2),1);add(registry,h<VkPipeline>(3),8);add(registry,h<VkPipeline>(4),0,false,{h<VkPipeline>(1),h<VkPipeline>(2),h<VkPipeline>(3)});
+        auto contract=registry.lookup(h<VkPipeline>(4))->dynamicStates();
+        expect(contract.complete() && contract.values.size()==2 && std::find(contract.values.begin(),contract.values.end(),VK_DYNAMIC_STATE_BLEND_CONSTANTS)==contract.values.end(),"Transient/nonowner dynamic flags poisoned linked graph");
+    }
+    expect(owned.empty(),"Dynamic contract graph leaked");
     {
         LibraryVariants registry(device,get,addresses,marked,4,1);Description d(1);
         expect(registry.observe(h<VkPipeline>(1),d.ci)==LibraryResult::registered,"Cumulative budget first creation failed");registry.remove(h<VkPipeline>(1));

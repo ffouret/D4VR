@@ -55,8 +55,9 @@ refus de variante : aucun remplacement ou retry ne modifie l'appel original.
 Le propriétaire doit retenir les leases jusqu'à la fin des usages GPU et tous
 les libérer avant le device. Le module n'attend ni ne soumet de travail et ne
 suit pas les fences ou queues. Les layouts et objets originaux gardent leur
-gestion de durée de vie par l'application. Les contrats de commandes, états
-GPL effectifs, descripteurs, alias, lectures/écritures et barrières restent à
+gestion de durée de vie par l'application. Le [contrat dynamique par partie](GPL_DYNAMIC_STATES.md)
+est maintenant conservé pour les états reconnus. Les autres états GPL, contrats
+de commandes, descripteurs, alias, lectures/écritures et barrières restent à
 auditer. La création de pipelines ne prouve pas leur admissibilité à la reprise.
 Les extensions racines non couvertes, render passes classiques, multiview,
 tessellation/geometry/mesh et flags non modélisés sont refusés.

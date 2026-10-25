@@ -33,7 +33,7 @@ std::vector<uint32_t> readCode(const char* path) {
 
 int main(int argc,char** argv) try {
     if (argc < 4) throw std::runtime_error("Usage: stereo_targets_vulkan original.vert.spv stereo.vert.spv mrt.frag.spv [--negative-sync-control] [--preview-directory path]");
-    bool negative = false,split = false,recorded = false,buffered = false,negativeCompute = false,extended = false,recipes = false,libraries = false,libraryOriginalLive = false; std::filesystem::path preview,computePath;
+    bool negative = false,split = false,recorded = false,buffered = false,negativeCompute = false,extended = false,recipes = false,libraries = false,libraryOriginalLive = false,stateDecoys = false; std::filesystem::path preview,computePath;
     for (int k = 4; k < argc; ++k) {
         if (std::string(argv[k]) == "--negative-sync-control") negative = true;
         else if (std::string(argv[k]) == "--split-passes") split = true;
@@ -44,6 +44,7 @@ int main(int argc,char** argv) try {
         else if (std::string(argv[k]) == "--pipeline-recipes") recipes = true;
         else if (std::string(argv[k]) == "--library-pipelines") libraries = true;
         else if (std::string(argv[k]) == "--library-original-live") libraryOriginalLive = true;
+        else if (std::string(argv[k]) == "--library-state-decoys") stateDecoys = true;
         else if (std::string(argv[k]) == "--compute" && k+1 < argc) computePath = argv[++k];
         else if (std::string(argv[k]) == "--preview-directory" && k+1 < argc) preview = argv[++k];
         else throw std::invalid_argument("Unknown stereo fixture option");
@@ -55,6 +56,7 @@ int main(int argc,char** argv) try {
     if (recipes && !recorded) throw std::invalid_argument("Pipeline recipes require recorded replay");
     if (libraries && (!recorded || recipes)) throw std::invalid_argument("Library pipelines require recorded replay and their own pipeline mode");
     if(libraryOriginalLive && !libraries)throw std::invalid_argument("Original GPL witness requires library pipelines");
+    if(stateDecoys && (!libraries || !extended))throw std::invalid_argument("Dynamic state decoys require extended GPL replay");
     if (!preview.empty()) {
         expect(!std::filesystem::exists(preview),"Use a new preview directory");
         std::filesystem::create_directories(preview);
@@ -258,6 +260,14 @@ int main(int argc,char** argv) try {
                     if(part!=1){ci.pViewportState=nullptr;ci.pRasterizationState=nullptr;ci.pDepthStencilState=nullptr;}
                     if(part==0)ci.pMultisampleState=nullptr;
                     if(part!=2)ci.pColorBlendState=nullptr;
+                    auto dynamic=*source.pDynamicState;
+                    std::vector<VkDynamicState> declarations(dynamic.pDynamicStates,dynamic.pDynamicStates+dynamic.dynamicStateCount);
+                    // Each library deliberately receives irrelevant declarations.
+                    // These two legacy viewport flags belong only to the shader
+                    // library, which instead owns the WITH_COUNT variants.
+                    if(stateDecoys && part==0)declarations.push_back(VK_DYNAMIC_STATE_VIEWPORT);
+                    if(stateDecoys && part==2)declarations.push_back(VK_DYNAMIC_STATE_SCISSOR);
+                    dynamic.dynamicStateCount=uint32_t(declarations.size());dynamic.pDynamicStates=declarations.data();ci.pDynamicState=&dynamic;
                     check(vkCreateGraphicsPipelines(f.device,VK_NULL_HANDLE,1,&ci,nullptr,&sources[part]));
                     expect(registry->observe(sources[part],ci)==pipeline::LibraryResult::registered,"Library pair registration failed");
                     if(part==1){vkDestroyShaderModule(f.device,helper,nullptr);vkDestroyShaderModule(f.device,pixel,nullptr);helper=pixel=VK_NULL_HANDLE;}
@@ -268,6 +278,9 @@ int main(int argc,char** argv) try {
                 VkPipeline original{};check(vkCreateGraphicsPipelines(f.device,VK_NULL_HANDLE,1,&ci,nullptr,&original));
                 expect(registry->observe(original,ci)==pipeline::LibraryResult::registered,"Linked eye pair registration failed");libraryLease=registry->lookup(original);
                 expect(libraryLease && libraryLease->parts()==15 && !libraryLease->library() && libraryLease->stereoVertex(),"Linked graph contract missing");
+                auto expected=extended?extendedStates:std::vector<VkDynamicState>{VK_DYNAMIC_STATE_VIEWPORT,VK_DYNAMIC_STATE_SCISSOR,VK_DYNAMIC_STATE_STENCIL_REFERENCE};
+                std::sort(expected.begin(),expected.end());
+                expect(libraryLease->dynamicStates().complete() && libraryLease->dynamicStates().values==expected,"Linked GPL dynamic contract differs from independent fixture declaration");
                 for(auto s:sources){registry->remove(s);if(libraryOriginalLive)retainedSourceLibraries.push_back(s);else vkDestroyPipeline(f.device,s,nullptr);}registry->remove(original);
                 auto count=registry->stats();expect(count.libraries==3 && count.executables==1 && count.liveNodes==4,"Leased private graph not retained");
                 registry.reset();return original;
@@ -326,6 +339,9 @@ int main(int argc,char** argv) try {
                 contract.descriptorSets = 1u<<3; contract.pushBytes = sizeof(Item); contract.stencilReference = VK_STENCIL_FACE_FRONT_AND_BACK;
                 contract.descriptors = buffered ? replay::DescriptorMode::buffers : replay::DescriptorMode::sets;
                 if (extended) { contract.dynamicStates = extendedStates; contract.vertexBindings = 1; }
+                // Use the library graph's owned snapshot, after source modules,
+                // declaration arrays and registry have already been released.
+                if(libraryLease)contract.dynamicStates=libraryLease->dynamicStates().values;
                 contract.externalWritesExcluded = contract.attachmentInputAliasesExcluded = true; recorder.pipeline(contract);
                 // Commands before BeginRendering must seed the replayed scope.
                 recorder.bindPipeline(contract.original);
@@ -524,6 +540,10 @@ int main(int argc,char** argv) try {
         << ",\"source_libraries_released_before_render\":" << (libraries && !libraryOriginalLive ? "true" : "false")
         << ",\"source_executable_released_before_render\":" << (libraries && !libraryOriginalLive ? "true" : "false")
         << ",\"forwarded_original_gpl_witness_verified\":" << (libraryOriginalLive ? "true" : "false")
+        << ",\"gpl_dynamic_state_contract_resolved\":" << (libraries ? "true" : "false")
+        << ",\"gpl_dynamic_state_contract_used_for_replay\":" << (libraries && recorded ? "true" : "false")
+        << ",\"gpl_nonowner_dynamic_decoys_verified\":" << (stateDecoys ? "true" : "false")
+        << ",\"gpl_effective_dynamic_state_count\":" << (libraries ? (extended?extendedStates.size():3) : 0)
         << ",\"following_draw_depth_write_disabled_verified\":" << (extended ? "true" : "false")
         << ",\"frozen_scene_cases\":4,\"epochs_per_case\":2,\"eye_renderings\":16,\"submissions\":8,"
         << "\"color_reference_different_bytes\":0,\"color_reference_compared_bytes\":" << result.colorBytes << ",\"depth_reference_compared_texels\":" << result.depthTexels

@@ -28,6 +28,8 @@ def run(args) -> dict:
         raise ValueError('Library pipelines require recorded replay and their own pipeline mode')
     if args.library_original_live and not args.library_pipelines:
         raise ValueError('Original GPL witness requires library pipelines')
+    if args.library_state_decoys and not (args.library_pipelines and args.dynamic_state):
+        raise ValueError('Dynamic state decoys require extended GPL replay')
     if not all(p.is_file() for p in inputs) or args.output.exists():
         raise ValueError('Provide the built fixture/shaders and a new private output directory')
     manifest = json.loads((args.validation_layer/'VkLayer_khronos_validation.json').read_text())
@@ -93,6 +95,8 @@ def run(args) -> dict:
             command.append('--library-pipelines')
         if args.library_original_live:
             command.append('--library-original-live')
+        if args.library_state_decoys:
+            command.append('--library-state-decoys')
         if negative:
             command.append('--negative-sync-control')
         if negative_compute:
@@ -106,6 +110,12 @@ def run(args) -> dict:
         if result.returncode or not payloads:
             raise ValueError(f'{name}: GPU fixture failed; inspect its private log')
         proof = payloads[-1]
+        if args.library_pipelines and (proof.get('gpl_dynamic_state_contract_resolved') is not True
+                or proof.get('gpl_dynamic_state_contract_used_for_replay') is not True
+                or proof.get('gpl_effective_dynamic_state_count')!=(12 if args.dynamic_state else 3)):
+            raise ValueError('The fixture did not use the resolved GPL dynamic contract')
+        if args.library_state_decoys and proof.get('gpl_nonowner_dynamic_decoys_verified') is not True:
+            raise ValueError('Nonowner declaration decoys were not verified')
         loaded = 'Insert instance layer "VK_LAYER_KHRONOS_validation"' in text and 'Inserted device layer "VK_LAYER_KHRONOS_validation"' in text
         hazard = 'SYNC-HAZARD-WRITE-AFTER-WRITE' in text
         if validation and not loaded:
@@ -170,7 +180,7 @@ def run(args) -> dict:
                 elif any(not p['effective_dynamic_states_known'] for p in states):
                     raise ValueError('Monolithic fixture declarations were not captured completely')
                 largest = max(len(b['states']) for p in states for b in p['declarations'])
-                if args.dynamic_state and largest != 12:raise ValueError('Dynamic pipeline declaration does not match fixture')
+                if args.dynamic_state and largest != (13 if args.library_state_decoys else 12):raise ValueError('Dynamic pipeline declaration does not match fixture')
                 attachments = [a for p in summary['passes'] for a in p['attachments'] if a['role'] in ('color','depth','stencil')]
                 clears = [a for a in attachments if a['load_op'] == 1]
                 if not clears or any(a['clear_value_words'] is None for a in clears):raise ValueError('Clear values absent from fixture metadata')
@@ -218,6 +228,7 @@ def main() -> int:
     parser.add_argument('--pipeline-recipes',action='store_true')
     parser.add_argument('--library-pipelines',action='store_true')
     parser.add_argument('--library-original-live',action='store_true')
+    parser.add_argument('--library-state-decoys',action='store_true')
     parser.add_argument('--trace-layer',type=Path)
     parser.add_argument('--paired-pipelines',action='store_true',help='Create diagnostic pairs in the loaded layer; never draw them')
     args = parser.parse_args(); run(args); return 0
