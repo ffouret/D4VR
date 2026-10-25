@@ -10,6 +10,12 @@ répond pas à cet objectif.
 
 ## État du projet
 
+Le [chemin synchrone des bibliothèques GPL](docs/LIBRARY_VARIANTS.md) construit
+deux graphes privés et les conserve par lease jusqu'à leur dernière utilisation.
+Deux contrôles GPU distincts vérifient leur indépendance des sources et le témoin
+GPL original avec ses bibliothèques maintenues en vie. Le cas d'un témoin GPL
+utilisé après destruction de ses bibliothèques reste non validé sur cet hôte.
+
 Le [module de recettes de pipelines](docs/PIPELINE_RECIPES.md) copie les
 paramètres et octets shader pour créer les deux variantes d'œil. La scène GPU
 de contrôle les utilise après destruction des modules sources ; ses références

@@ -2,6 +2,20 @@
 
 Essais du 24 octobre 2026.
 
+## Graphes de bibliothèques par œil (25 octobre)
+
+Deux groupes de six essais GPU passent : graphes privés après destruction de
+tous les objets sources, et témoin original GPL avec bibliothèques maintenues
+en vie jusqu'à la fin du GPU. Les seize vues restent exactes ; les états du
+dessin suivant et du calcul sont restaurés. Les deux contrôles négatifs et
+Steam Runtime passent dans chaque groupe. Cinq régressions monolithiques passent
+aussi. Les tests C++ couvrent leases, quotas, générations, identifiants simulés,
+échecs partiels et feedback isolé. Les 100 tests Python passent.
+
+Un essai natif antérieur liant le témoin original après destruction de ses
+bibliothèques s'arrête avec le code 139 ; cette condition reste non validée et
+sa cause non établie. [Preuves et limites précises](LIBRARY_VARIANTS.md).
+
 ## Variantes créées depuis les recettes (25 octobre)
 
 La fixture crée les variantes des deux yeux depuis une copie des paramètres du

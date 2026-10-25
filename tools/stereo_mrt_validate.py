@@ -21,6 +21,10 @@ def run(args) -> dict:
         raise ValueError('Dynamic state requires recorded replay')
     if args.pipeline_recipes and not args.recorded_replay:
         raise ValueError('Pipeline recipes require recorded replay')
+    if args.library_pipelines and (not args.recorded_replay or args.pipeline_recipes):
+        raise ValueError('Library pipelines require recorded replay and their own pipeline mode')
+    if args.library_original_live and not args.library_pipelines:
+        raise ValueError('Original GPL witness requires library pipelines')
     if not all(p.is_file() for p in inputs) or args.output.exists():
         raise ValueError('Provide the built fixture/shaders and a new private output directory')
     manifest = json.loads((args.validation_layer/'VkLayer_khronos_validation.json').read_text())
@@ -74,6 +78,10 @@ def run(args) -> dict:
             command.append('--dynamic-state')
         if args.pipeline_recipes:
             command.append('--pipeline-recipes')
+        if args.library_pipelines:
+            command.append('--library-pipelines')
+        if args.library_original_live:
+            command.append('--library-original-live')
         if negative:
             command.append('--negative-sync-control')
         if negative_compute:
@@ -123,6 +131,13 @@ def run(args) -> dict:
             if args.pipeline_recipes and (proof.get('pipeline_recipe_variants_verified') is not True
                     or proof.get('original_shader_modules_destroyed_before_variants') is not True):
                 raise ValueError(f'{name}: recipe-created variants after module destruction were not verified')
+            if args.library_pipelines and (proof.get('library_pipeline_variants_verified') is not True
+                    or proof.get('library_source_modules_destroyed_before_link') is not True
+                    or proof.get('source_registry_released_before_render') is not True
+                    or proof.get('source_libraries_released_before_render') is not (not args.library_original_live)
+                    or proof.get('source_executable_released_before_render') is not (not args.library_original_live)
+                    or proof.get('forwarded_original_gpl_witness_verified') is not args.library_original_live):
+                raise ValueError(f'{name}: linked variants and source/registry lifetime isolation were not verified')
         metadata = None
         if args.trace_layer:
             if not vulkan_trace.report(metadata_directory)['trace_loaded']:
@@ -135,16 +150,22 @@ def run(args) -> dict:
                 if len(frames) != 1:raise ValueError('Expected one bounded metadata capture')
                 data = frame_trace.read_frame(frames[0]);summary = frame_trace.summarize(data)
                 states = summary['pipeline_state_declarations']
-                if not states or any(not p['effective_dynamic_states_known'] for p in states):
+                if not states or any(not p['declarations_complete'] for p in states):
+                    raise ValueError('Fixture pipeline declarations were not captured completely')
+                linked=sum(p['linked_libraries'] for p in states)
+                if args.library_pipelines:
+                    if not linked or any(p['effective_dynamic_states_known'] for p in states if p['linked_libraries']):
+                        raise ValueError('GPL metadata falsely resolves the effective dynamic state list')
+                elif any(not p['effective_dynamic_states_known'] for p in states):
                     raise ValueError('Monolithic fixture declarations were not captured completely')
-                largest = max(len(p['declarations'][0]['states']) for p in states)
+                largest = max(len(b['states']) for p in states for b in p['declarations'])
                 if args.dynamic_state and largest != 12:raise ValueError('Dynamic pipeline declaration does not match fixture')
                 attachments = [a for p in summary['passes'] for a in p['attachments'] if a['role'] in ('color','depth','stencil')]
                 clears = [a for a in attachments if a['load_op'] == 1]
                 if not clears or any(a['clear_value_words'] is None for a in clears):raise ValueError('Clear values absent from fixture metadata')
                 if any(a['clear_value_words'] != [0x3f800000,0,0,0] for a in clears if a['role']=='depth'):
                     raise ValueError('Depth clear bits do not match original fixture')
-                metadata = {'bounded_capture_verified':True,'monolithic_pipeline_count':len(states),'largest_dynamic_declaration':largest,
+                metadata = {'bounded_capture_verified':True,'monolithic_pipeline_count':len(states)-linked,'linked_pipeline_count':linked,'largest_dynamic_declaration':largest,
                             'clear_value_sets':len(clears),'graphics_state_snapshot_complete':False}
         results.append({'case':name,'exit_code':result.returncode,'validation_layer_loaded':loaded,
                         'intentional_sync_hazard_detected':hazard,
@@ -170,6 +191,8 @@ def main() -> int:
     parser.add_argument('--compute',type=Path)
     parser.add_argument('--dynamic-state',action='store_true')
     parser.add_argument('--pipeline-recipes',action='store_true')
+    parser.add_argument('--library-pipelines',action='store_true')
+    parser.add_argument('--library-original-live',action='store_true')
     parser.add_argument('--trace-layer',type=Path)
     args = parser.parse_args(); run(args); return 0
 

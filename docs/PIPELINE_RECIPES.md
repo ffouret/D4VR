@@ -5,6 +5,10 @@ et les octets exacts des shaders d'un pipeline complet. Il construit deux
 pipelines privés à partir de cette recette. Il prépare l'adaptateur réel ;
 **il n'est pas branché sur la couche de Diablo et n'autorise pas la reprise**.
 
+Le [module synchrone de bibliothèques](LIBRARY_VARIANTS.md) complète ce chemin
+pour GPL, pendant que les objets et paramètres sources sont vivants. Il ne
+change pas les restrictions du présent module de recettes monolithiques.
+
 ## Propriété et durée de vie
 
 `Recipe::capture` reçoit les informations de création et un lookup des octets

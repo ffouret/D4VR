@@ -14,7 +14,7 @@ struct Buffer { VkBuffer handle; VkDeviceMemory memory; void* mapped; VkDeviceAd
 struct Fixture {
     VkInstance instance{}; VkPhysicalDevice physical{}; VkDevice device{}; VkQueue queue{};
     VkPhysicalDeviceMemoryProperties memory{}; uint32_t family{};
-    Fixture(bool dynamic, bool identifiers,bool descriptorBuffers = false,bool extended = false) {
+    Fixture(bool dynamic, bool identifiers,bool descriptorBuffers = false,bool extended = false,bool libraries = false) {
         VkApplicationInfo app{VK_STRUCTURE_TYPE_APPLICATION_INFO}; app.pApplicationName = "D4VR observer fixture"; app.apiVersion = dynamic ? VK_API_VERSION_1_3 : VK_API_VERSION_1_2;
         VkInstanceCreateInfo create{VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO}; create.pApplicationInfo = &app;
         check(vkCreateInstance(&create, nullptr, &instance));
@@ -39,11 +39,14 @@ struct Fixture {
         if (identifiers) { features13.pipelineCreationCacheControl = VK_TRUE; features13.pNext = &idFeature; }
         VkPhysicalDeviceDescriptorBufferFeaturesEXT bufferFeature{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_FEATURES_EXT}; bufferFeature.descriptorBuffer = VK_TRUE;
         if (descriptorBuffers) { bufferFeature.pNext = features13.pNext; features13.pNext = &bufferFeature; }
+        VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT libraryFeature{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GRAPHICS_PIPELINE_LIBRARY_FEATURES_EXT};libraryFeature.graphicsPipelineLibrary=VK_TRUE;
+        if (libraries) { libraryFeature.pNext=features13.pNext;features13.pNext=&libraryFeature; }
         if (dynamic || descriptorBuffers) features12.pNext = &features13;
         VkDeviceCreateInfo d{VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO}; d.pNext = &features12; d.pEnabledFeatures = &features; d.queueCreateInfoCount = 1; d.pQueueCreateInfos = &q;
         std::vector<const char*> extensions;
         if (identifiers) extensions.push_back(VK_EXT_SHADER_MODULE_IDENTIFIER_EXTENSION_NAME);
         if (descriptorBuffers) extensions.push_back(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
+        if (libraries) { extensions.push_back(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);extensions.push_back(VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME); }
         d.enabledExtensionCount = static_cast<uint32_t>(extensions.size()); d.ppEnabledExtensionNames = extensions.data();
         check(vkCreateDevice(physical, &d, nullptr, &device)); vkGetDeviceQueue(device, family, 0, &queue);
     }
