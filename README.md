@@ -10,6 +10,14 @@ répond pas à cet objectif.
 
 ## État du projet
 
+La [preuve d'intégration de la couche Vulkan](docs/LAYER_REPLAY_POC.md) raccorde
+maintenant les commandes d'une application au moteur de reprise : deux passes
+originales produisent deux vues privées, comparées exactement à des références
+GPU. L'image originale et la passe suivante restent identiques. Ce premier
+chemin traverse réellement le chargeur Vulkan ; son admission est limitée aux
+octets exacts de notre scène synthétique. Il ne reprend pas encore Diablo et
+ne soumet pas encore ces images à SteamVR.
+
 Le [helper peut maintenant être construit avec la seule projection](docs/PROJECTION_ONLY_HELPER.md),
 après preuve que ses quatre arguments de matrice d'objet sont inutilisés. Les
 dix vertex candidats, dont six auparavant refusés, passent la transformation et

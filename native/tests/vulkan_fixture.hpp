@@ -14,8 +14,8 @@ struct Buffer { VkBuffer handle; VkDeviceMemory memory; void* mapped; VkDeviceAd
 struct Fixture {
     VkInstance instance{}; VkPhysicalDevice physical{}; VkDevice device{}; VkQueue queue{};
     VkPhysicalDeviceMemoryProperties memory{}; uint32_t family{};
-    Fixture(bool dynamic, bool identifiers,bool descriptorBuffers = false,bool extended = false,bool libraries = false) {
-        VkApplicationInfo app{VK_STRUCTURE_TYPE_APPLICATION_INFO}; app.pApplicationName = "D4VR observer fixture"; app.apiVersion = dynamic ? VK_API_VERSION_1_3 : VK_API_VERSION_1_2;
+    Fixture(bool dynamic, bool identifiers,bool descriptorBuffers = false,bool extended = false,bool libraries = false,const char* appName = "D4VR observer fixture") {
+        VkApplicationInfo app{VK_STRUCTURE_TYPE_APPLICATION_INFO}; app.pApplicationName = appName; app.apiVersion = dynamic ? VK_API_VERSION_1_3 : VK_API_VERSION_1_2;
         VkInstanceCreateInfo create{VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO}; create.pApplicationInfo = &app;
         check(vkCreateInstance(&create, nullptr, &instance));
         uint32_t count = 0; check(vkEnumeratePhysicalDevices(instance, &count, nullptr));
