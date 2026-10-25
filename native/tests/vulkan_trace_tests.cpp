@@ -25,6 +25,9 @@ const VkBufferCreateInfo* expectedBufferInfo{};const VkBufferDeviceAddressInfo* 
 const VkDescriptorBufferBindingInfoEXT* expectedBindingInfo{};const uint32_t* expectedIndices{};const VkDeviceSize* expectedOffsets{};
 const VkDescriptorSet* expectedSets{};VkPipelineLayout expectedLayout{};VkBuffer expectedBuffer{};
 VkResult bufferResult=VK_SUCCESS;unsigned bufferCreates=0,bufferDestroys=0,addressQueries=0,bufferBinds=0,offsetBinds=0,classicBinds=0;
+const VkDescriptorSetLayoutCreateInfo* expectedSetInfo{};const VkPipelineLayoutCreateInfo* expectedPipelineLayoutInfo{};
+VkDescriptorSetLayout expectedSetLayout{};VkDeviceSize* expectedLayoutQuery{};
+VkResult layoutResult=VK_SUCCESS;unsigned setCreates=0,setDestroys=0,pipelineLayoutCreates=0,pipelineLayoutDestroys=0,sizeQueries=0,offsetQueries=0;
 template<class T> T object(uintptr_t value) { return reinterpret_cast<T>(value); }
 VKAPI_ATTR VkResult VKAPI_CALL originalCreate(VkDevice,VkPipelineCache cache,uint32_t n,const VkGraphicsPipelineCreateInfo* info,const VkAllocationCallbacks* allocator,VkPipeline* out) {
     require(n==3 && cache==expectedCache && info==expectedGraphics && allocator==expectedAllocator,"Original pipeline arguments changed");
@@ -79,6 +82,16 @@ VKAPI_ATTR void VKAPI_CALL bindOffsets(VkCommandBuffer c,VkPipelineBindPoint poi
 VKAPI_ATTR void VKAPI_CALL bindSets(VkCommandBuffer c,VkPipelineBindPoint point,VkPipelineLayout layout,uint32_t first,uint32_t n,const VkDescriptorSet* sets,uint32_t dynamicCount,const uint32_t* offsets) {
     require(c==expectedCommand && point==VK_PIPELINE_BIND_POINT_COMPUTE && layout==expectedLayout && first==1 && n==1 && sets==expectedSets && !dynamicCount && !offsets,"Classic descriptor arguments changed");++classicBinds;
 }
+VKAPI_ATTR VkResult VKAPI_CALL createSetLayout(VkDevice,const VkDescriptorSetLayoutCreateInfo* info,const VkAllocationCallbacks* allocator,VkDescriptorSetLayout* out) {
+    require(info==expectedSetInfo && allocator==expectedAllocator,"Set layout creation changed");++setCreates;if(layoutResult==VK_SUCCESS)*out=expectedSetLayout;return layoutResult;
+}
+VKAPI_ATTR void VKAPI_CALL destroySetLayout(VkDevice,VkDescriptorSetLayout layout,const VkAllocationCallbacks* allocator) {require(layout==expectedSetLayout && allocator==expectedAllocator,"Set layout destruction changed");++setDestroys;}
+VKAPI_ATTR VkResult VKAPI_CALL createPipelineLayout(VkDevice,const VkPipelineLayoutCreateInfo* info,const VkAllocationCallbacks* allocator,VkPipelineLayout* out) {
+    require(info==expectedPipelineLayoutInfo && allocator==expectedAllocator,"Pipeline layout creation changed");++pipelineLayoutCreates;if(layoutResult==VK_SUCCESS)*out=expectedLayout;return layoutResult;
+}
+VKAPI_ATTR void VKAPI_CALL destroyPipelineLayout(VkDevice,VkPipelineLayout layout,const VkAllocationCallbacks* allocator) {require(layout==expectedLayout && allocator==expectedAllocator,"Pipeline layout destruction changed");++pipelineLayoutDestroys;}
+VKAPI_ATTR void VKAPI_CALL layoutSize(VkDevice,VkDescriptorSetLayout layout,VkDeviceSize* out) {require(layout==expectedSetLayout && out==expectedLayoutQuery,"Layout size query changed");++sizeQueries;*out=128;}
+VKAPI_ATTR void VKAPI_CALL layoutOffset(VkDevice,VkDescriptorSetLayout layout,uint32_t binding,VkDeviceSize* out) {require(layout==expectedSetLayout && binding==7 && out==expectedLayoutQuery,"Layout offset query changed");++offsetQueries;*out=32;}
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL proc(VkDevice, const char* name) {
     if (std::strcmp(name,"vkCreateGraphicsPipelines")==0) return reinterpret_cast<PFN_vkVoidFunction>(privateCreate);
     if (std::strcmp(name,"vkDestroyPipeline")==0) return reinterpret_cast<PFN_vkVoidFunction>(pipelineDestroy);
@@ -86,6 +99,12 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL proc(VkDevice, const char* name) {
     if (std::strcmp(name, "vkCmdExecuteGeneratedCommandsEXT") == 0) return reinterpret_cast<PFN_vkVoidFunction>(generated);
     if (std::strcmp(name, "vkQueueSubmit2KHR") == 0) return reinterpret_cast<PFN_vkVoidFunction>(submit2);
     if(std::strcmp(name,"vkGetBufferDeviceAddressKHR")==0)return reinterpret_cast<PFN_vkVoidFunction>(bufferAddress);
+    if(std::strcmp(name,"vkCreateDescriptorSetLayout")==0)return reinterpret_cast<PFN_vkVoidFunction>(createSetLayout);
+    if(std::strcmp(name,"vkDestroyDescriptorSetLayout")==0)return reinterpret_cast<PFN_vkVoidFunction>(destroySetLayout);
+    if(std::strcmp(name,"vkCreatePipelineLayout")==0)return reinterpret_cast<PFN_vkVoidFunction>(createPipelineLayout);
+    if(std::strcmp(name,"vkDestroyPipelineLayout")==0)return reinterpret_cast<PFN_vkVoidFunction>(destroyPipelineLayout);
+    if(std::strcmp(name,"vkGetDescriptorSetLayoutSizeEXT")==0)return reinterpret_cast<PFN_vkVoidFunction>(layoutSize);
+    if(std::strcmp(name,"vkGetDescriptorSetLayoutBindingOffsetEXT")==0)return reinterpret_cast<PFN_vkVoidFunction>(layoutOffset);
     return nullptr;
 }
 } // namespace
@@ -176,13 +195,32 @@ int main() try {
     require(d4GetBufferDeviceAddress(handle,&addressInfo)==0x40000,"Original BDA result changed");
     VkDescriptorBufferBindingInfoEXT binding{VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT};binding.address=0x40020;binding.usage=bi.usage;expectedBindingInfo=&binding;
     uint32_t index=0;VkDeviceSize offset=64;expectedIndices=&index;expectedOffsets=&offset;expectedLayout=object<VkPipelineLayout>(778);
+    d->CreateDescriptorSetLayout=createSetLayout;d->DestroyDescriptorSetLayout=destroySetLayout;d->CreatePipelineLayout=createPipelineLayout;d->DestroyPipelineLayout=destroyPipelineLayout;
+    d->GetDescriptorSetLayoutSizeEXT=layoutSize;d->GetDescriptorSetLayoutBindingOffsetEXT=layoutOffset;expectedSetLayout=object<VkDescriptorSetLayout>(780);
+    VkDescriptorSetLayoutBinding layoutBinding{7,VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,1,VK_SHADER_STAGE_VERTEX_BIT,nullptr};
+    VkDescriptorSetLayoutCreateInfo setInfo{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO};setInfo.bindingCount=1;setInfo.pBindings=&layoutBinding;expectedSetInfo=&setInfo;
+    VkDescriptorSetLayout setLayout{};require(d4CreateDescriptorSetLayout(handle,&setInfo,expectedAllocator,&setLayout)==VK_SUCCESS && setLayout==expectedSetLayout,"Set layout result changed");
+    VkDescriptorSetLayout layoutSets[]{setLayout,setLayout,setLayout};
+    VkPipelineLayoutCreateInfo layoutInfo{VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};layoutInfo.setLayoutCount=3;layoutInfo.pSetLayouts=layoutSets;expectedPipelineLayoutInfo=&layoutInfo;
+    require(d4GetDeviceProcAddr(handle,"vkCreateDescriptorSetLayout")==reinterpret_cast<PFN_vkVoidFunction>(d4CreateDescriptorSetLayout)
+        && d4GetDeviceProcAddr(handle,"vkGetDescriptorSetLayoutBindingOffsetEXT")==reinterpret_cast<PFN_vkVoidFunction>(d4GetDescriptorSetLayoutBindingOffsetEXT),"Layout hooks not advertised through downstream lookup");
+    VkPipelineLayout pl{};require(d4CreatePipelineLayout(handle,&layoutInfo,expectedAllocator,&pl)==VK_SUCCESS && pl==expectedLayout,"Pipeline layout result changed");
+    VkDeviceSize query=0;expectedLayoutQuery=&query;d4GetDescriptorSetLayoutSizeEXT(handle,setLayout,&query);require(query==128,"Layout size result changed");
+    d4GetDescriptorSetLayoutBindingOffsetEXT(handle,setLayout,7,&query);require(query==32,"Layout offset result changed");
     d4CmdBindDescriptorBuffersEXT(primary,1,&binding);d4CmdSetDescriptorBufferOffsetsEXT(primary,VK_PIPELINE_BIND_POINT_GRAPHICS,expectedLayout,2,1,&index,&offset);
     VkDescriptorSet set=object<VkDescriptorSet>(779);expectedSets=&set;d4CmdBindDescriptorSets(primary,VK_PIPELINE_BIND_POINT_COMPUTE,expectedLayout,1,1,&set,0,nullptr);
     auto& events=d->commands[primary].frame.resources;require(events.size()==3 && events[0].buffers[0].status==d4vr::frame::BufferRange::uniqueObserved && events[0].buffers[0].offset==32,"Layer did not resolve actual forwarded address");
+    require(events[1].layout && events[2].layout==events[1].layout && events[1].layout->sets[0]->size==128 && events[1].layout->sets[0]->bindings[0].offset==32,"Layout query identity missing from forwarding observation");
+    auto oldLayout=events[1].layout;d4DestroyDescriptorSetLayout(handle,setLayout,expectedAllocator);d4DestroyPipelineLayout(handle,pl,expectedAllocator);
+    layoutResult=VK_ERROR_OUT_OF_HOST_MEMORY;
+    require(d4CreateDescriptorSetLayout(handle,&setInfo,expectedAllocator,&setLayout)==layoutResult && d4CreatePipelineLayout(handle,&layoutInfo,expectedAllocator,&pl)==layoutResult,"Failed layout creation result changed");
+    d4CmdBindDescriptorSets(primary,VK_PIPELINE_BIND_POINT_COMPUTE,expectedLayout,1,1,&set,0,nullptr);
+    require(!events.back().layout && oldLayout->sets[0]->size==128,"Failed creation invented a layout or destroyed a retained snapshot");
+    require(setCreates==2 && setDestroys==1 && pipelineLayoutCreates==2 && pipelineLayoutDestroys==1 && sizeQueries==1 && offsetQueries==1,"Layout API not forwarded exactly once");
     d4DestroyBuffer(handle,created,expectedAllocator);bufferResult=VK_ERROR_OUT_OF_DEVICE_MEMORY;
     require(d4CreateBuffer(handle,&bi,expectedAllocator,&created)==bufferResult,"Failed buffer create result changed");d4CmdBindDescriptorBuffersEXT(primary,1,&binding);
     require(events.back().buffers[0].status==d4vr::frame::BufferRange::unknown,"Failed creation or destroyed handle remained addressable");
-    require(bufferCreates==2 && bufferDestroys==1 && addressQueries==1 && bufferBinds==2 && offsetBinds==1 && classicBinds==1,"Resource API was not forwarded exactly once");
+    require(bufferCreates==2 && bufferDestroys==1 && addressQueries==1 && bufferBinds==2 && offsetBinds==1 && classicBinds==2,"Resource API was not forwarded exactly once");
     d4DestroyDevice(handle,nullptr);
     std::cout << "Vulkan forwarding, DGC, aliases, secondary/reused command buffers, errors and reset lifetime: passed\n";
     return 0;

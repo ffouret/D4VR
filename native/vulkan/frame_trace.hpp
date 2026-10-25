@@ -3,6 +3,7 @@
 // are emitted. The caller serializes access with the layer's state mutex.
 #include <vulkan/vulkan.h>
 #include "buffer_addresses.hpp"
+#include "descriptor_layouts.hpp"
 #include <algorithm>
 #include <array>
 #include <cstdint>
@@ -42,6 +43,7 @@ struct Pipeline {
     bool graphics = false,library = false,linked = false,declarationsComplete = true,effectiveStatesKnown = false;
     uint32_t ownParts = 0;
     std::vector<StateDeclaration> declarations;
+    std::shared_ptr<const PipelineLayoutSnapshot> layout;
 };
 struct Image {
     uint64_t id = 0; VkFormat format{}; VkExtent3D extent{};
@@ -61,6 +63,7 @@ struct ResourceEvent {
     uint64_t pipeline=0;size_t operation=0;bool truncated=false;
     std::vector<BufferRange> buffers;std::vector<VkBufferUsageFlags> usages;
     std::vector<uint32_t> indices;std::vector<VkDeviceSize> offsets;
+    std::shared_ptr<const PipelineLayoutSnapshot> layout;
 };
 struct Operation {
     enum Kind { Rendering, LegacyRendering, Compute, Secondary } kind = Rendering;
@@ -108,7 +111,7 @@ class Tracker {
     uint64_t nextImage = 1, nextView = 1, nextPipeline = 1, nextCommand = 1, lastRequest = 0;
     size_t liveOps = 0, liveDraws = 0;
     size_t declarationWords = 0;
-    size_t liveResourceEvents=0;BufferAddresses bufferRanges;bool resourceFaulted=false;
+    size_t liveResourceEvents=0;BufferAddresses bufferRanges;DescriptorLayouts layouts;bool resourceFaulted=false;
     unsigned captureCount = 0;
     std::shared_ptr<Capture> current;
     std::vector<std::shared_ptr<Capture>> ready;
@@ -178,7 +181,7 @@ class Tracker {
     }
 public:
     void resourceFailure(Command* c=nullptr) noexcept {
-        resourceFaulted=true;bufferRanges.invalidate();
+        resourceFaulted=true;bufferRanges.invalidate();layouts.invalidate();
         if(c){liveResourceEvents-=c->resources.size();c->resources.clear();c->truncated=true;}
     }
     bool enabled = false, hasSwapchain = false;
@@ -210,15 +213,24 @@ public:
     void buffer(VkBuffer handle,const VkBufferCreateInfo& info) {if(enabled)bufferRanges.created(handle,info);}
     void removeBuffer(VkBuffer handle) {if(enabled)bufferRanges.destroyed(handle);}
     void bufferAddress(VkBuffer handle,VkDeviceAddress address) {if(enabled)bufferRanges.addressed(handle,address);}
+    void setLayout(VkDescriptorSetLayout h,const VkDescriptorSetLayoutCreateInfo& info) {if(enabled)layouts.created(h,info);}
+    void removeSetLayout(VkDescriptorSetLayout h) {if(enabled)layouts.destroyed(h);}
+    void setLayoutSize(VkDescriptorSetLayout h,VkDeviceSize bytes) {if(enabled)layouts.size(h,bytes);}
+    void setLayoutOffset(VkDescriptorSetLayout h,uint32_t binding,VkDeviceSize bytes) {if(enabled)layouts.offset(h,binding,bytes);}
+    void pipelineLayout(VkPipelineLayout h,const VkPipelineLayoutCreateInfo& info) {if(enabled)layouts.created(h,info);}
+    void removePipelineLayout(VkPipelineLayout h) {if(enabled)layouts.destroyed(h);}
     void descriptorBuffers(Command& c,uint32_t n,const VkDescriptorBufferBindingInfoEXT* infos) {
         auto e=resource(c,ResourceEvent::descriptorBuffers);if(!e)return;e->count=n;e->truncated=n>32 || (n && !infos);if(!infos)return;
         for(uint32_t i=0;i<std::min(n,32u);++i){auto r=bufferRanges.resolve(infos[i].address);if(infos[i].pNext)r.creationComplete=false;e->buffers.push_back(r);e->usages.push_back(infos[i].usage);}
     }
-    void descriptorOffsets(Command& c,VkPipelineBindPoint point,uint32_t first,uint32_t n,const uint32_t* indices,const VkDeviceSize* offsets) {
+    void descriptorOffsets(Command& c,VkPipelineBindPoint point,uint32_t first,uint32_t n,const uint32_t* indices,const VkDeviceSize* offsets,VkPipelineLayout layout=VK_NULL_HANDLE) {
         auto e=resource(c,ResourceEvent::descriptorOffsets);if(!e)return;e->point=point;e->first=first;e->count=n;e->truncated=n>32 || first>32 || n>32-std::min(first,32u) || (n && (!indices || !offsets));
+        e->layout=layouts.snapshot(layout);e->truncated |= !e->layout || !e->layout->complete;
         if(n && indices && offsets){e->indices.assign(indices,indices+std::min(n,32u));e->offsets.assign(offsets,offsets+std::min(n,32u));}
     }
-    void classicDescriptors(Command& c,VkPipelineBindPoint point,uint32_t first,uint32_t n) {auto e=resource(c,ResourceEvent::classicDescriptors);if(e){e->point=point;e->first=first;e->count=n;}}
+    void classicDescriptors(Command& c,VkPipelineBindPoint point,uint32_t first,uint32_t n,VkPipelineLayout layout=VK_NULL_HANDLE) {
+        auto e=resource(c,ResourceEvent::classicDescriptors);if(e){e->point=point;e->first=first;e->count=n;e->layout=layouts.snapshot(layout);e->truncated = !e->layout || !e->layout->complete;}
+    }
     void module(VkShaderModule handle, const VkShaderModuleCreateInfo& info) {
         if (enabled && modules.size() < resourceLimit && info.pCode && info.codeSize >= 20)
             modules[handle] = {VkShaderStageFlagBits(0), digest(info.pCode, info.codeSize), info.codeSize, true};
@@ -253,6 +265,7 @@ public:
         }
         result->library = (flags&VK_PIPELINE_CREATE_2_LIBRARY_BIT_KHR) != 0;
         if (!hasParts && !result->library && !result->linked) result->ownParts = 15;
+        if(result->ownParts&6)result->layout=layouts.snapshot(info.layout);
         // A link-only create does not own state. Its ignored pointers must not
         // be dereferenced, even if non-null. Preserve library blocks separately
         // instead of claiming their unfiltered union is the effective state.
@@ -277,7 +290,7 @@ public:
     }
     void computePipeline(VkPipeline handle, const VkComputePipelineCreateInfo& info) {
         if (!enabled || !handle || pipelines.size() >= resourceLimit) return;
-        auto result = std::make_shared<Pipeline>(); result->id = nextPipeline++; result->shaders.push_back(shader(info.stage)); pipelines[handle] = result;
+        auto result = std::make_shared<Pipeline>(); result->id = nextPipeline++; result->layout=layouts.snapshot(info.layout);result->shaders.push_back(shader(info.stage)); pipelines[handle] = result;
     }
     void removePipeline(VkPipeline handle) { if (enabled) pipelines.erase(handle); }
     void bind(Command& c, VkPipelineBindPoint point, VkPipeline handle) {
@@ -381,10 +394,15 @@ inline void writeAttachment(std::ostream& out, const Attachment& a) {
 }
 inline std::string serialize(const Capture& capture) {
     std::map<uint64_t, std::shared_ptr<const Pipeline>> pipelines;
+    std::map<uint64_t,std::shared_ptr<const PipelineLayoutSnapshot>> layouts;
+    std::map<uint64_t,std::shared_ptr<const SetLayoutSnapshot>> sets;
     for (auto& submit : capture.submissions) for (auto& command : submit.commands) for (auto& op : command.ops) {
         for (auto& item : op->draws) if (item.second.pipeline) pipelines[item.first] = item.second.pipeline;
         if (op->compute) pipelines[op->compute->id] = op->compute;
     }
+    auto layout=[&](auto& p){if(p){layouts[p->revision]=p;for(auto& s:p->sets)if(s)sets[s->revision]=s;}};
+    for(auto& item:pipelines)layout(item.second->layout);
+    for(auto& submit:capture.submissions)for(auto& c:submit.commands)for(auto& e:c.resources)layout(e.layout);
     std::ostringstream out; out << std::boolalpha;
     out << "{\"schema_version\":1,\"request_sequence\":" << capture.sequence << ",\"device\":" << capture.device
         << ",\"scope\":\"" << (capture.headless ? "single_submission" : "cpu_submission_interval_between_present_calls")
@@ -392,11 +410,25 @@ inline std::string serialize(const Capture& capture) {
         << ",\"truncated\":" << capture.truncated << ",\"shader_identifier_algorithm\":\"" << capture.identifierAlgorithm
         << "\",\"gpu_execution_order_known\":false,\"replayable_command_stream\":false"
         << ",\"descriptor_contents_captured\":false,\"resource_aliases_excluded\":false"
-        << ",\"legacy_attachment_details_supported\":false,\"game_stereo_submitted\":false,\"pipelines\":[";
+        << ",\"legacy_attachment_details_supported\":false,\"game_stereo_submitted\":false,\"descriptor_set_layouts\":[";
+    bool setComma=false;for(auto& item:sets){auto& s=*item.second;if(setComma)out<<',';setComma=true;
+        out<<"{\"id\":"<<s.id<<",\"snapshot_id\":"<<s.revision<<",\"flags\":"<<s.flags<<",\"definition_complete\":"<<s.complete
+            <<",\"binding_count\":"<<s.bindingCount<<",\"size_known\":"<<s.sizeKnown<<",\"size_bytes\":"<<s.size<<",\"bindings\":[";
+        for(size_t j=0;j<s.bindings.size();++j){auto& b=s.bindings[j];if(j)out<<',';out<<"{\"binding\":"<<b.binding<<",\"type\":"<<b.type<<",\"count\":"<<b.count
+            <<",\"stages\":"<<b.stages<<",\"flags\":"<<b.flags<<",\"immutable_samplers_unresolved\":"<<b.immutableSamplers
+            <<",\"offset_known\":"<<b.offsetKnown<<",\"offset_bytes\":"<<b.offset<<'}';}out<<"]}";
+    }
+    out<<"],\"pipeline_layouts\":[";bool layoutComma=false;for(auto& item:layouts){auto& p=*item.second;if(layoutComma)out<<',';layoutComma=true;
+        out<<"{\"id\":"<<p.id<<",\"snapshot_id\":"<<p.revision<<",\"flags\":"<<p.flags<<",\"definition_complete\":"<<p.complete
+            <<",\"set_count\":"<<p.setCount<<",\"push_count\":"<<p.pushCount<<",\"sets\":[";
+        for(size_t j=0;j<p.sets.size();++j){if(j)out<<',';out<<"{\"null_slot\":"<<p.nullSlots[j]<<",\"snapshot_id\":"<<(p.sets[j]?p.sets[j]->revision:0)<<'}';}
+        out<<"],\"push_ranges\":[";for(size_t j=0;j<p.pushes.size();++j){auto& r=p.pushes[j];if(j)out<<',';out<<"{\"stages\":"<<r.stageFlags<<",\"offset\":"<<r.offset<<",\"size\":"<<r.size<<'}';}out<<"]}";
+    }
+    out<<"],\"pipelines\":[";
     bool comma = false;
     for (auto& item : pipelines) {
         auto& p = *item.second; if (comma) out << ','; comma = true;
-        out << "{\"id\":" << p.id << ",\"missing_libraries\":" << p.missingLibraries << ",\"shaders\":[";
+        out << "{\"id\":" << p.id << ",\"missing_libraries\":" << p.missingLibraries << ",\"layout_snapshot_id\":"<<(p.layout?p.layout->revision:0)<<",\"shaders\":[";
         for (size_t j = 0; j < p.shaders.size(); ++j) {
             auto& s = p.shaders[j]; if (j) out << ',';
             out << "{\"stage\":" << s.stage << ",\"known\":" << s.known << ",\"code_bytes\":" << s.bytes << ",\"fnv1a64\":\"" << hex(s.fnv)
@@ -432,7 +464,8 @@ inline std::string serialize(const Capture& capture) {
                 static const char* names[]{"descriptor_buffers","descriptor_offsets","classic_descriptors","draw","dispatch"};
                 out<<"{\"kind\":\""<<names[e.kind]<<"\",\"observed_event_index\":"<<k<<",\"operation_count\":"<<e.operation
                     <<",\"truncated\":"<<e.truncated<<",\"pipeline_id\":"<<e.pipeline<<",\"draw_kind\":"<<e.drawKind
-                    <<",\"bind_point\":"<<e.point<<",\"first_set\":"<<e.first<<",\"count\":"<<e.count<<",\"layout_identity_captured\":false,\"bindings\":[";
+                    <<",\"bind_point\":"<<e.point<<",\"first_set\":"<<e.first<<",\"count\":"<<e.count<<",\"layout_identity_captured\":"<<bool(e.layout)
+                    <<",\"layout_snapshot_id\":"<<(e.layout?e.layout->revision:0)<<",\"bindings\":[";
                 for(size_t b=0;b<e.buffers.size();++b){const auto& r=e.buffers[b];if(b)out<<',';
                     out<<"{\"status\":"<<r.status<<",\"buffer_id\":"<<r.id<<",\"size\":"<<r.size<<",\"buffer_usage\":"<<r.usage
                         <<",\"binding_usage\":"<<e.usages[b]<<",\"address_offset\":"<<r.offset<<",\"remaining_bytes\":"<<r.remaining

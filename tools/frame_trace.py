@@ -17,11 +17,62 @@ DRAW_NAMES = ('draw', 'indexed', 'indirect', 'indexed_indirect', 'indirect_count
               'indexed_indirect_count', 'generated_ext', 'generated_nv')
 ADDRESS_STATUS=('unknown','unique_observed_range','ambiguous','invalid','incomplete_registry')
 
-def resource_event(event: dict,index: int,operations: int,truncated: bool) -> None:
+def unsigned(value,bits=64):
+    return type(value) is int and 0<=value<2**bits
+
+
+def layout_tables(data: dict) -> dict:
+    sets=data.get('descriptor_set_layouts',[]);pipelines=data.get('pipeline_layouts',[])
+    if len(sets)+len(pipelines)>65536:raise ValueError('Layout snapshot budget exceeded')
+    seen=set();set_ids={};pipeline_ids={};words=0
+    for rows,dest in ((sets,set_ids),(pipelines,pipeline_ids)):
+        for row in rows:
+            sid=row.get('snapshot_id')
+            if (not unsigned(sid) or not sid or sid in seen or not unsigned(row.get('id')) or not row['id']
+                    or not unsigned(row.get('flags'),32) or type(row.get('definition_complete')) is not bool):
+                raise ValueError('Invalid or duplicate layout identity')
+            seen.add(sid);dest[sid]=row
+    for s in sets:
+        bindings=s['bindings'];words+=16+len(bindings)*8
+        if (len(bindings)>4096 or not unsigned(s['binding_count'],32) or type(s['size_known']) is not bool or not unsigned(s['size_bytes'])
+                or (not s['size_known'] and s['size_bytes']) or len(bindings)>s['binding_count']):
+            raise ValueError('Invalid set layout bounds')
+        numbers=[]
+        for b in bindings:
+            if (any(not unsigned(b[k],32) for k in ('binding','type','count','stages','flags')) or not unsigned(b['offset_bytes'])
+                    or type(b['offset_known']) is not bool or type(b['immutable_samplers_unresolved']) is not bool
+                    or (not b['offset_known'] and b['offset_bytes'])):
+                raise ValueError('Invalid descriptor layout binding')
+            numbers.append(b['binding'])
+        if numbers!=sorted(numbers):raise ValueError('Unsorted descriptor layout bindings')
+        if s['definition_complete'] and (len(bindings)!=s['binding_count'] or len(set(numbers))!=len(numbers) or any(b['immutable_samplers_unresolved'] for b in bindings)):
+            raise ValueError('Incomplete set layout claims complete definition')
+    for p in pipelines:
+        slots=p['sets'];push=p['push_ranges'];words+=16+len(slots)*2+len(push)*3
+        if (len(slots)>32 or len(push)>32 or not unsigned(p['set_count'],32) or not unsigned(p['push_count'],32)
+                or len(slots)>p['set_count'] or len(push)>p['push_count']):
+            raise ValueError('Pipeline layout array budget exceeded')
+        for slot in slots:
+            sid=slot['snapshot_id']
+            if (not unsigned(sid) or type(slot['null_slot']) is not bool or (slot['null_slot'] and sid) or (sid and sid not in set_ids)):
+                raise ValueError('Invalid set layout reference')
+        if any(any(not unsigned(r[k],32) for k in ('stages','offset','size')) for r in push):raise ValueError('Invalid push range')
+        if p['definition_complete'] and (len(slots)!=p['set_count'] or len(push)!=p['push_count']
+                or any(not slot['null_slot'] and (not slot['snapshot_id'] or not set_ids[slot['snapshot_id']]['definition_complete']) for slot in slots)):
+            raise ValueError('Incomplete pipeline layout claims complete definition')
+    if words>1024*1024:raise ValueError('Layout word budget exceeded')
+    return pipeline_ids
+
+
+def resource_event(event: dict,index: int,operations: int,truncated: bool,layouts: dict) -> None:
     kinds=('descriptor_buffers','descriptor_offsets','classic_descriptors','draw','dispatch')
     if (event.get('kind') not in kinds or type(event.get('observed_event_index')) is not int or event.get('observed_event_index')!=index
-            or event.get('layout_identity_captured') is not False or type(event.get('truncated')) is not bool):
-        raise ValueError('Invalid resource observation or unsupported layout identity')
+            or type(event.get('layout_identity_captured')) is not bool or type(event.get('truncated')) is not bool):
+        raise ValueError('Invalid resource observation')
+    sid=event.get('layout_snapshot_id',0)
+    if (not unsigned(sid) or bool(sid)!=event['layout_identity_captured'] or (sid and (sid not in layouts
+            or event['kind'] not in ('descriptor_offsets','classic_descriptors') or (not layouts[sid]['definition_complete'] and not event['truncated'])))):
+        raise ValueError('Invalid resource layout identity')
     for key in ('operation_count','pipeline_id','draw_kind','bind_point','first_set','count'):
         if type(event.get(key)) is not int or not 0<=event[key]<2**64:
             raise ValueError('Invalid resource observation integer')
@@ -87,6 +138,7 @@ def read_frame(path: Path) -> dict:
         raise ValueError('Resource contents and alias exclusion are not part of this schema')
     if data.get('scope') not in ('single_submission', 'cpu_submission_interval_between_present_calls'):
         raise ValueError('Unknown capture scope')
+    layouts=layout_tables(data)
     algorithm = data.get('shader_identifier_algorithm', '')
     if algorithm and not re.fullmatch('[0-9a-f]{32}', algorithm):
         raise ValueError('Invalid shader identifier algorithm')
@@ -94,6 +146,8 @@ def read_frame(path: Path) -> dict:
     if len(pipelines) > 65536 or len({p['id'] for p in pipelines}) != len(pipelines):
         raise ValueError('Duplicate pipelines or pipeline budget exceeded')
     for p in pipelines:
+        sid=p.get('layout_snapshot_id',0)
+        if not unsigned(sid) or (sid and sid not in layouts):raise ValueError('Invalid shader pipeline layout reference')
         state = p.get('pipeline_state')
         if state is not None:
             blocks = state['declarations']
@@ -131,7 +185,7 @@ def read_frame(path: Path) -> dict:
             operations += len(command['operations'])
             events=command.get('resource_events',[])
             if len(events)>2048:raise ValueError('Resource event budget exceeded')
-            for index,event in enumerate(events):resource_event(event,index,len(command['operations']),command['truncated'])
+            for index,event in enumerate(events):resource_event(event,index,len(command['operations']),command['truncated'],layouts)
             for op in command['operations']:
                 if len(op.get('colors', [])) > 16 or len(op.get('draws', [])) > 512:
                     raise ValueError('Pass metadata budget exceeded')
@@ -227,7 +281,8 @@ def summarize(data: dict, correlation: dict | None = None) -> dict:
     image_writes = defaultdict(list)
     truncated = bool(data['truncated'])
     missing_commands = unknown_pipeline_commands = failed = 0
-    resource_counts=Counter();address_counts=Counter();buffer_ids=set()
+    resource_counts=Counter();address_counts=Counter();buffer_ids=set();layout_counts=Counter();layout_ids=set();set_ids=set();queried_sizes=set();queried_offsets=set()
+    layouts={p['snapshot_id']:p for p in data.get('pipeline_layouts',[])};sets={s['snapshot_id']:s for s in data.get('descriptor_set_layouts',[])}
     for si, submit in enumerate(data['submissions']):
         if not submit['complete'] or submit['result'] != 0:
             failed += 1
@@ -237,6 +292,15 @@ def summarize(data: dict, correlation: dict | None = None) -> dict:
             truncated |= bool(command['truncated'])
             for event in command.get('resource_events',[]):
                 resource_counts[event['kind']]+=1;truncated|=event['truncated']
+                p=layouts.get(event.get('layout_snapshot_id',0))
+                if p:
+                    layout_counts[event['kind']]+=1;layout_ids.add(p['id'])
+                    for slot in p['sets']:
+                        s=sets.get(slot['snapshot_id'])
+                        if s:
+                            set_ids.add(s['id'])
+                            if s['size_known']:queried_sizes.add(s['id'])
+                            queried_offsets.update((s['id'],b['binding']) for b in s['bindings'] if b['offset_known'])
                 for b in event['bindings']:
                     address_counts[ADDRESS_STATUS[b['status']]]+=1
                     if b['buffer_id']:buffer_ids.add(b['buffer_id'])
@@ -276,6 +340,8 @@ def summarize(data: dict, correlation: dict | None = None) -> dict:
               'operation_counts': dict(operations), 'draw_command_counts': dict(draw_counts),
               'resource_observation_counts':dict(resource_counts),'buffer_address_status_counts':dict(address_counts),'observed_descriptor_buffer_ids':sorted(buffer_ids),
               'descriptor_contents_captured':False,'resource_aliases_excluded':False,
+              'layout_observation_counts':dict(layout_counts),'observed_pipeline_layout_ids':sorted(layout_ids),'observed_set_layout_ids':sorted(set_ids),
+              'descriptor_layout_query_counts':{'sizes':len(queried_sizes),'binding_offsets':len(queried_offsets)},
               'truncated': truncated, 'missing_command_buffers': missing_commands,
               'draw_commands_with_unknown_pipeline': unknown_pipeline_commands,
               'pipeline_count': len(pipeline_ids), 'passes': passes,

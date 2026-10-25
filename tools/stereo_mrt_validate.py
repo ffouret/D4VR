@@ -207,6 +207,14 @@ def run(args) -> dict:
                             or len(summary['observed_descriptor_buffer_ids'])!=1 or observations.get('descriptor_offsets',0)<8
                             or not observations.get('classic_descriptors') or not observations.get('dispatch')):
                         raise ValueError('Descriptor buffer range/offset observations were not captured from the actual fixture')
+                    if (summary['layout_observation_counts']!={'descriptor_offsets':observations['descriptor_offsets'],'classic_descriptors':4}
+                            or len(summary['observed_pipeline_layout_ids'])!=2 or len(summary['observed_set_layout_ids'])!=8
+                            or summary['descriptor_layout_query_counts']!={'sizes':1,'binding_offsets':2} or summary['truncated']):
+                        raise ValueError('Descriptor layout identities/driver queries were not captured completely')
+                    queried=[s for s in data['descriptor_set_layouts'] if s['bindings'] and all(b['offset_known'] for b in s['bindings'])]
+                    if (len(queried)!=1 or queried[0]['flags']!=16 or not queried[0]['size_known'] or not queried[0]['size_bytes']
+                            or [(b['binding'],b['type'],b['count'],b['stages']) for b in queried[0]['bindings']]!=[(0,6,1,33),(1,6,1,33)]):
+                        raise ValueError('Observed descriptor layout definition differs from the fixture')
                 states = summary['pipeline_state_declarations']
                 if not states or any(not p['declarations_complete'] for p in states):
                     raise ValueError('Fixture pipeline declarations were not captured completely')
@@ -226,6 +234,10 @@ def run(args) -> dict:
                     raise ValueError('Depth clear bits do not match original fixture')
                 metadata = {'bounded_capture_verified':True,'monolithic_pipeline_count':len(states)-linked,'linked_pipeline_count':linked,'largest_dynamic_declaration':largest,
                             'clear_value_sets':len(clears),'graphics_state_snapshot_complete':False}
+                if args.descriptor_buffers:
+                    metadata.update({k:summary[k] for k in ('resource_observation_counts','buffer_address_status_counts','layout_observation_counts',
+                        'descriptor_layout_query_counts')})
+                    metadata.update(observed_pipeline_layouts=len(summary['observed_pipeline_layout_ids']),observed_set_layouts=len(summary['observed_set_layout_ids']))
         paired=None
         if args.paired_pipelines:
             trace=vulkan_trace.report(metadata_directory)['process_traces'][0]

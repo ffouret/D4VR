@@ -25,6 +25,42 @@ def sample():
 
 
 class Frames(unittest.TestCase):
+    def test_layout_snapshots_link_events_and_pipelines_with_owned_query_metadata(self):
+        data=sample();s={'id':20,'snapshot_id':1,'flags':16,'definition_complete':True,'binding_count':1,'size_known':True,'size_bytes':128,
+            'bindings':[{'binding':7,'type':6,'count':1,'stages':1,'flags':0,'immutable_samplers_unresolved':False,'offset_known':True,'offset_bytes':32}]}
+        layout={'id':21,'snapshot_id':2,'flags':0,'definition_complete':True,'set_count':1,'push_count':1,
+            'sets':[{'null_slot':False,'snapshot_id':1}],'push_ranges':[{'stages':1,'offset':0,'size':16}]}
+        data['descriptor_set_layouts']=[s];data['pipeline_layouts']=[layout];data['pipelines'][0]['layout_snapshot_id']=2
+        event={'kind':'descriptor_offsets','observed_event_index':0,'operation_count':0,'truncated':False,'pipeline_id':0,'draw_kind':0,
+            'bind_point':0,'first_set':0,'count':1,'layout_identity_captured':True,'layout_snapshot_id':2,'indices':[0],'offsets':[128],'bindings':[]}
+        data['submissions'][0]['commands'][0]['resource_events']=[event]
+        with tempfile.TemporaryDirectory() as directory:
+            p=Path(directory)/'frame.json';p.write_text(json.dumps(data));summary=frame_trace.summarize(frame_trace.read_frame(p))
+            self.assertEqual(summary['observed_pipeline_layout_ids'],[21]);self.assertEqual(summary['observed_set_layout_ids'],[20])
+            self.assertEqual(summary['layout_observation_counts'],{'descriptor_offsets':1})
+            self.assertEqual(summary['descriptor_layout_query_counts'],{'sizes':1,'binding_offsets':1})
+            for obj,key,value in [(s,'snapshot_id',2),(s,'binding_count',0),(s,'size_known',False),(s['bindings'][0],'immutable_samplers_unresolved',True),
+                    (s['bindings'][0],'offset_known',False),(layout['sets'][0],'snapshot_id',3),(layout['sets'][0],'null_slot',True),
+                    (event,'layout_snapshot_id',9),(event,'layout_identity_captured',False),(data['pipelines'][0],'layout_snapshot_id',9)]:
+                old=obj[key];obj[key]=value;p.write_text(json.dumps(data))
+                with self.assertRaises(ValueError):frame_trace.read_frame(p)
+                obj[key]=old
+            s['definition_complete']=False;layout['definition_complete']=False;p.write_text(json.dumps(data))
+            with self.assertRaises(ValueError):frame_trace.read_frame(p)
+            event['truncated']=True;p.write_text(json.dumps(data));frame_trace.read_frame(p)
+            data['submissions'][0]['result']=-4;self.assertEqual(frame_trace.summarize(data)['observed_set_layout_ids'],[])
+
+    def test_null_and_unobserved_layout_slots_are_distinct_and_arrays_are_bounded(self):
+        data=sample();layout={'id':1,'snapshot_id':1,'flags':2,'definition_complete':True,'set_count':1,'push_count':0,
+            'sets':[{'null_slot':True,'snapshot_id':0}],'push_ranges':[]};data['pipeline_layouts']=[layout]
+        with tempfile.TemporaryDirectory() as directory:
+            p=Path(directory)/'frame.json';p.write_text(json.dumps(data));frame_trace.read_frame(p)
+            layout['sets'][0]['null_slot']=False;p.write_text(json.dumps(data))
+            with self.assertRaises(ValueError):frame_trace.read_frame(p)
+            layout['definition_complete']=False;p.write_text(json.dumps(data));frame_trace.read_frame(p)
+            layout['sets']*=33;layout['set_count']=33;p.write_text(json.dumps(data))
+            with self.assertRaises(ValueError):frame_trace.read_frame(p)
+
     def test_buffer_observations_preserve_bounds_without_admitting_aliases(self):
         data=sample();event={'kind':'descriptor_buffers','observed_event_index':0,'operation_count':0,'truncated':False,'pipeline_id':0,'draw_kind':0,
             'bind_point':0,'first_set':0,'count':1,'layout_identity_captured':False,'indices':[],'offsets':[],

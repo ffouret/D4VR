@@ -124,17 +124,51 @@ int main() try {
     require(ranges.resolve(UINT64_MAX-3).status==BufferRange::unknown,"Overflowing address range wrapped");
     BufferAddresses capped(1);capped.created(b1,bi);capped.addressed(b1,0x10000);capped.created(b2,bi);
     require(capped.resolve(0x10000).status==BufferRange::incompleteRegistry,"Dropped range left a falsely complete registry");
+    // Layout identity is generation based. Driver queries are owned revisions,
+    // including queries made after pipeline layout creation.
+    DescriptorLayouts layouts;auto sh=handle<VkDescriptorSetLayout>(200);auto ph=handle<VkPipelineLayout>(201);
+    VkDescriptorSetLayoutBinding bindings[]{{9,VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,2,VK_SHADER_STAGE_COMPUTE_BIT,reinterpret_cast<const VkSampler*>(1)},
+        {2,VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,1,VK_SHADER_STAGE_VERTEX_BIT,nullptr}};
+    VkDescriptorBindingFlags bindingFlags[]{VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT,0};
+    VkDescriptorSetLayoutBindingFlagsCreateInfo bindingFlagInfo{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO};
+    bindingFlagInfo.bindingCount=2;bindingFlagInfo.pBindingFlags=bindingFlags;
+    VkDescriptorSetLayoutCreateInfo si{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO};si.bindingCount=2;si.pBindings=bindings;si.pNext=&bindingFlagInfo;
+    layouts.created(sh,si);VkPushConstantRange push{VK_SHADER_STAGE_VERTEX_BIT,0,16};
+    VkPipelineLayoutCreateInfo pi{VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};pi.setLayoutCount=1;pi.pSetLayouts=&sh;pi.pushConstantRangeCount=1;pi.pPushConstantRanges=&push;
+    layouts.created(ph,pi);auto before=layouts.snapshot(ph);bindings[0].descriptorCount=999;bindingFlags[0]=0;push.size=32;
+    require(before && before->complete && before->sets[0]->bindings[0].binding==2 && before->sets[0]->bindings[1].count==2
+        && before->sets[0]->bindings[1].flags==VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT && before->pushes[0].size==16,"Layout arrays/ignored immutable pointer were not owned correctly");
+    layouts.size(sh,256);layouts.offset(sh,9,64);auto queried=layouts.snapshot(ph);
+    require(queried!=before && queried->id==before->id && queried->sets[0]->id==before->sets[0]->id && queried->sets[0]->sizeKnown && queried->sets[0]->size==256
+        && queried->sets[0]->bindings[1].offsetKnown && queried->sets[0]->bindings[1].offset==64 && !before->sets[0]->sizeKnown,"Late query mutated a frozen layout snapshot");
+    layouts.size(sh,256);layouts.offset(sh,9,64);require(layouts.snapshot(ph)==queried,"Unchanged driver query created another revision");
+    layouts.destroyed(sh);layouts.created(sh,si);require(layouts.snapshot(ph)==queried,"Recycled set layout replaced a pipeline's retained definition");
+    layouts.destroyed(ph);layouts.created(ph,pi);auto recycled=layouts.snapshot(ph);
+    require(recycled->id!=queried->id && recycled->sets[0]->id!=queried->sets[0]->id,"Layout handle generations conflated");
+    si.pNext=&foreign;layouts.created(sh,si);layouts.created(ph,pi);require(!layouts.snapshot(ph)->complete,"Unknown set layout chain reported complete");
+    si.pNext=nullptr;bindings[0].descriptorType=VK_DESCRIPTOR_TYPE_SAMPLER;layouts.created(sh,si);layouts.created(ph,pi);
+    require(!layouts.snapshot(ph)->complete && layouts.snapshot(ph)->sets[0]->bindings[1].immutableSamplers,"Unobserved immutable samplers admitted");
+    bindings[0].descriptorType=VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;si.bindingCount=4097;si.pBindings=nullptr;layouts.created(sh,si);layouts.created(ph,pi);
+    require(!layouts.snapshot(ph)->complete && layouts.snapshot(ph)->sets[0]->bindings.empty(),"Missing/excessive layout array reported complete");
+    VkDescriptorSetLayout nullSet=VK_NULL_HANDLE;pi.pSetLayouts=&nullSet;layouts.created(ph,pi);
+    require(layouts.snapshot(ph)->nullSlots[0] && !layouts.snapshot(ph)->sets[0],"Explicit null layout slot invented an object");
+    nullSet=handle<VkDescriptorSetLayout>(999);layouts.created(ph,pi);require(!layouts.snapshot(ph)->complete && !layouts.snapshot(ph)->nullSlots[0],"Unknown layout confused with an explicit null slot");
+    DescriptorLayouts layoutBudget(1);layoutBudget.created(ph,pi);require(!layoutBudget.valid() && !layoutBudget.snapshot(ph),"Layout budget failure did not close observation");
+    si.bindingCount=2;si.pBindings=bindings;pi.pSetLayouts=&sh;push.size=16;
     Tracker resources(true);auto rc=resources.command();resources.buffer(b1,bi);resources.bufferAddress(b1,0x10000);
+    resources.setLayout(sh,si);resources.pipelineLayout(ph,pi);resources.setLayoutSize(sh,256);resources.setLayoutOffset(sh,9,64);
     VkDescriptorBufferBindingInfoEXT db{VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT};db.address=0x10080;db.usage=VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;
     resources.descriptorBuffers(rc,1,&db);uint32_t idx=0;VkDeviceSize offset=256;
-    resources.descriptorOffsets(rc,VK_PIPELINE_BIND_POINT_COMPUTE,2,1,&idx,&offset);db.address=0;offset=999;idx=7;
-    resources.classicDescriptors(rc,VK_PIPELINE_BIND_POINT_GRAPHICS,0,1);resources.dispatch(rc,1,2,3,false);
+    resources.descriptorOffsets(rc,VK_PIPELINE_BIND_POINT_COMPUTE,0,1,&idx,&offset,ph);db.address=0;offset=999;idx=7;
+    resources.classicDescriptors(rc,VK_PIPELINE_BIND_POINT_GRAPHICS,0,1,ph);resources.dispatch(rc,1,2,3,false);
     require(rc.resources.size()==4 && rc.resources[0].buffers[0].offset==128 && rc.resources[1].offsets[0]==256 && rc.resources[1].indices[0]==0,"Transient resource arrays were borrowed");
     auto resourceTicket=resources.submit(1,0,0,0,{primaryHandle},[&](auto)->const Command*{return &rc;});resources.submitted(resourceTicket,VK_SUCCESS);
     auto resourceReady=resources.takeReady();resources.reset(rc);resources.removeBuffer(b1);resources.buffer(b1,bi);resources.bufferAddress(b1,0x30000);
+    resources.removeSetLayout(sh);resources.removePipelineLayout(ph);
     auto resourceJson=serialize(*resourceReady[0]);
     require(resourceJson.find("\"address_offset\":128")!=std::string::npos && resourceJson.find("\"descriptor_contents_captured\":false")!=std::string::npos
-        && resourceJson.find("\"resource_aliases_excluded\":false")!=std::string::npos,"Resource capture lost lifetime or invented replay admission");
+        && resourceJson.find("\"resource_aliases_excluded\":false")!=std::string::npos && resourceJson.find("\"layout_identity_captured\":true")!=std::string::npos
+        && resourceJson.find("\"offset_bytes\":64")!=std::string::npos,"Resource capture lost lifetime or invented replay admission");
     for(unsigned i=0;i<2049;++i)resources.classicDescriptors(rc,VK_PIPELINE_BIND_POINT_GRAPHICS,0,1);
     require(rc.truncated && rc.resources.size()==2048,"Resource event budget ignored");resources.reset(rc);resources.classicDescriptors(rc,VK_PIPELINE_BIND_POINT_GRAPHICS,0,1);
     require(!rc.truncated && rc.resources.size()==1,"Resource event reset did not recover budget");
