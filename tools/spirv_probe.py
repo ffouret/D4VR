@@ -258,7 +258,12 @@ def instrument(data: bytes, descriptor_set: int, binding: int, first_row: int, s
     return module.binary()
 
 
-def build(original: Path, helper: Path, output: Path, tools: Path, descriptor_set: int, binding: int, first_row: int, secondary_binding: int = 1, secondary_row: int = 56, geometry: bool = False, stereo: bool = False):
+def build(original: Path, helper: Path, output: Path, tools: Path, descriptor_set: int, binding: int, first_row: int, secondary_binding: int = 1, secondary_row: int = 56, geometry: bool = False, stereo: bool = False, helper_no_telemetry: bool = False):
+    if helper_no_telemetry:
+        if not stereo:raise ValueError('Telemetry-free helper requires stereo mode')
+        from stereo_helper import verify
+        subprocess.run([str(tools / 'spirv-val'), '--target-env', 'vulkan1.2', str(helper)], check=True, capture_output=True)
+        verify(helper.read_bytes())
     output.parent.mkdir(parents=True, exist_ok=True)
     scratch = output.parent / "intermediate" / output.stem
     scratch.mkdir(parents=True, exist_ok=True)
@@ -273,6 +278,9 @@ def build(original: Path, helper: Path, output: Path, tools: Path, descriptor_se
         module = Module(output.read_bytes())
         index = next(i for i, (op, _) in enumerate(module.instructions) if op in (71, 72) or 19 <= op <= 39)
         module.instructions.insert(index, (330, string_words("D4VR_STEREO_ABI_1")))
+        if helper_no_telemetry:
+            from stereo_helper import MARKER
+            module.instructions.insert(index+1, (330, string_words(MARKER)))
         output.write_bytes(module.binary())
     subprocess.run([str(tools / "spirv-val"), "--target-env", "vulkan1.2", str(output)], check=True, capture_output=True)
     return output
@@ -291,8 +299,9 @@ def main():
     parser.add_argument("--secondary-row", type=int, default=56)
     parser.add_argument("--geometry", action="store_true", help="Apply the diagnostic vertex displacement helper")
     parser.add_argument("--stereo", action="store_true", help="Apply the per-eye transform helper controlled by specialization ID 4")
+    parser.add_argument("--helper-no-telemetry", action="store_true", help="Require a validated telemetry-free stereo helper; does not audit the original shader")
     args = parser.parse_args()
-    print(build(args.original, args.helper, args.output, args.tools, args.descriptor_set, args.binding, args.first_row, args.secondary_binding, args.secondary_row, args.geometry, args.stereo))
+    print(build(args.original, args.helper, args.output, args.tools, args.descriptor_set, args.binding, args.first_row, args.secondary_binding, args.secondary_row, args.geometry, args.stereo, args.helper_no_telemetry))
 
 
 if __name__ == "__main__":

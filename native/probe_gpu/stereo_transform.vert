@@ -1,16 +1,24 @@
 #version 460
 #extension GL_EXT_buffer_reference : require
 #extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
+#ifndef D4VR_DIAGNOSTIC_TELEMETRY
+#define D4VR_DIAGNOSTIC_TELEMETRY 1
+#endif
+#if D4VR_DIAGNOSTIC_TELEMETRY != 0 && D4VR_DIAGNOSTIC_TELEMETRY != 1
+#error D4VR_DIAGNOSTIC_TELEMETRY must be zero or one
+#endif
+#if D4VR_DIAGNOSTIC_TELEMETRY
 layout(constant_id = 0) const uint64_t shader_id = 0ul;
 layout(constant_id = 1) const uint64_t control_address = 0ul;
 layout(constant_id = 2) const uint64_t ring_address = 0ul;
 layout(constant_id = 3) const uint ring_words = 1u;
-layout(constant_id = 4) const uint64_t eye_state_address = 0ul;
 layout(buffer_reference, std430, buffer_reference_align = 4) coherent buffer Counters {
     uint allocated_words;
     uint sampled_invocations;
 };
 layout(buffer_reference, std430, buffer_reference_align = 4) coherent buffer DataRing { uint words[]; };
+#endif
+layout(constant_id = 4) const uint64_t eye_state_address = 0ul;
 layout(buffer_reference, std430, buffer_reference_align = 16) readonly buffer EyeState {
     uvec4 header;
     uvec4 identity;
@@ -19,6 +27,7 @@ layout(buffer_reference, std430, buffer_reference_align = 16) readonly buffer Ey
     vec4 source_gate;
 };
 
+#if D4VR_DIAGNOSTIC_TELEMETRY
 void d4vr_record_stereo(uint vertex_id, vec4 before, vec4 after, vec4 projection, vec4 status)
 {
     if (vertex_id != 0u || control_address == 0ul || ring_address == 0ul || ring_words < 64u)
@@ -49,6 +58,7 @@ void d4vr_record_stereo(uint vertex_id, vec4 before, vec4 after, vec4 projection
         memoryBarrierBuffer(); stream.words[offset & mask] = 0xdeadca7cu; memoryBarrierBuffer();
     }
 }
+#endif
 
 // Recover the game's view-space homogeneous position using its current
 // projection, including jitter and variable depth coefficients. Transform the
@@ -88,8 +98,10 @@ void d4vr_stereo(uint vertex_id, vec4 p0, vec4 p1, vec4 p2, vec4 p3,
             applied = true;
         }
     }
+#if D4VR_DIAGNOSTIC_TELEMETRY
     d4vr_record_stereo(vertex_id, before, clip_position, vec4(p0.x, p1.y, p2.z, p2.w),
                        vec4(applied ? 1.0 : 0.0, float(eye), float(sequence), 1.0));
+#endif
 }
 
 void main()

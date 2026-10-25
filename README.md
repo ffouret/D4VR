@@ -10,6 +10,12 @@ répond pas à cet objectif.
 
 ## État du projet
 
+Le [helper stéréo peut maintenant être compilé sans télémétrie](docs/STEREO_HELPER.md).
+Ses écritures, atomiques et barrières de diagnostic sont alors absentes du
+SPIR-V. Les essais GPU retrouvent les mêmes références géométriques pour les
+deux yeux. Cela simplifie l'audit du helper ; les effets du shader original et
+les ressources des passes du jeu restent à vérifier avant leur reprise.
+
 Le [modèle des effets GLSL](docs/GLSL_EFFECTS.md) classe maintenant les opérations
 étendues des anciens candidats et détecte les écritures par pointeur de
 Modf/Frexp. Les inconnus restent bloquants. Cette analyse statique n'autorise

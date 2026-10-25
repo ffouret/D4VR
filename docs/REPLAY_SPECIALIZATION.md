@@ -15,9 +15,11 @@ L'appel original et les autres stages conservent leurs spécialisations.
 Le helper retourne avant ses atomiques et stores lorsque l'une des adresses
 est nulle ou que le ring contient moins de 64 mots. Les trois conditions sont
 imposées explicitement, même si la création source fournit des adresses actives.
-Le module SPIR-V n'est pas réécrit ; ses instructions de télémétrie restent
+Le module SPIR-V de diagnostic n'est pas réécrit ; ses instructions de télémétrie restent
 présentes. Le [recensement statique](SHADER_EFFECTS.md), couvrant aussi le code
 inaccessible, continue donc de les relever.
+Une [variante compilée sans télémétrie](STEREO_HELPER.md) est désormais
+disponible séparément ; la politique de spécialisation privée reste appliquée.
 
 Les autres entrées, dont l'identifiant de shader 0 et les constantes du shader
 original, sont conservées avec leurs octets. Les constantes remplacées sont

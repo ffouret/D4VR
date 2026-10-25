@@ -18,6 +18,9 @@ def run(args) -> dict:
     inputs = [args.fixture,args.original,args.instrumented,args.fragment]
     if args.compute:
         inputs.append(args.compute)
+    if args.telemetry_control_shader:
+        if not args.replay_telemetry:raise ValueError('Separate diagnostic shader requires the telemetry proof')
+        inputs.append(args.telemetry_control_shader)
     if args.descriptor_buffers and (not args.recorded_replay or not args.compute):
         raise ValueError('Descriptor buffers require recorded replay and the compute echo shader')
     if args.dynamic_state and not args.recorded_replay:
@@ -98,6 +101,8 @@ def run(args) -> dict:
             command.append('--static-state')
         if args.replay_telemetry:
             command.append('--replay-telemetry')
+        if args.telemetry_control_shader:
+            command += ['--telemetry-control-shader',str(args.telemetry_control_shader.resolve())]
         if args.pipeline_recipes:
             command.append('--pipeline-recipes')
         if args.library_pipelines:
@@ -164,7 +169,8 @@ def run(args) -> dict:
                 raise ValueError(f'{name}: complete empty static-state contract was not verified')
             if args.replay_telemetry and (proof.get('replay_telemetry_disabled_verified') is not True
                     or proof.get('telemetry_buffers_unchanged_bytes') != 131584
-                    or proof.get('enabled_telemetry_positive_control_words_written',0) <= 0):
+                    or proof.get('enabled_telemetry_positive_control_words_written',0) <= 0
+                    or proof.get('separate_telemetry_control_shader_used') is not bool(args.telemetry_control_shader)):
                 raise ValueError(f'{name}: diagnostic buffers changed or enabled telemetry control did not write')
             if args.pipeline_recipes and (proof.get('pipeline_recipe_variants_verified') is not True
                     or proof.get('original_shader_modules_destroyed_before_variants') is not True):
@@ -245,6 +251,7 @@ def main() -> int:
     parser.add_argument('--dynamic-state',action='store_true')
     parser.add_argument('--static-state',action='store_true')
     parser.add_argument('--replay-telemetry',action='store_true')
+    parser.add_argument('--telemetry-control-shader',type=Path,help='Diagnostic variant used only for the enabled telemetry control')
     parser.add_argument('--pipeline-recipes',action='store_true')
     parser.add_argument('--library-pipelines',action='store_true')
     parser.add_argument('--library-original-live',action='store_true')

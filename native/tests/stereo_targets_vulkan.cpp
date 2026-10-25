@@ -33,7 +33,7 @@ std::vector<uint32_t> readCode(const char* path) {
 
 int main(int argc,char** argv) try {
     if (argc < 4) throw std::runtime_error("Usage: stereo_targets_vulkan original.vert.spv stereo.vert.spv mrt.frag.spv [--negative-sync-control] [--preview-directory path]");
-    bool negative = false,split = false,recorded = false,buffered = false,negativeCompute = false,extended = false,recipes = false,libraries = false,libraryOriginalLive = false,stateDecoys = false,staticState = false,telemetry = false; std::filesystem::path preview,computePath;
+    bool negative = false,split = false,recorded = false,buffered = false,negativeCompute = false,extended = false,recipes = false,libraries = false,libraryOriginalLive = false,stateDecoys = false,staticState = false,telemetry = false; std::filesystem::path preview,computePath,telemetryControlPath;
     for (int k = 4; k < argc; ++k) {
         if (std::string(argv[k]) == "--negative-sync-control") negative = true;
         else if (std::string(argv[k]) == "--split-passes") split = true;
@@ -47,6 +47,7 @@ int main(int argc,char** argv) try {
         else if (std::string(argv[k]) == "--library-state-decoys") stateDecoys = true;
         else if (std::string(argv[k]) == "--static-state") staticState = true;
         else if (std::string(argv[k]) == "--replay-telemetry") telemetry = true;
+        else if (std::string(argv[k]) == "--telemetry-control-shader" && k+1 < argc) telemetryControlPath = argv[++k];
         else if (std::string(argv[k]) == "--compute" && k+1 < argc) computePath = argv[++k];
         else if (std::string(argv[k]) == "--preview-directory" && k+1 < argc) preview = argv[++k];
         else throw std::invalid_argument("Unknown stereo fixture option");
@@ -61,6 +62,7 @@ int main(int argc,char** argv) try {
     if (staticState && (!recorded || extended)) throw std::invalid_argument("Static-state proof requires recorded replay without extended dynamic state");
     if(stateDecoys && (!libraries || (!extended && !staticState)))throw std::invalid_argument("Dynamic state decoys require extended or static GPL replay");
     if(telemetry && (!recorded || (!recipes && !libraries) || libraryOriginalLive || staticState)) throw std::invalid_argument("Telemetry proof requires private replay variants and an uninstrumented original witness");
+    if(!telemetryControlPath.empty() && !telemetry)throw std::invalid_argument("Separate diagnostic shader requires the telemetry proof");
     if (!preview.empty()) {
         expect(!std::filesystem::exists(preview),"Use a new preview directory");
         std::filesystem::create_directories(preview);
@@ -100,6 +102,7 @@ int main(int argc,char** argv) try {
         vertexInput = f.buffer(sizeof(vertices),VK_BUFFER_USAGE_VERTEX_BUFFER_BIT); std::memcpy(vertexInput.mapped,vertices.data(),sizeof(vertices));
     }
     auto vertex = f.shader(argv[1]),instrumented = f.shader(argv[2]),fragment = f.shader(argv[3]);
+    auto telemetryControl=telemetryControlPath.empty()?VK_NULL_HANDLE:f.shader(telemetryControlPath.string().c_str());
     std::unique_ptr<pipeline::Recipe> recipe;
     auto originalCode=recipes?readCode(argv[1]):std::vector<uint32_t>{};
     auto transformedCode=recipes?readCode(argv[2]):std::vector<uint32_t>{};
@@ -171,7 +174,7 @@ int main(int argc,char** argv) try {
     auto pipeline = [&](VkDeviceAddress address,bool bufferMode = false,bool extendedMode = false,bool writeDepth = true,bool observe = false) {
         VkPipelineShaderStageCreateInfo stages[2]{};
         for (auto& s : stages) { s.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO; s.pName = "main"; }
-        stages[0].stage = VK_SHADER_STAGE_VERTEX_BIT; stages[0].module = (address || observe) ? instrumented : vertex;
+        stages[0].stage = VK_SHADER_STAGE_VERTEX_BIT; stages[0].module = observe && telemetryControl ? telemetryControl : (address || observe) ? instrumented : vertex;
         VkSpecializationMapEntry entry{4,0,8}; VkSpecializationInfo specialization{1,&entry,8,&address};
         if (address) stages[0].pSpecializationInfo = &specialization;
         struct DiagnosticValues{uint64_t shader,control,ring;uint32_t words,padding;uint64_t eye;};
@@ -221,6 +224,7 @@ int main(int argc,char** argv) try {
     auto bufferOriginalPipeline = (buffered || extended) ? pipeline(0,buffered,extended) : VK_NULL_HANDLE;
     auto witnessPipeline = extended ? pipeline(0,false,false,false) : VK_NULL_HANDLE;
     auto telemetryPositivePipeline=telemetry?pipeline(0,false,false,true,true):VK_NULL_HANDLE;
+    if(telemetryControl)vkDestroyShaderModule(f.device,telemetryControl,nullptr);
     if (recipes) {
         expect(bool(recipe),"Original application pipeline recipe missing");
         for(auto s:{vertex,instrumented,fragment})vkDestroyShaderModule(f.device,s,nullptr);
@@ -627,6 +631,7 @@ int main(int argc,char** argv) try {
         << ",\"replay_telemetry_disabled_verified\":" << (telemetry?"true":"false")
         << ",\"telemetry_buffers_unchanged_bytes\":" << telemetryProtectedBytes
         << ",\"enabled_telemetry_positive_control_words_written\":" << telemetryPositiveWrites
+        << ",\"separate_telemetry_control_shader_used\":" << (telemetryControlPath.empty()?"false":"true")
         << ",\"frozen_scene_cases\":4,\"epochs_per_case\":2,\"eye_renderings\":16,\"submissions\":" << (telemetry?9:8) << ","
         << "\"color_reference_different_bytes\":0,\"color_reference_compared_bytes\":" << result.colorBytes << ",\"depth_reference_compared_texels\":" << result.depthTexels
         << ",\"max_normalized_depth_difference\":" << result.maxDepthError << ",\"stencil_reference_different_bytes\":0,\"stencil_reference_compared_bytes\":" << result.stencilBytes
