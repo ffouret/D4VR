@@ -2,9 +2,9 @@
 
 Le mode expérimental prépare deux images successives avec deux positions de
 caméra. Il conserve le moteur de rendu original pour obtenir une première
-preuve visible avant la reprise complète de ses ressources. **Aucune paire de
-Diablo n'a encore été capturée avec ce mode.** Les preuves ci-dessous utilisent
-uniquement nos programmes de contrôle.
+preuve visible avant la reprise complète de ses ressources. **Une première paire
+réelle de Diablo IV a été capturée**, en 2560 × 1440. Elle reste successive et
+partiellement transformée ; ce résultat ne constitue pas encore du Diablo en VR.
 
 ## Sélection et capture
 
@@ -63,7 +63,33 @@ La [preuve synthétique](proofs/sequential-capture-v1.json) comprend :
 Ces essais ne lancent ni Diablo ni le casque. Ils ne corrigent pas les erreurs
 Vulkan internes à SteamVR déjà décrites dans la preuve du casque.
 
-## Essai privé préparé
+## Premier essai réel de Diablo IV
+
+La [preuve réelle agrégée](proofs/sequential-diablo-v1.json) correspond au binaire
+du commit `24e19a9`, avec le runtime Lutris épinglé et le jeu 3.2.3.73883. Deux
+captures du même processus/device ont été obtenues aux présentations 1997 et
+2130, en BGRA8 : 14 745 600 octets chacune. Les intervalles comportent
+respectivement 229 et 216 commandes de dessin utilisant les variantes privées,
+avec les masques d'œil attendus 1 et 2. La sélection revient à 2 après la prise.
+
+Les images montrent une même zone du jeu et un changement de point de vue du
+terrain. L'animation du personnage et des messages d'interface changent aussi.
+Ces images seules ne séparent donc pas toute la disparité géométrique du
+mouvement temporel. Le plafond de 512 nœuds privés est atteint : la couverture
+des pipelines est partielle, malgré zéro échec de création pilote dans les
+observations publiées. Il faut résoudre cette limite avant de prétendre couvrir
+le monde complet. Les 1 536 refus observés ne sont pas tous attribués à une
+cause individuelle dans ce relevé.
+
+Tous les processus de la session sont ensuite sortis ; l'exécutable, la
+bibliothèque originale et ses exports correspondent encore aux références.
+La destruction Vulkan du device n'a pas été observée. La validation Khronos
+n'était pas activée dans le jeu : ce relevé n'est pas une preuve de synchronisation
+du jeu sans erreur. Aucune image n'a été envoyée au casque lors de cet essai.
+Les pixels réels restent privés, hors dépôt ; seuls hashes et résultats agrégés
+sont publiés.
+
+## Procédure d'essai privée
 
 `tools/sequential_capture.py prepare` vérifie le binaire testé, le bundle de
 shaders déjà validé, la version du jeu et le lanceur Lutris complet. Il crée
