@@ -62,6 +62,25 @@ def read_frame(path: Path) -> dict:
     if len(pipelines) > 65536 or len({p['id'] for p in pipelines}) != len(pipelines):
         raise ValueError('Duplicate pipelines or pipeline budget exceeded')
     for p in pipelines:
+        state = p.get('pipeline_state')
+        if state is not None:
+            blocks = state['declarations']
+            if len(blocks) > 32 or any(type(state[k]) is not bool for k in
+                    ('is_library','linked_libraries','declarations_complete','effective_dynamic_states_known','graphics_state_snapshot_complete')):
+                raise ValueError('Invalid pipeline state declarations')
+            if state['graphics_state_snapshot_complete']:
+                raise ValueError('Full graphics state is not part of this metadata schema')
+            for block in blocks:
+                if (len(block['states']) > 64 or any(type(v) is not int or not 0 <= v < 2**31 for v in block['states'])
+                        or type(block['truncated']) is not bool):
+                    raise ValueError('Invalid dynamic state declaration block')
+            if state['declarations_complete'] and any(b['truncated'] for b in blocks):
+                raise ValueError('Truncated declarations cannot be complete')
+            if state['effective_dynamic_states_known'] and (not state['declarations_complete'] or state['is_library'] or state['linked_libraries']
+                    or state['own_parts'] != 15 or len(blocks) != 1 or blocks[0]['truncated']):
+                raise ValueError('Linked or incomplete declarations cannot identify effective states')
+            if state['effective_dynamic_states_known'] and len(set(blocks[0]['states'])) != len(blocks[0]['states']):
+                raise ValueError('Duplicate effective dynamic state declarations')
         if len(p['shaders']) > 512:
             raise ValueError('Shader metadata budget exceeded')
         for s in p['shaders']:
@@ -81,6 +100,11 @@ def read_frame(path: Path) -> dict:
             for op in command['operations']:
                 if len(op.get('colors', [])) > 16 or len(op.get('draws', [])) > 512:
                     raise ValueError('Pass metadata budget exceeded')
+                for attachment in op.get('colors', []) + [op[r] for r in ('depth','stencil') if op.get(r)]:
+                    words = attachment.get('clear_value_words')
+                    if words is not None and (attachment.get('load') != 1 or len(words) != 4
+                            or any(type(v) is not int or not 0 <= v < 2**32 for v in words)):
+                        raise ValueError('Invalid clear value words')
                 for draw in op.get('draws', []):
                     if len(draw['counts']) != 8 or any(type(v) is not int or v < 0 for v in draw['counts']):
                         raise ValueError('Invalid draw counts')
@@ -189,18 +213,22 @@ def summarize(data: dict, correlation: dict | None = None) -> dict:
                 draw_counts.update(counts)
                 attachments = []
                 for slot, a in enumerate(op['colors']):
-                    attachments.append({'role': 'color', 'slot': slot, **a['view']})
+                    attachments.append({'role': 'color', 'slot': slot, **a['view'], 'load_op':a.get('load'), 'store_op':a.get('store'),
+                                        'clear_value_words':a.get('clear_value_words')})
                     if a['resolve_mode']:
                         attachments.append({'role': 'color_resolve', 'slot': slot, **a['resolve_view']})
                 for role in ('depth', 'stencil'):
                     if op[role]:
-                        attachments.append({'role': role, **op[role]['view']})
+                        attachments.append({'role': role, **op[role]['view'], 'load_op':op[role].get('load'), 'store_op':op[role].get('store'),
+                                            'clear_value_words':op[role].get('clear_value_words')})
                 for image_id in {a['image_id'] for a in attachments if a['image_id']}:
                     image_writes[image_id].append(index)
                 passes.append({'index': index, 'submission': si, 'command': ci, 'operation': oi,
                                'kind': op['kind'], 'area': op['area'], 'draw_commands': sum(counts.values()),
                                'counts': dict(counts), 'pipeline_ids': [d['pipeline_id'] for d in op['draws']],
                                'attachments': attachments, 'scene_role': 'unclassified'})
+                passes[-1].update(queue_family=submit.get('queue_family'),queue_index=submit.get('queue_index'),
+                                  secondary_depth=command.get('secondary_depth',0),command_id=command.get('id'),command_generation=command.get('generation'))
     result = {'schema_version': 1, 'request_sequence': data['request_sequence'], 'scope': data['scope'],
               'present_before': data['present_before'], 'present_after': data['present_after'],
               'submission_count': len(data['submissions']), 'failed_or_incomplete_submissions': failed,
@@ -208,6 +236,7 @@ def summarize(data: dict, correlation: dict | None = None) -> dict:
               'truncated': truncated, 'missing_command_buffers': missing_commands,
               'draw_commands_with_unknown_pipeline': unknown_pipeline_commands,
               'pipeline_count': len(pipeline_ids), 'passes': passes,
+              'pipeline_state_declarations':[{'pipeline_id':p['id'],**p['pipeline_state']} for p in data['pipelines'] if p.get('pipeline_state') is not None],
               'shader_stage_occurrences': len(stages), 'stages_with_code_fingerprint': sum(s['known'] for s in stages),
               'stages_with_module_identifier': sum(bool(s.get('module_identifier')) for s in stages),
               'stages_without_code_or_identifier': sum(not s['known'] and not s.get('module_identifier') for s in stages),
@@ -254,7 +283,7 @@ def main() -> int:
     data = read_frame(args.file)
     correlation = correlate(data, args.shader_directory, args.camera_chain, args.identifier_catalog) if args.shader_directory or args.identifier_catalog else None
     result = summarize(data, correlation); probe.write_json(args.output, result)
-    print(json.dumps({k: v for k, v in result.items() if k not in ('passes', 'image_attachment_scopes', 'shader_correlation', 'pipeline_associations')}, indent=2))
+    print(json.dumps({k: v for k, v in result.items() if k not in ('passes', 'image_attachment_scopes', 'shader_correlation', 'pipeline_associations','pipeline_state_declarations')}, indent=2))
     return 0
 
 

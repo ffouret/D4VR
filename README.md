@@ -194,6 +194,12 @@ l'écriture de profondeur reste désactivée sans rebind. Les trois autres état
 et les variantes non couvertes restent refusés.
 [Audit, preuve GPU et limites](docs/DYNAMIC_STATE.md).
 
+Le diagnostic relève maintenant les déclarations des pipelines et les clear
+values. L'analyse des captures existantes retrouve une initialisation de la
+profondeur antérieure à celle des couleurs, avec encore des `LOAD` non résolus.
+Elle prépare la reprise d'une chaîne de passes ; aucun scope du jeu n'est
+encore autorisé pour la reprise. [Méthode et résultats](docs/PASS_DEPENDENCIES.md).
+
 ## Commandes du prototype
 
 | Action | Quest Touch | Clavier |

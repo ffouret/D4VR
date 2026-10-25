@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <array>
 #include <cstdint>
+#include <cstring>
 #include <iomanip>
 #include <map>
 #include <memory>
@@ -31,7 +32,16 @@ struct Shader {
     VkShaderStageFlagBits stage{}; uint64_t fnv = 0; size_t bytes = 0; bool known = false;
     std::string identifier;
 };
-struct Pipeline { uint64_t id = 0; std::vector<Shader> shaders; bool missingLibraries = false; };
+struct StateDeclaration {
+    uint64_t source = 0; uint32_t parts = 0; bool truncated = false;
+    std::vector<VkDynamicState> states;
+};
+struct Pipeline {
+    uint64_t id = 0; std::vector<Shader> shaders; bool missingLibraries = false;
+    bool graphics = false,library = false,linked = false,declarationsComplete = true,effectiveStatesKnown = false;
+    uint32_t ownParts = 0;
+    std::vector<StateDeclaration> declarations;
+};
 struct Image {
     uint64_t id = 0; VkFormat format{}; VkExtent3D extent{};
     VkImageUsageFlags usage{}; VkSampleCountFlagBits samples{}; uint32_t layers = 0; bool known = false;
@@ -40,6 +50,7 @@ struct View { uint64_t id = 0; Image image; VkFormat format{}; VkImageViewType t
 struct Attachment {
     View view, resolve; VkImageLayout layout{}, resolveLayout{};
     VkAttachmentLoadOp load{}; VkAttachmentStoreOp store{}; VkResolveModeFlagBits resolveMode{};
+    bool hasClear = false; std::array<uint32_t,4> clear{};
 };
 using DrawCounts = std::array<uint64_t, 8>; // direct, indexed, indirect, indexed indirect, counts, DGC EXT/NV
 struct Draw { std::shared_ptr<const Pipeline> pipeline; DrawCounts counts{}; };
@@ -86,6 +97,7 @@ class Tracker {
     static constexpr size_t resourceLimit = 65536, opLimit = 8192, drawLimit = 65536;
     uint64_t nextImage = 1, nextView = 1, nextPipeline = 1, nextCommand = 1, lastRequest = 0;
     size_t liveOps = 0, liveDraws = 0;
+    size_t declarationWords = 0;
     unsigned captureCount = 0;
     std::shared_ptr<Capture> current;
     std::vector<std::shared_ptr<Capture>> ready;
@@ -99,7 +111,7 @@ class Tracker {
         if (c.ops.size() >= 2048 || liveOps >= opLimit) { c.truncated = true; return {}; }
         auto op = std::make_shared<Operation>(); op->kind = kind; c.ops.push_back(op); ++liveOps; return op;
     }
-    Attachment attachment(const VkRenderingAttachmentInfo& info) const {
+    Attachment attachment(const VkRenderingAttachmentInfo& info,VkImageAspectFlags aspect = VK_IMAGE_ASPECT_COLOR_BIT) const {
         Attachment a; a.layout = info.imageLayout; a.load = info.loadOp; a.store = info.storeOp;
         a.resolveMode = info.resolveMode; a.resolveLayout = info.resolveImageLayout;
         auto get = [&](VkImageView view) { auto it = views.find(view); return it == views.end() ? View{} : it->second; };
@@ -107,7 +119,17 @@ class Tracker {
         // Preserve null attachment slots; unknown non-null views are marked.
         if (info.imageView && !a.view.known) a.view.id = UINT64_MAX;
         if (info.resolveImageView && !a.resolve.known) a.resolve.id = UINT64_MAX;
+        if (info.imageView && info.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR) {
+            a.hasClear = true;
+            if (aspect == VK_IMAGE_ASPECT_COLOR_BIT) std::memcpy(a.clear.data(),&info.clearValue,16);
+            else if (aspect == VK_IMAGE_ASPECT_DEPTH_BIT) std::memcpy(a.clear.data(),&info.clearValue.depthStencil.depth,4);
+            else a.clear[1] = info.clearValue.depthStencil.stencil;
+        }
         return a;
+    }
+    void declaration(Pipeline& p,StateDeclaration value) {
+        if (p.declarations.size() >= 32 || declarationWords+value.states.size() > 1024*1024) { p.declarationsComplete = false; return; }
+        declarationWords += value.states.size(); p.declarationsComplete &= !value.truncated; p.declarations.push_back(std::move(value));
     }
     std::shared_ptr<const Pipeline> pipeline(VkPipeline handle) const {
         auto i = pipelines.find(handle); return i == pipelines.end() ? nullptr : i->second;
@@ -168,24 +190,53 @@ public:
     void removeModule(VkShaderModule handle) { if (enabled) modules.erase(handle); }
     void graphicsPipeline(VkPipeline handle, const VkGraphicsPipelineCreateInfo& info) {
         if (!enabled || !handle || pipelines.size() >= resourceLimit) return;
-        auto result = std::make_shared<Pipeline>(); result->id = nextPipeline++;
+        auto result = std::make_shared<Pipeline>(); result->id = nextPipeline++; result->graphics = true;
+        VkPipelineCreateFlags2KHR flags = info.flags; bool hasParts = false;
         for (auto p = static_cast<const VkBaseInStructure*>(info.pNext); p; p = p->pNext) {
+            if (p->sType == VK_STRUCTURE_TYPE_PIPELINE_CREATE_FLAGS_2_CREATE_INFO_KHR)
+                flags = reinterpret_cast<const VkPipelineCreateFlags2CreateInfoKHR*>(p)->flags;
+            if (p->sType == VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_LIBRARY_CREATE_INFO_EXT) {
+                hasParts = true; result->ownParts = reinterpret_cast<const VkGraphicsPipelineLibraryCreateInfoEXT*>(p)->flags;
+            }
             if (p->sType == VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR) {
                 auto libraries = reinterpret_cast<const VkPipelineLibraryCreateInfoKHR*>(p);
+                result->linked |= libraries->libraryCount != 0;
                 for (uint32_t j = 0; j < std::min(libraries->libraryCount, 32u); ++j) {
                     auto lib = pipeline(libraries->pLibraries[j]);
                     if (lib) {
                         auto accepted = std::min(lib->shaders.size(), 128 - result->shaders.size());
                         result->shaders.insert(result->shaders.end(), lib->shaders.begin(), lib->shaders.begin() + accepted);
                         result->missingLibraries |= lib->missingLibraries || accepted != lib->shaders.size();
+                        result->declarationsComplete &= lib->declarationsComplete && lib->graphics;
+                        for (const auto& block : lib->declarations) declaration(*result,block);
                     }
                     else result->missingLibraries = true;
                 }
                 if (libraries->libraryCount > 32) result->missingLibraries = true;
             }
         }
+        result->library = (flags&VK_PIPELINE_CREATE_2_LIBRARY_BIT_KHR) != 0;
+        if (!hasParts && !result->library && !result->linked) result->ownParts = 15;
+        // A link-only create does not own state. Its ignored pointers must not
+        // be dereferenced, even if non-null. Preserve library blocks separately
+        // instead of claiming their unfiltered union is the effective state.
+        if (result->ownParts) {
+            StateDeclaration own; own.source = result->id; own.parts = result->ownParts;
+            if (info.pDynamicState) {
+                auto& state = *info.pDynamicState; own.truncated = state.pNext || state.flags || state.dynamicStateCount > 64;
+                auto count = std::min(state.dynamicStateCount,64u);
+                if (count && state.pDynamicStates) own.states.assign(state.pDynamicStates,state.pDynamicStates+count);
+                else if (count) own.truncated = true;
+                auto sorted = own.states; std::sort(sorted.begin(),sorted.end());
+                own.truncated |= std::adjacent_find(sorted.begin(),sorted.end()) != sorted.end();
+            }
+            declaration(*result,std::move(own));
+        } else if (!result->linked) result->declarationsComplete = false;
+        result->declarationsComplete &= !result->missingLibraries;
+        result->effectiveStatesKnown = result->declarationsComplete && !result->library && !result->linked && result->ownParts == 15;
         for (uint32_t j = 0; j < std::min(info.stageCount, 16u); ++j) result->shaders.push_back(shader(info.pStages[j]));
         if (info.stageCount > 16) result->missingLibraries = true;
+        result->declarationsComplete &= !result->missingLibraries; result->effectiveStatesKnown &= result->declarationsComplete;
         pipelines[handle] = result;
     }
     void computePipeline(VkPipeline handle, const VkComputePipelineCreateInfo& info) {
@@ -203,8 +254,8 @@ public:
         op->area = info.renderArea; op->layers = info.layerCount; op->viewMask = info.viewMask; op->flags = info.flags;
         for (uint32_t j = 0; j < std::min(info.colorAttachmentCount, 16u); ++j) op->colors.push_back(attachment(info.pColorAttachments[j]));
         if (info.colorAttachmentCount > 16) op->truncated = true;
-        if (info.pDepthAttachment) { op->hasDepth = true; op->depth = attachment(*info.pDepthAttachment); }
-        if (info.pStencilAttachment) { op->hasStencil = true; op->stencil = attachment(*info.pStencilAttachment); }
+        if (info.pDepthAttachment) { op->hasDepth = true; op->depth = attachment(*info.pDepthAttachment,VK_IMAGE_ASPECT_DEPTH_BIT); }
+        if (info.pStencilAttachment) { op->hasStencil = true; op->stencil = attachment(*info.pStencilAttachment,VK_IMAGE_ASPECT_STENCIL_BIT); }
     }
     void legacy(Command& c, const VkRenderPassBeginInfo& info) {
         c.active = append(c, Operation::LegacyRendering); if (c.active) c.active->area = info.renderArea;
@@ -284,7 +335,10 @@ inline void writeAttachment(std::ostream& out, const Attachment& a) {
     out << "{\"view\":"; writeView(out, a.view);
     out << ",\"layout\":" << a.layout << ",\"load\":" << a.load << ",\"store\":" << a.store
         << ",\"resolve_mode\":" << a.resolveMode << ",\"resolve_layout\":" << a.resolveLayout << ",\"resolve_view\":";
-    writeView(out, a.resolve); out << '}';
+    writeView(out, a.resolve); out << ",\"clear_value_words\":";
+    if (a.hasClear) out << '[' << a.clear[0] << ',' << a.clear[1] << ',' << a.clear[2] << ',' << a.clear[3] << ']';
+    else out << "null";
+    out << '}';
 }
 inline std::string serialize(const Capture& capture) {
     std::map<uint64_t, std::shared_ptr<const Pipeline>> pipelines;
@@ -308,7 +362,21 @@ inline std::string serialize(const Capture& capture) {
             out << "{\"stage\":" << s.stage << ",\"known\":" << s.known << ",\"code_bytes\":" << s.bytes << ",\"fnv1a64\":\"" << hex(s.fnv)
                 << "\",\"module_identifier\":\"" << s.identifier << "\"}";
         }
-        out << "]}";
+        out << "],\"pipeline_state\":";
+        if (!p.graphics) out << "null";
+        else {
+            out << "{\"is_library\":" << p.library << ",\"linked_libraries\":" << p.linked << ",\"own_parts\":" << p.ownParts
+                << ",\"declarations_complete\":" << p.declarationsComplete << ",\"effective_dynamic_states_known\":" << p.effectiveStatesKnown
+                << ",\"graphics_state_snapshot_complete\":false,\"declarations\":[";
+            for (size_t k = 0; k < p.declarations.size(); ++k) {
+                const auto& block = p.declarations[k]; if (k) out << ',';
+                out << "{\"source_pipeline_id\":" << block.source << ",\"parts\":" << block.parts << ",\"truncated\":" << block.truncated << ",\"states\":[";
+                for (size_t n = 0; n < block.states.size(); ++n) out << (n ? "," : "") << block.states[n];
+                out << "]}";
+            }
+            out << "]}";
+        }
+        out << '}';
     }
     out << "],\"submissions\":[";
     for (size_t i = 0; i < capture.submissions.size(); ++i) {

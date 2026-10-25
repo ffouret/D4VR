@@ -191,3 +191,11 @@ contrôles positifs et les deux négatifs passent, dont Steam Runtime avec
 validation Vulkan. Le test C++ ajoute complétude et invalidation des états.
 Ce relevé de sources ne remplace pas une capture des états effectivement utilisés
 par Diablo. [Procédure et limites](DYNAMIC_STATE.md).
+
+La couche de diagnostic conserve aussi les déclarations dynamiques et clear
+values. Quatre contrôles positifs et deux négatifs passent avec le validateur
+GPU, dont l'absence de capture sans opt-in ; quatorze essais de régression de
+la couche préservent les pixels. Les tests Python sont au nombre de 90. Le test
+C++ de métadonnées est inclus dans la CI Windows sans pilote. L'analyse des
+deux anciens relevés du jeu identifie deux racines de clear par capture, mais
+laisse deux et un `LOAD` non résolus. [Preuves et limites](PASS_DEPENDENCIES.md).

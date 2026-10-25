@@ -25,6 +25,32 @@ def sample():
 
 
 class Frames(unittest.TestCase):
+    def test_pipeline_declarations_are_owned_metadata_not_a_full_state_snapshot(self):
+        data=sample();state={'is_library':False,'linked_libraries':False,'own_parts':15,'declarations_complete':True,
+            'effective_dynamic_states_known':True,'graphics_state_snapshot_complete':False,
+            'declarations':[{'source_pipeline_id':3,'parts':15,'truncated':False,'states':[0,1]}]}
+        data['pipelines'][0]['pipeline_state']=state
+        with tempfile.TemporaryDirectory() as directory:
+            p=Path(directory)/'frame.json';p.write_text(json.dumps(data));parsed=frame_trace.read_frame(p)
+            self.assertEqual(frame_trace.summarize(parsed)['pipeline_state_declarations'][0]['declarations'][0]['states'],[0,1])
+            state['linked_libraries']=True;p.write_text(json.dumps(data))
+            with self.assertRaises(ValueError):frame_trace.read_frame(p)
+            state['effective_dynamic_states_known']=False;p.write_text(json.dumps(data));frame_trace.read_frame(p)
+            state['declarations'][0]['states']=list(range(65));p.write_text(json.dumps(data))
+            with self.assertRaises(ValueError):frame_trace.read_frame(p)
+
+    def test_clear_bits_require_clear_load_op_and_four_unsigned_words(self):
+        data=sample();a=data['submissions'][0]['commands'][0]['operations'][0]['colors'][0]
+        a.update(load=1,store=0,clear_value_words=[0,0,0,0x3f800000])
+        with tempfile.TemporaryDirectory() as directory:
+            p=Path(directory)/'frame.json';p.write_text(json.dumps(data));frame_trace.read_frame(p)
+            r=frame_trace.summarize(data);self.assertEqual(r['passes'][0]['attachments'][0]['clear_value_words'][3],0x3f800000)
+            for words in ([0,0,0],[0,0,0,-1],[0,0,0,True]):
+                a['clear_value_words']=words;p.write_text(json.dumps(data))
+                with self.assertRaises(ValueError):frame_trace.read_frame(p)
+            a.update(load=0,clear_value_words=[0,0,0,0]);p.write_text(json.dumps(data))
+            with self.assertRaises(ValueError):frame_trace.read_frame(p)
+
     def test_scopes_are_not_claimed_as_scene_identification(self):
         result = frame_trace.summarize(sample())
         self.assertEqual(result['draw_command_counts']['indexed'], 4)
