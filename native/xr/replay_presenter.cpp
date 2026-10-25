@@ -31,7 +31,7 @@ Matrix4 pose(const XrPosef& p) {
 #define VK_FUNCTIONS(X) X(CreateCommandPool) X(DestroyCommandPool) X(AllocateCommandBuffers) X(ResetCommandPool) X(BeginCommandBuffer) \
     X(EndCommandBuffer) X(CreateFence) X(DestroyFence) X(ResetFences) X(QueueSubmit) X(WaitForFences) X(QueueWaitIdle) X(CmdPipelineBarrier) X(CmdBlitImage)
 struct Presenter {
-    const BorrowedBinding& binding;const ReplaySource& source;
+    const BorrowedBinding& binding;const ProjectionSource& source;
     void* loader{};void* vkLoader{};PFN_xrGetInstanceProcAddr get{};
     XrInstance instance{};XrSystemId system{};XrSession session{};XrSpace space{};
 #define XF(n) PFN_xr##n xr##n{};
@@ -45,8 +45,8 @@ struct Presenter {
     VkCommandPool pool{};VkCommandBuffer command{};VkFence fence{};VkFormat format{};
     bool pending=false,running=false,frameOpen=false,anchored=false,uuidMatch=false,extensionsMatch=false;
     XrTime displayTime{};Matrix4 anchor=identity();std::array<double,3> initial{};
-    uint32_t frames=0,tracked=0,poseUpdates=0;double movement=0,separation=0;std::string runtime;
-    Presenter(const BorrowedBinding& b,const ReplaySource& s):binding(b),source(s) {}
+    uint32_t frames=0,tracked=0,poseUpdates=0,requests=0,rejected=0,unavailable=0;double movement=0,separation=0;std::string runtime;
+    Presenter(const BorrowedBinding& b,const ProjectionSource& s):binding(b),source(s) {}
     ~Presenter() {
         // xrEndFrame can enqueue runtime work after our own fence completed.
         // Complete that borrowed-queue work before freeing any XR image/session.
@@ -71,8 +71,7 @@ struct Presenter {
         return true;
     }
     void setup() {
-        if(!binding.instance || !binding.device || !binding.queue || !binding.get || !source.update || !source.record
-            || !source.images[0] || !source.images[1] || source.images[0]==source.images[1] || !source.extent.width || !source.extent.height
+        if(!binding.instance || !binding.device || !binding.queue || !binding.get || !source.record || !source.extent.width || !source.extent.height
             || source.extent.width>4096 || source.extent.height>4096)throw std::invalid_argument("Replay presenter contract unavailable");
         const char* path=std::getenv("D4VR_XR_LOADER");loader=dlopen(path&&*path?path:"libopenxr_loader.so.1",RTLD_NOW|RTLD_LOCAL);
         if(!loader)throw std::runtime_error("OpenXR loader unavailable");
@@ -122,16 +121,16 @@ struct Presenter {
         vkcheck(binding.setLoaderData(binding.device,command),"Initialize private command-buffer loader dispatch");
         VkFenceCreateInfo fc{VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};vkcheck(vkCreateFence(binding.device,&fc,nullptr,&fence),"vkCreateFence");
     }
-    void copy() {
+    void copy(const ProjectionFrame& frame) {
         for(unsigned eye=0;eye<2;++eye) {
             auto& e=eyes[eye];if(e.index>=e.images.size())throw std::runtime_error("XR image index out of bounds");auto image=e.images[e.index].image;
             VkImageMemoryBarrier b{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};b.srcQueueFamilyIndex=b.dstQueueFamilyIndex=VK_QUEUE_FAMILY_IGNORED;b.image=image;b.subresourceRange={VK_IMAGE_ASPECT_COLOR_BIT,0,1,0,1};
             b.oldLayout=VK_IMAGE_LAYOUT_UNDEFINED;b.newLayout=VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;b.dstAccessMask=VK_ACCESS_TRANSFER_WRITE_BIT;
             vkCmdPipelineBarrier(command,VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,VK_PIPELINE_STAGE_TRANSFER_BIT,0,0,nullptr,0,nullptr,1,&b);
             VkImageBlit blit{};blit.srcSubresource=blit.dstSubresource={VK_IMAGE_ASPECT_COLOR_BIT,0,0,1};
-            // The recorded Vulkan viewport grows down; XR's optical Y grows up.
-            blit.srcOffsets[0]={0,int32_t(source.extent.height),0};blit.srcOffsets[1]={int32_t(source.extent.width),0,1};blit.dstOffsets[1]={int32_t(source.extent.width),int32_t(source.extent.height),1};
-            vkCmdBlitImage(command,source.images[eye],VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,image,VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,1,&blit,VK_FILTER_NEAREST);
+            blit.srcOffsets[0]={0,source.flipY?int32_t(source.extent.height):0,0};
+            blit.srcOffsets[1]={int32_t(source.extent.width),source.flipY?0:int32_t(source.extent.height),1};blit.dstOffsets[1]={int32_t(source.extent.width),int32_t(source.extent.height),1};
+            vkCmdBlitImage(command,frame.eyes[eye].image,VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,image,VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,1,&blit,VK_FILTER_NEAREST);
             b.oldLayout=VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;b.newLayout=VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;b.srcAccessMask=VK_ACCESS_TRANSFER_WRITE_BIT;b.dstAccessMask=VK_ACCESS_COLOR_ATTACHMENT_READ_BIT|VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
             vkCmdPipelineBarrier(command,VK_PIPELINE_STAGE_TRANSFER_BIT,VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,0,0,nullptr,0,nullptr,1,&b);
         }
@@ -162,17 +161,24 @@ struct Presenter {
             if(!anchored){anchor=pose(views[0].pose);anchor[3]=center[0];anchor[7]=center[1];anchor[11]=center[2];initial=center;anchored=true;}
             double distance=0,ipd=0;for(unsigned k=0;k<3;++k)distance+=(center[k]-initial[k])*(center[k]-initial[k]);movement=std::max(movement,std::sqrt(distance));
             auto a=views[0].pose.position,b=views[1].pose.position;ipd=(a.x-b.x)*(a.x-b.x)+(a.y-b.y)*(a.y-b.y)+(a.z-b.z)*(a.z-b.z);separation=std::sqrt(ipd);
-            std::array<EyeState,2> packets;
+            ProjectionRequest request;request.sequence=++requests;request.queueFamily=binding.family;request.displayTime=displayTime;
             for(unsigned eye=0;eye<2;++eye) {
                 auto& view=views[eye];auto projection=perspective(std::tan(view.fov.angleLeft),std::tan(view.fov.angleRight),std::tan(view.fov.angleDown),std::tan(view.fov.angleUp),.1,100);
-                packets[eye]=make_eye_state(eye,frames+1,multiply(inverse(pose(view.pose)),anchor),projection);
+                request.packets[eye]=make_eye_state(eye,request.sequence,multiply(inverse(pose(view.pose)),anchor),projection);
+            }
+            vkcheck(vkResetCommandPool(binding.device,pool,0),"vkResetCommandPool");VkCommandBufferBeginInfo cb{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};cb.flags=VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;vkcheck(vkBeginCommandBuffer(command,&cb),"vkBeginCommandBuffer");
+            ProjectionFrame images;
+            bool available=source.record(request,command,images);++poseUpdates;
+            if(!available || !coherentProjection(request,images,source.extent,source.format)) {
+                if(available)++rejected;else ++unavailable;
+                vkcheck(vkEndCommandBuffer(command),"vkEndCommandBuffer discarded source");
+                check(xrEndFrame(session,&end),"xrEndFrame no coherent pair");frameOpen=false;continue;
+            }
+            for(unsigned eye=0;eye<2;++eye) {
                 XrSwapchainImageAcquireInfo acquire{XR_TYPE_SWAPCHAIN_IMAGE_ACQUIRE_INFO};check(xrAcquireSwapchainImage(eyes[eye].swapchain,&acquire,&eyes[eye].index),"xrAcquireSwapchainImage");eyes[eye].acquired=true;
                 XrSwapchainImageWaitInfo w{XR_TYPE_SWAPCHAIN_IMAGE_WAIT_INFO};w.timeout=XR_INFINITE_DURATION;check(xrWaitSwapchainImage(eyes[eye].swapchain,&w),"xrWaitSwapchainImage");
             }
-            source.update(packets);++poseUpdates;
-            vkcheck(vkResetCommandPool(binding.device,pool,0),"vkResetCommandPool");VkCommandBufferBeginInfo cb{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};cb.flags=VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;vkcheck(vkBeginCommandBuffer(command,&cb),"vkBeginCommandBuffer");
-            if(!source.record(command))throw std::runtime_error("No closed CLEAR snapshot for private XR replay");
-            copy();vkcheck(vkEndCommandBuffer(command),"vkEndCommandBuffer");
+            copy(images);vkcheck(vkEndCommandBuffer(command),"vkEndCommandBuffer");
             vkcheck(vkResetFences(binding.device,1,&fence),"vkResetFences");VkSubmitInfo submit{VK_STRUCTURE_TYPE_SUBMIT_INFO};submit.commandBufferCount=1;submit.pCommandBuffers=&command;
             vkcheck(vkQueueSubmit(binding.queue,1,&submit,fence),"vkQueueSubmit private replay");pending=true;vkcheck(vkWaitForFences(binding.device,1,&fence,VK_TRUE,UINT64_MAX),"vkWaitForFences private replay");pending=false;
             std::array<XrCompositionLayerProjectionView,2> layers{{{XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW},{XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW}}};
@@ -185,7 +191,7 @@ struct Presenter {
     }
 };
 }
-std::string presentReplay(const BorrowedBinding& binding,const ReplaySource& source,uint32_t seconds) {
+std::string presentProjectionImages(const BorrowedBinding& binding,const ProjectionSource& source,uint32_t seconds) {
     Presenter p(binding,source);std::string error;bool setup=false;
     try {if(seconds>30)throw std::invalid_argument("XR replay duration exceeds 30 seconds");p.setup();setup=true;if(seconds)p.run(seconds);}catch(const std::exception& e){error=e.what();}
     std::ostringstream out;out<<"{\"schema_version\":1,\"synthetic_scene\":true,\"diablo_rendered\":false,\"runtime\":"<<quote(p.runtime)
@@ -193,6 +199,19 @@ std::string presentReplay(const BorrowedBinding& binding,const ReplaySource& sou
         <<",\"success\":"<<(error.empty()&&setup&&(!seconds||p.frames>0)?"true":"false")<<",\"runtime_uuid_matches\":"<<(p.uuidMatch?"true":"false")
         <<",\"required_extensions_enabled\":"<<(p.extensionsMatch?"true":"false")<<",\"replayed_xr_frames\":"<<p.frames<<",\"tracked_frames\":"<<p.tracked
         <<",\"eye_packet_updates\":"<<p.poseUpdates<<",\"head_translation_meters\":"<<p.movement<<",\"eye_separation_meters\":"<<p.separation
+        <<",\"projection_requests\":"<<p.requests<<",\"incoherent_pairs_rejected\":"<<p.rejected<<",\"unavailable_pairs\":"<<p.unavailable
         <<",\"application_submissions_repeated\":0,\"borrowed_vulkan_objects_destroyed\":false,\"error\":"<<quote(error)<<"}\n";return out.str();
+}
+std::string presentReplay(const BorrowedBinding& binding,const ReplaySource& source,uint32_t seconds) {
+    ProjectionSource adapter;adapter.extent=source.extent;adapter.format=source.format;adapter.flipY=true;
+    if(source.update && source.record && source.images[0] && source.images[1] && source.images[0]!=source.images[1])
+        adapter.record=[&](const ProjectionRequest& request,VkCommandBuffer command,ProjectionFrame& images) {
+            source.update(request.packets);
+            if(!source.record(command))throw std::runtime_error("No closed CLEAR snapshot for private XR replay");
+            images.extent=source.extent;images.format=source.format;images.queueFamily=request.queueFamily;
+            for(unsigned i=0;i<2;++i)images.eyes[i]={source.images[i],i,request.sequence,request.displayTime,1};
+            return true;
+        };
+    return presentProjectionImages(binding,adapter,seconds);
 }
 } // namespace d4vr::xr

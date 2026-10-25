@@ -61,8 +61,8 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           cmake -S native -B work/recipe-sanitized-ci -DD4VR_BUILD_STEREO_TARGET_TESTS=ON -DD4VR_BUILD_VULKAN_TRACE=ON -DCMAKE_BUILD_TYPE=Debug "-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer"
-          cmake --build work/recipe-sanitized-ci --target d4vr_pipeline_recipe_tests d4vr_library_variants_tests d4vr_dynamic_states_tests d4vr_graphics_replay_tests d4vr_replay_specialization_tests d4vr_vulkan_trace_tests d4vr_frame_trace_tests d4vr_buffer_readback_tests --parallel 2
-          ctest --test-dir work/recipe-sanitized-ci -R "pipeline_recipe_ownership|library_variant_ownership|gpl_dynamic_state_ownership|graphics_state_replay|replay_specialization_ownership|vulkan_trace_forwarding|vulkan_frame_metadata|buffer_readback_bounds" --output-on-failure
+          cmake --build work/recipe-sanitized-ci --target d4vr_pipeline_recipe_tests d4vr_library_variants_tests d4vr_projection_source_tests d4vr_dynamic_states_tests d4vr_graphics_replay_tests d4vr_replay_specialization_tests d4vr_vulkan_trace_tests d4vr_frame_trace_tests d4vr_buffer_readback_tests --parallel 2
+          ctest --test-dir work/recipe-sanitized-ci -R "pipeline_recipe_ownership|library_variant_ownership|projection_image_coherence|gpl_dynamic_state_ownership|graphics_state_replay|replay_specialization_ownership|vulkan_trace_forwarding|vulkan_frame_metadata|buffer_readback_bounds" --output-on-failure
       - name: Fetch pinned SPIR-V grammar for static audit controls
         if: runner.os == 'Linux'
         uses: actions/checkout@v4
@@ -96,8 +96,8 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           cmake -S native -B work/stereo-targets-ci -DD4VR_BUILD_STEREO_TARGET_TESTS=ON "-DD4VR_VULKAN_INCLUDE_DIR=${{ github.workspace }}/work/vulkan-headers/include"
-          cmake --build work/stereo-targets-ci --config Release --target d4vr_stereo_targets_tests d4vr_graphics_replay_tests d4vr_frame_trace_tests d4vr_pipeline_recipe_tests d4vr_library_variants_tests d4vr_dynamic_states_tests d4vr_replay_specialization_tests
-          ctest --test-dir work/stereo-targets-ci -C Release -R "stereo_target_ownership|graphics_state_replay|vulkan_frame_metadata|pipeline_recipe_ownership|library_variant_ownership|gpl_dynamic_state_ownership|replay_specialization_ownership" --output-on-failure
+          cmake --build work/stereo-targets-ci --config Release --target d4vr_stereo_targets_tests d4vr_graphics_replay_tests d4vr_frame_trace_tests d4vr_pipeline_recipe_tests d4vr_library_variants_tests d4vr_projection_source_tests d4vr_dynamic_states_tests d4vr_replay_specialization_tests
+          ctest --test-dir work/stereo-targets-ci -C Release -R "stereo_target_ownership|graphics_state_replay|vulkan_frame_metadata|pipeline_recipe_ownership|library_variant_ownership|projection_image_coherence|gpl_dynamic_state_ownership|replay_specialization_ownership" --output-on-failure
       - name: Upload Windows probe without vendor or test libraries
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v4

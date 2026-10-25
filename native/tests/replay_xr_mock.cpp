@@ -19,12 +19,40 @@
 #define assert(x) do { if(!(x))std::abort(); } while(false)
 struct XrInstance_T {};
 struct XrSession_T {
-    XrGraphicsBindingVulkanKHR binding;unsigned frames=0;bool ready=false,exit=false;
+    XrGraphicsBindingVulkanKHR binding;unsigned frames=0,ticks=0,acquires=0,releases=0;bool ready=false,exit=false;
     VkQueue queue{};VkCommandPool pool{};VkQueryPool query{};VkBuffer buffer{};VkDeviceMemory memory{};VkFence fence{};
 };
 struct XrSpace_T {};
-struct XrSwapchain_T { VkDevice device{};VkImage image{};VkDeviceMemory memory{};bool acquired=false; };
+struct XrSwapchain_T { VkDevice device{};VkImage image{};VkDeviceMemory memory{};uint32_t width=0,height=0;bool acquired=false; };
 namespace { XrInstance_T instance;XrSession active{};unsigned swapchains=0; }
+namespace {
+void verifyPixels(XrSession s,const XrCompositionLayerProjection& projection) {
+    auto d=s->binding.device;auto left=projection.views[0].subImage.swapchain;
+    VkDeviceSize bytes=VkDeviceSize(left->width)*left->height*4;
+    VkBuffer buffer{};VkDeviceMemory memory{};VkCommandPool pool{};VkFence fence{};
+    VkBufferCreateInfo bi{VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};bi.size=2*bytes;bi.usage=VK_BUFFER_USAGE_TRANSFER_DST_BIT;assert(vkCreateBuffer(d,&bi,nullptr,&buffer)==VK_SUCCESS);
+    VkMemoryRequirements req{};vkGetBufferMemoryRequirements(d,buffer,&req);VkPhysicalDeviceMemoryProperties mp{};vkGetPhysicalDeviceMemoryProperties(s->binding.physicalDevice,&mp);
+    uint32_t type=0;for(;type<mp.memoryTypeCount;++type)if((req.memoryTypeBits&(1u<<type)) && (mp.memoryTypes[type].propertyFlags&(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT|VK_MEMORY_PROPERTY_HOST_COHERENT_BIT))==(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT|VK_MEMORY_PROPERTY_HOST_COHERENT_BIT))break;assert(type<mp.memoryTypeCount);
+    VkMemoryAllocateInfo ma{VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};ma.allocationSize=req.size;ma.memoryTypeIndex=type;assert(vkAllocateMemory(d,&ma,nullptr,&memory)==VK_SUCCESS);assert(vkBindBufferMemory(d,buffer,memory,0)==VK_SUCCESS);
+    VkCommandPoolCreateInfo pi{VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};pi.queueFamilyIndex=s->binding.queueFamilyIndex;assert(vkCreateCommandPool(d,&pi,nullptr,&pool)==VK_SUCCESS);
+    VkCommandBufferAllocateInfo ai{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};ai.commandPool=pool;ai.level=VK_COMMAND_BUFFER_LEVEL_PRIMARY;ai.commandBufferCount=1;VkCommandBuffer command{};assert(vkAllocateCommandBuffers(d,&ai,&command)==VK_SUCCESS);
+    VkCommandBufferBeginInfo begin{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};begin.flags=VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;assert(vkBeginCommandBuffer(command,&begin)==VK_SUCCESS);
+    for(unsigned i=0;i<2;++i){auto e=projection.views[i].subImage.swapchain;assert(e->width==left->width && e->height==left->height);
+        VkImageMemoryBarrier b{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};b.image=e->image;b.oldLayout=VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;b.newLayout=VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;b.srcAccessMask=VK_ACCESS_COLOR_ATTACHMENT_READ_BIT|VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;b.dstAccessMask=VK_ACCESS_TRANSFER_READ_BIT;b.srcQueueFamilyIndex=b.dstQueueFamilyIndex=VK_QUEUE_FAMILY_IGNORED;b.subresourceRange={VK_IMAGE_ASPECT_COLOR_BIT,0,1,0,1};
+        vkCmdPipelineBarrier(command,VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,VK_PIPELINE_STAGE_TRANSFER_BIT,0,0,nullptr,0,nullptr,1,&b);
+        VkBufferImageCopy copy{};copy.bufferOffset=i*bytes;copy.imageSubresource={VK_IMAGE_ASPECT_COLOR_BIT,0,0,1};copy.imageExtent={e->width,e->height,1};vkCmdCopyImageToBuffer(command,e->image,VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,buffer,1,&copy);
+        b.oldLayout=VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;b.newLayout=VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;b.srcAccessMask=VK_ACCESS_TRANSFER_READ_BIT;b.dstAccessMask=VK_ACCESS_COLOR_ATTACHMENT_READ_BIT|VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        vkCmdPipelineBarrier(command,VK_PIPELINE_STAGE_TRANSFER_BIT,VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,0,0,nullptr,0,nullptr,1,&b);
+    }
+    VkMemoryBarrier host{VK_STRUCTURE_TYPE_MEMORY_BARRIER};host.srcAccessMask=VK_ACCESS_TRANSFER_WRITE_BIT;host.dstAccessMask=VK_ACCESS_HOST_READ_BIT;vkCmdPipelineBarrier(command,VK_PIPELINE_STAGE_TRANSFER_BIT,VK_PIPELINE_STAGE_HOST_BIT,0,1,&host,0,nullptr,0,nullptr);assert(vkEndCommandBuffer(command)==VK_SUCCESS);
+    VkFenceCreateInfo fi{VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};assert(vkCreateFence(d,&fi,nullptr,&fence)==VK_SUCCESS);VkSubmitInfo submit{VK_STRUCTURE_TYPE_SUBMIT_INFO};submit.commandBufferCount=1;submit.pCommandBuffers=&command;assert(vkQueueSubmit(s->queue,1,&submit,fence)==VK_SUCCESS);assert(vkWaitForFences(d,1,&fence,VK_TRUE,UINT64_MAX)==VK_SUCCESS);
+    void* raw{};assert(vkMapMemory(d,memory,0,2*bytes,0,&raw)==VK_SUCCESS);auto pixels=static_cast<const unsigned char*>(raw);
+    for(unsigned i=0;i<2;++i)for(uint32_t y=0;y<left->height;++y)for(uint32_t x=0;x<left->width;++x){auto index=i*bytes+(VkDeviceSize(y)*left->width+x)*4;auto sy=std::getenv("D4VR_MOCK_XR_FLIP")?left->height-1-y:y;
+        assert(pixels[index]==(i?200:20) && pixels[index+1]==x%251 && pixels[index+2]==(sy+s->ticks*5)%251 && pixels[index+3]==255);}
+    vkUnmapMemory(d,memory);vkDestroyFence(d,fence,nullptr);vkDestroyCommandPool(d,pool,nullptr);vkDestroyBuffer(d,buffer,nullptr);vkFreeMemory(d,memory,nullptr);
+    std::fputs("D4VR mock XR image pixels verified\n",stderr);
+}
+}
 #define XR_FN(name) extern "C" XRAPI_ATTR XrResult XRAPI_CALL name
 XR_FN(xrCreateInstance)(const XrInstanceCreateInfo*,XrInstance* out) { assert(!active);*out=&instance;return XR_SUCCESS; }
 XR_FN(xrDestroyInstance)(XrInstance) { assert(!active && !swapchains);return XR_SUCCESS; }
@@ -52,6 +80,7 @@ XR_FN(xrCreateSession)(XrInstance,const XrSessionCreateInfo* info,XrSession* out
 }
 XR_FN(xrDestroySession)(XrSession s) {
     assert(s==active && !swapchains);auto d=s->binding.device;
+    assert(s->acquires==s->releases);std::fprintf(stderr,"D4VR mock XR image lifecycle: %u acquires, %u releases\n",s->acquires,s->releases);
     // No wait here: the presenter must complete work enqueued by xrEndFrame,
     // including this runtime's own query/buffer use, before destroying session.
     if(s->query)vkDestroyQueryPool(d,s->query,nullptr);
@@ -63,9 +92,9 @@ XR_FN(xrDestroySession)(XrSession s) {
 }
 XR_FN(xrEnumerateSwapchainFormats)(XrSession,uint32_t capacity,uint32_t* count,int64_t* out) { *count=1;if(capacity)out[0]=VK_FORMAT_B8G8R8A8_UNORM;return XR_SUCCESS; }
 XR_FN(xrCreateSwapchain)(XrSession s,const XrSwapchainCreateInfo* info,XrSwapchain* out) {
-    auto e=new XrSwapchain_T;e->device=s->binding.device;
+    auto e=new XrSwapchain_T;e->device=s->binding.device;e->width=info->width;e->height=info->height;
     VkImageCreateInfo ci{VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};ci.imageType=VK_IMAGE_TYPE_2D;ci.format=VkFormat(info->format);ci.extent={info->width,info->height,1};
-    ci.mipLevels=ci.arrayLayers=1;ci.samples=VK_SAMPLE_COUNT_1_BIT;ci.tiling=VK_IMAGE_TILING_OPTIMAL;ci.usage=VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT|VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    ci.mipLevels=ci.arrayLayers=1;ci.samples=VK_SAMPLE_COUNT_1_BIT;ci.tiling=VK_IMAGE_TILING_OPTIMAL;ci.usage=VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT|VK_IMAGE_USAGE_TRANSFER_DST_BIT|VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     if(vkCreateImage(e->device,&ci,nullptr,&e->image)!=VK_SUCCESS){delete e;return XR_ERROR_RUNTIME_FAILURE;}
     VkMemoryRequirements req{};vkGetImageMemoryRequirements(e->device,e->image,&req);VkPhysicalDeviceMemoryProperties memory{};vkGetPhysicalDeviceMemoryProperties(s->binding.physicalDevice,&memory);
     uint32_t type=0;for(;type<memory.memoryTypeCount;++type)if(req.memoryTypeBits&(1u<<type))break;assert(type<memory.memoryTypeCount);
@@ -83,21 +112,26 @@ XR_FN(xrPollEvent)(XrInstance,XrEventDataBuffer* out) {
     if(!active)return XR_EVENT_UNAVAILABLE;
     auto e=reinterpret_cast<XrEventDataSessionStateChanged*>(out);
     if(!active->ready){active->ready=true;e->type=XR_TYPE_EVENT_DATA_SESSION_STATE_CHANGED;e->session=active;e->state=XR_SESSION_STATE_READY;return XR_SUCCESS;}
-    if(active->frames>=2 && !active->exit){active->exit=true;e->type=XR_TYPE_EVENT_DATA_SESSION_STATE_CHANGED;e->session=active;e->state=XR_SESSION_STATE_EXITING;return XR_SUCCESS;}
+    if(active->ticks>=2 && !active->exit){active->exit=true;e->type=XR_TYPE_EVENT_DATA_SESSION_STATE_CHANGED;e->session=active;e->state=XR_SESSION_STATE_EXITING;return XR_SUCCESS;}
     return XR_EVENT_UNAVAILABLE;
 }
 XR_FN(xrBeginSession)(XrSession,const XrSessionBeginInfo*) { return XR_SUCCESS; }
 XR_FN(xrEndSession)(XrSession) { return XR_SUCCESS; }
-XR_FN(xrWaitFrame)(XrSession s,const XrFrameWaitInfo*,XrFrameState* out) { out->shouldRender=XR_TRUE;out->predictedDisplayTime=(s->frames+1)*10000000;out->predictedDisplayPeriod=10000000;return XR_SUCCESS; }
+XR_FN(xrWaitFrame)(XrSession s,const XrFrameWaitInfo*,XrFrameState* out) { ++s->ticks;out->shouldRender=XR_TRUE;out->predictedDisplayTime=s->ticks*10000000;out->predictedDisplayPeriod=10000000;return XR_SUCCESS; }
 XR_FN(xrBeginFrame)(XrSession,const XrFrameBeginInfo*) { return XR_SUCCESS; }
 XR_FN(xrLocateViews)(XrSession s,const XrViewLocateInfo*,XrViewState* state,uint32_t capacity,uint32_t* count,XrView* out) {
     assert(capacity>=2);*count=2;state->viewStateFlags=XR_VIEW_STATE_ORIENTATION_VALID_BIT|XR_VIEW_STATE_POSITION_VALID_BIT|XR_VIEW_STATE_ORIENTATION_TRACKED_BIT|XR_VIEW_STATE_POSITION_TRACKED_BIT;
-    for(unsigned i=0;i<2;++i){out[i].pose.orientation={0,0,0,1};out[i].pose.position={s->frames*.025f+(i?.032f:-.032f),0,0};out[i].fov={-.8f,.8f,.8f,-.8f};}return XR_SUCCESS;
+    for(unsigned i=0;i<2;++i){out[i].pose.orientation={0,0,0,1};out[i].pose.position={(s->ticks-1)*.025f+(i?.032f:-.032f),0,0};out[i].fov={-.8f,.8f,.8f,-.8f};}return XR_SUCCESS;
 }
 XR_FN(xrEndFrame)(XrSession s,const XrFrameEndInfo* info) {
     if(info->layerCount){assert(info->layerCount==1 && info->layers[0]->type==XR_TYPE_COMPOSITION_LAYER_PROJECTION);
         auto p=reinterpret_cast<const XrCompositionLayerProjection*>(info->layers[0]);assert(p->viewCount==2);
         for(unsigned i=0;i<2;++i)assert(!p->views[i].subImage.swapchain->acquired);
+        if(std::getenv("D4VR_MOCK_XR_CHECK_UPLOAD")){
+            assert(info->displayTime==s->ticks*10000000);
+            for(unsigned i=0;i<2;++i){const auto& v=p->views[i];assert(v.pose.position.x==(s->ticks-1)*.025f+(i?.032f:-.032f));assert(v.pose.orientation.w==1 && v.fov.angleLeft==-.8f && v.fov.angleRight==.8f);}
+            verifyPixels(s,*p);
+        }
         ++s->frames;std::fputs("D4VR mock XR projection frame completed\n",stderr);
         if(s->frames==2) {
             auto d=s->binding.device;
@@ -115,9 +149,9 @@ XR_FN(xrEndFrame)(XrSession s,const XrFrameEndInfo* info) {
         }
     }return XR_SUCCESS;
 }
-XR_FN(xrAcquireSwapchainImage)(XrSwapchain s,const XrSwapchainImageAcquireInfo*,uint32_t* index) { assert(!s->acquired);s->acquired=true;*index=0;return XR_SUCCESS; }
+XR_FN(xrAcquireSwapchainImage)(XrSwapchain s,const XrSwapchainImageAcquireInfo*,uint32_t* index) { assert(!s->acquired);s->acquired=true;++active->acquires;*index=0;return XR_SUCCESS; }
 XR_FN(xrWaitSwapchainImage)(XrSwapchain s,const XrSwapchainImageWaitInfo*) { assert(s->acquired);return XR_SUCCESS; }
-XR_FN(xrReleaseSwapchainImage)(XrSwapchain s,const XrSwapchainImageReleaseInfo*) { assert(s->acquired);s->acquired=false;return XR_SUCCESS; }
+XR_FN(xrReleaseSwapchainImage)(XrSwapchain s,const XrSwapchainImageReleaseInfo*) { assert(s->acquired);s->acquired=false;++active->releases;return XR_SUCCESS; }
 XR_FN(xrGetInstanceProcAddr)(XrInstance,const char* name,PFN_xrVoidFunction* out) {
 #define MATCH(fn) if(std::strcmp(name,#fn)==0){*out=reinterpret_cast<PFN_xrVoidFunction>(fn);return XR_SUCCESS;}
     MATCH(xrDestroyInstance) MATCH(xrGetSystem) MATCH(xrGetInstanceProperties) MATCH(xrGetVulkanGraphicsRequirementsKHR)
