@@ -5,6 +5,7 @@
 #include "../vulkan/layer_poc.hpp"
 #include "poc_shader_code.hpp"
 #include <array>
+#include <cstdlib>
 #include <filesystem>
 
 using namespace d4vr;
@@ -30,7 +31,19 @@ int main(int argc,char** argv) try {
     bool negative=false,wrong=false,unknownShader=false;
     for(int k=2;k<argc;++k) {if(std::string(argv[k])=="--unsupported-command")negative=true;else if(std::string(argv[k])=="--wrong-client")wrong=true;else if(std::string(argv[k])=="--unrecognized-shader")unknownShader=true;else throw std::invalid_argument("Unknown POC option");}
     auto directory=std::filesystem::path(argv[1]);if(!std::filesystem::is_directory(directory))throw std::invalid_argument("Create a private output directory first");
-    Fixture f(true,false,false,false,false,wrong?"D4VR other client":poc::clientName);
+    // Literal names returned by SteamVR's legacy external-device binding. They
+    // remain necessary to that contract even when their functionality is core.
+    const std::vector<const char*> instanceExtensions{"VK_KHR_external_memory_capabilities","VK_KHR_get_physical_device_properties2",
+        "VK_KHR_external_fence_capabilities","VK_KHR_surface","VK_KHR_external_semaphore_capabilities"};
+    const std::vector<const char*> deviceExtensions{"VK_KHR_external_memory","VK_KHR_external_semaphore","VK_KHR_timeline_semaphore",
+        "VK_KHR_dedicated_allocation","VK_KHR_get_memory_requirements2","VK_KHR_external_memory_fd","VK_KHR_external_semaphore_fd","VK_KHR_image_format_list"};
+    // Select layers on this application's instance. An environment-wide layer
+    // list also instruments SteamVR's unrelated internal probe instance, which
+    // is not the borrowed instance/device under test.
+    std::vector<const char*> layers;
+    const char* explicitLayers=std::getenv("D4VR_POC_EXPLICIT_LAYERS");
+    if(explicitLayers && std::string(explicitLayers)=="1")layers={"VK_LAYER_D4VR_replay_poc","VK_LAYER_KHRONOS_validation"};
+    Fixture f(true,false,false,false,false,wrong?"D4VR other client":poc::clientName,true,instanceExtensions,deviceExtensions,layers);
     auto projection=Matrix4{1.784022,0,0,0,0,3.171595,0,0,0,0,-1.001001,-.1001001,0,0,-1,0};
     std::array<EyeState,2> states;
     for(unsigned k=0;k<2;++k) {auto view=identity();view[3]=k?-.032:.032;states[k]=make_eye_state(k,1,view,projection);}

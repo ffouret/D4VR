@@ -86,6 +86,11 @@ public:
                    const VkDeviceSize* sizes,const VkDeviceSize* strides);
     void beginRendering(const VkRenderingInfo&,const stereo::Config& observedSignature);
     bool endRendering();
+    // Optional frozen-scene bridge for XR: retain only a successful all-CLEAR
+    // scope, then emit its private eyes into a DIFFERENT borrowed command buffer.
+    // Caller owns synchronization, input resource stability and pipeline leases.
+    // No original draw or original-state restoration is emitted by this method.
+    bool replaySnapshot(VkCommandBuffer);
     void draw(uint32_t vertices,uint32_t instances,uint32_t firstVertex,uint32_t firstInstance);
     void drawIndexed(uint32_t indices,uint32_t instances,uint32_t firstIndex,int32_t vertexOffset,uint32_t firstInstance);
     Stats stats() const;

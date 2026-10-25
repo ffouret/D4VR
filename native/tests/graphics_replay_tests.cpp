@@ -25,7 +25,7 @@ struct Driver {
     std::array<VkDeviceSize,32> vertexSizes{},vertexStrides{};
     bool nullSizes = false,nullStrides = false;
 } driver;
-struct DrawEvent { Driver state; std::array<int64_t,5> arguments; bool indexed; };
+struct DrawEvent { Driver state; std::array<int64_t,5> arguments; bool indexed; VkCommandBuffer command; };
 std::vector<DrawEvent> drawEvents;
 unsigned begins = 0,ends = 0;
 VKAPI_ATTR void VKAPI_CALL bindPipeline(VkCommandBuffer,VkPipelineBindPoint,VkPipeline p) { driver.pipeline = p; }
@@ -67,8 +67,8 @@ VKAPI_ATTR void VKAPI_CALL vertices2(VkCommandBuffer cb,uint32_t first,uint32_t 
 }
 VKAPI_ATTR void VKAPI_CALL beginReplay(VkCommandBuffer cb,const VkRenderingInfo* info) { begin(cb,info); ++begins; }
 VKAPI_ATTR void VKAPI_CALL endReplay(VkCommandBuffer) { ++ends; }
-VKAPI_ATTR void VKAPI_CALL draw(VkCommandBuffer,uint32_t a,uint32_t b,uint32_t c,uint32_t d) { drawEvents.push_back({driver,{a,b,c,d,0},false}); }
-VKAPI_ATTR void VKAPI_CALL indexed(VkCommandBuffer,uint32_t a,uint32_t b,uint32_t c,int32_t d,uint32_t e) { drawEvents.push_back({driver,{a,b,c,d,e},true}); }
+VKAPI_ATTR void VKAPI_CALL draw(VkCommandBuffer command,uint32_t a,uint32_t b,uint32_t c,uint32_t d) { drawEvents.push_back({driver,{a,b,c,d,0},false,command}); }
+VKAPI_ATTR void VKAPI_CALL indexed(VkCommandBuffer command,uint32_t a,uint32_t b,uint32_t c,int32_t d,uint32_t e) { drawEvents.push_back({driver,{a,b,c,d,e},true,command}); }
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL getReplay(VkDevice device,const char* name) {
 #define ENTRY(vk,fn) if (std::strcmp(name,"vk" #vk) == 0) return reinterpret_cast<PFN_vkVoidFunction>(fn);
     ENTRY(CmdBindPipeline,bindPipeline) ENTRY(CmdBindDescriptorSets,descriptors) ENTRY(CmdPushConstants,push)
@@ -286,5 +286,25 @@ int main() {
     { Rig r; r.state(); for (unsigned k = 0; k < 9000; ++k) r.replay->stencilReference(VK_STENCIL_FACE_FRONT_AND_BACK,k);
       r.begin(); r.replay->draw(3,1,0,0); assert(!r.replay->endRendering()); assert(drawEvents.size() == 1 && r.replay->stats().lastRejection == Rejection::budget); }
     assert(empty());
-    std::cout << "Graphics tape: transient copies, indexed draws, descriptor buffers/offsets, compute state restoration, complete static/unknown declarations, static invalidation, LOAD continuity and rejection paths: passed\n";
+    {
+        Rig r;r.state();auto privateCommand=reinterpret_cast<VkCommandBuffer>(0xf200);
+        assert(!r.replay->replaySnapshot(privateCommand));
+        r.begin();r.replay->drawIndexed(13,2,7,-3,5);assert(!r.replay->replaySnapshot(privateCommand));
+        assert(r.replay->endRendering());auto stats=r.replay->stats();auto count=drawEvents.size();
+        assert(!r.replay->replaySnapshot(VK_NULL_HANDLE) && !r.replay->replaySnapshot(r.command) && drawEvents.size()==count);
+        for(unsigned frame=0;frame<2;++frame) {
+            assert(r.replay->replaySnapshot(privateCommand));
+            for(unsigned eye=0;eye<2;++eye) {
+                auto& e=drawEvents[count++];assert(e.command==privateCommand && e.state.pipeline==r.policy.eyes[eye]);
+                assert(e.indexed && e.arguments==drawEvents[0].arguments);same(e.state,drawEvents[0].state,false);
+            }
+        }
+        assert(r.replay->stats().forwardedDraws==stats.forwardedDraws && r.replay->stats().replayedDraws==stats.replayedDraws);
+        r.begin(true);r.replay->draw(3,1,0,0);assert(r.replay->endRendering());
+        assert(!r.replay->replaySnapshot(privateCommand)); // A LOAD scope needs its producer closure.
+    }
+    assert(empty());
+    {Rig r;r.state();r.begin();r.replay->draw(3,1,0,0);assert(r.replay->endRendering());r.replay->unsupported();assert(!r.replay->replaySnapshot(reinterpret_cast<VkCommandBuffer>(0xf200)));}
+    assert(empty());
+    std::cout << "Graphics tape: state restoration, bounded replay, LOAD continuity, private-CB frozen scope and rejection paths: passed\n";
 }

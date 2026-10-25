@@ -47,6 +47,8 @@ struct Device::Impl {
     };
     std::map<VkCommandBuffer,std::unique_ptr<Recording>> recordings;
     uint32_t sequence=0; bool disabled=false;
+    std::function<std::string(const xr::ReplaySource&)> present;
+    bool presented=false;
     Impl(VkDevice d,PFN_vkGetDeviceProcAddr g,const VkPhysicalDeviceMemoryProperties& m):device(d),get(g),memory(m) {}
     bool attachment(VkImageView handle,VkFormat format,VkImageAspectFlags aspect) const {
         auto v=views.find(handle); if(v==views.end()) return false;
@@ -69,6 +71,12 @@ Device::Device(VkDevice d,PFN_vkGetDeviceProcAddr get,const VkPhysicalDeviceMemo
 #undef LOAD
 }
 Device::~Device()=default;
+void Device::presenter(std::function<std::string(const xr::ReplaySource&)> fn) {
+    // A runtime may call public vkGetDeviceQueue on the borrowed device while
+    // creating its session. That re-enters the layer; never replace a callback
+    // whose captures are currently being borrowed by the presenter.
+    if(!impl->presented)impl->present=std::move(fn);
+}
 void Device::disable() noexcept {
     impl->disabled=true;
     for(auto& entry:impl->recordings)entry.second->graphics->unsupported();
@@ -187,6 +195,17 @@ std::vector<Snapshot> Device::completed() {
             for(unsigned k=0;k<texels;++k) {const auto* pixel=bytes+eye*eyeBytes+k*4;ppm.insert(ppm.end(),{pixel[2],pixel[1],pixel[0]});}
             out.push_back({base+(eye?"-right.ppm":"-left.ppm"),std::move(ppm)});
         }
+    }
+    if(impl->present && !impl->presented && !impl->disabled)for(auto& entry:impl->recordings) {
+        auto& r=*entry.second;if(!r.submitted || !r.copied || r.graphics->stats().rejectedScopes)continue;
+        impl->presented=true;
+        xr::ReplaySource source;source.extent=r.targets->config().extent;source.format=r.targets->config().colors[0];
+        source.images={r.targets->eye(0).colors[0].handle,r.targets->eye(1).colors[0].handle};
+        source.update=[&r](const auto& states){r.targets->updateStatesAfterCompletion(states);};
+        source.record=[&r](auto command){return r.graphics->replaySnapshot(command);};
+        // Keep an independent owner across all runtime callbacks as well.
+        auto present=impl->present;
+        auto report=present(source);out.push_back({"poc-xr.json",{report.begin(),report.end()}});break;
     }
     return out;
 }

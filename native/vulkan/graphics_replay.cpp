@@ -1,4 +1,5 @@
 #include "graphics_replay.hpp"
+#include <algorithm>
 #include <cstring>
 #include <map>
 #include <variant>
@@ -49,11 +50,13 @@ struct Graphics::Impl {
     stereo::Targets& targets;
     std::array<stereo::PreviousUse,2> previous;
     std::map<VkPipeline,Pipeline> pipelines;
-    Tape history,prefix,scope;
+    Tape history,prefix,scope,snapshotPrefix,snapshotScope;
     size_t bytes = 0,records = 0;
     bool active = false,accepted = false,poisoned = false,initialized = false;
     uint64_t scopeDraws = 0;
     stereo::Loads loads;
+    stereo::Loads snapshotLoads;
+    bool snapshotReady = false;
     Stats counters;
     VkPipeline bound{};
     struct DescriptorState {
@@ -413,6 +416,18 @@ bool Graphics::endRendering() {
         if (!i.scopeDraws && i.accepted) i.reject(Rejection::noDraws);
         ++i.counters.rejectedScopes; i.active = false; i.initialized = false; i.scope.clear(); i.prefix.clear(); return false;
     }
+    // Snapshot allocation must finish before any private GPU command is emitted.
+    // Failure leaves the original scope forwarded once and rejects its copies.
+    i.capture([&] {
+        i.snapshotReady = false;i.snapshotPrefix.clear();i.snapshotScope.clear();
+        if(i.loads.depth==VK_ATTACHMENT_LOAD_OP_CLEAR && i.loads.stencil==VK_ATTACHMENT_LOAD_OP_CLEAR
+            && std::all_of(i.loads.colors.begin(),i.loads.colors.end(),[](auto op){return op==VK_ATTACHMENT_LOAD_OP_CLEAR;})) {
+            i.snapshotPrefix=i.prefix;i.snapshotScope=i.scope;i.snapshotLoads=i.loads;i.snapshotReady=true;
+        }
+    });
+    if(i.poisoned) {
+        ++i.counters.rejectedScopes;i.active=false;i.initialized=false;i.scope.clear();i.prefix.clear();return false;
+    }
     for (unsigned eye = 0; eye < 2; ++eye) {
         i.targets.begin(i.command,eye,i.previous[eye],i.loads);
         for (const auto& node : i.prefix) i.emit(*node,static_cast<int>(eye));
@@ -422,6 +437,19 @@ bool Graphics::endRendering() {
     for (const auto& node : i.history) i.emit(*node,-1);
     ++i.counters.replayedScopes; i.counters.replayedDraws += 2*i.scopeDraws; i.counters.restoredStateCommands += i.history.size();
     i.active = false; i.initialized = true; i.attachmentViews = i.pendingAttachmentViews; i.scope.clear(); i.prefix.clear(); return true;
+}
+bool Graphics::replaySnapshot(VkCommandBuffer command) {
+    auto& i=*impl;
+    if(!command || command==i.command || i.active || !i.snapshotReady || i.poisoned)return false;
+    struct Restore { VkCommandBuffer& slot;VkCommandBuffer original;~Restore(){slot=original;} } restore{i.command,i.command};
+    i.command=command;
+    for(unsigned eye=0;eye<2;++eye) {
+        i.targets.begin(command,eye,stereo::PreviousUse::transferSource,i.snapshotLoads);
+        for(const auto& node:i.snapshotPrefix)i.emit(*node,static_cast<int>(eye));
+        for(const auto& node:i.snapshotScope)i.emit(*node,static_cast<int>(eye));
+        i.targets.endForReadback(command,eye);
+    }
+    return true;
 }
 void Graphics::draw(uint32_t vertices,uint32_t instances,uint32_t firstVertex,uint32_t firstInstance) {
     auto& i = *impl; i.CmdDraw(i.command,vertices,instances,firstVertex,firstInstance); ++i.counters.forwardedDraws;

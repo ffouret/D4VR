@@ -181,6 +181,7 @@ struct Commands {
 struct Device {
     VkDevice handle{};
     PFN_vkGetDeviceProcAddr get{};
+    PFN_vkSetDeviceLoaderData setLoaderData{};
     uint32_t id{};
     std::shared_ptr<Instance> instance;
     VkPhysicalDevice physical{};
@@ -348,16 +349,18 @@ VKAPI_ATTR VkResult VKAPI_CALL d4CreateDevice(VkPhysicalDevice physical, const V
     auto instance = instanceFor(physical);
     auto chain = reinterpret_cast<const VkBaseInStructure*>(info->pNext);
     VkLayerDeviceCreateInfo* link = nullptr;
+    PFN_vkSetDeviceLoaderData setLoaderData{};
     for (; chain; chain = chain->pNext) if (chain->sType == VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO) {
         auto candidate = reinterpret_cast<const VkLayerDeviceCreateInfo*>(chain);
-        if (candidate->function == VK_LAYER_LINK_INFO) { link = const_cast<VkLayerDeviceCreateInfo*>(candidate); break; }
+        if (candidate->function == VK_LAYER_LINK_INFO) link = const_cast<VkLayerDeviceCreateInfo*>(candidate);
+        if (candidate->function == VK_LOADER_DATA_CALLBACK) setLoaderData=candidate->u.pfnSetDeviceLoaderData;
     }
     if (!instance || !link || !link->u.pLayerInfo) return VK_ERROR_INITIALIZATION_FAILED;
     auto next = link->u.pLayerInfo;
     auto get = next->pfnNextGetDeviceProcAddr;
     auto create = reinterpret_cast<PFN_vkCreateDevice>(next->pfnNextGetInstanceProcAddr(instance->handle, "vkCreateDevice"));
     if (!create) return VK_ERROR_INITIALIZATION_FAILED;
-    auto d = std::make_shared<Device>(); d->get = get;
+    auto d = std::make_shared<Device>(); d->get = get;d->setLoaderData=setLoaderData;
     link->u.pLayerInfo = next->pNext;
     auto status = create(physical, info, allocator, result);
     if (status != VK_SUCCESS) return status;
@@ -459,6 +462,18 @@ VKAPI_ATTR VkResult VKAPI_CALL d4CreateDevice(VkPhysicalDevice physical, const V
 VKAPI_ATTR void VKAPI_CALL d4GetDeviceQueue(VkDevice handle, uint32_t family, uint32_t index, VkQueue* queue) {
     auto d = deviceFor(handle); d->GetDeviceQueue(handle, family, index, queue);
     if (*queue) { std::lock_guard<std::mutex> lock(stateMutex); d->queues[*queue] = {family, index}; }
+    D4_POC(d,
+        const char* value=std::getenv("D4VR_POC_XR_SECONDS");
+        if(value && *value && family<d->queueFamilies.size() && (d->queueFamilies[family].queueFlags&VK_QUEUE_GRAPHICS_BIT)) {
+            char* end=nullptr;auto seconds=std::strtoul(value,&end,10);
+            if(end && !*end && seconds<=30) {
+                d4vr::xr::BorrowedBinding binding;binding.instance=d->instance->handle;binding.device=handle;binding.queue=*queue;binding.get=d->get;
+                binding.family=family;binding.index=index;binding.api=d->instance->api;binding.uuid=d->deviceUuid;binding.setLoaderData=d->setLoaderData;
+                binding.instanceExtensions=d->instance->extensions;binding.deviceExtensions=d->extensions;
+                d->poc->presenter([binding,seconds](const auto& source){return d4vr::xr::presentReplay(binding,source,uint32_t(seconds));});
+            }
+        }
+    );
 }
 VKAPI_ATTR void VKAPI_CALL d4GetDeviceQueue2(VkDevice handle, const VkDeviceQueueInfo2* info, VkQueue* queue) {
     auto d = deviceFor(handle); d->GetDeviceQueue2(handle, info, queue);

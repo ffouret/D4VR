@@ -2,6 +2,7 @@
 // Experimental closed-scene adapter, never a game shader admission policy.
 #include "graphics_replay.hpp"
 #include "pipeline_recipe.hpp"
+#include "../xr/replay_presenter.hpp"
 #include <string>
 
 namespace d4vr::poc {
@@ -13,6 +14,7 @@ public:
     Device(VkDevice,PFN_vkGetDeviceProcAddr,const VkPhysicalDeviceMemoryProperties&);
     ~Device();
     void disable() noexcept;
+    void presenter(std::function<std::string(const xr::ReplaySource&)>);
     void module(VkShaderModule,const VkShaderModuleCreateInfo&);
     void removeModule(VkShaderModule);
     void layout(VkPipelineLayout,const VkPipelineLayoutCreateInfo&);

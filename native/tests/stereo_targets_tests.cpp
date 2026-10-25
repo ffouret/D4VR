@@ -25,6 +25,22 @@ int main() {
         operations = 0; failAt = fail; rejected(create); assert(empty());
     }
     failAt = operations = 0; missingMap = true; rejected(create); assert(empty() && operations == 0); missingMap = false;
+    {
+        auto pair=create();auto before=mappedBytes;auto updated=states;
+        auto v=identity();v[3]=.125;
+        updated[0]=make_eye_state(0,2,v,identity());updated[1]=make_eye_state(1,2,v,identity());
+        auto addresses=std::array<VkDeviceAddress,2>{pair->eye(0).packetAddress,pair->eye(1).packetAddress};
+        failAt=operations+2;rejected([&]{pair->updateStatesAfterCompletion(updated);});
+        assert(activeMaps.empty() && mappedBytes==before);failAt=0;
+        pair->updateStatesAfterCompletion(updated);
+        for(unsigned eye=0;eye<2;++eye) {
+            assert(pair->eye(eye).packetAddress==addresses[eye]);
+            assert(std::memcmp(mappedBytes.at(key(pair->eye(eye).packetMemory)).data(),&updated[eye],sizeof(EyeState))==0);
+        }
+        auto successful=mappedBytes;updated[1].header[2]=3;auto count=operations;
+        rejected([&]{pair->updateStatesAfterCompletion(updated);});assert(operations==count && mappedBytes==successful && activeMaps.empty());
+    }
+    assert(empty());
     dispatchRequests = 0; config.extent.width = 0; rejected(create); assert(dispatchRequests == 0); config.extent.width = 256;
     states[1].header[2] = 2; rejected(create); assert(dispatchRequests == 0);
     std::cout << "Stereo target ownership, 48 partial failures, cleanup ordering and borrowed dispatch: passed\n";

@@ -14,9 +14,13 @@ struct Buffer { VkBuffer handle; VkDeviceMemory memory; void* mapped; VkDeviceAd
 struct Fixture {
     VkInstance instance{}; VkPhysicalDevice physical{}; VkDevice device{}; VkQueue queue{};
     VkPhysicalDeviceMemoryProperties memory{}; uint32_t family{};
-    Fixture(bool dynamic, bool identifiers,bool descriptorBuffers = false,bool extended = false,bool libraries = false,const char* appName = "D4VR observer fixture") {
+    Fixture(bool dynamic, bool identifiers,bool descriptorBuffers = false,bool extended = false,bool libraries = false,const char* appName = "D4VR observer fixture",bool timeline = false,
+            const std::vector<const char*>& instanceExtensions = {},const std::vector<const char*>& deviceExtensions = {},
+            const std::vector<const char*>& instanceLayers = {}) {
         VkApplicationInfo app{VK_STRUCTURE_TYPE_APPLICATION_INFO}; app.pApplicationName = appName; app.apiVersion = dynamic ? VK_API_VERSION_1_3 : VK_API_VERSION_1_2;
         VkInstanceCreateInfo create{VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO}; create.pApplicationInfo = &app;
+        create.enabledExtensionCount=uint32_t(instanceExtensions.size());create.ppEnabledExtensionNames=instanceExtensions.data();
+        create.enabledLayerCount=uint32_t(instanceLayers.size());create.ppEnabledLayerNames=instanceLayers.data();
         check(vkCreateInstance(&create, nullptr, &instance));
         uint32_t count = 0; check(vkEnumeratePhysicalDevices(instance, &count, nullptr));
         std::vector<VkPhysicalDevice> devices(count); check(vkEnumeratePhysicalDevices(instance, &count, devices.data()));
@@ -34,6 +38,7 @@ struct Fixture {
         VkPhysicalDeviceFeatures features{}; features.shaderInt64 = VK_TRUE; features.vertexPipelineStoresAndAtomics = VK_TRUE;
         features.depthBounds = extended;
         VkPhysicalDeviceVulkan12Features features12{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES}; features12.bufferDeviceAddress = VK_TRUE;
+        features12.timelineSemaphore=timeline;
         VkPhysicalDeviceVulkan13Features features13{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES}; features13.dynamicRendering = VK_TRUE;
         VkPhysicalDeviceShaderModuleIdentifierFeaturesEXT idFeature{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MODULE_IDENTIFIER_FEATURES_EXT}; idFeature.shaderModuleIdentifier = VK_TRUE;
         if (identifiers) { features13.pipelineCreationCacheControl = VK_TRUE; features13.pNext = &idFeature; }
@@ -43,7 +48,7 @@ struct Fixture {
         if (libraries) { libraryFeature.pNext=features13.pNext;features13.pNext=&libraryFeature; }
         if (dynamic || descriptorBuffers) features12.pNext = &features13;
         VkDeviceCreateInfo d{VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO}; d.pNext = &features12; d.pEnabledFeatures = &features; d.queueCreateInfoCount = 1; d.pQueueCreateInfos = &q;
-        std::vector<const char*> extensions;
+        std::vector<const char*> extensions=deviceExtensions;
         if (identifiers) extensions.push_back(VK_EXT_SHADER_MODULE_IDENTIFIER_EXTENSION_NAME);
         if (descriptorBuffers) extensions.push_back(VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME);
         if (libraries) { extensions.push_back(VK_EXT_GRAPHICS_PIPELINE_LIBRARY_EXTENSION_NAME);extensions.push_back(VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME); }

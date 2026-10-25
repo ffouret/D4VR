@@ -105,6 +105,8 @@ def run(args) -> dict:
             command += ['--telemetry-control-shader',str(args.telemetry_control_shader.resolve())]
         if args.single_camera_buffer:
             command.append('--single-camera-buffer')
+        if args.frozen_snapshot:
+            command.append('--frozen-snapshot')
         if args.pipeline_recipes:
             command.append('--pipeline-recipes')
         if args.library_pipelines:
@@ -126,6 +128,8 @@ def run(args) -> dict:
         if result.returncode or not payloads:
             raise ValueError(f'{name}: GPU fixture failed; inspect its private log')
         proof = payloads[-1]
+        if args.frozen_snapshot and (proof.get('frozen_private_command_buffer_replays')!=8 or proof.get('eye_packets_updated_after_completion') is not True):
+            raise ValueError('Frozen private-command-buffer replay or completed packet updates were not exercised')
         if args.library_pipelines and (proof.get('gpl_dynamic_state_contract_resolved') is not True
                 or proof.get('gpl_dynamic_state_contract_used_for_replay') is not True
                 or proof.get('gpl_effective_dynamic_state_count')!=(0 if args.static_state else 12 if args.dynamic_state else 3)):
@@ -257,6 +261,7 @@ def main() -> int:
     parser.add_argument('--replay-telemetry',action='store_true')
     parser.add_argument('--telemetry-control-shader',type=Path,help='Diagnostic variant used only for the enabled telemetry control')
     parser.add_argument('--single-camera-buffer',action='store_true',help='Synthetic fixture only: pack view rows56..59 in camera buffer0 as well')
+    parser.add_argument('--frozen-snapshot',action='store_true',help='Replay all-CLEAR snapshots into another CB after a completed eye-pose update')
     parser.add_argument('--pipeline-recipes',action='store_true')
     parser.add_argument('--library-pipelines',action='store_true')
     parser.add_argument('--library-original-live',action='store_true')

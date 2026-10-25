@@ -119,6 +119,18 @@ std::unique_ptr<Targets> Targets::create(VkDevice device,PFN_vkGetDeviceProcAddr
 const Eye& Targets::eye(unsigned k) const { return impl->eyes.at(k); }
 const Config& Targets::config() const { return impl->config; }
 bool Targets::hasStencil() const { return impl->config.depth == VK_FORMAT_D24_UNORM_S8_UINT; }
+void Targets::updateStatesAfterCompletion(const std::array<EyeState,2>& states) {
+    validate(impl->config,states);
+    std::array<void*,2> mapped{};
+    try {
+        for(unsigned eye=0;eye<2;++eye)checked(impl->MapMemory(impl->device,impl->eyes[eye].packetMemory,0,sizeof(EyeState),0,&mapped[eye]));
+    } catch(...) {
+        for(unsigned eye=0;eye<2;++eye)if(mapped[eye])impl->UnmapMemory(impl->device,impl->eyes[eye].packetMemory);
+        throw;
+    }
+    for(unsigned eye=0;eye<2;++eye)std::memcpy(mapped[eye],&states[eye],sizeof(EyeState));
+    for(unsigned eye=0;eye<2;++eye)impl->UnmapMemory(impl->device,impl->eyes[eye].packetMemory);
+}
 void Targets::prepare(VkCommandBuffer command,unsigned eye,PreviousUse previous) const {
     if (previous != PreviousUse::discarded && previous != PreviousUse::transferSource)
         throw std::invalid_argument("Invalid previous stereo target use");

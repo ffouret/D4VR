@@ -107,9 +107,9 @@ restent dans ce répertoire privé ; seuls agrégats et empreintes sont publiés
 
 ## Prochaine liaison
 
-Il faut raccorder les images privées à une session OpenXR utilisant le même
-device et la même queue, avec poses, synchronisation et durée de vie explicites.
-Le profil fermé peut servir à tester cette liaison hors du jeu. Pour Diablo,
+Le [raccordement OpenXR de la scène figée](FROZEN_REPLAY_XR.md) a depuis affiché
+ces images dans SteamVR, avec des erreurs de validation encore ouvertes. Le
+profil fermé sert à cette liaison hors du jeu. Pour Diablo,
 restent indispensables l'identité exacte du code actif, les ressources et alias,
 les états complets et les producteurs LOAD. L'ancienne couche de diagnostic
 de paires reste gelée et aucune boucle de lancement Battle.net n'est ajoutée.

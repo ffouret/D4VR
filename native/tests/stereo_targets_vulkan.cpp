@@ -33,7 +33,7 @@ std::vector<uint32_t> readCode(const char* path) {
 
 int main(int argc,char** argv) try {
     if (argc < 4) throw std::runtime_error("Usage: stereo_targets_vulkan original.vert.spv stereo.vert.spv mrt.frag.spv [--negative-sync-control] [--preview-directory path]");
-    bool negative = false,split = false,recorded = false,buffered = false,negativeCompute = false,extended = false,recipes = false,libraries = false,libraryOriginalLive = false,stateDecoys = false,staticState = false,telemetry = false,singleCameraBuffer = false; std::filesystem::path preview,computePath,telemetryControlPath;
+    bool negative = false,split = false,recorded = false,buffered = false,negativeCompute = false,extended = false,recipes = false,libraries = false,libraryOriginalLive = false,stateDecoys = false,staticState = false,telemetry = false,singleCameraBuffer = false,frozen = false; std::filesystem::path preview,computePath,telemetryControlPath;
     for (int k = 4; k < argc; ++k) {
         if (std::string(argv[k]) == "--negative-sync-control") negative = true;
         else if (std::string(argv[k]) == "--split-passes") split = true;
@@ -48,12 +48,14 @@ int main(int argc,char** argv) try {
         else if (std::string(argv[k]) == "--static-state") staticState = true;
         else if (std::string(argv[k]) == "--replay-telemetry") telemetry = true;
         else if (std::string(argv[k]) == "--single-camera-buffer") singleCameraBuffer = true;
+        else if (std::string(argv[k]) == "--frozen-snapshot") frozen = true;
         else if (std::string(argv[k]) == "--telemetry-control-shader" && k+1 < argc) telemetryControlPath = argv[++k];
         else if (std::string(argv[k]) == "--compute" && k+1 < argc) computePath = argv[++k];
         else if (std::string(argv[k]) == "--preview-directory" && k+1 < argc) preview = argv[++k];
         else throw std::invalid_argument("Unknown stereo fixture option");
     }
     if ((negative || negativeCompute) && !preview.empty()) throw std::invalid_argument("Negative control cannot export previews");
+    if(frozen && (!recorded || !recipes || split || buffered || extended || staticState))throw std::invalid_argument("Frozen replay proof requires complete classic monolithic recorded scopes");
     if (buffered && (!recorded || computePath.empty())) throw std::invalid_argument("Descriptor-buffer proof requires recorded replay and a compute echo shader");
     if (negativeCompute && !buffered) throw std::invalid_argument("Compute negative control requires descriptor buffers");
     if (extended && !recorded) throw std::invalid_argument("Dynamic-state proof requires recorded replay");
@@ -239,6 +241,7 @@ int main(int argc,char** argv) try {
     VkCommandPool commands{}; check(vkCreateCommandPool(f.device,&cpi,nullptr,&commands));
     VkCommandBufferAllocateInfo cai{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO}; cai.commandPool = commands; cai.commandBufferCount = 1;
     VkCommandBuffer command{}; check(vkAllocateCommandBuffers(f.device,&cai,&command));
+    VkCommandBuffer snapshotCommand{};if(frozen)check(vkAllocateCommandBuffers(f.device,&cai,&snapshotCommand));
     VkFenceCreateInfo fi{VK_STRUCTURE_TYPE_FENCE_CREATE_INFO}; VkFence fence{}; check(vkCreateFence(f.device,&fi,nullptr,&fence));
     Matrix4 source{1.784022f,0,.000439f,0,0,3.171595f,-.000347f,0,0,0,-1.001502f,-.300451f,0,0,-1,0};
     auto states = [&](uint32_t sequence,double separation,bool head) {
@@ -263,6 +266,7 @@ int main(int argc,char** argv) try {
         {"head-asymmetric",2,{near,far},states(4,.064,true),false}}};
     Result result;
     uint64_t recordedScopes = 0,recordedDraws = 0,restoredStateCommands = 0,witnessComparedBytes = 0,originalComparedBytes = 0,computeWords = 0,wrongComputeSamples = 0;
+    uint64_t frozenSnapshots=0;
     auto bytes = static_cast<const uint8_t*>(staging.mapped);
     for (unsigned caseIndex = 0; caseIndex < cases.size(); ++caseIndex) {
         const auto& test = cases[caseIndex];
@@ -331,6 +335,7 @@ int main(int argc,char** argv) try {
         upload(0,source,identity());
         for (unsigned eye = 0; eye < 2; ++eye) upload(eye+1,(test.states[eye].header[3]&2) ? source : matrix(test.states[eye].eyeProjection),matrix(test.states[eye].eyeFromGameView));
         for (unsigned epoch = 0; epoch < 2; ++epoch) {
+            std::unique_ptr<replay::Graphics> recordingOwner;
             if(telemetry){
                 std::memset(telemetryCounters.mapped,0xa5,64);std::memset(telemetryCounters.mapped,0,8);
                 std::memset(telemetryRing.mapped,0xa5,telemetryRingWords*4);
@@ -348,10 +353,10 @@ int main(int argc,char** argv) try {
                 part(target.eye(eye).depth.handle,VK_IMAGE_ASPECT_STENCIL_BIT,plane*5);
             };
             auto render = [&](const Targets& target,unsigned eye,VkPipeline selected,unsigned set,unsigned slot,
-                              unsigned firstItem = 0,unsigned itemCount = 0,bool continuation = false,bool readback = true,bool fresh = false) {
+                              unsigned firstItem = 0,unsigned itemCount = 0,bool continuation = false,bool readback = true,bool fresh = false,bool recycled = false) {
                 stereo::Loads loads;
                 if (continuation) { loads.colors.fill(VK_ATTACHMENT_LOAD_OP_LOAD); loads.depth = loads.stencil = VK_ATTACHMENT_LOAD_OP_LOAD; }
-                target.begin(command,eye,((epoch || continuation) && !fresh) ? stereo::PreviousUse::transferSource : stereo::PreviousUse::discarded,loads);
+                target.begin(command,eye,((epoch || continuation || recycled) && !fresh) ? stereo::PreviousUse::transferSource : stereo::PreviousUse::discarded,loads);
                 vkCmdBindPipeline(command,VK_PIPELINE_BIND_POINT_GRAPHICS,selected);
                 vkCmdBindDescriptorSets(command,VK_PIPELINE_BIND_POINT_GRAPHICS,layout,3,1,&sets[set],0,nullptr);
                 VkViewport viewport{0,0,float(width),float(height),0,1}; VkRect2D scissor{{0,0},{width,height}};
@@ -366,8 +371,9 @@ int main(int argc,char** argv) try {
             };
             bool splitThisCase = split && test.count == 2;
             if (recorded) {
-                replay::Graphics recorder(f.device,vkGetDeviceProcAddr,command,*eyes,epoch ? stereo::PreviousUse::transferSource : stereo::PreviousUse::discarded,
+                recordingOwner=std::make_unique<replay::Graphics>(f.device,vkGetDeviceProcAddr,command,*eyes,epoch ? stereo::PreviousUse::transferSource : stereo::PreviousUse::discarded,
                     buffered ? replay::DescriptorLimits{std::min(32u,descriptorProperties.maxDescriptorBufferBindings),descriptorProperties.descriptorBufferOffsetAlignment} : replay::DescriptorLimits{},extended);
+                auto& recorder=*recordingOwner;
                 auto recordedLayout = buffered ? bufferLayout : layout;
                 replay::Pipeline contract; contract.original = libraryOriginalLive ? libraryOriginal : (buffered || extended) ? bufferOriginalPipeline : originalPipeline; contract.eyes = eyePipeline; contract.layout = recordedLayout;
                 contract.descriptorSets = 1u<<3; contract.pushBytes = sizeof(Item); contract.stencilReference = VK_STENCIL_FACE_FRONT_AND_BACK;
@@ -476,6 +482,25 @@ int main(int argc,char** argv) try {
             check(vkEndCommandBuffer(command));
             VkSubmitInfo submit{VK_STRUCTURE_TYPE_SUBMIT_INFO}; submit.commandBufferCount = 1; submit.pCommandBuffers = &command;
             check(vkQueueSubmit(f.queue,1,&submit,fence)); check(vkWaitForFences(f.device,1,&fence,VK_TRUE,30'000'000'000ull)); check(vkResetFences(f.device,1,&fence));
+            if(frozen) {
+                auto updated=test.states;
+                for(unsigned eye=0;eye<2;++eye) {
+                    updated[eye].header[2]+=10+epoch;updated[eye].eyeFromGameView[3]+=.125f*(epoch+1);
+                    upload(eye+1,(updated[eye].header[3]&2)?source:matrix(updated[eye].eyeProjection),matrix(updated[eye].eyeFromGameView));
+                }
+                eyes->updateStatesAfterCompletion(updated);
+                auto originalCommand=command;command=snapshotCommand;
+                check(vkBeginCommandBuffer(command,&begin));auto before=recordingOwner->stats();
+                expect(recordingOwner->replaySnapshot(command),"Frozen CLEAR scope could not be replayed into a private command buffer");
+                expect(recordingOwner->stats().forwardedDraws==before.forwardedDraws,"Frozen replay repeated original draws");
+                copy(*eyes,0,1);copy(*eyes,1,2);
+                render(*reference,0,originalPipeline,1,3,0,0,false,true,false,true);
+                render(*reference,1,originalPipeline,2,4,0,0,false,true,false,true);
+                vkCmdPipelineBarrier(command,VK_PIPELINE_STAGE_TRANSFER_BIT,VK_PIPELINE_STAGE_HOST_BIT,0,1,&host,0,nullptr,0,nullptr);
+                check(vkEndCommandBuffer(command));submit.pCommandBuffers=&command;
+                check(vkQueueSubmit(f.queue,1,&submit,fence));check(vkWaitForFences(f.device,1,&fence,VK_TRUE,30'000'000'000ull));check(vkResetFences(f.device,1,&fence));
+                command=originalCommand;++frozenSnapshots;
+            }
             if(telemetry){
                 const auto* counters=static_cast<const uint32_t*>(telemetryCounters.mapped);
                 expect(counters[0]==0 && counters[1]==0,"Private replay wrote diagnostic counters");
@@ -615,6 +640,7 @@ int main(int argc,char** argv) try {
         << ",\"negative_compute_control\":" << (negativeCompute ? "true" : "false") << ",\"incorrect_compute_samples_detected\":" << wrongComputeSamples
         << ",\"clear_followed_by_load_verified\":" << (split ? "true" : "false") << ",\"eye_rendering_passes\":" << (split ? 24 : 16)
         << ",\"recorded_graphics_replay_verified\":" << (recorded ? "true" : "false") << ",\"captured_scopes_replayed\":" << recordedScopes
+        << ",\"frozen_private_command_buffer_replays\":" << frozenSnapshots << ",\"eye_packets_updated_after_completion\":" << (frozen?"true":"false")
         << ",\"captured_draw_copies\":" << recordedDraws << ",\"original_state_commands_restored\":" << restoredStateCommands
         << ",\"following_draw_reference_compared_bytes\":" << witnessComparedBytes
         << ",\"forwarded_original_reference_compared_bytes\":" << originalComparedBytes

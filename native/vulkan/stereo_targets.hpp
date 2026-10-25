@@ -53,6 +53,9 @@ public:
     const Eye& eye(unsigned) const;
     const Config& config() const;
     bool hasStencil() const;
+    // Caller must have completed EVERY GPU read of both packets before this
+    // host update. Addresses remain stable; packets are immutable per submission.
+    void updateStatesAfterCompletion(const std::array<EyeState,2>&);
     Rendering rendering(unsigned,const Loads& = {}) const;
     void prepare(VkCommandBuffer,unsigned,PreviousUse) const;
     void begin(VkCommandBuffer,unsigned,PreviousUse,const Loads& = {}) const;
