@@ -75,6 +75,9 @@ jobs:
       - name: Verify telemetry-free helper and preserved source writes
         if: runner.os == 'Linux'
         run: python tools/stereo_helper_validate.py --compiler /usr/bin/glslangValidator --tools /usr/bin --grammar work/spirv-headers/include/spirv/unified1/spirv.core.grammar.json --glsl-grammar work/spirv-headers/include/spirv/unified1/extinst.glsl.std.450.grammar.json --output-directory work/stereo-helper-ci
+      - name: Verify full-module non-output write contract
+        if: runner.os == 'Linux'
+        run: python tools/shader_write_validate.py --compiler /usr/bin/glslangValidator --tools /usr/bin --grammar work/spirv-headers/include/spirv/unified1/spirv.core.grammar.json --glsl-grammar work/spirv-headers/include/spirv/unified1/extinst.glsl.std.450.grammar.json --output-directory work/shader-write-ci
       - name: Verify every Windows export name, ordinal and forwarder
         if: runner.os == 'Windows'
         run: python -c "import pathlib,sys; sys.path.insert(0,'tools'); import probe; probe.validate_probe(pathlib.Path('work/native-ci/probe/Release/sl.interposer.dll'),probe.profile())"

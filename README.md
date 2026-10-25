@@ -10,6 +10,12 @@ répond pas à cet objectif.
 
 ## État du projet
 
+Un [contrat d'écritures du module complet](docs/SHADER_WRITE_CONTRACT.md) vérifie
+maintenant les instructions de toutes les fonctions après validation SPIR-V.
+Les dix-sept anciens candidats et quatre vertex transformés satisfont ce
+prérequis statique. Six autres vertex sont refusés par l'injecteur. Les sorties,
+ressources, alias et dépendances restent à auditer avant toute reprise du jeu.
+
 Le [helper stéréo peut maintenant être compilé sans télémétrie](docs/STEREO_HELPER.md).
 Ses écritures, atomiques et barrières de diagnostic sont alors absentes du
 SPIR-V. Les essais GPU retrouvent les mêmes références géométriques pour les

@@ -31,6 +31,12 @@ exécuté par cet outil.
 
 ## Limites pour la reprise
 
+Le [contrat d'écritures du module complet](SHADER_WRITE_CONTRACT.md) est un outil
+distinct. Il combine une couverture explicite des instructions et spirv-val
+sur les mêmes octets pour exclure les écritures hors mémoire locale/sorties.
+Ce prérequis ne change pas les champs de refus du présent recensement et
+n'autorise toujours aucune passe à être reprise.
+
 Une association par identifiant du pilote, ou par FNV et taille, reste un
 candidat. Le fichier local est revérifié contre le catalogue et son SHA-256
 figure dans le rapport privé ; cela ne prouve pas l'identité exacte du module

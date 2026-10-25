@@ -1,0 +1,35 @@
+; Static control: an uncalled function writes external storage by OpCopyMemory.
+OpCapability Shader
+OpMemoryModel Logical GLSL450
+OpEntryPoint Fragment %main "main" %color %buffer
+OpExecutionMode %main OriginUpperLeft
+OpDecorate %color Location 0
+OpDecorate %block Block
+OpMemberDecorate %block 0 Offset 0
+OpDecorate %buffer DescriptorSet 0
+OpDecorate %buffer Binding 0
+%void = OpTypeVoid
+%fn = OpTypeFunction %void
+%uint = OpTypeInt 32 0
+%block = OpTypeStruct %uint
+%storage = OpTypePointer StorageBuffer %block
+%buffer = OpVariable %storage StorageBuffer
+%up = OpTypePointer StorageBuffer %uint
+%localp = OpTypePointer Function %uint
+%out = OpTypePointer Output %uint
+%color = OpVariable %out Output
+%zero = OpConstant %uint 0
+%one = OpConstant %uint 1
+%semantics = OpConstant %uint 72
+%main = OpFunction %void None %fn
+%entry = OpLabel
+OpStore %color %one
+OpReturn
+OpFunctionEnd
+%hidden = OpFunction %void None %fn
+%hidden_entry = OpLabel
+%local = OpVariable %localp Function %one
+%pointer = OpAccessChain %up %buffer %zero
+OpCopyMemory %pointer %local
+OpReturn
+OpFunctionEnd
