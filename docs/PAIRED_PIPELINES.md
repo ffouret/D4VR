@@ -82,7 +82,9 @@ python3 tools/stereo_mrt_validate.py --fixture /travail/d4vr_stereo_targets_fixt
 
 Le validateur crée ses deux paquets privés et purge les options héritées des
 autres diagnostics. Les lanceurs de jeu existants purgent aussi ces nouvelles
-variables. Aucun lanceur de capture du jeu n'active encore ce mode.
+variables. Le [lanceur isolé de paires](PAIRED_CAPTURE.md) exige maintenant une
+couche et des overrides validés ; ses essais ont ouvert Battle.net, sans encore
+confirmer de processus ou de création de pipeline de Diablo.
 
 Restent l'observation réelle des créations du jeu, la résolution des états GPL,
 l'audit des ressources et des `LOAD` préparatoires, une reprise admissible des

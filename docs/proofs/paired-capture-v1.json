@@ -1,0 +1,118 @@
+{
+  "schema_version": 1,
+  "scope": "Linux paired-pipeline launcher and process attribution only; no Diablo process or device was observed. Earlier paired GPU proofs still apply to their recorded layer build.",
+  "repository_parent_commit": "8fa05fe2cc2bf128d7fe737ffd868b2730536c25",
+  "source_sha256": {
+    "tools/paired_capture.py": "e6fa6413b0c0ef3447548ce62c7dcf9933136ce6553382a6b619310548ed07dd",
+    "tools/shader_capture.py": "3fd68e7ecfc51b8d4d0cda18c7c9da1870f8a8988e8b763def5ed196ed732aae",
+    "tests/test_paired_capture.py": "c80ad82871787f0a7e4b27b08eead2dbe2495e81755468b4f6b6fe959616b0de"
+  },
+  "validated_layer_sha256": "7dff5be93ac887dd1b290a7a832032b807d49fd6dd0e9a467125d2a6dd6bbf57",
+  "validated_private_shader_bundle_sha256": "8c46da8cf67381b54d087cd4f4eb202925992b3055729efc9b6e16b8ac5172d2",
+  "validated_override_count": 2113,
+  "final_bounded_control": {
+    "maximum_seconds": 30,
+    "time_limit_reached": true,
+    "launcher_exit_code": 241,
+    "remaining_owned_processes_at_report": 0,
+    "remaining_launcher_processes_after_control": 0,
+    "session_report": {
+      "schema_version": 1,
+      "game_process_observed": false,
+      "game_process_ids": [],
+      "any_layer_trace_loaded": true,
+      "game_device_trace_found": false,
+      "game_pair_creation_confirmed": false,
+      "game_device_diagnostics": [],
+      "all_game_devices_cleanly_destroyed": false,
+      "snapshot_counts_may_be_partial": false,
+      "private_pipelines_drawn": false,
+      "game_stereo_submitted": false,
+      "interpretation": "Only traces associated with an observed Diablo IV.exe process can confirm game device/pair creation."
+    },
+    "original_library_matches": true,
+    "game_executable_matches": true,
+    "exports_match": true,
+    "private_capture_sha256": "bdf7f2309a8645e33fbf646abad18b837c2b5e67ad235e22007e1d3adff93a6f",
+    "private_process_observations_sha256": "9fcc0f14a8606257f545a96fa696e9dad6d1318ef4d89cfd6aaf25ecfc984b14",
+    "private_trace_report_sha256": "ff69a41e9c6eab25ab228cddb7fec13147a665b5e54b5ab4f90aa06037da00d1",
+    "private_launcher_sha256": "546512c83e5243024bb1a7a18dc827cf8d0d6d3561f83bcb38d00931ddbd4bb3",
+    "private_loader_manifest_sha256": "971e32bf156f53cc96453dfe7812dabfb43848ed9c66e2562cde559e2317b79b"
+  },
+  "exploratory_attempts": [
+    {
+      "private_capture_sha256": "9ac8e56f29df83af7eff86bc3a908cf51e7f58353c256714dd093bc79c0e6a9a",
+      "private_process_observations_sha256": "192cb641252cae0b2f1813142ac2065604069866a75d84a0d0072f9433335711",
+      "session_report": {
+        "schema_version": 1,
+        "game_process_observed": false,
+        "game_process_ids": [],
+        "any_layer_trace_loaded": true,
+        "game_device_trace_found": false,
+        "game_pair_creation_confirmed": false,
+        "game_device_diagnostics": [],
+        "all_game_devices_cleanly_destroyed": false,
+        "snapshot_counts_may_be_partial": false,
+        "private_pipelines_drawn": false,
+        "game_stereo_submitted": false,
+        "interpretation": "Only traces associated with an observed Diablo IV.exe process can confirm game device/pair creation."
+      },
+      "original_library_matches_after": true,
+      "game_executable_matches_after": true,
+      "runner_source_version": "before final prefix/cleanup/report corrections; exact intermediate source not archived",
+      "completion_at_original_report": {
+        "launcher_exit_code": 241,
+        "time_limit_reached": false,
+        "remaining_owned_processes": 2
+      },
+      "post_report_cleanup_verified_no_marked_processes": true,
+      "manual_relay_without_full_lutris_environment_used_default_umu_prefix": true,
+      "default_prefix_data_removed": false
+    },
+    {
+      "private_capture_sha256": "551f36fd6bf1ce158106718f75646c2fca7764643ce62ef1f0fbaaf9e5046cf1",
+      "private_process_observations_sha256": "2b1dfe96f210b27533bb15ea508d9390952d4c238f891fee4932fd85bbd0eb2e",
+      "session_report": {
+        "schema_version": 1,
+        "game_process_observed": false,
+        "game_process_ids": [],
+        "any_layer_trace_loaded": true,
+        "game_device_trace_found": false,
+        "game_pair_creation_confirmed": false,
+        "game_device_diagnostics": [],
+        "all_game_devices_cleanly_destroyed": false,
+        "snapshot_counts_may_be_partial": false,
+        "private_pipelines_drawn": false,
+        "game_stereo_submitted": false,
+        "interpretation": "Only traces associated with an observed Diablo IV.exe process can confirm game device/pair creation."
+      },
+      "original_library_matches_after": true,
+      "game_executable_matches_after": true,
+      "runner_source_version": "before final prefix/cleanup/report corrections; exact intermediate source not archived",
+      "completion_at_original_report": {
+        "launcher_exit_code": 241,
+        "time_limit_reached": true,
+        "remaining_owned_processes": 1
+      },
+      "post_report_cleanup_verified_no_marked_processes": true
+    }
+  ],
+  "python_cases": 108,
+  "cpu_controls": [
+    "reject missing or wrong explicit Wine prefix",
+    "pin only the private launcher text and caches",
+    "validate create-only evidence and exact layer fingerprints",
+    "stage only binary and loader manifest without starting a process",
+    "refuse foreign marker and recycled process start time during pidfd cleanup",
+    "exclude helper traces from Diablo device/pair proof",
+    "mark sampled device counters partial without clean destruction",
+    "never claim private drawing or SteamVR images from telemetry"
+  ],
+  "final_source_live_test_launch_game_option": false,
+  "lutris_launch_argument_reference": "https://github.com/lutris/lutris/blob/master/lutris/services/battlenet.py",
+  "original_game_or_nvidia_binaries_changed": false,
+  "raw_game_shaders_or_logs_included": false,
+  "game_pipeline_pairs_observed": false,
+  "game_draw_replay_implemented": false,
+  "game_stereo_submitted": false
+}

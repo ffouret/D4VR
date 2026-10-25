@@ -10,6 +10,12 @@ répond pas à cet objectif.
 
 ## État du projet
 
+Le [lanceur isolé de paires](docs/PAIRED_CAPTURE.md) prépare les deux paquets,
+vérifie le préfixe et les empreintes, borne la session et ferme ses seuls
+processus marqués. Ses essais ouvrent Battle.net ; aucun nouveau processus ou
+rendu de Diablo n'a été confirmé. Les traces d'utilitaires ne sont pas prises
+pour des preuves du jeu.
+
 Le [diagnostic de paires dans la couche Vulkan](docs/PAIRED_PIPELINES.md) observe
 les créations originales et compile les variantes privées de chaque œil, sans
 les dessiner. Les essais GPU couvrent les pipelines monolithiques, GPL et les

@@ -17,7 +17,7 @@ import probe
 def launcher_processes() -> dict[str, int]:
     script = """import pathlib,json
 counts={}
-wanted={'battle.net.exe','battle.net launcher.exe','agent.exe','diablo iv.exe'}
+wanted={'battle.net.exe','battle.net launcher.exe','agent.exe','diablo iv.exe','diablo iv launcher.exe'}
 for p in pathlib.Path('/proc').glob('[0-9]*'):
  try:
   names={a.decode(errors='replace').replace('\\\\','/').rsplit('/',1)[-1].casefold() for a in (p/'cmdline').read_bytes().split(b'\\0')}
