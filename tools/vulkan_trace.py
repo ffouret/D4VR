@@ -30,6 +30,7 @@ def read_trace(path: Path) -> dict:
     devices = {}
     instances = []
     eye_errors = []
+    pair_errors = []
     for row in rows:
         event = row.get('event')
         if event == 'instance':
@@ -40,7 +41,9 @@ def read_trace(path: Path) -> dict:
             devices[row['device']] = dict(row, last_total_commands=None, last_present_call=0, clean_destroy=False)
         elif event == 'eye_control_error':
             eye_errors.append(row)
-        elif event in ('submit', 'submit_error', 'present', 'device_destroy', 'xr_binding', 'eye_control', 'eye_control_pipeline'):
+        elif event == 'paired_pipeline_error':
+            pair_errors.append(row)
+        elif event in ('submit', 'submit_error', 'present', 'device_destroy', 'xr_binding', 'eye_control', 'eye_control_pipeline', 'paired_pipelines'):
             device = devices.get(row['device'])
             if device is None:
                 raise ValueError('Command event precedes device creation')
@@ -51,14 +54,18 @@ def read_trace(path: Path) -> dict:
                 device['xr_binding_probe'] = row['binding']
             elif event in ('eye_control','eye_control_pipeline'):
                 device['eye_control'] = row['control']
+            elif event == 'paired_pipelines':
+                device['paired_pipelines'] = row['diagnostic']
             elif event == 'device_destroy':
                 device.update(last_total_commands=row['commands'], clean_destroy=True,
                               last_present_call=row['present_calls'], submissions=row['submissions'])
                 if 'eye_control' in row:
                     device['eye_control'] = row['eye_control']
+                if 'paired_pipelines' in row:
+                    device['paired_pipelines'] = row['paired_pipelines']
     return {'file': path.name, 'records': len(rows), 'instances': instances,
             'devices': list(devices.values()), 'record_budget_reached': len(rows) == 512,
-            'game_stereo_submitted': False,'eye_control_errors':eye_errors}
+            'game_stereo_submitted': False,'eye_control_errors':eye_errors,'paired_pipeline_errors':pair_errors}
 
 
 def report(directory: Path) -> dict:
@@ -189,7 +196,7 @@ def run(game: Path, launcher: Path, bundle: Path, runtime_bundle: Path, output: 
     bridge = Path('/run/host/usr/bin/flatpak-spawn')
     command = ([str(bridge), '--host', '/usr/bin/env'] if bridge.exists() else ['/usr/bin/env'])
     for name in ('VKD3D_SHADER_OVERRIDE', 'VKD3D_SHADER_DUMP_PATH', 'VKD3D_SHADER_DEBUG_RING_SIZE_LOG2',
-                 'D4VR_TRACE_XR_BINDING', 'D4VR_XR_LOADER', 'D4VR_FRAME_TRACE', 'D4VR_EYE_STATE_FILE'):
+                 'D4VR_TRACE_XR_BINDING', 'D4VR_XR_LOADER', 'D4VR_FRAME_TRACE', 'D4VR_EYE_STATE_FILE', 'D4VR_PAIR_LEFT_FILE', 'D4VR_PAIR_RIGHT_FILE'):
         command += ['-u', name]
     command += [key + '=' + value for key, value in variables.items()] + ['/usr/bin/bash', str(private_launcher)]
     print('Battle.net : diagnostic Vulkan isolé ; entrer en partie sur le moniteur, puis fermer le jeu et Battle.net.', flush=True)

@@ -235,3 +235,14 @@ la couche préservent les pixels. Les tests Python sont au nombre de 90. Le test
 C++ de métadonnées est inclus dans la CI Windows sans pilote. L'analyse des
 deux anciens relevés du jeu identifie deux racines de clear par capture, mais
 laisse deux et un `LOAD` non résolus. [Preuves et limites](PASS_DEPENDENCIES.md).
+
+
+Le diagnostic de paires est maintenant raccordé aux créations de la couche
+Vulkan, derrière deux paquets explicites. Deux groupes de huit essais GPU
+couvrent les pipelines monolithiques et GPL, les métadonnées, Steam Runtime,
+l'activation absente/invalide et les contrôles négatifs. Trois essais ajoutent
+les modules puis les identifiants issus d'un cache préparé ; quatorze
+régressions de pixels et dix-huit du mode ancien à un œil restent séparées.
+Les paires de la couche ne sont jamais utilisées pour dessiner. Les 101 tests
+Python passent. La transmission des créations originales partielles et les
+échecs privés sont testés sans pilote. [Contrat et preuves](PAIRED_PIPELINES.md).

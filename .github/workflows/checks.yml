@@ -55,13 +55,13 @@ jobs:
           python tools/spirv_probe.py work/native-xr-ci/mrt.vert.spv --helper work/native-xr-ci/stereo-transform.spv --tools /usr/bin --output work/native-xr-ci/mrt-instrumented.spv --stereo
           glslangValidator -V --target-env vulkan1.1 native/tests/stereo_mrt_vertex.vert -o work/native-xr-ci/mrt-vertex.spv
           python tools/spirv_probe.py work/native-xr-ci/mrt-vertex.spv --helper work/native-xr-ci/stereo-transform.spv --tools /usr/bin --output work/native-xr-ci/mrt-vertex-instrumented.spv --stereo
-      - name: Check pipeline recipe lifetimes with ASan and UBSan
+      - name: Check pipeline graphs and layer forwarding with ASan and UBSan
         # No GPU or game is involved in this CPU ownership test.
         if: runner.os == 'Linux'
         run: |
-          cmake -S native -B work/recipe-sanitized-ci -DD4VR_BUILD_STEREO_TARGET_TESTS=ON -DCMAKE_BUILD_TYPE=Debug "-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer"
-          cmake --build work/recipe-sanitized-ci --target d4vr_pipeline_recipe_tests d4vr_library_variants_tests --parallel 2
-          ctest --test-dir work/recipe-sanitized-ci -R "pipeline_recipe_ownership|library_variant_ownership" --output-on-failure
+          cmake -S native -B work/recipe-sanitized-ci -DD4VR_BUILD_STEREO_TARGET_TESTS=ON -DD4VR_BUILD_VULKAN_TRACE=ON -DCMAKE_BUILD_TYPE=Debug "-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer"
+          cmake --build work/recipe-sanitized-ci --target d4vr_pipeline_recipe_tests d4vr_library_variants_tests d4vr_vulkan_trace_tests --parallel 2
+          ctest --test-dir work/recipe-sanitized-ci -R "pipeline_recipe_ownership|library_variant_ownership|vulkan_trace_forwarding" --output-on-failure
       - name: Fetch pinned SPIR-V grammar for static audit controls
         if: runner.os == 'Linux'
         uses: actions/checkout@v4

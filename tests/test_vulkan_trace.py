@@ -9,6 +9,16 @@ import vulkan_trace
 
 
 class TraceReports(unittest.TestCase):
+    def test_pair_creation_does_not_prove_drawing(self):
+        with tempfile.TemporaryDirectory() as directory:
+            self.write(directory,[{'event':'paired_pipeline_error','device':1,'reason':'missing packet'},
+                {'event':'device','device':1},{'event':'paired_pipelines','device':1,'diagnostic':{'executable_pairs':1}},
+                {'event':'device_destroy','device':1,'commands':{},'present_calls':0,'submissions':0,'paired_pipelines':{'executable_pairs':3}}])
+            result=vulkan_trace.read_trace(Path(directory)/'vulkan-123.jsonl')
+            self.assertEqual(result['devices'][0]['paired_pipelines']['executable_pairs'],3)
+            self.assertEqual(len(result['paired_pipeline_errors']),1)
+            self.assertFalse(result['game_stereo_submitted'])
+
     def test_eye_bridge_stats_are_distinct_from_stereo_rendering(self):
         with tempfile.TemporaryDirectory() as directory:
             self.write(directory,[{'event':'eye_control_error','device':1,'reason':'feature unavailable'},

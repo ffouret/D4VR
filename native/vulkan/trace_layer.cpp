@@ -3,6 +3,7 @@
 #include <vulkan/vk_layer.h>
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <chrono>
 #include <cstdlib>
 #include <cstring>
@@ -16,6 +17,7 @@
 #include <vector>
 #include "frame_trace.hpp"
 #include "eye_control.hpp"
+#include "library_variants.hpp"
 #ifdef D4VR_TRACE_XR_BINDING
 #include "xr_binding.hpp"
 #endif
@@ -180,10 +182,22 @@ struct Device {
     std::unordered_map<VkCommandBuffer, Commands> commands;
     d4vr::frame::Tracker frame;
     std::unique_ptr<d4vr::eye::Control> eye;
+    // Declaration order also keeps packets alive until private graphs die.
+    std::array<std::unique_ptr<d4vr::eye::Control>,2> pairEyes;
+    std::unique_ptr<d4vr::pipeline::LibraryVariants> pairs;
+    std::atomic<uint64_t> pairBatches{0},pairOutputs{0};
     uint64_t eyePipelineRecords = 0;
     Counts totals{}, interval{};
     uint64_t submissions = 0, presents = 0, submittedBuffers = 0;
 };
+std::string pairsJson(const Device& d) {
+    const auto s = d.pairs->stats();
+    return "{\"mode\":\"create_only\",\"private_draws\":false,\"original_arguments_unchanged\":true,\"source_batches\":" + std::to_string(d.pairBatches.load()) +
+        ",\"source_outputs\":" + std::to_string(d.pairOutputs.load()) + ",\"library_pairs\":" + std::to_string(s.libraries) +
+        ",\"executable_pairs\":" + std::to_string(s.executables) + ",\"rejected\":" + std::to_string(s.rejected) +
+        ",\"driver_failures\":" + std::to_string(s.driverFailures) + ",\"compile_required\":" + std::to_string(s.compileRequired) +
+        ",\"live_nodes\":" + std::to_string(s.liveNodes) + ",\"creation_attempts\":" + std::to_string(s.creationAttempts) + ",\"maximum_live_nodes\":512,\"maximum_creation_attempts\":512}";
+}
 std::unordered_map<void*, std::shared_ptr<Instance>> instances;
 std::unordered_map<void*, std::shared_ptr<Device>> devices;
 uint32_t nextDevice = 1;
@@ -360,7 +374,12 @@ VKAPI_ATTR VkResult VKAPI_CALL d4CreateDevice(VkPhysicalDevice physical, const V
     uint32_t familyCount = 0; getFamilies(physical, &familyCount, nullptr);
     d->queueFamilies.resize(familyCount); getFamilies(physical, &familyCount, d->queueFamilies.data());
     const char* eyeFile = std::getenv("D4VR_EYE_STATE_FILE");
-    if (eyeFile && *eyeFile) try {
+    const char* pairLeft = std::getenv("D4VR_PAIR_LEFT_FILE");
+    const char* pairRight = std::getenv("D4VR_PAIR_RIGHT_FILE");
+    const bool pairRequested = (pairLeft && *pairLeft) || (pairRight && *pairRight);
+    if ((eyeFile && *eyeFile) || pairRequested) try {
+        if (pairRequested && (!(pairLeft && *pairLeft && pairRight && *pairRight) || (eyeFile && *eyeFile)))
+            throw std::invalid_argument("Paired pipeline diagnostic requires both packets and excludes single-eye overrides");
         bool addressEnabled = false;
         for (auto p = static_cast<const VkBaseInStructure*>(info->pNext); p; p = p->pNext) {
             if (p->sType == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES)
@@ -372,9 +391,20 @@ VKAPI_ATTR VkResult VKAPI_CALL d4CreateDevice(VkPhysicalDevice physical, const V
         VkPhysicalDeviceMemoryProperties memory{};
         auto getMemory = reinterpret_cast<PFN_vkGetPhysicalDeviceMemoryProperties>(instance->get(instance->handle,"vkGetPhysicalDeviceMemoryProperties"));
         getMemory(physical,&memory);
-        d->eye = d4vr::eye::Control::create(*result,get,memory,d4vr::eye::readPacket(eyeFile));
+        if (pairRequested) {
+            auto left = d4vr::eye::readPacket(pairLeft),right = d4vr::eye::readPacket(pairRight);
+            if (left.identity[0] != 0 || right.identity[0] != 1 || left.header[2] != right.header[2])
+                throw std::invalid_argument("Paired packets require left/right identities and matching sequences");
+            d->pairEyes[0] = d4vr::eye::Control::create(*result,get,memory,left);
+            d->pairEyes[1] = d4vr::eye::Control::create(*result,get,memory,right);
+            auto classifier = d->pairEyes[0].get();
+            d->pairs = std::make_unique<d4vr::pipeline::LibraryVariants>(*result,get,
+                std::array<VkDeviceAddress,2>{d->pairEyes[0]->address(),d->pairEyes[1]->address()},
+                [classifier](const auto& stage) { return classifier->marked(stage); },512,512);
+        } else d->eye = d4vr::eye::Control::create(*result,get,memory,d4vr::eye::readPacket(eyeFile));
     } catch (const std::exception& error) {
-        logFile.write("\"event\":\"eye_control_error\",\"device\":" + std::to_string(d->id) + ",\"reason\":" + quoted(error.what()));
+        d->pairs.reset(); for (auto& packet : d->pairEyes) packet.reset();
+        logFile.write("\"event\":" + quoted(pairRequested ? "paired_pipeline_error" : "eye_control_error") + ",\"device\":" + std::to_string(d->id) + ",\"reason\":" + quoted(error.what()));
     }
     std::ostringstream queues; queues << '[';
     for (uint32_t i = 0; i < info->queueCreateInfoCount; ++i) {
@@ -387,6 +417,7 @@ VKAPI_ATTR VkResult VKAPI_CALL d4CreateDevice(VkPhysicalDevice physical, const V
         ",\"vendor_id\":" + std::to_string(properties.vendorID) + ",\"supported_api\":" + version(properties.apiVersion) +
         ",\"queues\":" + queues.str() + ",\"extensions\":" + extensions(info->enabledExtensionCount, info->ppEnabledExtensionNames));
     if (d->eye) logFile.write("\"event\":\"eye_control\",\"device\":" + std::to_string(d->id) + ",\"control\":" + d->eye->json());
+    if (d->pairs) logFile.write("\"event\":\"paired_pipelines\",\"device\":" + std::to_string(d->id) + ",\"diagnostic\":" + pairsJson(*d));
     return status;
 }
 VKAPI_ATTR void VKAPI_CALL d4GetDeviceQueue(VkDevice handle, uint32_t family, uint32_t index, VkQueue* queue) {
@@ -405,9 +436,10 @@ VKAPI_ATTR void VKAPI_CALL d4DestroyDevice(VkDevice handle, const VkAllocationCa
         record = "\"event\":\"device_destroy\",\"device\":" + std::to_string(d->id) + ",\"submissions\":" + std::to_string(d->submissions) +
             ",\"present_calls\":" + std::to_string(d->presents) + ",\"submitted_command_buffers\":" + std::to_string(d->submittedBuffers) + ",\"commands\":" + countsJson(d->totals);
         if (d->eye) record += ",\"eye_control\":" + d->eye->json();
+        if (d->pairs) record += ",\"paired_pipelines\":" + pairsJson(*d);
         devices.erase(key(handle));
     }
-    logFile.write(record); d->eye.reset(); d->DestroyDevice(handle, allocator);
+    logFile.write(record); d->pairs.reset(); for (auto& packet : d->pairEyes) packet.reset(); d->eye.reset(); d->DestroyDevice(handle, allocator);
 }
 VKAPI_ATTR VkResult VKAPI_CALL d4AllocateCommandBuffers(VkDevice handle, const VkCommandBufferAllocateInfo* info, VkCommandBuffer* buffers) {
     auto d = deviceFor(handle); auto result = d->AllocateCommandBuffers(handle, info, buffers);
@@ -529,20 +561,24 @@ VKAPI_ATTR VkResult VKAPI_CALL d4CreateShaderModule(VkDevice device, const VkSha
     auto d = deviceFor(device); auto result = d->CreateShaderModule(device, info, allocator, module);
     if (result == VK_SUCCESS && d->frame.enabled) { std::lock_guard<std::mutex> lock(stateMutex); d->frame.module(*module, *info); }
     if (result == VK_SUCCESS && d->eye) d->eye->module(*module,*info);
+    if (result == VK_SUCCESS && d->pairs) d->pairEyes[0]->module(*module,*info);
     return result;
 }
 VKAPI_ATTR void VKAPI_CALL d4DestroyShaderModule(VkDevice device, VkShaderModule module, const VkAllocationCallbacks* allocator) {
     auto d = deviceFor(device); if (d->frame.enabled) { std::lock_guard<std::mutex> lock(stateMutex); d->frame.removeModule(module); }
     if (d->eye) d->eye->removeModule(module);
+    if (d->pairs) d->pairEyes[0]->removeModule(module);
     d->DestroyShaderModule(device, module, allocator);
 }
 VKAPI_ATTR void VKAPI_CALL d4GetShaderModuleIdentifierEXT(VkDevice device,VkShaderModule module,VkShaderModuleIdentifierEXT* identifier) {
     auto d = deviceFor(device); d->GetShaderModuleIdentifierEXT(device,module,identifier);
     if (d->eye) d->eye->identifier(module,*identifier);
+    if (d->pairs) d->pairEyes[0]->identifier(module,*identifier);
 }
 VKAPI_ATTR void VKAPI_CALL d4GetShaderModuleCreateInfoIdentifierEXT(VkDevice device,const VkShaderModuleCreateInfo* info,VkShaderModuleIdentifierEXT* identifier) {
     auto d = deviceFor(device); d->GetShaderModuleCreateInfoIdentifierEXT(device,info,identifier);
     if (d->eye) d->eye->identifier(*info,*identifier);
+    if (d->pairs) d->pairEyes[0]->identifier(*info,*identifier);
 }
 VKAPI_ATTR VkResult VKAPI_CALL d4CreateGraphicsPipelines(VkDevice device, VkPipelineCache cache, uint32_t n, const VkGraphicsPipelineCreateInfo* info, const VkAllocationCallbacks* allocator, VkPipeline* pipelines) {
     auto d = deviceFor(device);
@@ -550,6 +586,15 @@ VKAPI_ATTR VkResult VKAPI_CALL d4CreateGraphicsPipelines(VkDevice device, VkPipe
     if (d->eye) try { edits = d->eye->graphics(n,info); }
     catch (const std::exception& error) { logFile.write("\"event\":\"eye_control_error\",\"device\":" + std::to_string(d->id) + ",\"reason\":" + quoted(error.what())); }
     auto result = d->CreateGraphicsPipelines(device, cache, n, edits ? edits->info.data() : info, allocator, pipelines);
+    // Synchronous: the original call has finished, but input modules/layouts
+    // and pointers still belong to this API call. Private dispatch is strictly
+    // downstream and never touches application cache, allocator or feedback.
+    if (d->pairs) {
+        const auto batch = ++d->pairBatches;
+        for (uint32_t i = 0; i < n; ++i) if (pipelines[i]) { ++d->pairOutputs; d->pairs->observe(pipelines[i],info[i]); }
+        if (batch <= 8 || (batch <= 16384 && !(batch&(batch-1))))
+            logFile.write("\"event\":\"paired_pipelines\",\"device\":" + std::to_string(d->id) + ",\"diagnostic\":" + pairsJson(*d));
+    }
     if (edits) {
         uint64_t record;
         { std::lock_guard<std::mutex> lock(stateMutex); record = ++d->eyePipelineRecords; }
@@ -564,7 +609,8 @@ VKAPI_ATTR VkResult VKAPI_CALL d4CreateComputePipelines(VkDevice device, VkPipel
     if (d->frame.enabled) { std::lock_guard<std::mutex> lock(stateMutex); for (uint32_t i = 0; i < n; ++i) if (pipelines[i]) d->frame.computePipeline(pipelines[i], info[i]); } return result;
 }
 VKAPI_ATTR void VKAPI_CALL d4DestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks* allocator) {
-    auto d = deviceFor(device); if (d->frame.enabled) { std::lock_guard<std::mutex> lock(stateMutex); d->frame.removePipeline(pipeline); } d->DestroyPipeline(device, pipeline, allocator);
+    auto d = deviceFor(device); if (d->pairs) d->pairs->remove(pipeline);
+    if (d->frame.enabled) { std::lock_guard<std::mutex> lock(stateMutex); d->frame.removePipeline(pipeline); } d->DestroyPipeline(device, pipeline, allocator);
 }
 VKAPI_ATTR VkResult VKAPI_CALL d4QueueSubmit(VkQueue queue, uint32_t n, const VkSubmitInfo* submits, VkFence fence) {
     auto d = deviceFor(queue); Counts counts{}; uint64_t buffers = 0;

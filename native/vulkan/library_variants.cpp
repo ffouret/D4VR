@@ -13,7 +13,7 @@ namespace {
 void require(bool ok){if(!ok)throw std::invalid_argument("Unsupported library pipeline description");}
 struct Dispatch {
     VkDevice device{};PFN_vkCreateGraphicsPipelines create{};PFN_vkDestroyPipeline destroy{};
-    std::atomic<uint32_t> active{0};uint32_t limit=0;
+    std::atomic<uint32_t> active{0},attempts{0};uint32_t limit=0,maximumCreations=0;
 };
 struct Spec {
     std::vector<VkSpecializationMapEntry> entries;std::vector<uint8_t> bytes;VkSpecializationInfo info{};
@@ -85,15 +85,15 @@ struct LibraryVariants::Impl {
     mutable std::mutex mutex;std::unordered_map<VkPipeline,Lease> nodes;std::unordered_map<VkPipeline,bool> pending;LibraryStats counts;
     LibraryResult result(LibraryResult r){std::lock_guard<std::mutex> lock(mutex);if(r!=LibraryResult::registered)++counts.rejected;if(r==LibraryResult::driverFailure)++counts.driverFailures;if(r==LibraryResult::compileRequired)++counts.compileRequired;return r;}
 };
-LibraryVariants::LibraryVariants(VkDevice device,PFN_vkGetDeviceProcAddr get,const std::array<VkDeviceAddress,2>& addresses,MarkedStage marked,uint32_t limit){
-    require(device && get && marked && limit && limit<=4096 && addresses[0] && addresses[1] && addresses[0]!=addresses[1] && addresses[0]%16==0 && addresses[1]%16==0);
-    auto p=std::make_unique<Impl>();p->dispatch=std::make_shared<Dispatch>();p->dispatch->device=device;p->dispatch->limit=limit;p->addresses=addresses;p->marked=std::move(marked);
+LibraryVariants::LibraryVariants(VkDevice device,PFN_vkGetDeviceProcAddr get,const std::array<VkDeviceAddress,2>& addresses,MarkedStage marked,uint32_t limit,uint32_t maximumCreations){
+    require(device && get && marked && limit && limit<=4096 && maximumCreations && maximumCreations<=4096 && addresses[0] && addresses[1] && addresses[0]!=addresses[1] && addresses[0]%16==0 && addresses[1]%16==0);
+    auto p=std::make_unique<Impl>();p->dispatch=std::make_shared<Dispatch>();p->dispatch->device=device;p->dispatch->limit=limit;p->dispatch->maximumCreations=maximumCreations;p->addresses=addresses;p->marked=std::move(marked);
     p->dispatch->create=reinterpret_cast<PFN_vkCreateGraphicsPipelines>(get(device,"vkCreateGraphicsPipelines"));p->dispatch->destroy=reinterpret_cast<PFN_vkDestroyPipeline>(get(device,"vkDestroyPipeline"));require(p->dispatch->create && p->dispatch->destroy);impl=std::move(p);
 }
 LibraryVariants::~LibraryVariants()=default;
 LibraryVariants::Lease LibraryVariants::lookup(VkPipeline source)const{std::lock_guard<std::mutex> lock(impl->mutex);auto i=impl->nodes.find(source);return i==impl->nodes.end()?Lease{}:i->second;}
 void LibraryVariants::remove(VkPipeline source){Lease removed;{std::lock_guard<std::mutex> lock(impl->mutex);auto pending=impl->pending.find(source);if(pending!=impl->pending.end())pending->second=true;auto i=impl->nodes.find(source);if(i!=impl->nodes.end()){removed=std::move(i->second);impl->nodes.erase(i);}}}
-LibraryStats LibraryVariants::stats()const{std::lock_guard<std::mutex> lock(impl->mutex);auto out=impl->counts;out.liveNodes=impl->dispatch->active;return out;}
+LibraryStats LibraryVariants::stats()const{std::lock_guard<std::mutex> lock(impl->mutex);auto out=impl->counts;out.liveNodes=impl->dispatch->active;out.creationAttempts=impl->dispatch->attempts;return out;}
 LibraryResult LibraryVariants::observe(VkPipeline source,const VkGraphicsPipelineCreateInfo& original)noexcept{
     auto& p=*impl;
     try{
@@ -126,6 +126,9 @@ LibraryResult LibraryVariants::observe(VkPipeline source,const VkGraphicsPipelin
             require(selected.size()<=1);data->stereo|=!selected.empty();
         }
         if(!data->library && !data->stereo)return p.result(LibraryResult::unmarkedExecutable);
+        // A library owning an unmarked pre-raster stage can never contribute
+        // a target vertex. Do not compile two unusable copies of it.
+        if(data->library && (chain.ownParts&2u) && selected.empty())return p.result(LibraryResult::unmarkedPreRaster);
         auto active=p.dispatch->active.load();
         do{if(active>=p.dispatch->limit)return p.result(LibraryResult::budget);}while(!p.dispatch->active.compare_exchange_weak(active,active+1));
         data->reserved=true;
@@ -145,6 +148,8 @@ LibraryResult LibraryVariants::observe(VkPipeline source,const VkGraphicsPipelin
                 infos[eye].pRasterizationState=nullptr;infos[eye].pMultisampleState=nullptr;infos[eye].pDepthStencilState=nullptr;infos[eye].pColorBlendState=nullptr;infos[eye].pDynamicState=nullptr;
             }
         }
+        auto attempts=p.dispatch->attempts.load();
+        do{if(attempts>=p.dispatch->maximumCreations)return p.result(LibraryResult::budget);}while(!p.dispatch->attempts.compare_exchange_weak(attempts,attempts+1));
         auto result=p.dispatch->create(p.dispatch->device,VK_NULL_HANDLE,2,infos.data(),nullptr,data->handles.data());
         if(result!=VK_SUCCESS)return p.result(result==VK_PIPELINE_COMPILE_REQUIRED?LibraryResult::compileRequired:LibraryResult::driverFailure);
         require(data->handles[0] && data->handles[1]);

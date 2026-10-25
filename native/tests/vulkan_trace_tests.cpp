@@ -3,6 +3,7 @@
 #include "../vulkan/trace_layer.cpp"
 #include <iostream>
 #include <stdexcept>
+#include <set>
 
 namespace {
 void require(bool condition, const char* message) { if (!condition) throw std::runtime_error(message); }
@@ -13,6 +14,36 @@ VkCommandBuffer expectedCommand{};
 const VkGeneratedCommandsInfoEXT* expectedGenerated{};
 const VkSubmitInfo2* expectedSubmit{};
 VkQueue expectedQueue{};
+const VkGraphicsPipelineCreateInfo* expectedGraphics{};
+const VkAllocationCallbacks* expectedAllocator{};
+VkPipelineCache expectedCache{};
+uint32_t originalCreates=0,privateCreates=0,originalDestroys=0;
+uintptr_t nextPrivate=1000;
+std::set<VkPipeline> privatePipelines;
+VkResult privateResult=VK_SUCCESS;
+template<class T> T object(uintptr_t value) { return reinterpret_cast<T>(value); }
+VKAPI_ATTR VkResult VKAPI_CALL originalCreate(VkDevice,VkPipelineCache cache,uint32_t n,const VkGraphicsPipelineCreateInfo* info,const VkAllocationCallbacks* allocator,VkPipeline* out) {
+    require(n==3 && cache==expectedCache && info==expectedGraphics && allocator==expectedAllocator,"Original pipeline arguments changed");
+    ++originalCreates;out[0]=object<VkPipeline>(101);out[1]=VK_NULL_HANDLE;out[2]=object<VkPipeline>(102);
+    return VK_ERROR_UNKNOWN; // Partial batch outputs must still be observed.
+}
+VKAPI_ATTR VkResult VKAPI_CALL privateCreate(VkDevice,VkPipelineCache cache,uint32_t n,const VkGraphicsPipelineCreateInfo* info,const VkAllocationCallbacks* allocator,VkPipeline* out) {
+    require(n==2 && !cache && !allocator,"Private creation reused application outputs");++privateCreates;
+    for (unsigned i=0;i<2;++i) {
+        require(info[i].pStages[0].pSpecializationInfo && info[i].pStages[0].pSpecializationInfo->mapEntryCount==1,"Private eye specialization missing");
+        const auto& spec=*info[i].pStages[0].pSpecializationInfo;uint64_t address=0;
+        std::memcpy(&address,static_cast<const uint8_t*>(spec.pData)+spec.pMapEntries[0].offset,8);
+        require(spec.pMapEntries[0].constantID==4 && address==(i?0x2000u:0x1000u),"Private eye specialization invalid");
+        out[i]=(i==0 || privateResult==VK_SUCCESS)?object<VkPipeline>(nextPrivate++):VK_NULL_HANDLE;
+        if (out[i]) privatePipelines.insert(out[i]);
+    }
+    return privateResult;
+}
+VKAPI_ATTR void VKAPI_CALL pipelineDestroy(VkDevice,VkPipeline pipeline,const VkAllocationCallbacks* allocator) {
+    if (privatePipelines.erase(pipeline)) require(!allocator,"Private pipeline allocator changed");
+    else { require((pipeline==object<VkPipeline>(101) || pipeline==object<VkPipeline>(102)) && allocator==expectedAllocator,"Unexpected original destruction");++originalDestroys; }
+}
+VKAPI_ATTR void VKAPI_CALL deviceDestroy(VkDevice,const VkAllocationCallbacks*) { require(privatePipelines.empty(),"Private graph survived device destruction"); }
 VKAPI_ATTR void VKAPI_CALL getQueue(VkDevice, uint32_t family, uint32_t index, VkQueue* out) {
     require(family == 3 && index == 2, "Queue arguments changed"); *out = expectedQueue;
 }
@@ -30,6 +61,8 @@ VKAPI_ATTR VkResult VKAPI_CALL begin(VkCommandBuffer, const VkCommandBufferBegin
 VKAPI_ATTR VkResult VKAPI_CALL resetPool(VkDevice, VkCommandPool, VkCommandPoolResetFlags) { return VK_SUCCESS; }
 VKAPI_ATTR void VKAPI_CALL destroyPool(VkDevice, VkCommandPool, const VkAllocationCallbacks*) {}
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL proc(VkDevice, const char* name) {
+    if (std::strcmp(name,"vkCreateGraphicsPipelines")==0) return reinterpret_cast<PFN_vkVoidFunction>(privateCreate);
+    if (std::strcmp(name,"vkDestroyPipeline")==0) return reinterpret_cast<PFN_vkVoidFunction>(pipelineDestroy);
     if (std::strcmp(name, "vkCmdDraw") == 0) return reinterpret_cast<PFN_vkVoidFunction>(draw);
     if (std::strcmp(name, "vkCmdExecuteGeneratedCommandsEXT") == 0) return reinterpret_cast<PFN_vkVoidFunction>(generated);
     if (std::strcmp(name, "vkQueueSubmit2KHR") == 0) return reinterpret_cast<PFN_vkVoidFunction>(submit2);
@@ -91,6 +124,29 @@ int main() try {
     d4QueueSubmit2(queue, 1, &submission, VK_NULL_HANDLE);
     require(d->commands.empty() && d->totals[UnknownBuffers] == 1, "Pool destruction retained stale command buffers");
     require(quoted("x\n\"\\") == "\"x\\u000a\\\"\\\\\"", "Invalid JSON escaping");
+    VkPipelineShaderStageCreateInfo stages[3]{};VkGraphicsPipelineCreateInfo infos[3]{};
+    for (unsigned i=0;i<3;++i) { stages[i].sType=VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;stages[i].stage=VK_SHADER_STAGE_VERTEX_BIT;
+        stages[i].module=object<VkShaderModule>(i==2?20:10);stages[i].pName="main";
+        infos[i].sType=VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;infos[i].stageCount=1;infos[i].pStages=&stages[i]; }
+    VkAllocationCallbacks allocator{};expectedGraphics=infos;expectedAllocator=&allocator;expectedCache=object<VkPipelineCache>(55);
+    d->CreateGraphicsPipelines=originalCreate;d->DestroyPipeline=pipelineDestroy;d->DestroyDevice=deviceDestroy;
+    VkPipeline outputs[3]{};
+    require(d4CreateGraphicsPipelines(handle,expectedCache,3,infos,&allocator,outputs)==VK_ERROR_UNKNOWN && originalCreates==1 && privateCreates==0,"Disabled paired mode changed creation");
+    d->pairs=std::make_unique<d4vr::pipeline::LibraryVariants>(handle,proc,std::array<VkDeviceAddress,2>{0x1000,0x2000},
+        [](const auto& s) { return s.module==object<VkShaderModule>(10); });
+    require(d4CreateGraphicsPipelines(handle,expectedCache,3,infos,&allocator,outputs)==VK_ERROR_UNKNOWN && originalCreates==2 && privateCreates==1,
+        "Partial batch was not forwarded once or null/unmarked outputs were cloned");
+    require(outputs[0]==object<VkPipeline>(101) && !outputs[1] && outputs[2]==object<VkPipeline>(102) && !stages[0].pSpecializationInfo,
+        "Application outputs or shader specialization changed");
+    require(d->pairBatches==1 && d->pairOutputs==2 && d->pairs->stats().executables==1,"Paired counters incorrect");
+    d4DestroyPipeline(handle,outputs[0],&allocator);d4DestroyPipeline(handle,outputs[2],&allocator);
+    require(originalDestroys==2 && privatePipelines.empty(),"Source destroy not forwarded or private graph leaked");
+    privateResult=VK_PIPELINE_COMPILE_REQUIRED;
+    require(d4CreateGraphicsPipelines(handle,expectedCache,3,infos,&allocator,outputs)==VK_ERROR_UNKNOWN && originalCreates==3 && privateCreates==2
+        && privatePipelines.empty() && d->pairs->stats().compileRequired==1,"Private compile failure changed original result or leaked a partial output");
+    privateResult=VK_SUCCESS;d4CreateGraphicsPipelines(handle,expectedCache,3,infos,&allocator,outputs);
+    require(privatePipelines.size()==2,"Private teardown test did not create a graph");
+    d4DestroyDevice(handle,nullptr);
     std::cout << "Vulkan forwarding, DGC, aliases, secondary/reused command buffers, errors and reset lifetime: passed\n";
     return 0;
 } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }

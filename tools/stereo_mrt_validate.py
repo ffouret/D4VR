@@ -9,9 +9,12 @@ import subprocess
 import probe
 import frame_trace
 import vulkan_trace
+import eye_control
 
 
 def run(args) -> dict:
+    if args.paired_pipelines and not args.trace_layer:
+        raise ValueError('Paired pipeline diagnostic requires the trace layer')
     inputs = [args.fixture,args.original,args.instrumented,args.fragment]
     if args.compute:
         inputs.append(args.compute)
@@ -35,6 +38,9 @@ def run(args) -> dict:
         if trace_manifest['layer']['name'] != vulkan_trace.LAYER or not (args.trace_layer/vulkan_trace.LIBRARY).is_file():
             raise ValueError('Expected the built D4VR trace layer and manifest')
     args.output.mkdir(parents=True,mode=0o700)
+    if args.paired_pipelines:
+        for eye,name in enumerate(('left','right')):
+            packet=args.output/(name+'.bin');packet.write_bytes(eye_control.encode(eye));packet.chmod(0o600)
     runtime = args.runtime.resolve() if args.runtime else None
     cases = [('native',False,False,False,False),('native-validation',True,False,False,False),
              ('sync-negative-control',True,False,True,False)]
@@ -42,6 +48,8 @@ def run(args) -> dict:
         cases.append(('descriptor-offset-negative-control',True,False,False,True))
     if args.trace_layer:
         cases.append(('metadata-disabled',True,False,False,False))
+    if args.paired_pipelines:
+        cases += [('paired-disabled',True,False,False,False),('paired-invalid-config',True,False,False,False)]
     if runtime:
         cases.append(('steam-runtime-validation',True,True,False,False))
     results = []
@@ -49,7 +57,7 @@ def run(args) -> dict:
         bridge = Path('/run/host/usr/bin/flatpak-spawn')
         command = [str(bridge),'--host','/usr/bin/env'] if bridge.exists() else ['/usr/bin/env']
         for key in ('VK_INSTANCE_LAYERS','VK_ADD_LAYER_PATH','VK_LAYER_PATH','VK_LAYER_ENABLES','VK_LAYER_VALIDATE_SYNC',
-                    'VK_LOADER_DEBUG','D4VR_EYE_STATE_FILE','D4VR_TRACE_DIR','D4VR_FRAME_TRACE','D4VR_TRACE_XR_BINDING'):
+                    'VK_LOADER_DEBUG','D4VR_EYE_STATE_FILE','D4VR_PAIR_LEFT_FILE','D4VR_PAIR_RIGHT_FILE','D4VR_TRACE_DIR','D4VR_FRAME_TRACE','D4VR_TRACE_XR_BINDING'):
             command += ['-u',key]
         layers = []; paths = []
         if validation:
@@ -61,6 +69,9 @@ def run(args) -> dict:
             metadata_directory.mkdir(mode=0o700);request = metadata_directory/'frame.request';request.write_text('1\n');os.chmod(request,0o600)
             command.append('D4VR_TRACE_DIR='+str(metadata_directory.resolve()))
             if name != 'metadata-disabled':command.append('D4VR_FRAME_TRACE=1')
+            if args.paired_pipelines and name != 'paired-disabled':
+                command.append('D4VR_PAIR_LEFT_FILE='+str((args.output/'left.bin').resolve()))
+                if name != 'paired-invalid-config':command.append('D4VR_PAIR_RIGHT_FILE='+str((args.output/'right.bin').resolve()))
         if layers:
             command += ['VK_INSTANCE_LAYERS='+':'.join(layers),'VK_ADD_LAYER_PATH=' + ':'.join(paths)]
         if in_runtime:
@@ -167,10 +178,24 @@ def run(args) -> dict:
                     raise ValueError('Depth clear bits do not match original fixture')
                 metadata = {'bounded_capture_verified':True,'monolithic_pipeline_count':len(states)-linked,'linked_pipeline_count':linked,'largest_dynamic_declaration':largest,
                             'clear_value_sets':len(clears),'graphics_state_snapshot_complete':False}
+        paired=None
+        if args.paired_pipelines:
+            trace=vulkan_trace.report(metadata_directory)['process_traces'][0]
+            device=trace['devices'][0];paired=device.get('paired_pipelines')
+            if name=='paired-invalid-config':
+                if paired or len(trace['paired_pipeline_errors'])!=1:raise ValueError('Invalid pair configuration was not isolated')
+            elif trace['paired_pipeline_errors']:raise ValueError('Paired pipeline initialization failed')
+            elif name=='paired-disabled':
+                if paired:raise ValueError('Private pipeline diagnostic enabled without opt-in')
+            elif (not device['clean_destroy'] or not paired or paired['mode']!='create_only' or paired['private_draws'] is not False
+                  or paired['original_arguments_unchanged'] is not True or paired['creation_attempts']<1 or paired['executable_pairs']<1
+                  or paired['driver_failures'] or paired['compile_required'] or paired['live_nodes']!=0
+                  or (args.library_pipelines and paired['library_pairs']<3)):
+                raise ValueError('Private pair creation/cleanup was not verified')
         results.append({'case':name,'exit_code':result.returncode,'validation_layer_loaded':loaded,
                         'intentional_sync_hazard_detected':hazard,
                         'intentional_wrong_compute_offset_detected':negative_compute and proof.get('incorrect_compute_samples_detected') == 8,'fixture':proof,
-                        'frame_metadata':metadata})
+                        'frame_metadata':metadata,'paired_pipelines':paired})
         print(f'{name}: passed',flush=True)
     report = {'schema_version':1,'scope':'original synthetic scene only','cases':results,
               'input_sha256':{p.name:probe.digest(p) for p in inputs},
@@ -194,6 +219,7 @@ def main() -> int:
     parser.add_argument('--library-pipelines',action='store_true')
     parser.add_argument('--library-original-live',action='store_true')
     parser.add_argument('--trace-layer',type=Path)
+    parser.add_argument('--paired-pipelines',action='store_true',help='Create diagnostic pairs in the loaded layer; never draw them')
     args = parser.parse_args(); run(args); return 0
 
 

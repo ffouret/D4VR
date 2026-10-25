@@ -37,6 +37,8 @@ public:
     void removeModule(VkShaderModule handle);
     void identifier(VkShaderModule handle,const VkShaderModuleIdentifierEXT& identifier);
     void identifier(const VkShaderModuleCreateInfo& info,const VkShaderModuleIdentifierEXT& identifier);
+    bool marked(const VkPipelineShaderStageCreateInfo& stage) const;
+    VkDeviceAddress address() const;
     std::unique_ptr<GraphicsEdits> graphics(uint32_t count,const VkGraphicsPipelineCreateInfo* info);
     std::string json() const;
 };

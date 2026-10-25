@@ -122,9 +122,15 @@ int main()try{
     {
         LibraryVariants registry(device,get,addresses,[](const auto&){return false;});Description d(15,false);
         auto before=creates;expect(registry.observe(h<VkPipeline>(1),d.ci)==LibraryResult::unmarkedExecutable && creates==before,"Unmarked executable cloned");
+        Description unmarked(6);expect(registry.observe(h<VkPipeline>(3),unmarked.ci)==LibraryResult::unmarkedPreRaster && creates==before,"Unmarked pre-raster library cloned");
         VkPipelineCreateFlags2CreateInfoKHR flags{VK_STRUCTURE_TYPE_PIPELINE_CREATE_FLAGS_2_CREATE_INFO_KHR};flags.flags=VK_PIPELINE_CREATE_2_LIBRARY_BIT_KHR;flags.pNext=d.ci.pNext;d.ci.pNext=&flags;
         expect(registry.observe(h<VkPipeline>(2),d.ci)==LibraryResult::unsupported,"Flags2 library/full-set conflict ignored");
     }
     expect(owned.empty(),"Final private pipelines leaked");
+    {
+        LibraryVariants registry(device,get,addresses,marked,4,1);Description d(1);
+        expect(registry.observe(h<VkPipeline>(1),d.ci)==LibraryResult::registered,"Cumulative budget first creation failed");registry.remove(h<VkPipeline>(1));
+        expect(registry.observe(h<VkPipeline>(2),d.ci)==LibraryResult::budget && registry.stats().creationAttempts==1 && owned.empty(),"Source destruction reset cumulative compile budget");
+    }
     std::cout<<"GPL variants: subset ownership, synchronous stage/identifier specialization, per-eye links, leases, reuse, quotas, feedback isolation, partial failures and cancellation: passed\n";return 0;
 }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}

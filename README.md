@@ -10,6 +10,11 @@ répond pas à cet objectif.
 
 ## État du projet
 
+Le [diagnostic de paires dans la couche Vulkan](docs/PAIRED_PIPELINES.md) observe
+les créations originales et compile les variantes privées de chaque œil, sans
+les dessiner. Les essais GPU couvrent les pipelines monolithiques, GPL et les
+identifiants issus d'un cache préparé. Ce raccordement reste testé hors de Diablo.
+
 Le [chemin synchrone des bibliothèques GPL](docs/LIBRARY_VARIANTS.md) construit
 deux graphes privés et les conserve par lease jusqu'à leur dernière utilisation.
 Deux contrôles GPU distincts vérifient leur indépendance des sources et le témoin

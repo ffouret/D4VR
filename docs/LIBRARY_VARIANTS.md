@@ -1,9 +1,10 @@
 # Variantes synchrones des bibliothèques de pipelines
 
-`native/vulkan/library_variants.*` prépare le raccordement des créations de
-pipelines monolithiques ou assemblés avec GPL. Le module construit un graphe
-privé par œil pendant que les paramètres sources sont encore valides. **Il n'est
-pas raccordé au jeu et ne fournit aucune autorisation de reprise des dessins.**
+`native/vulkan/library_variants.*` traite les créations de pipelines
+monolithiques ou assemblés avec GPL. Le module construit un graphe
+privé par œil pendant que les paramètres sources sont encore valides. **La couche Vulkan le raccorde maintenant à un diagnostic explicite de
+création seule, validé hors jeu. Il ne fournit aucune autorisation de reprise
+des dessins.** Voir [le diagnostic de paires](PAIRED_PIPELINES.md).
 
 ## Contrat de création
 
@@ -44,6 +45,10 @@ Le quota compte aussi les nœuds conservés par les leases, pas seulement ceux
 encore indexés. Les limites sont 512 nœuds par défaut (configuration au plus
 4 096), profondeur 8, 4 bibliothèques liées, 16 stages, 8 nœuds pNext et
 64 entrées/4 Kio de spécialisation par stage avant ajout de l'adresse d'œil.
+Une seconde limite borne le nombre cumulé d'appels privés : 4 096 par défaut,
+512 dans le diagnostic de couche. Détruire les sources ne réinitialise pas ce
+budget. Les bibliothèques possédant une pré-rastérisation non marquée sont
+refusées avant compilation ; les morceaux neutres restent copiés sous quota.
 Les échecs partiels sont nettoyés. Un `VK_PIPELINE_COMPILE_REQUIRED` reste un
 refus de variante : aucun remplacement ou retry ne modifie l'appel original.
 
@@ -83,8 +88,9 @@ explicitement ; aucune union brute de listes du jeu n'est autorisée. Les tests
 C++ et leur version ASan/UBSan dans la CI Linux couvrent ownership, liens,
 spécialisations, identifiants simulés, feedback, quotas, recyclage et échecs
 partiels. Windows exécute les tests C++ communs ; les 100 tests Python passent.
-Les créations de stages par identifiant sont testées sans pilote et leur
-éventuel cache miss reste refusé ; ce n'est pas une preuve de cache chaud sur GPU.
+Dans cette preuve initiale, les stages par identifiant étaient testés sans
+pilote. Le nouveau [diagnostic de couche](PAIRED_PIPELINES.md) ajoute une
+réussite GPU avec cache préparé ; les cache misses restent refusés.
 
 ## Limite native observée
 
@@ -102,8 +108,9 @@ modifications locales non reconstituées : ce n'est pas un audit complet des
 créations réellement utilisées par Diablo.
 
 [Mesures et limites](proofs/library-variants-v1.json). Aucun nouvel essai du jeu
-ni envoi SteamVR n'est associé à cette étape. Restent la classification réelle
-des modules, le raccordement des créations et commandes, l'audit des ressources
+ni envoi SteamVR n'est associé à cette étape. Le raccordement des créations
+est ajouté dans le [diagnostic de paires](PAIRED_PIPELINES.md), testé hors jeu.
+Restent les essais réels, le raccordement des commandes, l'audit des ressources
 et dépendances, les passes suivantes, poses prédites et soumission SteamVR. Le
 backend D3D12 natif Windows reste absent.
 

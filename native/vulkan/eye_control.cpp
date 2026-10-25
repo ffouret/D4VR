@@ -80,7 +80,9 @@ struct Control::Impl {
         if (stage.stage != VK_SHADER_STAGE_VERTEX_BIT) return false;
         std::lock_guard<std::mutex> lock(mutex);
         if (stage.module && modules.count(stage.module)) return true;
+        unsigned count = 0;
         for (auto p = static_cast<const VkBaseInStructure*>(stage.pNext); p; p = p->pNext) {
+            if (++count > 8) return false;
             if (p->sType == VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO && tagged(*reinterpret_cast<const VkShaderModuleCreateInfo*>(p))) return true;
             if (p->sType == VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_MODULE_IDENTIFIER_CREATE_INFO_EXT) {
                 auto id = reinterpret_cast<const VkPipelineShaderStageModuleIdentifierCreateInfoEXT*>(p);
@@ -158,6 +160,8 @@ std::unique_ptr<GraphicsEdits> Control::graphics(uint32_t count,const VkGraphics
     if (!edits->changedStages) return {};
     impl->changedStages += edits->changedStages; return edits;
 }
+bool Control::marked(const VkPipelineShaderStageCreateInfo& stage) const { return impl->marked(stage); }
+VkDeviceAddress Control::address() const { return impl->address; }
 std::string Control::json() const {
     std::ostringstream s; s << "{\"enabled\":true,\"mode\":\"immutable_per_launch\",\"eye\":" << impl->state.identity[0]
         << ",\"sequence\":" << impl->state.header[2] << ",\"source_projection\":" << ((impl->state.header[3]&2) ? "true" : "false")

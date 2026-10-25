@@ -113,7 +113,7 @@ def run(game: Path, launcher: Path, bundle: Path, output: Path, geometry_test: b
     probe.write_json(output / "capture.json", capture)
     bridge = Path("/run/host/usr/bin/flatpak-spawn")
     command = ([str(bridge), "--host", "/usr/bin/env"] if bridge.exists() else ["/usr/bin/env"])
-    for key in ('D4VR_EYE_STATE_FILE','D4VR_FRAME_TRACE','D4VR_TRACE_XR_BINDING','D4VR_XR_LOADER','VK_INSTANCE_LAYERS','VK_ADD_LAYER_PATH'):
+    for key in ('D4VR_EYE_STATE_FILE', 'D4VR_PAIR_LEFT_FILE', 'D4VR_PAIR_RIGHT_FILE','D4VR_FRAME_TRACE','D4VR_TRACE_XR_BINDING','D4VR_XR_LOADER','VK_INSTANCE_LAYERS','VK_ADD_LAYER_PATH'):
         command += ['-u',key]
     command += [key + "=" + value for key, value in variables.items()] + ["/usr/bin/bash", str(private_launcher)]
     if geometry_test:

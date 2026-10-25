@@ -19,8 +19,8 @@ public:
     bool library() const;
     bool stereoVertex() const;
 };
-enum class LibraryResult { registered,unsupported,unknownLibrary,unmarkedExecutable,budget,driverFailure,compileRequired,duplicateSource };
-struct LibraryStats { uint64_t libraries=0,executables=0,rejected=0,driverFailures=0,compileRequired=0;uint32_t liveNodes=0; };
+enum class LibraryResult { registered,unsupported,unknownLibrary,unmarkedExecutable,budget,driverFailure,compileRequired,duplicateSource,unmarkedPreRaster };
+struct LibraryStats { uint64_t libraries=0,executables=0,rejected=0,driverFailures=0,compileRequired=0;uint32_t liveNodes=0,creationAttempts=0; };
 
 // Synchronous pipeline adapter: observe() runs AFTER forwarding the original
 // create, before returning to its caller, while all input pointers/modules and
@@ -39,7 +39,7 @@ public:
     using Lease=std::shared_ptr<const LibraryNode>;
     using MarkedStage=std::function<bool(const VkPipelineShaderStageCreateInfo&)>;
     LibraryVariants(VkDevice,PFN_vkGetDeviceProcAddr,const std::array<VkDeviceAddress,2>&,
-                    MarkedStage,uint32_t maximumLiveNodes=512);
+                    MarkedStage,uint32_t maximumLiveNodes=512,uint32_t maximumCreations=4096);
     ~LibraryVariants();
     LibraryResult observe(VkPipeline original,const VkGraphicsPipelineCreateInfo&) noexcept;
     Lease lookup(VkPipeline original) const;
