@@ -29,6 +29,12 @@ const VkDescriptorSetLayoutCreateInfo* expectedSetInfo{};const VkPipelineLayoutC
 VkDescriptorSetLayout expectedSetLayout{};VkDeviceSize* expectedLayoutQuery{};
 VkResult layoutResult=VK_SUCCESS;unsigned setCreates=0,setDestroys=0,pipelineLayoutCreates=0,pipelineLayoutDestroys=0,sizeQueries=0,offsetQueries=0;
 const VkDescriptorGetInfoEXT* expectedDescriptorInfo{};void* expectedDescriptorOutput{};unsigned descriptorQueries=0;
+const VkMemoryAllocateInfo* expectedMemoryInfo{};const VkBindBufferMemoryInfo* expectedBindInfo{};const VkMappedMemoryRange* expectedMemoryRange{};
+VkDeviceMemory expectedMemory{};void** expectedMapOutput{};VkResult memoryResult=VK_SUCCESS;
+unsigned memoryAllocations=0,memoryFrees=0,memoryBinds=0,memoryBatchBinds=0,memoryMaps=0,memoryUnmaps=0,memoryFlushes=0,memoryInvalidations=0;
+#ifdef VK_KHR_map_memory2
+const VkMemoryMapInfoKHR* expectedMapInfo{};const VkMemoryUnmapInfoKHR* expectedUnmapInfo{};unsigned maps2=0,unmaps2=0;
+#endif
 template<class T> T object(uintptr_t value) { return reinterpret_cast<T>(value); }
 VKAPI_ATTR VkResult VKAPI_CALL originalCreate(VkDevice,VkPipelineCache cache,uint32_t n,const VkGraphicsPipelineCreateInfo* info,const VkAllocationCallbacks* allocator,VkPipeline* out) {
     require(n==3 && cache==expectedCache && info==expectedGraphics && allocator==expectedAllocator,"Original pipeline arguments changed");
@@ -97,6 +103,18 @@ VKAPI_ATTR void VKAPI_CALL getDescriptor(VkDevice,const VkDescriptorGetInfoEXT* 
     require(info==expectedDescriptorInfo && n==16 && out==expectedDescriptorOutput,"Descriptor query arguments changed");++descriptorQueries;
     for(unsigned i=0;i<16;++i)static_cast<uint8_t*>(out)[i]=uint8_t(i+1);
 }
+VKAPI_ATTR VkResult VKAPI_CALL allocateMemory(VkDevice,const VkMemoryAllocateInfo* info,const VkAllocationCallbacks* allocator,VkDeviceMemory* out) {require(info==expectedMemoryInfo && allocator==expectedAllocator,"Allocation arguments changed");++memoryAllocations;if(memoryResult==VK_SUCCESS)*out=expectedMemory;return memoryResult;}
+VKAPI_ATTR void VKAPI_CALL freeMemory(VkDevice,VkDeviceMemory memory,const VkAllocationCallbacks* allocator) {require(memory==expectedMemory && allocator==expectedAllocator,"Free arguments changed");++memoryFrees;}
+VKAPI_ATTR VkResult VKAPI_CALL bindMemory(VkDevice,VkBuffer buffer,VkDeviceMemory memory,VkDeviceSize offset) {require(buffer==expectedBuffer && memory==expectedMemory && offset==32,"Memory bind arguments changed");++memoryBinds;return memoryResult;}
+VKAPI_ATTR VkResult VKAPI_CALL bindMemory2(VkDevice,uint32_t n,const VkBindBufferMemoryInfo* info) {require(n==1 && info==expectedBindInfo,"Batch bind arguments changed");++memoryBatchBinds;return memoryResult;}
+VKAPI_ATTR VkResult VKAPI_CALL mapMemory(VkDevice,VkDeviceMemory memory,VkDeviceSize offset,VkDeviceSize size,VkMemoryMapFlags flags,void** out) {require(memory==expectedMemory && offset==16 && size==VK_WHOLE_SIZE && !flags && out==expectedMapOutput,"Map arguments changed");++memoryMaps;if(memoryResult==VK_SUCCESS)*out=reinterpret_cast<void*>(0x12340000);return memoryResult;}
+VKAPI_ATTR void VKAPI_CALL unmapMemory(VkDevice,VkDeviceMemory memory) {require(memory==expectedMemory,"Unmap arguments changed");++memoryUnmaps;}
+VKAPI_ATTR VkResult VKAPI_CALL flushMemory(VkDevice,uint32_t n,const VkMappedMemoryRange* range) {require(n==1 && range==expectedMemoryRange,"Flush arguments changed");++memoryFlushes;return memoryResult;}
+VKAPI_ATTR VkResult VKAPI_CALL invalidateMemory(VkDevice,uint32_t n,const VkMappedMemoryRange* range) {require(n==1 && range==expectedMemoryRange,"Invalidate arguments changed");++memoryInvalidations;return memoryResult;}
+#ifdef VK_KHR_map_memory2
+VKAPI_ATTR VkResult VKAPI_CALL mapMemory2(VkDevice,const VkMemoryMapInfoKHR* info,void** out) {require(info==expectedMapInfo && out==expectedMapOutput,"Map2 arguments changed");++maps2;if(memoryResult==VK_SUCCESS)*out=reinterpret_cast<void*>(0x12340000);return memoryResult;}
+VKAPI_ATTR VkResult VKAPI_CALL unmapMemory2(VkDevice,const VkMemoryUnmapInfoKHR* info) {require(info==expectedUnmapInfo,"Unmap2 arguments changed");++unmaps2;return memoryResult;}
+#endif
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL proc(VkDevice, const char* name) {
     if (std::strcmp(name,"vkCreateGraphicsPipelines")==0) return reinterpret_cast<PFN_vkVoidFunction>(privateCreate);
     if (std::strcmp(name,"vkDestroyPipeline")==0) return reinterpret_cast<PFN_vkVoidFunction>(pipelineDestroy);
@@ -111,6 +129,11 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL proc(VkDevice, const char* name) {
     if(std::strcmp(name,"vkGetDescriptorSetLayoutSizeEXT")==0)return reinterpret_cast<PFN_vkVoidFunction>(layoutSize);
     if(std::strcmp(name,"vkGetDescriptorSetLayoutBindingOffsetEXT")==0)return reinterpret_cast<PFN_vkVoidFunction>(layoutOffset);
     if(std::strcmp(name,"vkGetDescriptorEXT")==0)return reinterpret_cast<PFN_vkVoidFunction>(getDescriptor);
+    if(std::strcmp(name,"vkBindBufferMemory2KHR")==0)return reinterpret_cast<PFN_vkVoidFunction>(bindMemory2);
+#ifdef VK_KHR_map_memory2
+    if(std::strcmp(name,"vkMapMemory2")==0 || std::strcmp(name,"vkMapMemory2KHR")==0)return reinterpret_cast<PFN_vkVoidFunction>(mapMemory2);
+    if(std::strcmp(name,"vkUnmapMemory2")==0 || std::strcmp(name,"vkUnmapMemory2KHR")==0)return reinterpret_cast<PFN_vkVoidFunction>(unmapMemory2);
+#endif
     return nullptr;
 }
 } // namespace
@@ -197,6 +220,26 @@ int main() try {
     d->frame.enabled=true;d->commands[primary].frame=d->frame.command();expectedCommand=primary;
     VkBufferCreateInfo bi{VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};bi.size=4096;bi.usage=VK_BUFFER_USAGE_RESOURCE_DESCRIPTOR_BUFFER_BIT_EXT;expectedBufferInfo=&bi;expectedBuffer=object<VkBuffer>(777);
     VkBuffer created{};require(d4CreateBuffer(handle,&bi,expectedAllocator,&created)==VK_SUCCESS && created==expectedBuffer,"Buffer create result changed");
+    d->AllocateMemory=allocateMemory;d->FreeMemory=freeMemory;d->BindBufferMemory=bindMemory;d->BindBufferMemory2=bindMemory2;
+    d->MapMemory=mapMemory;d->UnmapMemory=unmapMemory;d->FlushMappedMemoryRanges=flushMemory;d->InvalidateMappedMemoryRanges=invalidateMemory;
+    VkPhysicalDeviceMemoryProperties memoryProperties{};memoryProperties.memoryTypeCount=1;memoryProperties.memoryHeapCount=1;memoryProperties.memoryTypes[0].propertyFlags=VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+    d->frame.memoryProperties(memoryProperties,64);expectedMemory=object<VkDeviceMemory>(880);
+    VkMemoryAllocateInfo memoryInfo{VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};memoryInfo.allocationSize=8192;expectedMemoryInfo=&memoryInfo;VkDeviceMemory allocated{};
+    require(d4AllocateMemory(handle,&memoryInfo,expectedAllocator,&allocated)==VK_SUCCESS && allocated==expectedMemory,"Allocation result changed");
+    memoryResult=VK_ERROR_OUT_OF_DEVICE_MEMORY;require(d4BindBufferMemory(handle,created,allocated,32)==memoryResult,"Failed binding result changed");memoryResult=VK_SUCCESS;
+    VkBindBufferMemoryInfo bindInfo{VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_INFO};bindInfo.buffer=created;bindInfo.memory=allocated;bindInfo.memoryOffset=32;expectedBindInfo=&bindInfo;
+    require(d4GetDeviceProcAddr(handle,"vkBindBufferMemory2KHR")==reinterpret_cast<PFN_vkVoidFunction>(d4BindBufferMemory2) && d4BindBufferMemory2(handle,1,&bindInfo)==VK_SUCCESS,"Batch binding/alias result changed");
+    void* mapped=nullptr;expectedMapOutput=&mapped;memoryResult=VK_ERROR_MEMORY_MAP_FAILED;
+    require(d4MapMemory(handle,allocated,16,VK_WHOLE_SIZE,0,&mapped)==memoryResult && !mapped,"Failed map output changed");memoryResult=VK_SUCCESS;
+    require(d4MapMemory(handle,allocated,16,VK_WHOLE_SIZE,0,&mapped)==VK_SUCCESS && mapped==reinterpret_cast<void*>(0x12340000),"Map pointer/result changed");
+    VkMappedMemoryRange memoryRange{VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE};memoryRange.memory=allocated;memoryRange.offset=64;memoryRange.size=64;expectedMemoryRange=&memoryRange;
+    require(d4FlushMappedMemoryRanges(handle,1,&memoryRange)==VK_SUCCESS && d4InvalidateMappedMemoryRanges(handle,1,&memoryRange)==VK_SUCCESS,"Cache results changed");
+    memoryResult=VK_ERROR_OUT_OF_HOST_MEMORY;require(d4FlushMappedMemoryRanges(handle,1,&memoryRange)==memoryResult,"Failed flush result changed");memoryResult=VK_SUCCESS;
+#ifdef VK_KHR_map_memory2
+    d->MapMemory2KHR=mapMemory2;d->UnmapMemory2KHR=unmapMemory2;d4UnmapMemory(handle,allocated);
+    VkMemoryMapInfoKHR mapInfo{VK_STRUCTURE_TYPE_MEMORY_MAP_INFO_KHR};mapInfo.memory=allocated;mapInfo.offset=16;mapInfo.size=VK_WHOLE_SIZE;expectedMapInfo=&mapInfo;
+    require(d4GetDeviceProcAddr(handle,"vkMapMemory2")==reinterpret_cast<PFN_vkVoidFunction>(d4MapMemory2KHR) && d4MapMemory2KHR(handle,&mapInfo,&mapped)==VK_SUCCESS,"Map2 core alias or forwarding changed");
+#endif
     VkBufferDeviceAddressInfo addressInfo{VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO};addressInfo.buffer=created;expectedAddressInfo=&addressInfo;
     require(d4GetBufferDeviceAddress(handle,&addressInfo)==0x40000,"Original BDA result changed");
     VkDescriptorBufferBindingInfoEXT binding{VK_STRUCTURE_TYPE_DESCRIPTOR_BUFFER_BINDING_INFO_EXT};binding.address=0x40020;binding.usage=bi.usage;expectedBindingInfo=&binding;
@@ -227,6 +270,18 @@ int main() try {
     auto queryTicket=d->frame.submit(1,0,0,0,{primary},[&](auto)->const d4vr::frame::Command*{return &d->commands[primary].frame;});d->frame.submitted(queryTicket,VK_SUCCESS);auto queryCaptures=d->frame.takeReady();
     require(descriptorQueries==3 && queryCaptures.size()==1 && queryCaptures[0]->descriptorQueries==2 && queryCaptures[0]->descriptorReceipts.size()==1
         && queryCaptures[0]->descriptorReceipts[0]->bytes[0]==1 && queryCaptures[0]->descriptorReceipts[0]->buffer.offset==32,"Descriptor output bytes/opt-in/forwarding or owned source identity changed");
+    require(queryCaptures[0]->bufferMemory.size()==1 && queryCaptures[0]->bufferMemory[0].bufferMapped && queryCaptures[0]->bufferMemory[0].flushes==1
+        && queryCaptures[0]->bufferMemory[0].invalidations==1 && queryCaptures[0]->bufferMemory[0].properties==VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,"Allocation/map/cache metadata inferred coherent memory or counted a failed call");
+#ifdef VK_KHR_map_memory2
+    VkMemoryUnmapInfoKHR unmapInfo{VK_STRUCTURE_TYPE_MEMORY_UNMAP_INFO_KHR};unmapInfo.memory=allocated;expectedUnmapInfo=&unmapInfo;
+    require(d4UnmapMemory2KHR(handle,&unmapInfo)==VK_SUCCESS && maps2==1 && unmaps2==1,"Unmap2 result/forwarding changed");
+#else
+    d4UnmapMemory(handle,allocated);
+#endif
+    d4FreeMemory(handle,allocated,expectedAllocator);memoryResult=VK_ERROR_OUT_OF_HOST_MEMORY;
+    require(d4AllocateMemory(handle,&memoryInfo,expectedAllocator,&allocated)==memoryResult && d4BindBufferMemory2(handle,1,&bindInfo)==memoryResult,"Memory errors changed");
+    require(memoryAllocations==2 && memoryFrees==1 && memoryBinds==1 && memoryBatchBinds==2 && memoryMaps==2 && memoryUnmaps==1 && memoryFlushes==2 && memoryInvalidations==1
+        && queryCaptures[0]->bufferMemory[0].bufferMapped,"Memory APIs forwarded more than once or freeing changed a captured snapshot");memoryResult=VK_SUCCESS;
     layoutResult=VK_ERROR_OUT_OF_HOST_MEMORY;
     require(d4CreateDescriptorSetLayout(handle,&setInfo,expectedAllocator,&setLayout)==layoutResult && d4CreatePipelineLayout(handle,&layoutInfo,expectedAllocator,&pl)==layoutResult,"Failed layout creation result changed");
     d4CmdBindDescriptorSets(primary,VK_PIPELINE_BIND_POINT_COMPUTE,expectedLayout,1,1,&set,0,nullptr);

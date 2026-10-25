@@ -25,6 +25,8 @@ class BufferAddresses {
         VkDeviceAddress maximum=0;for(auto& r:index){maximum=std::max(maximum,r.end);r.maxEnd=maximum;}dirty=false;
     }
 public:
+    struct Identity {uint64_t id=0,size=0;bool complete=false;};
+    Identity identity(VkBuffer handle) const {auto i=buffers.find(handle);return i==buffers.end()?Identity{}:Identity{i->second.id,i->second.size,i->second.complete};}
     explicit BufferAddresses(size_t maximum=65536):limit(maximum) {}
     void invalidate() noexcept {exhausted=true;}
     void created(VkBuffer handle,const VkBufferCreateInfo& info) {

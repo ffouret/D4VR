@@ -210,6 +210,38 @@ int main() try {
     auto qr=queries.takeReady();encoding[0]=11;queries.descriptorOutput(newInput,4,encoding);queries.removeBuffer(b1);queries.removeView(vh);queries.removeImage(ih);
     require(qr[0]->descriptorQueries==1 && qr[0]->descriptorReceipts.size()==1 && qr[0]->descriptorReceipts[0]->bytes[0]==10,"Submitted descriptor catalog changed after later queries/destruction");
     auto qjson=serialize(*qr[0]);require(qjson.find("\"encoding_hex\":\"0a020304\"")!=std::string::npos && qjson.find("\"descriptor_query_selection_proven\":false")!=std::string::npos,"Exact private receipt or explicit selection limitation missing");
+    // Allocation identity, suballocation offsets and map/cache observations do
+    // not claim that host writes are visible or that physical aliases are absent.
+    MemoryBindings memory;auto mem=handle<VkDeviceMemory>(300);VkPhysicalDeviceMemoryProperties properties{};
+    properties.memoryTypeCount=2;properties.memoryHeapCount=1;properties.memoryTypes[0].propertyFlags=VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    properties.memoryTypes[1].propertyFlags=VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;memory.configure(properties,64);
+    memory.buffer(b1,1,128,true);memory.buffer(b2,2,128,true);require(memory.snapshot(1).status==BufferMemorySnapshot::bindingNotObserved,"Unobserved binding invented an allocation");
+    VkMemoryAllocateInfo allocation{VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};allocation.allocationSize=512;allocation.memoryTypeIndex=1;
+    memory.allocated(mem,allocation);memory.bound(b1,mem,64);memory.bound(b2,mem,128);
+    memory.mapped(mem,64,VK_WHOLE_SIZE,0,reinterpret_cast<void*>(1));auto ms=memory.snapshot(1);
+    require(ms.status==BufferMemorySnapshot::observed && ms.propertiesKnown && ms.properties==VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT && ms.bufferMapped
+        && ms.mapOffset==64 && ms.mapSize==448 && ms.bindingOffset==64,"Suballocation/map offset or noncoherent properties were inferred incorrectly");
+    require(memory.snapshot(2).memoryId==ms.memoryId && memory.snapshot(2).bindingOffset==128,"Overlapping buffer payloads lost their common observed allocation");
+    VkMappedMemoryRange range{VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE};range.memory=mem;range.offset=64;range.size=128;
+    memory.cacheRange(range,true);memory.cacheRange(range,false);auto cache=memory.snapshot(1);
+    require(cache.flushes==1 && cache.invalidations==1 && cache.flushRangeKnown && cache.invalidateRangeKnown && cache.flushOffset==64 && cache.flushSize==128,"Cache-operation ranges were not owned");
+    range.offset=65;memory.cacheRange(range,true);require(!memory.snapshot(1).flushRangeKnown,"Unaligned noncoherent flush range reported known");
+    memory.unmapped(mem);require(!memory.snapshot(1).mapped && !memory.snapshot(1).flushRangeKnown && ms.bufferMapped,"Unmap flushed implicitly or mutated an old snapshot");
+    memory.mapped(mem,0,64,0,reinterpret_cast<void*>(1));require(!memory.snapshot(1).bufferMapped && memory.snapshot(1).mapGeneration==2,"Partial remap claimed full payload coverage");
+    memory.mapped(mem,512,VK_WHOLE_SIZE,0,reinterpret_cast<void*>(1));require(!memory.snapshot(1).mappingComplete,"Out-of-bounds map was admitted");
+    memory.mapped(mem,0,512,0,reinterpret_cast<void*>(1));memory.unmapped(mem,false);require(!memory.snapshot(1).mappingComplete,"Unknown unmap state remained complete");
+    memory.bound(b1,mem,UINT64_MAX);require(memory.snapshot(1).status==BufferMemorySnapshot::invalidBounds,"Overflowing binding range wrapped");
+    memory.bound(b1,mem,64,false);require(!memory.snapshot(1).bindingComplete,"Unknown bind chain reported complete");memory.bound(b1,mem,64);
+    memory.freed(mem);require(memory.snapshot(1).status==BufferMemorySnapshot::releasedAllocation && memory.snapshot(1).memoryId==ms.memoryId,"Free erased the bound allocation generation");
+    memory.allocated(mem,allocation);require(memory.snapshot(1).status==BufferMemorySnapshot::releasedAllocation,"Recycled allocation handle revived an old binding");
+    memory.bound(b1,mem,64);require(memory.snapshot(1).memoryId!=ms.memoryId,"Recycled allocation identity conflated");
+    memory.bound(b1,mem,64,true,false);require(memory.snapshot(1).status==BufferMemorySnapshot::indeterminateBinding,"Failed batch binding invented success");
+    memory.bound(b1,handle<VkDeviceMemory>(999),64);require(memory.snapshot(1).status==BufferMemorySnapshot::unknownAllocation,"Unobserved allocation invented properties");
+    allocation.pNext=&foreign;allocation.memoryTypeIndex=99;memory.allocated(mem,allocation);memory.bound(b1,mem,0);
+    require(!memory.snapshot(1).allocationComplete && !memory.snapshot(1).propertiesKnown,"Unknown allocation chain/type admitted");
+    memory.removeBuffer(b1);memory.buffer(b1,3,32,true);require(memory.snapshot(1).status==BufferMemorySnapshot::unknownBuffer && memory.snapshot(3).status==BufferMemorySnapshot::bindingNotObserved,"Buffer generation was recycled in memory registry");
+    MemoryBindings memoryLimit(1);memoryLimit.buffer(b1,1,64,true);memoryLimit.buffer(b2,2,64,true);
+    require(memoryLimit.snapshot(1).status==BufferMemorySnapshot::incompleteRegistry,"Memory registry capacity failed open");
     Tracker disabled; auto off = disabled.command(); disabled.begin(off,rendering); disabled.draw(off,0); require(off.ops.empty() && off.resources.empty(),"Disabled tracker recorded metadata");
     std::cout << "Frame metadata: attachments/pipelines/layouts, exact descriptor receipts, resource generations, GPL/DGC, submission lifetime and caps: passed\n";
     return 0;

@@ -164,6 +164,11 @@ struct Commands {
     d4vr::frame::Command frame;
 };
 // One immutable dispatch table per device avoids proc-address lookup per draw.
+#ifdef VK_KHR_map_memory2
+#define D4_MEMORY2_FUNCTIONS(X) X(MapMemory2KHR) X(UnmapMemory2KHR)
+#else
+#define D4_MEMORY2_FUNCTIONS(X)
+#endif
 #define D4_DEVICE_FUNCTIONS(X) \
     X(DestroyDevice) X(GetDeviceQueue) X(GetDeviceQueue2) X(AllocateCommandBuffers) X(FreeCommandBuffers) X(BeginCommandBuffer) \
     X(ResetCommandBuffer) X(ResetCommandPool) X(DestroyCommandPool) X(CmdExecuteCommands) \
@@ -179,6 +184,7 @@ struct Commands {
     X(EndCommandBuffer) X(DeviceWaitIdle) X(CreatePipelineLayout) X(DestroyPipelineLayout) \
     X(CmdPushConstants) X(CmdSetViewport) X(CmdSetScissor) X(CmdSetStencilReference) \
     X(CreateBuffer) X(DestroyBuffer) X(GetBufferDeviceAddress) \
+    X(AllocateMemory) X(FreeMemory) X(BindBufferMemory) X(BindBufferMemory2) X(MapMemory) X(UnmapMemory) X(FlushMappedMemoryRanges) X(InvalidateMappedMemoryRanges) D4_MEMORY2_FUNCTIONS(X) \
     X(CreateDescriptorSetLayout) X(DestroyDescriptorSetLayout) X(GetDescriptorSetLayoutSizeEXT) X(GetDescriptorSetLayoutBindingOffsetEXT) X(GetDescriptorEXT) \
     X(CmdBindDescriptorBuffersEXT) X(CmdSetDescriptorBufferOffsetsEXT) X(CmdBindDescriptorSets)
 struct Device {
@@ -379,8 +385,12 @@ VKAPI_ATTR VkResult VKAPI_CALL d4CreateDevice(VkPhysicalDevice physical, const V
     D4_ALIAS(CmdDrawIndirectCount) D4_ALIAS(CmdDrawIndexedIndirectCount)
     D4_ALIAS(CmdBeginRenderPass2) D4_ALIAS(CmdBeginRendering) D4_ALIAS(QueueSubmit2)
     D4_ALIAS(CmdEndRenderPass2) D4_ALIAS(CmdEndRendering)
-    D4_ALIAS(GetBufferDeviceAddress)
+    D4_ALIAS(GetBufferDeviceAddress) D4_ALIAS(BindBufferMemory2)
 #undef D4_ALIAS
+#ifdef VK_KHR_map_memory2
+    if(!d->MapMemory2KHR)d->MapMemory2KHR=reinterpret_cast<PFN_vkMapMemory2KHR>(get(*result,"vkMapMemory2"));
+    if(!d->UnmapMemory2KHR)d->UnmapMemory2KHR=reinterpret_cast<PFN_vkUnmapMemory2KHR>(get(*result,"vkUnmapMemory2"));
+#endif
     const char* frameEnabled = std::getenv("D4VR_FRAME_TRACE");
     d->frame.enabled = frameEnabled && std::strcmp(frameEnabled, "1") == 0;
     d->frame.hasSwapchain = std::find(d->extensions.begin(), d->extensions.end(), VK_KHR_SWAPCHAIN_EXTENSION_NAME) != d->extensions.end();
@@ -388,6 +398,8 @@ VKAPI_ATTR VkResult VKAPI_CALL d4CreateDevice(VkPhysicalDevice physical, const V
     VkPhysicalDeviceProperties properties{};
     auto getProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties>(instance->get(instance->handle, "vkGetPhysicalDeviceProperties"));
     getProperties(physical, &properties);
+    if(d->frame.enabled){auto getMemory=reinterpret_cast<PFN_vkGetPhysicalDeviceMemoryProperties>(instance->get(instance->handle,"vkGetPhysicalDeviceMemoryProperties"));
+        if(getMemory){VkPhysicalDeviceMemoryProperties memory{};getMemory(physical,&memory);d->frame.memoryProperties(memory,properties.limits.nonCoherentAtomSize);}}
     auto properties2 = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2>(instance->get(instance->handle, "vkGetPhysicalDeviceProperties2"));
     if (!properties2) properties2 = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties2>(instance->get(instance->handle, "vkGetPhysicalDeviceProperties2KHR"));
     if (properties2) {
@@ -600,6 +612,35 @@ VKAPI_ATTR VkDeviceAddress VKAPI_CALL d4GetBufferDeviceAddress(VkDevice device,c
     auto d=deviceFor(device);auto address=d->GetBufferDeviceAddress(device,info);
     if(d->frame.enabled){std::lock_guard<std::mutex> lock(stateMutex);d->frame.bufferAddress(info->buffer,address);}return address;
 }
+VKAPI_ATTR VkResult VKAPI_CALL d4AllocateMemory(VkDevice device,const VkMemoryAllocateInfo* info,const VkAllocationCallbacks* allocator,VkDeviceMemory* out) {
+    auto d=deviceFor(device);auto r=d->AllocateMemory(device,info,allocator,out);if(r==VK_SUCCESS && d->frame.enabled){std::lock_guard<std::mutex> lock(stateMutex);try{d->frame.allocateMemory(*out,*info);}catch(...){d->frame.memoryFailure();}}return r;
+}
+VKAPI_ATTR void VKAPI_CALL d4FreeMemory(VkDevice device,VkDeviceMemory memory,const VkAllocationCallbacks* allocator) {
+    auto d=deviceFor(device);d->FreeMemory(device,memory,allocator);if(d->frame.enabled){std::lock_guard<std::mutex> lock(stateMutex);d->frame.freeMemory(memory);}
+}
+VKAPI_ATTR VkResult VKAPI_CALL d4BindBufferMemory(VkDevice device,VkBuffer buffer,VkDeviceMemory memory,VkDeviceSize offset) {
+    auto d=deviceFor(device);auto r=d->BindBufferMemory(device,buffer,memory,offset);if(d->frame.enabled){std::lock_guard<std::mutex> lock(stateMutex);d->frame.bindMemory(buffer,memory,offset,true,r==VK_SUCCESS);}return r;
+}
+VKAPI_ATTR VkResult VKAPI_CALL d4BindBufferMemory2(VkDevice device,uint32_t n,const VkBindBufferMemoryInfo* infos) {
+    auto d=deviceFor(device);auto r=d->BindBufferMemory2(device,n,infos);if(d->frame.enabled){std::lock_guard<std::mutex> lock(stateMutex);
+        if(n>4096 || (n && !infos))d->frame.memoryFailure();else for(uint32_t i=0;i<n;++i)d->frame.bindMemory(infos[i].buffer,infos[i].memory,infos[i].memoryOffset,!infos[i].pNext,r==VK_SUCCESS);}return r;
+}
+VKAPI_ATTR VkResult VKAPI_CALL d4MapMemory(VkDevice device,VkDeviceMemory memory,VkDeviceSize offset,VkDeviceSize size,VkMemoryMapFlags flags,void** out) {
+    auto d=deviceFor(device);auto r=d->MapMemory(device,memory,offset,size,flags,out);if(r==VK_SUCCESS && d->frame.enabled){std::lock_guard<std::mutex> lock(stateMutex);d->frame.mapMemory(memory,offset,size,flags,*out);}return r;
+}
+VKAPI_ATTR void VKAPI_CALL d4UnmapMemory(VkDevice device,VkDeviceMemory memory) {auto d=deviceFor(device);d->UnmapMemory(device,memory);if(d->frame.enabled){std::lock_guard<std::mutex> lock(stateMutex);d->frame.unmapMemory(memory);}}
+#ifdef VK_KHR_map_memory2
+VKAPI_ATTR VkResult VKAPI_CALL d4MapMemory2KHR(VkDevice device,const VkMemoryMapInfoKHR* info,void** out) {
+    auto d=deviceFor(device);if(!d->frame.enabled)return d->MapMemory2KHR(device,info,out);
+    auto memory=info->memory;auto offset=info->offset;auto size=info->size;auto flags=info->flags;bool complete=!info->pNext;
+    auto r=d->MapMemory2KHR(device,info,out);if(r==VK_SUCCESS){std::lock_guard<std::mutex> lock(stateMutex);d->frame.mapMemory(memory,offset,size,flags,*out,complete);}return r;
+}
+VKAPI_ATTR VkResult VKAPI_CALL d4UnmapMemory2KHR(VkDevice device,const VkMemoryUnmapInfoKHR* info) {
+    auto d=deviceFor(device);auto r=d->UnmapMemory2KHR(device,info);if(d->frame.enabled){std::lock_guard<std::mutex> lock(stateMutex);d->frame.unmapMemory(info->memory,r==VK_SUCCESS && !info->pNext && !info->flags);}return r;
+}
+#endif
+VKAPI_ATTR VkResult VKAPI_CALL d4FlushMappedMemoryRanges(VkDevice device,uint32_t n,const VkMappedMemoryRange* ranges) {auto d=deviceFor(device);auto r=d->FlushMappedMemoryRanges(device,n,ranges);if(r==VK_SUCCESS && d->frame.enabled){std::lock_guard<std::mutex> lock(stateMutex);d->frame.memoryRanges(n,ranges,true);}return r;}
+VKAPI_ATTR VkResult VKAPI_CALL d4InvalidateMappedMemoryRanges(VkDevice device,uint32_t n,const VkMappedMemoryRange* ranges) {auto d=deviceFor(device);auto r=d->InvalidateMappedMemoryRanges(device,n,ranges);if(r==VK_SUCCESS && d->frame.enabled){std::lock_guard<std::mutex> lock(stateMutex);d->frame.memoryRanges(n,ranges,false);}return r;}
 VKAPI_ATTR VkResult VKAPI_CALL d4CreateDescriptorSetLayout(VkDevice device,const VkDescriptorSetLayoutCreateInfo* info,const VkAllocationCallbacks* allocator,VkDescriptorSetLayout* layout) {
     auto d=deviceFor(device);auto r=d->CreateDescriptorSetLayout(device,info,allocator,layout);
     if(r==VK_SUCCESS && d->frame.enabled){std::lock_guard<std::mutex> lock(stateMutex);try{d->frame.setLayout(*layout,*info);}catch(...){d->frame.resourceFailure();}}return r;
@@ -836,8 +877,12 @@ PFN_vkVoidFunction intercepted(const char* name) {
     D4_MATCH_ALIAS(CmdDrawIndirectCount) D4_MATCH_ALIAS(CmdDrawIndexedIndirectCount)
     D4_MATCH_ALIAS(CmdBeginRenderPass2) D4_MATCH_ALIAS(CmdBeginRendering) D4_MATCH_ALIAS(QueueSubmit2)
     D4_MATCH_ALIAS(CmdEndRenderPass2) D4_MATCH_ALIAS(CmdEndRendering)
-    D4_MATCH_ALIAS(GetBufferDeviceAddress)
+    D4_MATCH_ALIAS(GetBufferDeviceAddress) D4_MATCH_ALIAS(BindBufferMemory2)
 #undef D4_MATCH_ALIAS
+#ifdef VK_KHR_map_memory2
+    if(std::strcmp(name,"vkMapMemory2")==0)return reinterpret_cast<PFN_vkVoidFunction>(d4MapMemory2KHR);
+    if(std::strcmp(name,"vkUnmapMemory2")==0)return reinterpret_cast<PFN_vkVoidFunction>(d4UnmapMemory2KHR);
+#endif
     return nullptr;
 }
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL d4GetInstanceProcAddr(VkInstance handle, const char* name) {

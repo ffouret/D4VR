@@ -224,6 +224,11 @@ def run(args) -> dict:
                     if (any(r['buffer']['status']!=1 or not r['range_within_observed_buffer'] for r in receipts[:6])
                             or len({r['buffer']['buffer_id'] for r in receipts[:6]})!=6 or not receipts[6]['view']['view_known'] or not receipts[6]['view']['image_known']):
                         raise ValueError('Descriptor buffer/image resource identities were not observed')
+                    memory=data.get('buffer_memory',[])
+                    if (summary['memory_observation_counts']!={'observed_binding':7} or summary['memory_allocation_count']!=7
+                            or summary['memory_fully_mapped_buffer_payloads']!=7 or summary['memory_cache_call_counts']!={'flush':1,'invalidate':1}
+                            or any(not m['properties_known'] or m['property_flags']&6!=6 or not m['binding_complete'] or not m['allocation_chain_complete'] for m in memory)):
+                        raise ValueError('Observed memory allocation/binding/map/cache provenance differs from fixture')
                 states = summary['pipeline_state_declarations']
                 if not states or any(not p['declarations_complete'] for p in states):
                     raise ValueError('Fixture pipeline declarations were not captured completely')
@@ -249,6 +254,7 @@ def run(args) -> dict:
                     metadata.update(observed_pipeline_layouts=len(summary['observed_pipeline_layout_ids']),observed_set_layouts=len(summary['observed_set_layout_ids']))
                     metadata.update(descriptor_query_counts=summary['descriptor_query_counts'],descriptor_exact_byte_oracle_verified=True,
                         descriptor_source_buffers=6,descriptor_source_image_views=1,descriptor_query_selection_proven=False)
+                    metadata.update({k:summary[k] for k in ('memory_observation_counts','memory_allocation_count','memory_fully_mapped_buffer_payloads','memory_cache_call_counts','memory_gpu_visibility_proven')})
         paired=None
         if args.paired_pipelines:
             trace=vulkan_trace.report(metadata_directory)['process_traces'][0]

@@ -23,6 +23,8 @@ bornes observées, ainsi que les déclarations de layouts et les offsets fournis
 par le pilote. Les sorties opaques de `vkGetDescriptorEXT` sont aussi conservées
 dans les captures privées avec leur source observée, sans prouver leur usage
 effectif par le GPU ni autoriser de reprise du jeu.
+Le suivi ajoute les allocations, offsets de liaison, mappings et opérations de
+cache observées, sans lire la mémoire ni prouver sa visibilité GPU.
 
 La [preuve d'intégration de la couche Vulkan](docs/LAYER_REPLAY_POC.md) raccorde
 maintenant les commandes d'une application au moteur de reprise : deux passes

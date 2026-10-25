@@ -25,6 +25,26 @@ def sample():
 
 
 class Frames(unittest.TestCase):
+    def test_memory_provenance_preserves_bounds_without_inventing_visibility(self):
+        data=sample();m={'buffer_id':8,'status':3,'buffer_size':128,'memory_id':9,'allocation_size':512,'binding_offset':64,'memory_type':1,'property_flags':2,
+            'allocation_flags':0,'device_mask':0,'binding_complete':True,'allocation_chain_complete':True,'properties_known':True,'allocation_live':True,
+            'mapped':True,'mapping_complete':True,'buffer_payload_fully_mapped':True,'map_generation':1,'map_offset':0,'map_size':512,
+            'flush_calls':1,'invalidate_calls':0,'last_flush_offset':0,'last_flush_size':64,'last_flush_range_known':True,
+            'last_invalidate_offset':0,'last_invalidate_size':0,'last_invalidate_range_known':False,'gpu_visibility_proven':False}
+        data.update(buffer_memory=[m],memory_observation_scope='last_recorded_cpu_submission',memory_observations_truncated=False,memory_properties_known=True,non_coherent_atom_size=64)
+        with tempfile.TemporaryDirectory() as directory:
+            p=Path(directory)/'frame.json';p.write_text(json.dumps(data));summary=frame_trace.summarize(frame_trace.read_frame(p))
+            self.assertEqual(summary['memory_observation_counts'],{'observed_binding':1});self.assertEqual(summary['memory_cache_call_counts'],{'flush':1,'invalidate':0})
+            self.assertFalse(summary['memory_gpu_visibility_proven']);self.assertFalse(summary['resource_aliases_excluded'])
+            for obj,key,value in [(m,'memory_id',0),(m,'binding_offset',2**64-1),(m,'memory_type',99),(m,'map_size',32),(m,'gpu_visibility_proven',True),
+                    (m,'last_flush_offset',1),(m,'properties_known',False),(data,'memory_observation_scope','gpu_execution')]:
+                old=obj[key];obj[key]=value;p.write_text(json.dumps(data))
+                with self.assertRaises(ValueError):frame_trace.read_frame(p)
+                obj[key]=old
+            m.update(status=6,allocation_live=False,mapped=False,mapping_complete=False,buffer_payload_fully_mapped=False,map_offset=0,map_size=0,last_flush_range_known=False)
+            p.write_text(json.dumps(data));frame_trace.read_frame(p)
+            data['memory_observations_truncated']=True;p.write_text(json.dumps(data));self.assertTrue(frame_trace.summarize(frame_trace.read_frame(p))['truncated'])
+
     def test_exact_descriptor_query_catalog_is_bounded_and_does_not_claim_active_selection(self):
         data=sample();r={'id':1,'first_observed_query':1,'type':6,'kind':1,'input_chain_complete':True,'input_pointer_null':False,'null_descriptor':False,
             'encoding_bytes':4,'encoding_hex':'01020304','range_bytes':256,'format':0,'range_within_observed_buffer':True,

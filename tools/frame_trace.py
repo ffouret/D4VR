@@ -21,6 +21,44 @@ def unsigned(value,bits=64):
     return type(value) is int and 0<=value<2**bits
 
 
+MEMORY_STATUS=('unknown_buffer','binding_not_observed','unknown_allocation','observed_binding','invalid_bounds','incomplete_registry','released_allocation','indeterminate_binding')
+
+def memory_observations(data: dict) -> None:
+    rows=data.get('buffer_memory',[]);atom=data.get('non_coherent_atom_size',0)
+    if (len(rows)>4096 or not unsigned(atom) or type(data.get('memory_properties_known',False)) is not bool
+            or type(data.get('memory_observations_truncated',False)) is not bool
+            or ('buffer_memory' in data and data.get('memory_observation_scope')!='last_recorded_cpu_submission')):
+        raise ValueError('Invalid memory observation scope/budget')
+    seen=set()
+    numbers=('buffer_id','buffer_size','memory_id','allocation_size','binding_offset','map_generation','map_offset','map_size','flush_calls','invalidate_calls',
+             'last_flush_offset','last_flush_size','last_invalidate_offset','last_invalidate_size')
+    flags=('binding_complete','allocation_chain_complete','properties_known','allocation_live','mapped','mapping_complete','buffer_payload_fully_mapped','last_flush_range_known','last_invalidate_range_known')
+    for s in rows:
+        if (any(not unsigned(s[k]) for k in numbers) or any(not unsigned(s[k],32) for k in ('memory_type','property_flags','allocation_flags','device_mask'))
+                or any(type(s[k]) is not bool for k in flags) or s.get('gpu_visibility_proven') is not False or not s['buffer_id'] or s['buffer_id'] in seen
+                or type(s['status']) is not int or s['status'] not in range(len(MEMORY_STATUS))):
+            raise ValueError('Invalid memory provenance observation')
+        seen.add(s['buffer_id']);known=s['status'] in (3,4,6)
+        if bool(s['memory_id'])!=known or (known and not s['allocation_size']) or (not known and (s['allocation_live'] or s['properties_known'] or s['mapped'])):
+            raise ValueError('Memory observation invented an allocation')
+        if s['properties_known'] and (not data.get('memory_properties_known',False) or s['memory_type']>=32):raise ValueError('Unknown memory type properties claimed')
+        if not s['properties_known'] and s['property_flags']:raise ValueError('Unknown allocation invented memory flags')
+        fits=s['binding_offset']<=s['allocation_size'] and s['buffer_size']<=s['allocation_size']-s['binding_offset']
+        if (s['status']==3 and (not fits or not s['allocation_live'])) or (s['status']==4 and (fits or not s['allocation_live'])) or (s['status']==6 and s['allocation_live']):
+            raise ValueError('Memory binding bounds/lifetime disagree')
+        if s['mapped'] and s['mapping_complete'] and (not s['map_generation'] or s['map_offset']>=s['allocation_size'] or not s['map_size'] or s['map_size']>s['allocation_size']-s['map_offset']):
+            raise ValueError('Invalid observed mapping bounds')
+        covered=s['status']==3 and s['mapped'] and s['mapping_complete'] and s['binding_offset']>=s['map_offset'] and s['binding_offset']-s['map_offset']<=s['map_size'] and s['buffer_size']<=s['map_size']-(s['binding_offset']-s['map_offset'])
+        if s['buffer_payload_fully_mapped']!=covered:raise ValueError('Mapping coverage claim disagrees with bounds')
+        for name,calls in (('flush','flush_calls'),('invalidate','invalidate_calls')):
+            if s[f'last_{name}_range_known']:
+                off=s[f'last_{name}_offset'];size=s[f'last_{name}_size']
+                if (not s[calls] or not s['mapped'] or not s['mapping_complete'] or not atom or off%atom or not size
+                        or off<s['map_offset'] or off-s['map_offset']>s['map_size'] or size>s['map_size']-(off-s['map_offset'])
+                        or (size%atom and off+size!=s['allocation_size'])):
+                    raise ValueError('Invalid cache-operation observation')
+
+
 def descriptor_receipts(data: dict) -> None:
     rows=data.get('descriptor_query_receipts',[]);queries=data.get('descriptor_queries_observed',0)
     if (len(rows)>4096 or not unsigned(queries) or len(rows)>queries
@@ -183,6 +221,7 @@ def read_frame(path: Path) -> dict:
         raise ValueError('Unknown capture scope')
     layouts=layout_tables(data)
     descriptor_receipts(data)
+    memory_observations(data)
     algorithm = data.get('shader_identifier_algorithm', '')
     if algorithm and not re.fullmatch('[0-9a-f]{32}', algorithm):
         raise ValueError('Invalid shader identifier algorithm')
@@ -323,7 +362,7 @@ def summarize(data: dict, correlation: dict | None = None) -> dict:
     draw_counts = Counter()
     passes = []
     image_writes = defaultdict(list)
-    truncated = bool(data['truncated']) or data.get('descriptor_query_catalog_truncated',False)
+    truncated = bool(data['truncated']) or data.get('descriptor_query_catalog_truncated',False) or data.get('memory_observations_truncated',False)
     missing_commands = unknown_pipeline_commands = failed = 0
     resource_counts=Counter();address_counts=Counter();buffer_ids=set();layout_counts=Counter();layout_ids=set();set_ids=set();queried_sizes=set();queried_offsets=set()
     layouts={p['snapshot_id']:p for p in data.get('pipeline_layouts',[])};sets={s['snapshot_id']:s for s in data.get('descriptor_set_layouts',[])}
@@ -378,6 +417,7 @@ def summarize(data: dict, correlation: dict | None = None) -> dict:
                                'attachments': attachments, 'scene_role': 'unclassified'})
                 passes[-1].update(queue_family=submit.get('queue_family'),queue_index=submit.get('queue_index'),
                                   secondary_depth=command.get('secondary_depth',0),command_id=command.get('id'),command_generation=command.get('generation'))
+    memory=data.get('buffer_memory',[]);allocations={m['memory_id']:m for m in memory if m['memory_id']}
     result = {'schema_version': 1, 'request_sequence': data['request_sequence'], 'scope': data['scope'],
               'present_before': data['present_before'], 'present_after': data['present_after'],
               'submission_count': len(data['submissions']), 'failed_or_incomplete_submissions': failed,
@@ -390,6 +430,10 @@ def summarize(data: dict, correlation: dict | None = None) -> dict:
                   'encoding_bytes':sum(r['encoding_bytes'] for r in data.get('descriptor_query_receipts',[])),
                   'resource_kinds':dict(Counter(r['kind'] for r in data.get('descriptor_query_receipts',[])))},
               'descriptor_query_catalog_truncated':data.get('descriptor_query_catalog_truncated',False),'descriptor_query_selection_proven':False,
+              'memory_observation_counts':dict(Counter(MEMORY_STATUS[m['status']] for m in memory)),
+              'memory_observations_truncated':data.get('memory_observations_truncated',False),'memory_gpu_visibility_proven':False,
+              'memory_allocation_count':len(allocations),'memory_fully_mapped_buffer_payloads':sum(m['buffer_payload_fully_mapped'] for m in memory),
+              'memory_cache_call_counts':{'flush':sum(m['flush_calls'] for m in allocations.values()),'invalidate':sum(m['invalidate_calls'] for m in allocations.values())},
               'truncated': truncated, 'missing_command_buffers': missing_commands,
               'draw_commands_with_unknown_pipeline': unknown_pipeline_commands,
               'pipeline_count': len(pipeline_ids), 'passes': passes,

@@ -125,6 +125,64 @@ comptages sans recopier ces octets. Références Vulkan :
 [source typée](https://docs.vulkan.org/refpages/latest/refpages/source/VkDescriptorDataEXT.html),
 [adresse, range et format](https://docs.vulkan.org/refpages/latest/refpages/source/VkDescriptorAddressInfoEXT.html).
 
+## Provenance mémoire observée
+
+Le device récupère les propriétés mémoire réelles et `nonCoherentAtomSize`.
+Les allocations réussies reçoivent une identité de génération ; les bindings
+de buffers conservent cette identité, la taille logique et l'offset dans
+l'allocation. Free/recréation d'un même handle ne réactive jamais une ancienne
+liaison. Les snapshots sont des valeurs CPU : ils survivent aux changements
+ultérieurs sans garder de ressource GPU en vie.
+
+Les hooks couvrent Allocate/FreeMemory, BindBufferMemory/BindBufferMemory2
+(core/KHR), Map/UnmapMemory, Flush/InvalidateMappedMemoryRanges. MapMemory2 et
+UnmapMemory2 sont aussi interceptés avec leurs noms KHR/core lorsque les headers
+de compilation prennent en charge `VK_KHR_map_memory2`. Un échec de batch bind
+laisse toutes les liaisons concernées indéterminées : les statuts individuels
+de maintenance6 ne sont pas décodés. Les chaînes d'allocation inconnues, imports,
+bindings de groupes de devices ou paramètres de mapping non pris en charge
+restent incomplets. Les liaisons d'images et sparse ne sont pas suivies ici.
+
+`buffer_memory` décrit les buffers référencés par le préfixe de requêtes et les
+liaisons instrumentées. Son scope est le **dernier envoi CPU enregistré** de la
+capture, indépendamment de son résultat, et ne décrit pas un ordre d'exécution
+GPU. Les lignes indiquent propriétés, offset de liaison, mapping/génération,
+couverture du payload logique et derniers ranges de flush/invalidation. Un
+mapping `VK_WHOLE_SIZE` est borné par la taille de l'allocation ; l'offset de
+mapping et celui du buffer sont traités séparément. Aucun pointeur hôte ni
+contenu de mémoire n'est sérialisé par ce suivi.
+
+| Statut | Observation |
+| --- | --- |
+| 0 | Génération de buffer inconnue ou déjà retirée |
+| 1 | Aucune liaison observée (ne conclut pas que le buffer est réellement non lié) |
+| 2 | Liaison observée vers une allocation inconnue |
+| 3 | Liaison et bornes logiques observées |
+| 4 | Bornes de liaison incompatibles avec la taille observée |
+| 5 | Registre incomplet après dépassement/échec |
+| 6 | Allocation libérée, génération historique conservée |
+| 7 | Résultat de liaison indéterminé |
+
+Les propriétés HOST_VISIBLE/COHERENT proviennent du type mémoire réel ; elles
+ne sont jamais déduites de l'usage du buffer. Les ranges de cache connus
+respectent le mapping, l'allocation et l'alignement de l'atome non cohérent.
+Les échecs ne sont pas comptés comme des opérations réussies ; unmap ne crée
+aucun flush implicite. Remap/unmap invalident les anciens ranges connus tout
+en conservant leurs compteurs historiques.
+
+Même une ligne entièrement observée et mappée garde
+`gpu_visibility_proven=false`. Les écritures CPU, accès GPU concurrents,
+barrières, imports et alias physiques ne sont pas résolus. Les offsets/taille
+portent sur le payload logique, pas sur toutes les contraintes d'alias des
+memory requirements. Le registre est limité à 65 536 buffers et allocations
+vivants, les tableaux d'API et captures à 4 096 entrées ; un dépassement est
+explicite et ferme la résolution. Il reste à établir un contrat de capture
+des octets avec durée de vie, quiescence et visibilité avant toute lecture.
+
+Références Vulkan : [mapping](https://docs.vulkan.org/refpages/latest/refpages/source/vkMapMemory.html),
+[flush et absence de flush implicite à l'unmap](https://docs.vulkan.org/refpages/latest/refpages/source/vkFlushMappedMemoryRanges.html),
+[liaisons multiples et échecs](https://docs.vulkan.org/refpages/latest/refpages/source/vkBindBufferMemory2.html).
+
 ## Événements bornés
 
 `resource_events` suit l'ordre des seules observations instrumentées dans un
@@ -173,8 +231,16 @@ capture. Les mêmes six processus GPU et onze régressions du POC sont exécuté
 le témoin compute et les références graphiques restent comparés. Ce contrôle
 ne prouve pas la sélection active d'une texture par le jeu.
 
-Avant une nouvelle capture du jeu, il faut compléter la provenance mémoire et
-la visibilité des ressources, puis relier les encodages à leur emplacement
+La [preuve de provenance mémoire](proofs/memory-bindings-v1.json) ajoute les
+suballocations, propriétés non cohérentes synthétiques, mappings partiels,
+réutilisations, erreurs et ranges de cache. Sur GPU, les sept buffers suivis
+ont chacun une allocation observée et un payload entièrement mappé ; un flush
+et une invalidation sont comptés. Les témoins graphiques, compute et les sept
+encodages exacts restent comparés. Cela ne prouve ni la visibilité actuelle
+des écritures ni l'absence d'alias. Aucun nouvel essai dans Diablo ou au casque.
+
+Avant une nouvelle capture du jeu, il faut établir la capture des octets avec
+sa durée de vie et sa visibilité, puis relier les encodages à leur emplacement
 actif. Les
 observations présentes ne ferment pas les dépendances LOAD ni les états de
 dessin requis par le moteur de reprise.

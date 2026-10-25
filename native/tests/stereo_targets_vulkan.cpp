@@ -162,6 +162,10 @@ int main(int argc,char** argv) try {
         VkWriteDescriptorSet w{VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET}; w.dstSet = sets[s]; w.dstBinding = b;
         w.descriptorCount = 1; w.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; w.pBufferInfo = &info; vkUpdateDescriptorSets(f.device,1,&w,0,nullptr);
         if (buffered) {
+            if(!s && !b){VkPhysicalDeviceProperties properties{};vkGetPhysicalDeviceProperties(f.physical,&properties);
+                VkMappedMemoryRange range{VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE};range.memory=buffer.memory;range.size=properties.limits.nonCoherentAtomSize;
+                expect(range.size<=113*16,"Fixture mapped span smaller than noncoherent atom");
+                check(vkFlushMappedMemoryRanges(f.device,1,&range));check(vkInvalidateMappedMemoryRanges(f.device,1,&range));}
             VkDeviceSize offset = 0; getBindingOffset(f.device,bufferLayouts[3],b,&offset);
             VkDescriptorAddressInfoEXT address{VK_STRUCTURE_TYPE_DESCRIPTOR_ADDRESS_INFO_EXT}; address.address = buffer.address; address.range = (b ? 80 : 113)*16; address.format = VK_FORMAT_UNDEFINED;
             VkDescriptorGetInfoEXT descriptor{VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT}; descriptor.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; descriptor.data.pUniformBuffer = &address;
