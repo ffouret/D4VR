@@ -43,9 +43,10 @@ int main(int argc,char** argv)try{
     bool heldView=poseCapture && std::getenv("D4VR_POSE_FIXTURE_MONOSCOPIC");
     bool cooperative=std::getenv("D4VR_COOPERATIVE_XR_DIAGNOSTIC");
     bool depthFixture=std::getenv("D4VR_DEPTH_LAYER_FIXTURE");
+    bool auditFixture=std::getenv("D4VR_DEPTH_AUDIT_FIXTURE");
     bool foreignProducer=(poseCapture || cooperative) && std::getenv("D4VR_POSE_FIXTURE_FOREIGN");
     if(poseCapture)text(directory/"pose.request","invalid diagnostic input\n");
-    Window window;Fixture f(true,false,false,false,false,"D4VR presentation selection fixture",cameraUpdates,{"VK_KHR_surface","VK_KHR_xlib_surface"},{VK_KHR_SWAPCHAIN_EXTENSION_NAME},{},cameraUpdates?5:1,cooperative);
+    Window window;Fixture f(true,false,false,false,false,"D4VR presentation selection fixture",cameraUpdates || auditFixture,{"VK_KHR_surface","VK_KHR_xlib_surface"},{VK_KHR_SWAPCHAIN_EXTENSION_NAME},{},cameraUpdates?5:1,cooperative || auditFixture);
     std::array<VkQueue,5> readerQueues{};if(cameraUpdates)for(unsigned i=0;i<5;++i)vkGetDeviceQueue(f.device,f.family,i,&readerQueues[i]);
     auto createSurface=reinterpret_cast<CreateSurface>(vkGetInstanceProcAddr(f.instance,"vkCreateXlibSurfaceKHR"));if(!createSurface)throw std::runtime_error("Xlib Vulkan surface unavailable");
     XlibSurfaceInfo si{VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR,nullptr,0,window.display,window.window};VkSurfaceKHR surface{};check(createSurface(f.instance,&si,nullptr,&surface));
@@ -93,9 +94,15 @@ int main(int argc,char** argv)try{
     std::vector<VkSemaphore> finished(images.size());for(auto& s:finished)check(vkCreateSemaphore(f.device,&sem,nullptr,&s));
     VkSemaphore serial{};if(foreignProducer){VkSemaphoreTypeCreateInfo type{VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO};type.semaphoreType=VK_SEMAPHORE_TYPE_TIMELINE;VkSemaphoreCreateInfo create{VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};create.pNext=&type;check(vkCreateSemaphore(f.device,&create,nullptr,&serial));}
     VkFenceCreateInfo fi{VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};VkFence fence{};check(vkCreateFence(f.device,&fi,nullptr,&fence));auto golden=f.buffer(VkDeviceSize(extent.width)*extent.height*4,VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    if(auditFixture){
+        VkSemaphoreTypeCreateInfo type{VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO};type.semaphoreType=VK_SEMAPHORE_TYPE_TIMELINE;VkSemaphoreCreateInfo create{VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};create.pNext=&type;VkSemaphore signal{};check(vkCreateSemaphore(f.device,&create,nullptr,&signal));
+        VkSemaphoreSubmitInfo value{VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO};value.semaphore=signal;value.value=1;value.stageMask=VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT;VkSubmitInfo2 submit{VK_STRUCTURE_TYPE_SUBMIT_INFO_2};submit.signalSemaphoreInfoCount=1;submit.pSignalSemaphoreInfos=&value;
+        check(vkQueueSubmit2(f.queue,1,&submit,VK_NULL_HANDLE));check(vkQueueWaitIdle(f.queue));uint64_t counter=0;check(vkGetSemaphoreCounterValue(f.device,signal,&counter));if(counter!=1)throw std::runtime_error("Observation mode changed or rejected original signal");vkDestroySemaphore(f.device,signal,nullptr);
+    }
     text(directory/"eye.selection","2\n");
     bool cancelPose=(poseCapture || cooperative) && std::getenv("D4VR_POSE_FIXTURE_CANCEL");unsigned frameCount=64;if((poseCapture || cooperative) && (std::getenv("D4VR_POSE_FIXTURE_SHORT") || cancelPose))frameCount=8;
     for(unsigned frame=0;frame<frameCount;++frame){
+        if(auditFixture && (frame==8 || frame==40))text(directory/"depth-audit.request",frame==8?"1\n":"2\n");
         if(depthFixture && (frame==4 || frame==36))text(directory/"depth.request","D4VR_DEPTH_1 "+std::to_string(frame==4?1:2)+" "+std::to_string(extent.width)+" "+std::to_string(extent.height)+" 129 2\n");
         if(heldView && frame==60)text(directory/"pose.stop","1\n");
         if(cancelPose && frame==6)text(directory/"pose.stop","1\n");

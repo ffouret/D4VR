@@ -47,6 +47,23 @@ void check(VkResult r){if(r!=VK_SUCCESS)throw std::runtime_error("Depth readback
 bool format(VkFormat f){return f==VK_FORMAT_D24_UNORM_S8_UINT || f==VK_FORMAT_D32_SFLOAT;}
 bool identity(const VkComponentMapping& m){return m.r==VK_COMPONENT_SWIZZLE_IDENTITY && m.g==VK_COMPONENT_SWIZZLE_IDENTITY && m.b==VK_COMPONENT_SWIZZLE_IDENTITY && m.a==VK_COMPONENT_SWIZZLE_IDENTITY;}
 }
+bool image_candidate(const VkImageCreateInfo& i){
+    return !i.pNext && !i.flags && i.imageType==VK_IMAGE_TYPE_2D && format(i.format)
+        && i.extent.width && i.extent.height && i.extent.width<=4096 && i.extent.height<=4096 && i.extent.depth==1
+        && i.mipLevels==1 && i.arrayLayers==1 && i.samples==VK_SAMPLE_COUNT_1_BIT && i.tiling==VK_IMAGE_TILING_OPTIMAL
+        && i.sharingMode==VK_SHARING_MODE_EXCLUSIVE && (i.usage&(VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT|VK_IMAGE_USAGE_TRANSFER_SRC_BIT))==(VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT|VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+}
+bool view_candidate(const VkImageViewCreateInfo& i,VkFormat original){const auto& r=i.subresourceRange;
+    return !i.pNext && !i.flags && i.viewType==VK_IMAGE_VIEW_TYPE_2D && i.format==original && identity(i.components)
+        && !r.baseMipLevel && r.levelCount==1 && !r.baseArrayLayer && r.layerCount==1 && (r.aspectMask&VK_IMAGE_ASPECT_DEPTH_BIT)
+        && !(r.aspectMask&~(VK_IMAGE_ASPECT_DEPTH_BIT|VK_IMAGE_ASPECT_STENCIL_BIT));
+}
+bool rendering_candidate(const VkRenderingInfo& i,VkExtent2D extent){
+    if(i.pNext || i.flags || i.layerCount!=1 || i.viewMask || !i.pDepthAttachment)return false;
+    const auto& a=*i.pDepthAttachment;const auto& area=i.renderArea;
+    return !a.pNext && a.imageLayout==VK_IMAGE_LAYOUT_GENERAL && a.resolveMode==VK_RESOLVE_MODE_NONE && !a.resolveImageView
+        && a.storeOp==VK_ATTACHMENT_STORE_OP_STORE && !area.offset.x && !area.offset.y && area.extent.width==extent.width && area.extent.height==extent.height;
+}
 #define D4_DEPTH_FUNCTIONS(X) X(CreateBuffer) X(DestroyBuffer) X(GetBufferMemoryRequirements) X(AllocateMemory) X(FreeMemory) X(BindBufferMemory) X(MapMemory) X(UnmapMemory) X(CreateFence) X(DestroyFence) X(GetFenceStatus) X(QueueSubmit) X(CmdPipelineBarrier) X(CmdCopyImageToBuffer)
 struct Readback::Impl {
     VkDevice device;VkPhysicalDeviceMemoryProperties memory;uint32_t limit;VkDeviceSize budget;
@@ -83,19 +100,14 @@ void Readback::image(VkImage h,const VkImageCreateInfo& i){
     for(auto v=p.views.begin();v!=p.views.end();)if(v->second.image==h)v=p.views.erase(v);else ++v;
     if(p.generation==UINT64_MAX)return;
     auto gen=++p.generation;
-    if(p.images.size()>=65536 || !h || i.pNext || i.flags || i.imageType!=VK_IMAGE_TYPE_2D || !format(i.format)
-        || !i.extent.width || !i.extent.height || i.extent.width>4096 || i.extent.height>4096 || i.extent.depth!=1
-        || i.mipLevels!=1 || i.arrayLayers!=1 || i.samples!=VK_SAMPLE_COUNT_1_BIT || i.tiling!=VK_IMAGE_TILING_OPTIMAL
-        || i.sharingMode!=VK_SHARING_MODE_EXCLUSIVE || (i.usage&(VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT|VK_IMAGE_USAGE_TRANSFER_SRC_BIT))!=(VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT|VK_IMAGE_USAGE_TRANSFER_SRC_BIT))return;
+    if(p.images.size()>=65536 || !h || !image_candidate(i))return;
     p.images[h]={gen,{i.extent.width,i.extent.height},i.format};
 }
 void Readback::removeImage(VkImage h){auto& p=*impl;std::lock_guard<std::mutex> lock(p.mutex);p.images.erase(h);for(auto v=p.views.begin();v!=p.views.end();)if(v->second.image==h)v=p.views.erase(v);else ++v;}
 void Readback::view(VkImageView h,const VkImageViewCreateInfo& i){
     auto& p=*impl;std::lock_guard<std::mutex> lock(p.mutex);p.views.erase(h);if(p.generation==UINT64_MAX)return;auto gen=++p.generation;
-    auto image=p.images.find(i.image);const auto& r=i.subresourceRange;
-    if(!h || p.views.size()>=65536 || image==p.images.end() || i.pNext || i.flags || i.viewType!=VK_IMAGE_VIEW_TYPE_2D || i.format!=image->second.format
-        || !identity(i.components) || r.baseMipLevel || r.levelCount!=1 || r.baseArrayLayer || r.layerCount!=1 || !(r.aspectMask&VK_IMAGE_ASPECT_DEPTH_BIT)
-        || (r.aspectMask&~(VK_IMAGE_ASPECT_DEPTH_BIT|VK_IMAGE_ASPECT_STENCIL_BIT)))return;
+    auto image=p.images.find(i.image);
+    if(!h || p.views.size()>=65536 || image==p.images.end() || !view_candidate(i,image->second.format))return;
     p.views[h]={gen,image->second.generation,i.image};
 }
 void Readback::removeView(VkImageView h){std::lock_guard<std::mutex> lock(impl->mutex);impl->views.erase(h);}
@@ -114,12 +126,12 @@ void Readback::cancel(){std::lock_guard<std::mutex> lock(impl->mutex);impl->requ
 void Readback::beginRendering(VkCommandBuffer c,const VkRenderingInfo& i){
     auto& p=*impl;std::lock_guard<std::mutex> lock(p.mutex);auto found=p.commands.find(c);if(found==p.commands.end())return;
     auto& cmd=found->second;cmd.attachment.reset();++cmd.ordinal;
-    if(!cmd.eligible || !p.request.copies || i.pNext || i.flags || i.layerCount!=1 || i.viewMask || !i.pDepthAttachment)return;
+    if(!cmd.eligible || !p.request.copies || !i.pDepthAttachment)return;
     const auto& a=*i.pDepthAttachment;auto v=p.views.find(a.imageView);
-    if(a.pNext || a.imageLayout!=VK_IMAGE_LAYOUT_GENERAL || a.resolveMode!=VK_RESOLVE_MODE_NONE || a.resolveImageView || a.storeOp!=VK_ATTACHMENT_STORE_OP_STORE || v==p.views.end())return;
+    if(v==p.views.end())return;
     auto image=p.images.find(v->second.image);if(image==p.images.end() || image->second.generation!=v->second.imageGeneration)return;
-    const auto& im=image->second;const auto& area=i.renderArea;
-    if(im.format!=p.request.format || im.extent.width!=p.request.extent.width || im.extent.height!=p.request.extent.height || area.offset.x || area.offset.y || area.extent.width!=im.extent.width || area.extent.height!=im.extent.height)return;
+    const auto& im=image->second;
+    if(im.format!=p.request.format || im.extent.width!=p.request.extent.width || im.extent.height!=p.request.extent.height || !rendering_candidate(i,im.extent))return;
     uint32_t bits=0;if(a.loadOp==VK_ATTACHMENT_LOAD_OP_CLEAR)std::memcpy(&bits,&a.clearValue.depthStencil.depth,4);
     cmd.attachment=Impl::Attachment{im,v->second,a.imageView,p.request.sequence,a.loadOp,bits};
 }

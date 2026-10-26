@@ -32,6 +32,11 @@ struct Stats {
     VkDeviceSize reservedBytes=0;
 };
 std::optional<Request> decode_request(const std::string&);
+// Value-only admission shared by the observer and the actual readback. These
+// predicates do not register resources or call Vulkan.
+bool image_candidate(const VkImageCreateInfo&);
+bool view_candidate(const VkImageViewCreateInfo&,VkFormat originalFormat);
+bool rendering_candidate(const VkRenderingInfo&,VkExtent2D sourceExtent);
 // Mandatory DEVICE-WIDE contract, from before any read is recorded until all
 // instrumented CBs are reset/freed and GPU work has ended. Call BEFORE forwarding
 // EVERY submit (including submits without a depth copy). Do not broaden scopes:

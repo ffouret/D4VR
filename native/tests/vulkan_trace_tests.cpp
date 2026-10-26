@@ -142,6 +142,15 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL proc(VkDevice, const char* name) {
 } // namespace
 
 int main() try {
+    // Control files must not follow links or read a pipe/special file. The
+    // observer shares this bounded counter parser with frame metadata.
+    char directory[]="/tmp/d4vr-trace-counter-XXXXXX";require(mkdtemp(directory),"Counter temp directory unavailable");
+    auto previous=std::getenv("D4VR_TRACE_DIR");std::optional<std::string> previousDirectory;if(previous)previousDirectory=previous;
+    setenv("D4VR_TRACE_DIR",directory,1);auto request=std::string(directory)+"/depth-audit.request";
+    require(writePrivate(request,"2\n",2) && frameRequest("depth-audit.request")==2,"Regular bounded request not read");unlink(request.c_str());
+    require(symlink("/dev/null",request.c_str())==0 && frameRequest("depth-audit.request")==0,"Request symlink followed");unlink(request.c_str());
+    require(mkfifo(request.c_str(),0600)==0,"FIFO fixture failed");int pipe=open(request.c_str(),O_RDWR|O_NONBLOCK|O_CLOEXEC);require(pipe>=0 && frameRequest("depth-audit.request")==0,"Special request file admitted");close(pipe);unlink(request.c_str());rmdir(directory);
+    if(previousDirectory)setenv("D4VR_TRACE_DIR",previousDirectory->c_str(),1);else unsetenv("D4VR_TRACE_DIR");
     VkNegotiateLayerInterface negotiation{}; negotiation.loaderLayerInterfaceVersion = 1;
     require(vkNegotiateLoaderLayerInterfaceVersion(&negotiation) == VK_ERROR_INITIALIZATION_FAILED, "Unsupported loader version accepted");
     negotiation.loaderLayerInterfaceVersion = 99;

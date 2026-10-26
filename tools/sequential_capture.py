@@ -63,7 +63,7 @@ def prepare(game: Path,launcher: Path,shaders: Path,layer: Path,output: Path) ->
 
 def launch(output: Path):
     capture=json.loads((output/'capture.json').read_text())
-    if capture['purpose']!='sequential_diablo_capture' or capture['phase']!='prepared':raise ValueError('Session is not prepared')
+    if capture['purpose'] not in ('sequential_diablo_capture','observational_depth_audit') or capture['phase']!='prepared':raise ValueError('Session is not prepared')
     if shader_capture.launcher_processes():raise ValueError('Close Diablo and Battle.net before launch')
     capture['phase']='running';probe.write_json(output/'capture.json',capture)
     cmd=paired_capture.command(capture);observations=[]

@@ -10,12 +10,16 @@ répond pas à cet objectif.
 
 ## État du projet
 
-La [lecture bornée de profondeur](docs/DEPTH_READBACK.md) est maintenant raccordée
-à la couche Vulkan. Les références D24/D32 et les essais en fenêtre passent,
-avec couleur et stencil d’origine préservés et zéro erreur de synchronisation.
-Cette sonde doit aider à distinguer la géométrie absente d’un défaut dans les
-traitements suivants. Elle **n’a pas encore été activée dans Diablo** : ses
-conditions de synchronisation et le choix de la passe doivent y être vérifiés.
+Un [audit sans lecture GPU, essayé dans Diablo](docs/DEPTH_AUDIT.md), établit
+que la [sonde de profondeur préparée](docs/DEPTH_READBACK.md) ne peut pas encore
+y être activée : les scopes de synchronisation, commandes et descriptions de
+ressources sortent de ses conditions admises. Sur 400 573 soumissions observées,
+377 890 sortent de cette politique ; les 35 configurations de rendu avec profondeur
+sont également exclues. Les appels du jeu sont transmis sans modification ni refus.
+Le jeu est sorti normalement et les originaux sont préservés. La suite est de
+chercher une lecture de profondeur déjà effectuée par le jeu, pour préparer une
+capture qui respecte sa synchronisation. Aucun pixel de profondeur de Diablo
+n’a encore été lu et les trous au champ élargi restent présents.
 
 Le [maintien explicite d’une vue diagnostique](docs/FIXED_VIEW_HOLD.md) corrige
 une erreur du protocole précédent : cinq secondes entre les demandes ne
