@@ -10,6 +10,14 @@ répond pas à cet objectif.
 
 ## État du projet
 
+Un [observateur des utilisations d’images](docs/SOURCE_CONSUMERS.md) ajoute
+des requêtes de descripteurs, les attachements couleur déclarés et les extrémités
+des transferts dans la même session que la profondeur. Quatre contrôles en
+fenêtre préservent 67 108 864 octets de références, sans erreur Khronos.
+ Ces observations préparent l’analyse des découpes : une requête de descripteur
+ne prouve ni sa sélection ni une lecture du shader, et le lien avec le reçu
+couleur exporté reste à établir.
+
 L’analyse des quatre shaders sans variante a isolé deux calculs de profondeur
 appliqués après la projection. Le [nouveau contrôle géométrique](docs/POST_PROJECTION_DEPTH.md)
 préserve ces calculs et corrige leurs unités de clip : 144 références GPU passent

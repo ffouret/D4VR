@@ -251,6 +251,7 @@ struct Device {
     std::atomic<uint64_t> depthSubmission{0};
     d4vr::frame::Tracker frame;
     std::unique_ptr<d4vr::history::SourceHistory> sourceHistory;
+    bool sourceConsumerHistory=false;
     std::mutex historyReportMutex;uint64_t historyReports=0,historyRequest=0;
     std::unique_ptr<d4vr::eye::Control> eye;
     // Declaration order also keeps packets alive until private graphs die.
@@ -487,7 +488,7 @@ void writeHistory(Device& d,bool final=false){
     const auto dir=std::getenv("D4VR_TRACE_DIR");if(!dir)return;
     std::lock_guard<std::mutex> lock(d.historyReportMutex);const auto request=frameRequest("source-history.request");
     if(d.historyReports>=16 || (!final && request<=d.historyRequest))return;
-    auto payload=d.sourceHistory->report();auto data="{\"schema_version\":1,\"process_id\":"+std::to_string(getpid())+",\"device\":"+std::to_string(d.id)+",\"report_sequence\":"+std::to_string(++d.historyReports)+",\"external_request\":"+std::to_string(request)+",\"final\":"+(final?"true":"false")+",\"frame_trace_enabled\":"+(d.frame.enabled?"true":"false")+",\"history\":"+payload+"}\n";
+    auto payload=d.sourceHistory->report();auto data="{\"schema_version\":1,\"process_id\":"+std::to_string(getpid())+",\"device\":"+std::to_string(d.id)+",\"report_sequence\":"+std::to_string(++d.historyReports)+",\"external_request\":"+std::to_string(request)+",\"final\":"+(final?"true":"false")+",\"frame_trace_enabled\":"+(d.frame.enabled?"true":"false")+",\"consumer_history_enabled\":"+(d.sourceConsumerHistory?"true":"false")+",\"history\":"+payload+"}\n";
     if(writePrivate(std::string(dir)+"/source-history-"+std::to_string(getpid())+"-"+std::to_string(d.id)+"-"+std::to_string(d.historyReports)+".json",data.data(),data.size()))d.historyRequest=std::max(d.historyRequest,request);
 }
 template<class T>d4vr::history::HistorySubmission historyBefore(Device& d,VkQueue q,uint32_t n,const T* submits){
@@ -762,7 +763,10 @@ VKAPI_ATTR VkResult VKAPI_CALL d4CreateDevice(VkPhysicalDevice physical, const V
     if(enabled("D4VR_DEPTH_SOURCE_HISTORY"))try{
         auto number=[](const char* name,uint32_t fallback){auto v=std::getenv(name);if(!v)return fallback;char* end=nullptr;auto n=std::strtoul(v,&end,10);if(!*v || *end || !n || n>4096)throw std::invalid_argument("History footprint");return uint32_t(n);};
         auto stamp=uint64_t(std::chrono::steady_clock::now().time_since_epoch().count())^uint64_t(getpid());if(!stamp)stamp=1;
-        d->sourceHistory=std::make_unique<d4vr::history::SourceHistory>(VkExtent2D{number("D4VR_SOURCE_HISTORY_WIDTH",1707),number("D4VR_SOURCE_HISTORY_HEIGHT",960)},VkFormat(number("D4VR_SOURCE_HISTORY_FORMAT",129)),stamp);
+        d4vr::history::Limits historyLimits;historyLimits.consumerWindows=enabled("D4VR_SOURCE_CONSUMER_HISTORY");
+        if(historyLimits.consumerWindows)historyLimits.reports=3;
+        d->sourceHistory=std::make_unique<d4vr::history::SourceHistory>(VkExtent2D{number("D4VR_SOURCE_HISTORY_WIDTH",1707),number("D4VR_SOURCE_HISTORY_HEIGHT",960)},VkFormat(number("D4VR_SOURCE_HISTORY_FORMAT",129)),stamp,historyLimits);
+        d->sourceConsumerHistory=historyLimits.consumerWindows;
         d->frame.pipelineCatalogOnly=true;
     }catch(...){logFile.write("\"event\":\"source_history_unavailable\"");}
     d->frame.hasSwapchain = std::find(d->extensions.begin(), d->extensions.end(), VK_KHR_SWAPCHAIN_EXTENSION_NAME) != d->extensions.end();
@@ -1152,20 +1156,38 @@ VKAPI_ATTR void VKAPI_CALL d4GetDescriptorSetLayoutBindingOffsetEXT(VkDevice dev
     if(d->frame.enabled){std::lock_guard<std::mutex> lock(stateMutex);try{d->frame.setLayoutOffset(layout,binding,*offset);}catch(...){d->frame.resourceFailure();}}
 }
 VKAPI_ATTR void VKAPI_CALL d4GetDescriptorEXT(VkDevice device,const VkDescriptorGetInfoEXT* info,size_t n,void* output) {
-    auto d=deviceFor(device);if(!d->frame.enabled){d->GetDescriptorEXT(device,info,n,output);return;}
+    auto d=deviceFor(device);if(!d->frame.enabled && !d->sourceConsumerHistory){d->GetDescriptorEXT(device,info,n,output);return;}
     d4vr::frame::DescriptorReceipt input;
-    {std::lock_guard<std::mutex> lock(stateMutex);try{input=d->frame.descriptorInput(*info);}catch(...){d->frame.resourceFailure();}}
+    if(d->frame.enabled){std::lock_guard<std::mutex> lock(stateMutex);try{input=d->frame.descriptorInput(*info);}catch(...){d->frame.resourceFailure();}}
+    d4vr::history::DescriptorImageQuery imageQuery;
+    // Freeze the typed source while its lifetime is current. Never resolve the
+    // application view after returning from the driver, and never hold either
+    // layer-global mutex while forwarding this potentially reentrant call.
+    if(d->sourceConsumerHistory && info){
+        const VkDescriptorImageInfo* image=nullptr;
+        switch(info->type){
+        case VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:image=info->data.pSampledImage;break;
+        case VK_DESCRIPTOR_TYPE_STORAGE_IMAGE:image=info->data.pStorageImage;break;
+        case VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:image=info->data.pInputAttachmentImage;break;
+        case VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:image=info->data.pCombinedImageSampler;break;
+        default:break;
+        }
+        if(image){D4_HISTORY(d,imageQuery=d->sourceHistory->descriptorImageQueryBefore(image->imageView,info->type,image->imageLayout,!info->pNext,n));}
+    }
     d->GetDescriptorEXT(device,info,n,output);
-    {std::lock_guard<std::mutex> lock(stateMutex);d->frame.descriptorOutput(std::move(input),n,output);}
+    if(d->sourceConsumerHistory){D4_HISTORY(d,d->sourceHistory->descriptorImageQueryAfter(imageQuery,n,output));}
+    if(d->frame.enabled){std::lock_guard<std::mutex> lock(stateMutex);d->frame.descriptorOutput(std::move(input),n,output);}
 }
 VKAPI_ATTR void VKAPI_CALL d4CmdDispatch(VkCommandBuffer command, uint32_t x, uint32_t y, uint32_t z) {
     auto d = deviceFor(command); count(d, command, Dispatch);
     D4_POC(d,d->poc->unsupported(command));
+    D4_HISTORY(d,if(d->sourceConsumerHistory)d->sourceHistory->unknown(command,d4vr::history::Gap::missingRoute));
     frameCommand(d, command, [&](auto& t, auto& c) { t.dispatch(c, x, y, z, false); }); d->CmdDispatch(command, x, y, z);
 }
 VKAPI_ATTR void VKAPI_CALL d4CmdDispatchIndirect(VkCommandBuffer command, VkBuffer b, VkDeviceSize o) {
     auto d = deviceFor(command); count(d, command, DispatchIndirect);
     D4_POC(d,d->poc->unsupported(command));
+    D4_HISTORY(d,if(d->sourceConsumerHistory)d->sourceHistory->unknown(command,d4vr::history::Gap::missingRoute));
     frameCommand(d, command, [&](auto& t, auto& c) { t.dispatch(c, 0, 0, 0, true); }); d->CmdDispatchIndirect(command, b, o);
 }
 VKAPI_ATTR void VKAPI_CALL d4CmdBeginRenderPass(VkCommandBuffer command, const VkRenderPassBeginInfo* info, VkSubpassContents contents) {
@@ -1282,16 +1304,18 @@ VKAPI_ATTR void VKAPI_CALL d4DestroyImage(VkDevice device, VkImage image, const 
 }
 VKAPI_ATTR VkResult VKAPI_CALL d4CreateSwapchainKHR(VkDevice device,const VkSwapchainCreateInfoKHR* info,const VkAllocationCallbacks* allocator,VkSwapchainKHR* chain){
     auto d=deviceFor(device);auto r=d->CreateSwapchainKHR(device,info,allocator,chain);
+    if(r==VK_SUCCESS && d->sourceConsumerHistory){D4_HISTORY(d,d->sourceHistory->swapchain(*chain,*info));}
     if(r==VK_SUCCESS && d->presentation)try{d->presentation->swapchain(*chain,*info);}catch(...){}
     if(r==VK_SUCCESS && (d->poseDiagnostic || d->cooperativeDiagnostic)){std::lock_guard<std::mutex> lock(stateMutex);if(d->poseChains.size()<16)d->poseChains[*chain]={info->imageExtent,info->imageFormat};}
     return r;
 }
 VKAPI_ATTR void VKAPI_CALL d4DestroySwapchainKHR(VkDevice device,VkSwapchainKHR chain,const VkAllocationCallbacks* allocator){
-    auto d=deviceFor(device);if(d->presentation)d->presentation->removeSwapchain(chain);d->DestroySwapchainKHR(device,chain,allocator);
+    auto d=deviceFor(device);if(d->sourceConsumerHistory){D4_HISTORY(d,d->sourceHistory->removeSwapchain(chain));}if(d->presentation)d->presentation->removeSwapchain(chain);d->DestroySwapchainKHR(device,chain,allocator);
     if(d->poseDiagnostic || d->cooperativeDiagnostic){std::lock_guard<std::mutex> lock(stateMutex);d->poseChains.erase(chain);}
 }
 VKAPI_ATTR VkResult VKAPI_CALL d4GetSwapchainImagesKHR(VkDevice device,VkSwapchainKHR chain,uint32_t* count,VkImage* images){
     auto d=deviceFor(device);auto r=d->GetSwapchainImagesKHR(device,chain,count,images);
+    if(r==VK_SUCCESS && d->sourceConsumerHistory && images){D4_HISTORY(d,d->sourceHistory->swapchainImages(chain,*count,images));}
     if(r==VK_SUCCESS && d->presentation && images)try{d->presentation->swapchainImages(chain,*count,images);}catch(...){}
     return r;
 }
@@ -1311,12 +1335,12 @@ void captureBlit(const std::shared_ptr<Device>& d,VkCommandBuffer command,VkImag
 }
 VKAPI_ATTR void VKAPI_CALL d4CmdBlitImage(VkCommandBuffer command,VkImage source,VkImageLayout src,VkImage destination,VkImageLayout dst,uint32_t count,const VkImageBlit* regions,VkFilter filter){
     auto d=deviceFor(command);D4_POC(d,d->poc->unsupported(command));captureBlit(d,command,source,src,destination,dst,count,regions,filter);
-    D4_AUDIT(d,d->depthAudit->transfers().blit(command,source,src,destination,dst,count,regions,filter));D4_HISTORY(d,d->sourceHistory->unknown(command,d4vr::history::Gap::missingRoute));
+    D4_AUDIT(d,d->depthAudit->transfers().blit(command,source,src,destination,dst,count,regions,filter));D4_HISTORY(d,if(d->sourceConsumerHistory)d->sourceHistory->blit(command,source,src,destination,dst,count,regions,filter);else d->sourceHistory->unknown(command,d4vr::history::Gap::missingRoute));
     d->CmdBlitImage(command,source,src,destination,dst,count,regions,filter);
 }
 VKAPI_ATTR void VKAPI_CALL d4CmdBlitImage2(VkCommandBuffer command,const VkBlitImageInfo2* info){
     auto d=deviceFor(command);D4_POC(d,d->poc->unsupported(command));
-    D4_AUDIT(d,d->depthAudit->transfers().blit2(command,info));D4_HISTORY(d,d->sourceHistory->unknown(command,d4vr::history::Gap::missingRoute));
+    D4_AUDIT(d,d->depthAudit->transfers().blit2(command,info));D4_HISTORY(d,if(d->sourceConsumerHistory)d->sourceHistory->blit(command,*info);else d->sourceHistory->unknown(command,d4vr::history::Gap::missingRoute));
     if(!info->pNext && info->regionCount==1 && info->pRegions && !info->pRegions[0].pNext){const auto& r=info->pRegions[0];VkImageBlit region{};
         region.srcSubresource=r.srcSubresource;region.dstSubresource=r.dstSubresource;std::copy(r.srcOffsets,r.srcOffsets+2,region.srcOffsets);std::copy(r.dstOffsets,r.dstOffsets+2,region.dstOffsets);
         captureBlit(d,command,info->srcImage,info->srcImageLayout,info->dstImage,info->dstImageLayout,1,&region,info->filter);}

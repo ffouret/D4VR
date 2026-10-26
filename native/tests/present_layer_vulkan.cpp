@@ -36,6 +36,7 @@ struct Item{std::array<float,4> position,color;};
 void text(const std::filesystem::path& p,const std::string& value){auto tmp=p;tmp+=".tmp";std::ofstream out(tmp);out<<value;out.close();std::filesystem::rename(tmp,p);}
 #include "depth_transfer_fixture.hpp"
 #include "held_depth_fixture.hpp"
+#include "source_consumer_fixture.hpp"
 }
 int main(int argc,char** argv)try{
     if(argc!=4)throw std::invalid_argument("Usage: present_layer_fixture vertex.spv fragment.spv private-directory");
@@ -50,11 +51,13 @@ int main(int argc,char** argv)try{
     bool transferFixture=std::getenv("D4VR_DEPTH_TRANSFER_FIXTURE");
     bool heldDepthFixture=std::getenv("D4VR_HELD_DEPTH_FIXTURE");
     bool sourceHistoryFixture=std::getenv("D4VR_SOURCE_HISTORY_FIXTURE");
+    bool sourceConsumerFixture=std::getenv("D4VR_SOURCE_CONSUMER_FIXTURE");
     bool foreignProducer=(poseCapture || cooperative) && std::getenv("D4VR_POSE_FIXTURE_FOREIGN");
     if(heldDepthFixture && (!poseCapture || !heldView || !cameraUpdates || depthFixture || transferFixture || auditFixture || cooperative || foreignProducer))throw std::invalid_argument("Held depth fixture requires the monoscopic pose-camera fixture alone");
     if(sourceHistoryFixture && !heldDepthFixture)throw std::invalid_argument("Source history fixture requires held geometric depth");
+    if(sourceConsumerFixture && !sourceHistoryFixture)throw std::invalid_argument("Source consumer fixture requires source history workload");
     if(poseCapture)text(directory/"pose.request","invalid diagnostic input\n");
-    Window window;Fixture f(true,false,false,false,false,"D4VR presentation selection fixture",cameraUpdates || auditFixture,{"VK_KHR_surface","VK_KHR_xlib_surface"},{VK_KHR_SWAPCHAIN_EXTENSION_NAME},{},cameraUpdates?5:1,cooperative || auditFixture || heldDepthFixture);
+    Window window;Fixture f(true,false,sourceConsumerFixture,false,false,"D4VR presentation selection fixture",cameraUpdates || auditFixture,{"VK_KHR_surface","VK_KHR_xlib_surface"},{VK_KHR_SWAPCHAIN_EXTENSION_NAME},{},cameraUpdates?5:1,cooperative || auditFixture || heldDepthFixture);
     std::array<VkQueue,5> readerQueues{};if(cameraUpdates)for(unsigned i=0;i<5;++i)vkGetDeviceQueue(f.device,f.family,i,&readerQueues[i]);
     auto createSurface=reinterpret_cast<CreateSurface>(vkGetInstanceProcAddr(f.instance,"vkCreateXlibSurfaceKHR"));if(!createSurface)throw std::runtime_error("Xlib Vulkan surface unavailable");
     XlibSurfaceInfo si{VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR,nullptr,0,window.display,window.window};VkSurfaceKHR surface{};check(createSurface(f.instance,&si,nullptr,&surface));
@@ -77,7 +80,8 @@ int main(int argc,char** argv)try{
     VkDeviceMemory memory{};check(vkAllocateMemory(f.device,&mai,nullptr,&memory));check(vkBindImageMemory(f.device,source,memory,0));
     VkImageViewCreateInfo vi{VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};vi.image=source;vi.viewType=VK_IMAGE_VIEW_TYPE_2D;vi.format=fmt->format;vi.subresourceRange={VK_IMAGE_ASPECT_COLOR_BIT,0,1,0,1};VkImageView view{};check(vkCreateImageView(f.device,&vi,nullptr,&view));
     VkImage depthImage{};VkImageView depthView{};VkDeviceMemory depthMemory{};
-    std::unique_ptr<HeldDepthFixture> heldDepth;if(heldDepthFixture)heldDepth=std::make_unique<HeldDepthFixture>(f,extent,sourceHistoryFixture);
+    std::unique_ptr<HeldDepthFixture> heldDepth;if(heldDepthFixture)heldDepth=std::make_unique<HeldDepthFixture>(f,extent,sourceHistoryFixture,sourceConsumerFixture);
+    std::unique_ptr<SourceConsumerFixture> sourceConsumer;if(sourceConsumerFixture)sourceConsumer=std::make_unique<SourceConsumerFixture>(f,*heldDepth,directory);
     if(depthFixture){auto depthInfo=ici;depthInfo.format=VK_FORMAT_D24_UNORM_S8_UINT;depthInfo.usage=VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT|VK_IMAGE_USAGE_TRANSFER_SRC_BIT;check(vkCreateImage(f.device,&depthInfo,nullptr,&depthImage));
         VkMemoryRequirements requirements{};vkGetImageMemoryRequirements(f.device,depthImage,&requirements);auto allocation=mai;allocation.allocationSize=requirements.size;allocation.memoryTypeIndex=f.type(requirements.memoryTypeBits,VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);check(vkAllocateMemory(f.device,&allocation,nullptr,&depthMemory));check(vkBindImageMemory(f.device,depthImage,depthMemory,0));
         auto depthInfoView=vi;depthInfoView.image=depthImage;depthInfoView.format=depthInfo.format;depthInfoView.subresourceRange.aspectMask=VK_IMAGE_ASPECT_DEPTH_BIT|VK_IMAGE_ASPECT_STENCIL_BIT;check(vkCreateImageView(f.device,&depthInfoView,nullptr,&depthView));}
@@ -113,7 +117,9 @@ int main(int argc,char** argv)try{
     text(directory/"eye.selection","2\n");
     bool cancelPose=(poseCapture || cooperative) && std::getenv("D4VR_POSE_FIXTURE_CANCEL");unsigned frameCount=64;if((poseCapture || cooperative) && (std::getenv("D4VR_POSE_FIXTURE_SHORT") || cancelPose))frameCount=8;
     for(unsigned frame=0;frame<frameCount;++frame){
+        if(sourceConsumer)sourceConsumer->beforeFrame(frame);
         if(sourceHistoryFixture)heldDepth->historyFrame(directory,frame,command,source);
+        if(sourceConsumer)sourceConsumer->afterHistoryFrame(frame);
         if(heldDepthFixture){unsigned request=frame==0?1:frame==5?2:frame==16?3:frame==37?4:frame==48?5:frame==61?6:0;if(request){text(directory/"depth-copy.request","D4VR_DEPTH_1 "+std::to_string(request)+" "+std::to_string(extent.width)+" "+std::to_string(extent.height)+" 126 1\n");std::this_thread::sleep_for(std::chrono::milliseconds(25));}}
         if(auditFixture && (frame==8 || frame==40))text(directory/"depth-audit.request",frame==8?"1\n":"2\n");
         if(depthFixture && (frame==4 || frame==36))text(directory/"depth.request","D4VR_DEPTH_1 "+std::to_string(frame==4?1:2)+" "+std::to_string(extent.width)+" "+std::to_string(extent.height)+" 129 2\n");
@@ -187,10 +193,11 @@ int main(int argc,char** argv)try{
     if(serial)vkDestroySemaphore(f.device,serial,nullptr);
     vkDestroySemaphore(f.device,acquired,nullptr);vkDestroyFence(f.device,fence,nullptr);vkUnmapMemory(f.device,golden.memory);vkDestroyBuffer(f.device,golden.handle,nullptr);vkFreeMemory(f.device,golden.memory,nullptr);
     if(depthFixture){vkDestroyImageView(f.device,depthView,nullptr);vkDestroyImage(f.device,depthImage,nullptr);vkFreeMemory(f.device,depthMemory,nullptr);}
-    heldDepth.reset();vkDestroyImageView(f.device,view,nullptr);vkDestroyImage(f.device,source,nullptr);vkFreeMemory(f.device,memory,nullptr);vkDestroySwapchainKHR(f.device,chain,nullptr);vkDestroyDevice(f.device,nullptr);vkDestroySurfaceKHR(f.instance,surface,nullptr);vkDestroyInstance(f.instance,nullptr);
+    sourceConsumer.reset();heldDepth.reset();vkDestroyImageView(f.device,view,nullptr);vkDestroyImage(f.device,source,nullptr);vkFreeMemory(f.device,memory,nullptr);vkDestroySwapchainKHR(f.device,chain,nullptr);vkDestroyDevice(f.device,nullptr);vkDestroySurfaceKHR(f.instance,surface,nullptr);vkDestroyInstance(f.instance,nullptr);
     std::cout<<"{\"presentation_layer_fixture_passed\":true,\"frames\":"<<frameCount<<",\"game_stereo_submitted\":false";
     if(heldDepthFixture)std::cout<<",\"held_depth_geometry\":true,\"original_depth_copies\":"<<frameCount<<",\"original_null_fence_submits\":"<<frameCount<<",\"original_copy_stage_mask\":"<<VK_PIPELINE_STAGE_2_COPY_BIT<<",\"original_blit_stage_mask\":"<<VK_PIPELINE_STAGE_2_BLIT_BIT<<",\"application_completion\":\"device_wait_idle_after_present\",\"depth_color_common_instant_claimed\":false";
     if(sourceHistoryFixture)std::cout<<",\"source_history_fixture\":true,\"original_late_source_clears\":"<<frameCount<<",\"original_twin_clears\":"<<frameCount<<",\"twin_lifetimes\":2,\"history_gpu_execution_order_inferred\":false";
+    if(sourceConsumerFixture)std::cout<<",\"source_consumer_fixture\":true,\"original_descriptor_image_queries\":8,\"descriptor_queries_bound_or_sampled\":false";
     std::cout<<"}\n";
     return 0;
 }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}

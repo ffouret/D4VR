@@ -33,6 +33,9 @@ const VkDescriptorSetLayoutCreateInfo* expectedSetInfo{};const VkPipelineLayoutC
 VkDescriptorSetLayout expectedSetLayout{};VkDeviceSize* expectedLayoutQuery{};
 VkResult layoutResult=VK_SUCCESS;unsigned setCreates=0,setDestroys=0,pipelineLayoutCreates=0,pipelineLayoutDestroys=0,sizeQueries=0,offsetQueries=0;
 const VkDescriptorGetInfoEXT* expectedDescriptorInfo{};void* expectedDescriptorOutput{};unsigned descriptorQueries=0;
+const VkSwapchainCreateInfoKHR* expectedSwapchainInfo{};VkSwapchainKHR expectedSwapchain{};
+uint32_t* expectedSwapchainCount{};VkImage* expectedSwapchainImages{};unsigned swapchainForwards=0;
+unsigned consumerDispatches=0;
 const VkMemoryAllocateInfo* expectedMemoryInfo{};const VkBindBufferMemoryInfo* expectedBindInfo{};const VkMappedMemoryRange* expectedMemoryRange{};
 VkDeviceMemory expectedMemory{};void** expectedMapOutput{};VkResult memoryResult=VK_SUCCESS;
 unsigned memoryAllocations=0,memoryFrees=0,memoryBinds=0,memoryBatchBinds=0,memoryMaps=0,memoryUnmaps=0,memoryFlushes=0,memoryInvalidations=0;
@@ -115,6 +118,17 @@ VKAPI_ATTR void VKAPI_CALL getDescriptor(VkDevice,const VkDescriptorGetInfoEXT* 
     require(info==expectedDescriptorInfo && n==16 && out==expectedDescriptorOutput,"Descriptor query arguments changed");++descriptorQueries;
     for(unsigned i=0;i<16;++i)static_cast<uint8_t*>(out)[i]=uint8_t(i+1);
 }
+VKAPI_ATTR VkResult VKAPI_CALL createSwapchain(VkDevice,const VkSwapchainCreateInfoKHR* info,const VkAllocationCallbacks* a,VkSwapchainKHR* out) {
+    require(info==expectedSwapchainInfo && a==expectedAllocator,"Swapchain create pointers changed");++swapchainForwards;*out=expectedSwapchain;return VK_SUCCESS;
+}
+VKAPI_ATTR VkResult VKAPI_CALL swapchainImages(VkDevice,VkSwapchainKHR chain,uint32_t* n,VkImage* images) {
+    require(chain==expectedSwapchain && n==expectedSwapchainCount && images==expectedSwapchainImages,"Swapchain images pointers changed");++swapchainForwards;*n=1;images[0]=transferDestination;return VK_SUCCESS;
+}
+VKAPI_ATTR void VKAPI_CALL destroySwapchain(VkDevice,VkSwapchainKHR chain,const VkAllocationCallbacks* a) {
+    require(chain==expectedSwapchain && a==expectedAllocator,"Swapchain destruction changed");++swapchainForwards;
+}
+VKAPI_ATTR void VKAPI_CALL dispatch(VkCommandBuffer c,uint32_t x,uint32_t y,uint32_t z){require(c==expectedCommand && x==3 && y==5 && z==7,"Consumer dispatch arguments changed");++consumerDispatches;}
+VKAPI_ATTR void VKAPI_CALL dispatchIndirect(VkCommandBuffer c,VkBuffer b,VkDeviceSize o){require(c==expectedCommand && b==transferBuffer && o==128,"Consumer indirect dispatch arguments changed");++consumerDispatches;}
 VKAPI_ATTR VkResult VKAPI_CALL allocateMemory(VkDevice,const VkMemoryAllocateInfo* info,const VkAllocationCallbacks* allocator,VkDeviceMemory* out) {require(info==expectedMemoryInfo && allocator==expectedAllocator,"Allocation arguments changed");++memoryAllocations;if(memoryResult==VK_SUCCESS)*out=expectedMemory;return memoryResult;}
 VKAPI_ATTR void VKAPI_CALL freeMemory(VkDevice,VkDeviceMemory memory,const VkAllocationCallbacks* allocator) {require(memory==expectedMemory && allocator==expectedAllocator,"Free arguments changed");++memoryFrees;}
 VKAPI_ATTR VkResult VKAPI_CALL bindMemory(VkDevice,VkBuffer buffer,VkDeviceMemory memory,VkDeviceSize offset) {require(buffer==expectedBuffer && memory==expectedMemory && offset==32,"Memory bind arguments changed");++memoryBinds;return memoryResult;}
@@ -459,6 +473,41 @@ int main() try {
     require(events.back().buffers[0].status==d4vr::frame::BufferRange::unknown,"Failed creation or destroyed handle remained addressable");
     require(bufferCreates==2 && bufferDestroys==1 && addressQueries==1 && bufferBinds==2 && offsetBinds==1 && classicBinds==2,"Resource API was not forwarded exactly once");
     history_forwarding::check(d,handle,primary,queue);
+    // New consumer observation must also preserve the dispatch path when the
+    // broad frame observer is disabled, including an already-faulted observer.
+    d->frame.enabled=false;d->CreateSwapchainKHR=createSwapchain;d->GetSwapchainImagesKHR=swapchainImages;d->DestroySwapchainKHR=destroySwapchain;
+    d->CmdDispatch=dispatch;d->CmdDispatchIndirect=dispatchIndirect;
+    const auto descriptorsBefore=descriptorQueries,transfersBefore=transferForwards;
+    VkImageCreateInfo observedImage{VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};observedImage.imageType=VK_IMAGE_TYPE_2D;observedImage.format=VK_FORMAT_D32_SFLOAT;
+    observedImage.extent={2,2,1};observedImage.mipLevels=observedImage.arrayLayers=1;observedImage.samples=VK_SAMPLE_COUNT_1_BIT;
+    observedImage.usage=VK_IMAGE_USAGE_TRANSFER_SRC_BIT|VK_IMAGE_USAGE_SAMPLED_BIT;
+    VkImageViewCreateInfo observedView{VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};observedView.image=transferSource;observedView.viewType=VK_IMAGE_VIEW_TYPE_2D;
+    observedView.format=observedImage.format;observedView.subresourceRange={VK_IMAGE_ASPECT_DEPTH_BIT,0,1,0,1};const auto view=object<VkImageView>(0xc001);
+    VkDescriptorImageInfo sampled{};sampled.imageView=view;sampled.imageLayout=VK_IMAGE_LAYOUT_GENERAL;
+    VkDescriptorGetInfoEXT imageDescriptor{VK_STRUCTURE_TYPE_DESCRIPTOR_GET_INFO_EXT};imageDescriptor.type=VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;imageDescriptor.data.pSampledImage=&sampled;
+    VkBaseInStructure opaqueNext{VK_STRUCTURE_TYPE_APPLICATION_INFO,nullptr};imageDescriptor.pNext=&opaqueNext;
+    expectedDescriptorInfo=&imageDescriptor;expectedDescriptorOutput=returnedDescriptor;
+    VkSwapchainCreateInfoKHR chainInfo{VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR};chainInfo.pNext=&opaqueNext;chainInfo.imageFormat=VK_FORMAT_B8G8R8A8_UNORM;
+    chainInfo.imageExtent={2,2};chainInfo.imageArrayLayers=1;chainInfo.imageUsage=VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    expectedSwapchainInfo=&chainInfo;expectedSwapchain=object<VkSwapchainKHR>(0xc002);
+    for(unsigned mode=0;mode<3;++mode){
+        d->sourceConsumerHistory=mode!=0;
+        if(mode){d4vr::history::Limits limits;limits.consumerWindows=true;d->sourceHistory=std::make_unique<d4vr::history::SourceHistory>(VkExtent2D{2,2},VK_FORMAT_D32_SFLOAT,800+mode,limits);
+            d->sourceHistory->image(transferSource,observedImage);d->sourceHistory->view(view,observedView);d->sourceHistory->begin(primary,VK_COMMAND_BUFFER_LEVEL_PRIMARY,0,3,0);
+            if(mode==2)d->sourceHistory->fault();}
+        std::memset(returnedDescriptor,0,16);d4GetDescriptorEXT(handle,&imageDescriptor,16,returnedDescriptor);
+        for(unsigned i=0;i<16;++i)require(returnedDescriptor[i]==i+1,"Consumer observer changed original descriptor bytes");
+        VkSwapchainKHR chain{};require(d4CreateSwapchainKHR(handle,&chainInfo,expectedAllocator,&chain)==VK_SUCCESS && chain==expectedSwapchain,"Consumer observer changed swapchain result");
+        uint32_t count=1;VkImage images[1]{};expectedSwapchainCount=&count;expectedSwapchainImages=images;
+        require(d4GetSwapchainImagesKHR(handle,chain,&count,images)==VK_SUCCESS && count==1 && images[0]==transferDestination,"Consumer observer changed original WSI images");
+        d4CmdBlitImage(primary,transferSource,VK_IMAGE_LAYOUT_GENERAL,transferDestination,VK_IMAGE_LAYOUT_GENERAL,1,&tl,VK_FILTER_NEAREST);
+        for(const char* suffix:{"","KHR"}){auto fn=reinterpret_cast<PFN_vkCmdBlitImage2>(d4GetDeviceProcAddr(handle,(std::string("vkCmdBlitImage2")+suffix).c_str()));require(fn==d4CmdBlitImage2,"Consumer BLIT alias missing");fn(primary,&tli);}
+        d4CmdDispatch(primary,3,5,7);d4CmdDispatchIndirect(primary,transferBuffer,128);
+        d4DestroySwapchainKHR(handle,chain,expectedAllocator);d->sourceHistory.reset();
+    }
+    d->sourceConsumerHistory=false;
+    require(descriptorQueries==descriptorsBefore+3 && transferForwards==transfersBefore+9 && swapchainForwards==9 && consumerDispatches==6,"Consumer hooks did not forward exactly once");
+    std::cout << "{\"source_consumer_forwarding_passed\":true,\"modes\":3,\"descriptor_queries\":3,\"blits\":9,\"swapchain_calls\":9,\"uncovered_dispatches\":6,\"observer_gpu_calls\":0}\n";
     d4DestroyDevice(handle,nullptr);
     std::cout << "Vulkan forwarding, DGC, aliases, secondary/reused command buffers, errors and reset lifetime: passed\n";
     return 0;

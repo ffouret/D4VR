@@ -14,9 +14,16 @@ struct Limits {
     uint32_t eventsPerReport=512,occurrencesPerReport=8;
     uint32_t occurrences=64,commandsPerSubmit=256,batchesPerSubmit=256,semaphoresPerSubmit=256,reports=8;
     size_t serializedBytes=8*1024*1024;
+    bool consumerWindows=false;
+    uint32_t consumerEventsPerReport=512,consumerOccurrencesPerReport=8;
+    uint32_t descriptorQueries=64,descriptorQueriesPerReport=16,descriptorBytesPerQuery=256;
 };
 enum class Gap : uint32_t {legacy=0,secondary,generated,alias,missingRoute,unknownState,unknownResource,unknownPipeline,extension};
 struct HistoryOccurrence;
+struct DescriptorImageQuery {
+    uint64_t observerSession=0,query=0;
+    explicit operator bool() const noexcept {return observerSession && query;}
+};
 struct HistorySubmission {
     uint64_t sequence=0;
     std::shared_ptr<HistoryOccurrence> occurrence; // CPU values only, including across reset.
@@ -33,6 +40,15 @@ public:
     void fault() noexcept;
     void image(VkImage,const VkImageCreateInfo&) noexcept;void removeImage(VkImage) noexcept;
     void view(VkImageView,const VkImageViewCreateInfo&) noexcept;void removeView(VkImageView) noexcept;
+    ImageUseRef imageUse(VkImageView) const noexcept;ImageUseRef imageRef(VkImage) const noexcept;
+    void swapchain(VkSwapchainKHR,const VkSwapchainCreateInfoKHR&) noexcept;
+    void swapchainImages(VkSwapchainKHR,uint32_t,const VkImage*) noexcept;
+    void removeSwapchain(VkSwapchainKHR) noexcept;
+    // BEFORE freezes the candidate image/view lifetime. AFTER copies only the
+    // original opaque driver output, with independent byte/query caps. Neither
+    // event asserts descriptor placement, selection, binding, or a GPU read.
+    DescriptorImageQuery descriptorImageQueryBefore(VkImageView,VkDescriptorType,VkImageLayout,bool inputChainComplete,size_t outputSize) noexcept;
+    void descriptorImageQueryAfter(const DescriptorImageQuery&,size_t,const void*) noexcept;
     void semaphore(VkSemaphore,const VkSemaphoreCreateInfo&) noexcept;void removeSemaphore(VkSemaphore) noexcept;
     void removePipeline(VkPipeline) noexcept;
     void begin(VkCommandBuffer,VkCommandBufferLevel,VkCommandBufferUsageFlags,uint32_t family,uint32_t eye=2,bool known=true) noexcept;
@@ -46,6 +62,8 @@ public:
     void clearDepthStencil(VkCommandBuffer,VkImage,VkImageLayout,const VkClearDepthStencilValue*,uint32_t,const VkImageSubresourceRange*) noexcept;
     void clearAttachments(VkCommandBuffer,uint32_t,const VkClearAttachment*,uint32_t,const VkClearRect*) noexcept;
     HistoryCopyRef sourceCopy(VkCommandBuffer,const VkCopyImageInfo2&) noexcept;
+    HistoryBlitRef blit(VkCommandBuffer,VkImage,VkImageLayout,VkImage,VkImageLayout,uint32_t,const VkImageBlit*,VkFilter) noexcept;
+    HistoryBlitRef blit(VkCommandBuffer,const VkBlitImageInfo2&) noexcept;
     void barrier(VkCommandBuffer,const VkDependencyInfo&) noexcept;
     void unknown(VkCommandBuffer,Gap) noexcept;
     // Mark ONLY a COPY that was actually selected by the readback producer.
