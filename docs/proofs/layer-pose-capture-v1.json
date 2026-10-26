@@ -17,7 +17,7 @@
     "invalid_inputs_refused": 9,
     "real_xr_source_claimed": false
   },
-  "layer_sha256": "f928b26cf35457c3a00ff58edb99c589d67a1b26b529bea3efba2ba8fcebfdbf",
+  "layer_sha256": "4067d3da01e4ebab1c8d66d4dd39fb1fddccc71727a0ada995bd0fdefc49eae1",
   "fixture_sha256": "5eac8260d8ef30cee507a158a9513a349249210b937cc365ab9ec9332deb66b8",
   "cases": [
     {
@@ -78,7 +78,7 @@
         "requests": 2,
         "pairs": 2,
         "unavailable": 0,
-        "rejected_leases": 1,
+        "rejected_leases": 0,
         "deferred_queue_leases": 0,
         "active": false,
         "consumer_pending": false,
@@ -88,10 +88,10 @@
         "xr_submission": false
       },
       "producer": {
-        "slots": 3,
-        "reserved_bytes": 786432,
-        "leases_issued": 5,
-        "retire_submissions": 5,
+        "slots": 2,
+        "reserved_bytes": 524288,
+        "leases_issued": 4,
+        "retire_submissions": 4,
         "outstanding_leases": 0
       },
       "validation_errors": 0
@@ -170,12 +170,12 @@
           "request": 2,
           "packet_sequence": 3,
           "source_presents": [
-            61,
-            62
+            38,
+            39
           ],
           "source_capture_sequences": [
-            61,
-            62
+            38,
+            39
           ],
           "disparities_pixels": [
             14.621196616026268,
@@ -404,12 +404,12 @@
           "request": 2,
           "packet_sequence": 3,
           "source_presents": [
-            42,
-            43
+            38,
+            39
           ],
           "source_capture_sequences": [
-            42,
-            43
+            38,
+            39
           ],
           "disparities_pixels": [
             14.621196616026268,
@@ -492,7 +492,7 @@
   "legacy_wsi": {
     "purpose": "sequential_presentation_capture",
     "schema_version": 1,
-    "layer_sha256": "f928b26cf35457c3a00ff58edb99c589d67a1b26b529bea3efba2ba8fcebfdbf",
+    "layer_sha256": "4067d3da01e4ebab1c8d66d4dd39fb1fddccc71727a0ada995bd0fdefc49eae1",
     "wsi_loader_capture_passed": true,
     "original_pixels_restored": true,
     "synthetic_scene": true,
@@ -530,24 +530,6 @@
     ],
     "forwarding_tests_passed": true
   },
-  "tested_source_parent": "42c3f2d34226ed0cc0b3f62e7b7b3cbe6c4e771f",
-  "checks_passed": 11,
-  "python_tests_passed": 170,
-  "exact_original_pixel_bytes_total": 5242880,
-  "requests_tested_total": 12,
-  "pairs_exported_total": 10,
-  "foreign_queue_lease_retirements_total": 4,
-  "source_sha256": {
-    "native/core/diagnostic_pose.hpp": "49a2d01d86399ecb4733c9c041e1c8cda031e2a896696421feb277148dd2c849",
-    "native/vulkan/diagnostic_capture.hpp": "f0c6fb2fd84d13d3ce4795bca29d6c7bd7554841e6a071e1256d04b9a54cb49d",
-    "native/vulkan/diagnostic_capture.cpp": "ca8ee101bd1fa9329a9261145b5245b453a7a9b43262e6720498626ce72adf8e",
-    "native/vulkan/trace_layer.cpp": "81abd401cfecb3e93d1394e862402a7d377114545dcd5164dd9e5f03e236fb2c",
-    "native/vulkan/capture_projection.hpp": "52ada97dd1b83dd85813ce141258d29a0d1eadb9761f4f77539eb04e81e3f7f5",
-    "native/vulkan/capture_projection.cpp": "d29d32077db70d928fc721d0408152b41736ccb967ac83a2c53386848a0fe166",
-    "native/tests/present_layer_vulkan.cpp": "f06082211dd68a3a41391e8ed38b2556a677bd08014b0452a760e637c8cecc13",
-    "native/tests/diagnostic_pose_tests.cpp": "c4a867289f84d6140b172a14b02117040b63d35c4460e746e493a13b90fda9eb",
-    "tools/pose_layer_validate.py": "316c9cc2926681a4b9732498bf96e3580eb5a4fd87eca75b271668a9d4c58f8f"
-  },
   "limits": [
     "New regular trace layer binary has not been run in Diablo; latest real game proof remains diablo-camera-updates-v1.json source e8b2702. No game/HMD was launched in this milestone.",
     "The runtime pose source is an external diagnostic text file; supplied XR-like poses/time are not a real OpenXR observation or current display-time claim. No OpenXR call or SteamVR submission occurs in this layer mode.",
@@ -557,5 +539,23 @@
     "Foreign-producer WSI fixture uses explicit application timeline ordering and a host acquisition fence. Clean final synchronization validation does not prove asynchronous multiqueue game/runtime coordination; earlier insufficient fixture acquisition paths are not part of this proof.",
     "Normal layer path polls its consumer fence; file reads, CPU copies/private exports and teardown can block. A request without an admissible left image has no automatic timeout; pose.stop or game/device teardown cancels it.",
     "Common diagnostic codec/consumer compile under Windows in CI, but native Windows D3D12 game/VR integration and physical SteamVR validation issues remain unresolved."
-  ]
+  ],
+  "python_tests_passed": 170,
+  "tested_source_parent": "7bd0dc36f6117ec362ac38084b4b17936496918f",
+  "checks_passed": 11,
+  "exact_original_pixel_bytes_total": 5242880,
+  "requests_tested_total": 12,
+  "pairs_exported_total": 10,
+  "foreign_queue_lease_retirements_total": 4,
+  "source_sha256": {
+    "native/core/diagnostic_pose.hpp": "49a2d01d86399ecb4733c9c041e1c8cda031e2a896696421feb277148dd2c849",
+    "native/vulkan/diagnostic_capture.hpp": "f0c6fb2fd84d13d3ce4795bca29d6c7bd7554841e6a071e1256d04b9a54cb49d",
+    "native/vulkan/diagnostic_capture.cpp": "81c03e75e303686ba36a9699d6eae5ec9703df3e14c2b59e8ec29d51452d1584",
+    "native/vulkan/trace_layer.cpp": "81abd401cfecb3e93d1394e862402a7d377114545dcd5164dd9e5f03e236fb2c",
+    "native/vulkan/capture_projection.hpp": "52ada97dd1b83dd85813ce141258d29a0d1eadb9761f4f77539eb04e81e3f7f5",
+    "native/vulkan/capture_projection.cpp": "d29d32077db70d928fc721d0408152b41736ccb967ac83a2c53386848a0fe166",
+    "native/tests/present_layer_vulkan.cpp": "f06082211dd68a3a41391e8ed38b2556a677bd08014b0452a760e637c8cecc13",
+    "native/tests/diagnostic_pose_tests.cpp": "c4a867289f84d6140b172a14b02117040b63d35c4460e746e493a13b90fda9eb",
+    "tools/pose_layer_validate.py": "316c9cc2926681a4b9732498bf96e3580eb5a4fd87eca75b271668a9d4c58f8f"
+  }
 }

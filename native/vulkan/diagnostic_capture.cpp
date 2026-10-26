@@ -1,6 +1,7 @@
 #include "diagnostic_capture.hpp"
 #include <algorithm>
 #include <stdexcept>
+#include <string>
 namespace d4vr::present {
 namespace {void check(VkResult r){if(r!=VK_SUCCESS)throw std::runtime_error("Diagnostic consumer Vulkan "+std::to_string(r));}}
 #define FUNCTIONS(X) X(CreateCommandPool) X(DestroyCommandPool) X(AllocateCommandBuffers) X(ResetCommandPool) X(BeginCommandBuffer) X(EndCommandBuffer) X(CreateBuffer) X(DestroyBuffer) X(GetBufferMemoryRequirements) X(AllocateMemory) X(FreeMemory) X(BindBufferMemory) X(MapMemory) X(UnmapMemory) X(CreateFence) X(DestroyFence) X(ResetFences) X(GetFenceStatus) X(CmdCopyImageToBuffer) X(CmdPipelineBarrier) X(QueueSubmit)
