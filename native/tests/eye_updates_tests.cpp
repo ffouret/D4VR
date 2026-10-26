@@ -29,6 +29,8 @@ VKAPI_ATTR VkResult VKAPI_CALL loader(VkDevice,void*){return VK_SUCCESS;}
 VKAPI_ATTR void VKAPI_CALL barrier(VkCommandBuffer,VkPipelineStageFlags a,VkPipelineStageFlags b,VkDependencyFlags,uint32_t,const VkMemoryBarrier*,uint32_t n,const VkBufferMemoryBarrier* p,uint32_t,const VkImageMemoryBarrier*){
     require(n==1 && p->size==sizeof(EyeState) && p->srcQueueFamilyIndex==VK_QUEUE_FAMILY_IGNORED,"Invalid buffer barrier");
     require((a&VK_PIPELINE_STAGE_TRANSFER_BIT) || (b&VK_PIPELINE_STAGE_TRANSFER_BIT),"Missing update dependency");++barriers;
+    VkPipelineStageFlags reads=VK_PIPELINE_STAGE_VERTEX_SHADER_BIT|VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    require(((a&reads)==reads) || ((b&reads)==reads),"Packet update omitted a graphics reader stage");
 }
 VKAPI_ATTR void VKAPI_CALL update(VkCommandBuffer,VkBuffer,VkDeviceSize offset,VkDeviceSize size,const void* data){require(!offset && size==sizeof(EyeState),"Invalid packet copy");recorded.push_back(*static_cast<const EyeState*>(data));++writes;}
 VKAPI_ATTR VkResult VKAPI_CALL submit(VkQueue,uint32_t n,const VkSubmitInfo* s,VkFence f){

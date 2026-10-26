@@ -42,6 +42,12 @@ class ObserverInstrumentationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'Both original'):
             spirv_probe.instrument(self.data,3,0,72,stereo=True,projection_only_helper=True,projection_input=True,fixed_partner_projection=True)
 
+    def test_fragment_mode_never_accepts_a_vertex_entry_or_late_transform(self):
+        with self.assertRaisesRegex(ValueError,'ordinary early'):
+            spirv_probe.instrument(self.data,3,0,72,fragment_projection_input=True)
+        with self.assertRaisesRegex(ValueError,'entry point'):
+            spirv_probe.instrument(self.data,3,0,72,stereo=True,projection_only_helper=True,projection_input=True,fragment_projection_input=True)
+
     def test_fixed_partner_keeps_original_stores_and_adds_only_local_outputs(self):
         m=spirv_probe.Module(self.data);target=next(a[0] for op,a in m.instructions if op==71 and a[1:]==[33,0])
         access=next(a for op,a in m.instructions if op==65 and a[2]==target)

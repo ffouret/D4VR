@@ -111,13 +111,15 @@ LibraryResult LibraryVariants::observe(VkPipeline source,const VkGraphicsPipelin
             require(original.stageCount<=16 && (!original.stageCount || original.pStages));
             if(original.stageCount)stages.assign(original.pStages,original.pStages+original.stageCount);
             if(chain.ownParts&2u)for(const auto& s:stages)require(s.stage==VK_SHADER_STAGE_VERTEX_BIT || s.stage==VK_SHADER_STAGE_FRAGMENT_BIT);
-            if(chain.ownParts&2u)for(unsigned i=0;i<stages.size();++i)if(stages[i].stage==VK_SHADER_STAGE_VERTEX_BIT && p.marked(stages[i]))selected.push_back(i);
-            require(selected.size()<=1);data->stereo|=!selected.empty();
+            std::set<VkShaderStageFlagBits> selectedKinds;
+            for(unsigned i=0;i<stages.size();++i){const auto& s=stages[i];bool vertex=s.stage==VK_SHADER_STAGE_VERTEX_BIT && (chain.ownParts&2u);bool fragment=s.stage==VK_SHADER_STAGE_FRAGMENT_BIT && (chain.ownParts&4u);
+                if((vertex||fragment) && p.marked(s)){require(selectedKinds.insert(s.stage).second);selected.push_back(i);if(vertex)data->stereo=true;}}
+            require(selected.size()<=2);
         }
         if(!data->library && !data->stereo)return p.result(LibraryResult::unmarkedExecutable);
         // A library owning an unmarked pre-raster stage can never contribute
         // a target vertex. Do not compile two unusable copies of it.
-        if(data->library && (chain.ownParts&2u) && selected.empty())return p.result(LibraryResult::unmarkedPreRaster);
+        if(data->library && (chain.ownParts&2u) && !data->stereo)return p.result(LibraryResult::unmarkedPreRaster);
         data->dynamics=DynamicStates::capture(chain.ownParts,original.pDynamicState);
         for(const auto& child:data->children)data->dynamics.include(child->dynamicStates());
         auto active=p.dispatch->active.load();

@@ -22,6 +22,14 @@ bool tagged(const VkShaderModuleCreateInfo& info) {
     }
     return tag && constant;
 }
+bool fragmentTagged(const VkShaderModuleCreateInfo& info){
+    if(!tagged(info))return false;
+    constexpr char marker[]="D4VR_FRAGMENT_PROJECTION_INPUT_1";bool tag=false;unsigned entries=0;bool fragment=false;
+    for(size_t k=5;k<info.codeSize/4;){auto n=info.pCode[k]>>16,op=info.pCode[k]&65535u;
+        if(op==330 && (n-1)*4>=sizeof(marker) && std::memcmp(info.pCode+k+1,marker,sizeof(marker))==0)tag=true;
+        if(op==15 && n>=4){++entries;fragment=info.pCode[k+1]==4;}k+=n;
+    }return tag && entries==1 && fragment;
+}
 EyeState readPacket(const char* path) {
     int fd = open(path,O_RDONLY | O_CLOEXEC | O_NOFOLLOW);
     if (fd < 0) throw std::invalid_argument("Cannot open private eye state packet");
@@ -70,6 +78,8 @@ struct Control::Impl {
     mutable std::mutex mutex;
     std::unordered_set<VkShaderModule> modules;
     std::unordered_set<std::string> identifiers;
+    std::unordered_set<VkShaderModule> fragmentModules;
+    std::unordered_set<std::string> fragmentIdentifiers;
     std::atomic<uint64_t> changedStages{0};
     ~Impl() { if (buffer) DestroyBuffer(device,buffer,nullptr); if (memory) FreeMemory(device,memory,nullptr); }
     static std::string identifierKey(const VkShaderModuleIdentifierEXT& value) {
@@ -77,17 +87,18 @@ struct Control::Impl {
             ? std::string(reinterpret_cast<const char*>(value.identifier),value.identifierSize) : std::string{};
     }
     bool marked(const VkPipelineShaderStageCreateInfo& stage) const {
-        if (stage.stage != VK_SHADER_STAGE_VERTEX_BIT) return false;
+        if (stage.stage != VK_SHADER_STAGE_VERTEX_BIT && stage.stage != VK_SHADER_STAGE_FRAGMENT_BIT) return false;
         std::lock_guard<std::mutex> lock(mutex);
-        if (stage.module && modules.count(stage.module)) return true;
+        bool fs=stage.stage==VK_SHADER_STAGE_FRAGMENT_BIT;const auto& sourceModules=fs?fragmentModules:modules;const auto& sourceIdentifiers=fs?fragmentIdentifiers:identifiers;
+        if (stage.module && sourceModules.count(stage.module)) return true;
         unsigned count = 0;
         for (auto p = static_cast<const VkBaseInStructure*>(stage.pNext); p; p = p->pNext) {
             if (++count > 8) return false;
-            if (p->sType == VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO && tagged(*reinterpret_cast<const VkShaderModuleCreateInfo*>(p))) return true;
+            if (p->sType == VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO){const auto& ci=*reinterpret_cast<const VkShaderModuleCreateInfo*>(p);if(fs?fragmentTagged(ci):(tagged(ci)&&!fragmentTagged(ci)))return true;}
             if (p->sType == VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_MODULE_IDENTIFIER_CREATE_INFO_EXT) {
                 auto id = reinterpret_cast<const VkPipelineShaderStageModuleIdentifierCreateInfoEXT*>(p);
                 if (id->pIdentifier && id->identifierSize && id->identifierSize <= VK_MAX_SHADER_MODULE_IDENTIFIER_SIZE_EXT
-                    && identifiers.count(std::string(reinterpret_cast<const char*>(id->pIdentifier),id->identifierSize))) return true;
+                    && sourceIdentifiers.count(std::string(reinterpret_cast<const char*>(id->pIdentifier),id->identifierSize))) return true;
             }
         }
         return false;
@@ -131,17 +142,17 @@ std::unique_ptr<Control> Control::create(VkDevice device,PFN_vkGetDeviceProcAddr
 }
 void Control::module(VkShaderModule handle,const VkShaderModuleCreateInfo& info) {
     if (!tagged(info)) return;
-    std::lock_guard<std::mutex> lock(impl->mutex); if (impl->modules.size() < 65536) impl->modules.insert(handle);
+    std::lock_guard<std::mutex> lock(impl->mutex); if (impl->modules.size()+impl->fragmentModules.size() < 65536)(fragmentTagged(info)?impl->fragmentModules:impl->modules).insert(handle);
 }
-void Control::removeModule(VkShaderModule handle) { std::lock_guard<std::mutex> lock(impl->mutex); impl->modules.erase(handle); }
+void Control::removeModule(VkShaderModule handle) { std::lock_guard<std::mutex> lock(impl->mutex); impl->modules.erase(handle);impl->fragmentModules.erase(handle); }
 void Control::identifier(VkShaderModule handle,const VkShaderModuleIdentifierEXT& identifier) {
     auto key = Impl::identifierKey(identifier); if (key.empty()) return;
     std::lock_guard<std::mutex> lock(impl->mutex);
-    if (impl->modules.count(handle) && impl->identifiers.size() < 65536) impl->identifiers.insert(key);
+    if(impl->identifiers.size()+impl->fragmentIdentifiers.size()<65536){if(impl->fragmentModules.count(handle))impl->fragmentIdentifiers.insert(key);else if(impl->modules.count(handle))impl->identifiers.insert(key);}
 }
 void Control::identifier(const VkShaderModuleCreateInfo& info,const VkShaderModuleIdentifierEXT& identifier) {
     auto key = Impl::identifierKey(identifier); if (key.empty() || !tagged(info)) return;
-    std::lock_guard<std::mutex> lock(impl->mutex); if (impl->identifiers.size() < 65536) impl->identifiers.insert(key);
+    std::lock_guard<std::mutex> lock(impl->mutex); if (impl->identifiers.size()+impl->fragmentIdentifiers.size() < 65536)(fragmentTagged(info)?impl->fragmentIdentifiers:impl->identifiers).insert(key);
 }
 std::unique_ptr<GraphicsEdits> Control::graphics(uint32_t count,const VkGraphicsPipelineCreateInfo* original) {
     if (!count) return {};

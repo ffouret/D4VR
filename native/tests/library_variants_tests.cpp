@@ -76,6 +76,24 @@ void shaderSpec(const VkGraphicsPipelineCreateInfo& ci,unsigned eye){
 void add(LibraryVariants& registry,VkPipeline source,uint32_t parts,bool lib=true,std::vector<VkPipeline> children={}){Description d(parts,lib,std::move(children));expect(registry.observe(source,d.ci)==LibraryResult::registered,"Graph node not registered");}
 }
 int main()try{
+    {
+        auto both=[](const VkPipelineShaderStageCreateInfo& s){return s.module==h<VkShaderModule>(10) || s.module==h<VkShaderModule>(20);};
+        LibraryVariants registry(device,get,addresses,both);
+        inspect=[](const auto& ci,unsigned eye){uint32_t parts=15;for(auto p=static_cast<const VkBaseInStructure*>(ci.pNext);p;p=p->pNext)if(p->sType==VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_LIBRARY_CREATE_INFO_EXT)parts=reinterpret_cast<const VkGraphicsPipelineLibraryCreateInfoEXT*>(p)->flags;
+            for(unsigned k=0;k<ci.stageCount;++k){const auto& s=ci.pStages[k];bool found=false;auto spec=s.pSpecializationInfo;
+            if(s.stage!=VK_SHADER_STAGE_VERTEX_BIT && s.stage!=VK_SHADER_STAGE_FRAGMENT_BIT)continue;
+            if((s.stage==VK_SHADER_STAGE_VERTEX_BIT && !(parts&2u)) || (s.stage==VK_SHADER_STAGE_FRAGMENT_BIT && !(parts&4u)))continue;
+            for(unsigned j=0;j<spec->mapEntryCount;++j){auto e=spec->pMapEntries[j];if(e.constantID==4){uint64_t a;std::memcpy(&a,static_cast<const uint8_t*>(spec->pData)+e.offset,8);found=e.size==8 && a==addresses[eye];}}expect(found,"Marked stage missed its own eye address");}};
+        Description combined(6);expect(registry.observe(h<VkPipeline>(40),combined.ci)==LibraryResult::registered,"Combined VS/FS specialization failed");
+        Description fs(4);expect(registry.observe(h<VkPipeline>(41),fs.ci)==LibraryResult::registered && !registry.lookup(h<VkPipeline>(41))->stereoVertex(),"Fragment-only library invented a stereo vertex");
+        Description vertex(2);expect(registry.observe(h<VkPipeline>(42),vertex.ci)==LibraryResult::registered,"Separate vertex subset failed");
+        inspect={};add(registry,h<VkPipeline>(43),1);add(registry,h<VkPipeline>(44),8);add(registry,h<VkPipeline>(45),0,false,{h<VkPipeline>(41),h<VkPipeline>(42),h<VkPipeline>(43),h<VkPipeline>(44)});
+        expect(registry.lookup(h<VkPipeline>(45))->stereoVertex(),"Separate VS/FS link lost vertex authority");
+        LibraryVariants fsOnly(device,get,addresses,[](const auto& s){return s.stage==VK_SHADER_STAGE_FRAGMENT_BIT;});Description executable(15,false);
+        expect(fsOnly.observe(h<VkPipeline>(46),executable.ci)==LibraryResult::unmarkedExecutable,"Fragment marker authorized an unmarked vertex executable");
+    }
+    expect(owned.empty(),"Fragment subset specialization leaked");
+    observedChildren.clear();
     LibraryVariants::Lease lease;
     {
         LibraryVariants registry(device,get,addresses,marked,8);inspect=shaderSpec;

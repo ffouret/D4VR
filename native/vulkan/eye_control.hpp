@@ -8,6 +8,7 @@
 
 namespace d4vr::eye {
 bool tagged(const VkShaderModuleCreateInfo& info);
+bool fragmentTagged(const VkShaderModuleCreateInfo& info);
 EyeState readPacket(const char* path);
 
 // Preserve every original specialization byte/entry. A separate appended

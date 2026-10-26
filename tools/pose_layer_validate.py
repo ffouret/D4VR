@@ -21,15 +21,19 @@ def validate(a):
     portable=json.loads(run([str(a.unit.resolve())]).strip());run([str(a.forwarding.resolve())])
     root=Path(__file__).resolve().parents[1];shaders=[]
     for ext in ('vert','frag'):
-        path=a.output/('present.'+ext+'.spv');run([str(a.compiler.resolve()),'-V','--target-env','vulkan1.2',str(root/('native/tests/present_eye.'+ext)),'-o',str(path.resolve())])
-        if ext=='vert':
+        path=a.output/('present.'+ext+'.spv');run([str(a.compiler.resolve()),'-V','--target-env','vulkan1.2',str(root/('native/tests/'+('present_fragment_eye.' if getattr(a,'fragment_packet_check',False) else 'present_eye.')+ext)),'-o',str(path.resolve())])
+        if ext=='vert' or (getattr(a,'fragment_packet_check',False) and getattr(a,'fragment_marker',True)):
             words=list(struct.unpack('<'+'I'*(len(path.read_bytes())//4),path.read_bytes()));marker=b'D4VR_STEREO_ABI_1\0';marker+=b'\0'*(-len(marker)%4);instruction=[((len(marker)//4+1)<<16)|330,*struct.unpack('<'+'I'*(len(marker)//4),marker)];index=5
+            while index<len(words) and words[index]&65535 not in (71,72,19,20,21,22):index+=words[index]>>16
+            words[index:index]=instruction;path.write_bytes(struct.pack('<'+'I'*len(words),*words))
+        if ext=='frag' and getattr(a,'fragment_packet_check',False) and getattr(a,'fragment_marker',True):
+            words=list(struct.unpack('<'+'I'*(len(path.read_bytes())//4),path.read_bytes()));marker=b'D4VR_FRAGMENT_PROJECTION_INPUT_1\0';marker+=b'\0'*(-len(marker)%4);instruction=[((len(marker)//4+1)<<16)|330,*struct.unpack('<'+'I'*(len(marker)//4),marker)];index=5
             while index<len(words) and words[index]&65535 not in (71,72,19,20,21,22):index+=words[index]>>16
             words[index:index]=instruction;path.write_bytes(struct.pack('<'+'I'*len(words),*words))
         shaders.append(path.resolve())
     cases=[]
     for runtime in (False,True) if a.runtime else (False,):
-        for control in ('normal','short','foreign','cancel'):
+        for control in getattr(a,'controls',('normal','short','foreign','cancel')):
             short=control in ('short','cancel');name=('' if control=='normal' else control+'-')+('steam-runtime' if runtime else 'native');directory=(a.output/name).resolve();directory.mkdir(mode=0o700)
             variables={'VK_INSTANCE_LAYERS':vulkan_trace.LAYER+':VK_LAYER_KHRONOS_validation','VK_ADD_LAYER_PATH':str(a.layer.resolve())+':'+str(a.validation_layer.resolve()),'VK_LAYER_ENABLES':'VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT','VK_LAYER_VALIDATE_SYNC':'1','VK_LOADER_DEBUG':'layer','D4VR_TRACE_DIR':str(directory),'D4VR_SEQUENTIAL_CAPTURE_DIR':str(directory),'D4VR_GPU_CAMERA_UPDATES':'1','D4VR_POSE_CAPTURE_DIAGNOSTIC':'1'}
             if getattr(a,'calibrated',False):variables['D4VR_POSE_FIXTURE_CALIBRATED']='1'
@@ -75,6 +79,7 @@ def validate(a):
                     if abs(values[11]-expected_x)>1e-6:raise ValueError('Requested game-view translation was not queued')
                     image=raw[eye*size:(eye+1)*size];reference=(directory/('source-frame-'+str(item['present']-1)+'.pixels')).read_bytes()
                     if image!=reference:raise ValueError('Actual GPU consumer differs from original rendered pixels')
+                    if getattr(a,'fragment_packet_check',False) and any(image[i]>0 for i in range(0,len(image),4)):raise ValueError('Fragment packet differs from vertex packet')
                     exact+=size
                     for channel in (1,2):
                         xs=[i//4%d['width'] for i in range(0,len(image),4) if image[i+channel]>200]
@@ -93,8 +98,10 @@ def validate(a):
                     if delta[1]>=0 or not 1.7<delta[0]/delta[1]<2.3:raise ValueError('Second diagnostic pose did not move depth-dependent geometry')
                     shifts.append(delta)
             cases.append({'case':name,'pairs':pairs,'frames':frames,'original_submissions':submissions,'original_draws':frames*2,'exact_original_pixel_bytes':exact,'view_translation_pixels_by_eye':shifts,'registered_graphics_queues':destroy[0]['camera_updates']['registered_queues'],'foreign_acquisition_fence_waited':control=='foreign','driver':state,'producer':pool,'validation_errors':0});print(name+': passed',flush=True)
-    legacy=present_validate.validate(argparse.Namespace(output=a.output/'legacy-wsi',fixture=a.fixture,compiler=a.compiler,layer=a.layer,validation_layer=a.validation_layer,runtime=a.runtime));legacy['forwarding_tests_passed']=True;probe.write_json(a.layer/'sequential-validation.json',legacy)
-    proof={'schema_version':1,'synthetic_scene':True,'actual_wsi_loader':True,'actual_capture_producer':True,'actual_gpu_image_consumer':True,'actual_xr_pose_source':False,'diablo_rendered':False,'actual_steamvr_submission':False,'whole_scene_verified':False,'common_scene_time_known':False,'khronos_synchronization_validation_loaded':True,'validation_errors':0,'portable':portable,'layer_sha256':probe.digest(a.layer/vulkan_trace.LIBRARY),'fixture_sha256':probe.digest(a.fixture),'cases':cases,'legacy_wsi':legacy}
+    legacy=None
+    if not getattr(a,'skip_legacy',False):
+        legacy=present_validate.validate(argparse.Namespace(output=a.output/'legacy-wsi',fixture=a.fixture,compiler=a.compiler,layer=a.layer,validation_layer=a.validation_layer,runtime=a.runtime));legacy['forwarding_tests_passed']=True;probe.write_json(a.layer/'sequential-validation.json',legacy)
+    proof={'schema_version':1,'synthetic_scene':True,'actual_wsi_loader':True,'actual_capture_producer':True,'actual_gpu_image_consumer':True,'actual_xr_pose_source':False,'diablo_rendered':False,'actual_steamvr_submission':False,'whole_scene_verified':False,'common_scene_time_known':False,'khronos_synchronization_validation_loaded':True,'validation_errors':0,'portable':portable,'fragment_packet_check':getattr(a,'fragment_packet_check',False),'layer_sha256':probe.digest(a.layer/vulkan_trace.LIBRARY),'fixture_sha256':probe.digest(a.fixture),'cases':cases,'legacy_wsi':legacy}
     probe.write_json(a.output/'proof.json',proof);return proof
 
 
@@ -103,5 +110,6 @@ if __name__=='__main__':
     for key in ('fixture','compiler','layer','validation-layer','unit','forwarding','output'):p.add_argument('--'+key,type=Path,required=True)
     p.add_argument('--runtime',type=Path)
     p.add_argument('--calibrated',action='store_true')
+    p.add_argument('--fragment-packet-check',action='store_true')
     try:print(json.dumps(validate(p.parse_args()),indent=2))
     except (OSError,ValueError,subprocess.SubprocessError) as e:raise SystemExit(str(e))

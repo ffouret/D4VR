@@ -20,6 +20,7 @@
 int main(int argc, char** argv) try {
     if (argc < 4) throw std::runtime_error("Usage: gpu_probe_vulkan original.spv probed.spv fragment.spv [--geometry|--stereo|--eye-bridge] [--dynamic] [--identifiers]");
     bool geometry = false, dynamic = false, identifiers = false, stereo = false, bridge = false,telemetryEnabled=true,depthCalibration=false,cameraBlock=false,fixedPartner=false;
+    std::string fragmentProjectionPath;
     for (int i = 4; i < argc; ++i) {
         auto arg = std::string(argv[i]);
         if (arg == "--geometry") geometry = true;
@@ -30,6 +31,7 @@ int main(int argc, char** argv) try {
         else if (arg == "--depth-calibration") {depthCalibration=true;stereo=true;geometry=true;dynamic=true;telemetryEnabled=false;}
         else if (arg == "--camera-block") {cameraBlock=true;geometry=true;dynamic=true;}
         else if (arg == "--fixed-partner") {fixedPartner=true;depthCalibration=true;stereo=true;geometry=true;dynamic=true;telemetryEnabled=false;}
+        else if (arg == "--fragment-projection" && i+1<argc) {fragmentProjectionPath=argv[++i];}
         else if (arg == "--eye-bridge") { bridge = true; geometry = true; dynamic = true; }
         else throw std::runtime_error("Unknown option: " + arg);
     }
@@ -54,6 +56,7 @@ int main(int argc, char** argv) try {
     std::array<VkDescriptorSetLayoutBinding, 2> bindings{{
         {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr},
         {1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1, VK_SHADER_STAGE_VERTEX_BIT, nullptr}}};
+    if(!fragmentProjectionPath.empty())for(auto& b:bindings)b.stageFlags|=VK_SHADER_STAGE_FRAGMENT_BIT;
     std::array<VkDescriptorSetLayout, 4> layouts{};
     for (unsigned i = 0; i < 4; ++i) {
         VkDescriptorSetLayoutCreateInfo l{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO};
@@ -95,6 +98,7 @@ int main(int argc, char** argv) try {
     VkFramebufferCreateInfo frame_create{VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO}; frame_create.renderPass = render_pass; frame_create.attachmentCount = 1; frame_create.pAttachments = &view; frame_create.width = width; frame_create.height = height; frame_create.layers = 1;
     VkFramebuffer framebuffer{}; check(vkCreateFramebuffer(f.device, &frame_create, nullptr, &framebuffer));
     auto vertex = f.shader(argv[1]), probed = f.shader(argv[2]), fragment = f.shader(argv[3]);
+    auto fragmentProbed=fragmentProjectionPath.empty()?VK_NULL_HANDLE:f.shader(fragmentProjectionPath.c_str());
     struct Specialization { uint64_t shader, control, ring; uint32_t words, padding; uint64_t eyeState; } values{0xd4a0d4a0d4a0d4a0ull, control.address, ring.address, ring_words,0,eyeState.address};
     static_assert(offsetof(Specialization,eyeState) == 32);
     std::array<VkSpecializationMapEntry, 5> maps{{{0, 0, 8}, {1, 8, 8}, {2, 16, 8}, {3, 24, 4}, {4,32,8}}};
@@ -104,6 +108,7 @@ int main(int argc, char** argv) try {
         for (auto& s : stages) { s.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO; s.pName = "main"; }
         stages[0].stage = VK_SHADER_STAGE_VERTEX_BIT; stages[0].module = module; if (observe) stages[0].pSpecializationInfo = &specialization;
         stages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT; stages[1].module = fragment;
+        if(observe && fragmentProbed){stages[1].module=fragmentProbed;stages[1].pSpecializationInfo=&specialization;}
         VkPipelineVertexInputStateCreateInfo vi{VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO};
         VkPipelineInputAssemblyStateCreateInfo ia{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO}; ia.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         VkViewport viewport{0, 0, float(width), float(height), 0, 1}; VkRect2D scissor{{0, 0}, {width, height}};
@@ -152,10 +157,11 @@ int main(int argc, char** argv) try {
             VkBufferMemoryBarrier stateBarrier{VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER}; stateBarrier.buffer = eyeState.handle;
             stateBarrier.size = sizeof(d4vr::EyeState); stateBarrier.srcQueueFamilyIndex = stateBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             stateBarrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT; stateBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-            vkCmdPipelineBarrier(command,VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,VK_PIPELINE_STAGE_TRANSFER_BIT,0,0,nullptr,1,&stateBarrier,0,nullptr);
+            auto readers=VK_PIPELINE_STAGE_VERTEX_SHADER_BIT|VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+            vkCmdPipelineBarrier(command,readers,VK_PIPELINE_STAGE_TRANSFER_BIT,0,0,nullptr,1,&stateBarrier,0,nullptr);
             vkCmdUpdateBuffer(command,eyeState.handle,0,sizeof(d4vr::EyeState),update);
             stateBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT; stateBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-            vkCmdPipelineBarrier(command,VK_PIPELINE_STAGE_TRANSFER_BIT,VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,0,0,nullptr,1,&stateBarrier,0,nullptr);
+            vkCmdPipelineBarrier(command,VK_PIPELINE_STAGE_TRANSFER_BIT,readers,0,0,nullptr,1,&stateBarrier,0,nullptr);
         }
         if(depthCalibration){for(auto b:{staging.handle,depthStaging.handle}){VkBufferMemoryBarrier reuse{VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER};reuse.buffer=b;reuse.size=VK_WHOLE_SIZE;reuse.srcAccessMask=VK_ACCESS_TRANSFER_WRITE_BIT|VK_ACCESS_HOST_READ_BIT;reuse.dstAccessMask=VK_ACCESS_TRANSFER_WRITE_BIT;reuse.srcQueueFamilyIndex=reuse.dstQueueFamilyIndex=VK_QUEUE_FAMILY_IGNORED;vkCmdPipelineBarrier(command,VK_PIPELINE_STAGE_TRANSFER_BIT|VK_PIPELINE_STAGE_HOST_BIT,VK_PIPELINE_STAGE_TRANSFER_BIT,0,0,nullptr,1,&reuse,0,nullptr);}}
         VkClearValue clear{}; VkRenderPassBeginInfo pass{VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO}; pass.renderPass = render_pass; pass.framebuffer = framebuffer; pass.renderArea.extent = {width, height}; pass.clearValueCount = 1; pass.pClearValues = &clear;
@@ -200,6 +206,7 @@ int main(int argc, char** argv) try {
         for (auto p : {original_pipeline,observer_pipeline,null_state_pipeline}) if (p) vkDestroyPipeline(f.device,p,nullptr);
         vkDestroyCommandPool(f.device,command_pool,nullptr);
         for (auto s : {vertex,probed,fragment}) vkDestroyShaderModule(f.device,s,nullptr);
+        if(fragmentProbed)vkDestroyShaderModule(f.device,fragmentProbed,nullptr);
         vkDestroyFramebuffer(f.device,framebuffer,nullptr); vkDestroyRenderPass(f.device,render_pass,nullptr);
         vkDestroyImageView(f.device,view,nullptr); vkDestroyImage(f.device,image,nullptr); vkFreeMemory(f.device,image_memory,nullptr);
         if(depthView)vkDestroyImageView(f.device,depthView,nullptr);

@@ -123,3 +123,20 @@ def verify_projection_only(data: bytes) -> dict:
     if any(ignored.intersection(a) for _,a in body):
         raise ValueError('Object-matrix parameter is used by stereo helper')
     return {**result,'projection_only_abi_verified':True,'unused_object_parameter_indices':[5,6,7,8]}
+
+
+def verify_fragment_input(data: bytes) -> dict:
+    """Fragment entry has no VertexIndex: the helper must not use argument 0."""
+    from spirv_probe import Module,literal
+    result=verify_projection_only(data);m=Module(data)
+    names={a[0]:literal(a[1:]) for op,a in m.instructions if op==5}
+    target=next(i for i,n in names.items() if n.startswith('d4vr_stereo('))
+    active=False;parameters=[];body=[]
+    for op,a in m.instructions:
+        if op==54:active=a[1]==target
+        if active:
+            if op==55:parameters.append(a[1])
+            else:body.append(a)
+        if op==56:active=False
+    if any(parameters[0] in a for a in body):raise ValueError('Fragment helper uses vertex argument')
+    return {**result,'vertex_argument_unused':True}

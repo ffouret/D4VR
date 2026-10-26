@@ -50,6 +50,14 @@ bool stereoCode(const std::vector<uint32_t>& words) {
     }
     return tag && decorated && constants.count(decorated);
 }
+bool fragmentCode(const std::vector<uint32_t>& words){
+    if(!stereoCode(words))return false;
+    constexpr char marker[]="D4VR_FRAGMENT_PROJECTION_INPUT_1";bool tag=false,fragment=false;unsigned entries=0;
+    for(size_t k=5;k<words.size();){auto n=words[k]>>16,op=words[k]&65535u;auto a=words.data()+k+1;
+        if(op==330 && (n-1)*4>=sizeof(marker) && std::memcmp(a,marker,sizeof(marker))==0)tag=true;
+        if(op==15 && n>=4){++entries;fragment=a[0]==4;}k+=n;
+    }return tag && entries==1 && fragment;
+}
 struct Specialization {
     std::vector<VkSpecializationMapEntry> entries;
     std::vector<uint8_t> bytes;
@@ -185,12 +193,14 @@ std::unique_ptr<Variants> Recipe::stereo(VkDevice device,PFN_vkGetDeviceProcAddr
         require(h!=VK_NULL_HANDLE,"Successful shader creation returned null");modules.handles[k]=h;
     }
     std::array<std::array<VkPipelineShaderStageCreateInfo,2>,2> stages;
-    std::array<std::unique_ptr<ReplaySpecialization>,2> specs;
+    std::array<std::array<std::unique_ptr<ReplaySpecialization>,2>,2> specs;
     std::array<VkGraphicsPipelineCreateInfo,2> infos{impl->info,impl->info};
     for (unsigned eye=0;eye<2;++eye) {
-        specs[eye]=std::make_unique<ReplaySpecialization>(impl->stages[0].pSpecializationInfo,addresses[eye]);stages[eye]=impl->stages;
+        specs[eye][0]=std::make_unique<ReplaySpecialization>(impl->stages[0].pSpecializationInfo,addresses[eye]);stages[eye]=impl->stages;
         for (unsigned s=0;s<2;++s) stages[eye][s].module=modules.handles[s];
-        stages[eye][0].pSpecializationInfo=&specs[eye]->info;infos[eye].pStages=stages[eye].data();
+        stages[eye][0].pSpecializationInfo=&specs[eye][0]->info;
+        if(fragmentCode(impl->shaders[1])){specs[eye][1]=std::make_unique<ReplaySpecialization>(impl->stages[1].pSpecializationInfo,addresses[eye]);stages[eye][1].pSpecializationInfo=&specs[eye][1]->info;}
+        infos[eye].pStages=stages[eye].data();
     }
     auto result=createPipeline(device,VK_NULL_HANDLE,2,infos.data(),nullptr,owned->handles.data());
     if (result!=VK_SUCCESS) throw std::runtime_error("Eye pipeline creation failed: "+std::to_string(result));

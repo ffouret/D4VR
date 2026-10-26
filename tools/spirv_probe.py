@@ -71,7 +71,8 @@ def helper_library(data: bytes, geometry: bool = False, stereo: bool = False, ca
     return module.binary()
 
 
-def instrument(data: bytes, descriptor_set: int, binding: int, first_row: int, secondary_binding: int = 1, secondary_row: int = 56, geometry: bool = False, stereo: bool = False, projection_only_helper: bool = False, projection_input: bool = False, camera_block_rows: int = 0, fixed_partner_projection: bool = False) -> bytes:
+def instrument(data: bytes, descriptor_set: int, binding: int, first_row: int, secondary_binding: int = 1, secondary_row: int = 56, geometry: bool = False, stereo: bool = False, projection_only_helper: bool = False, projection_input: bool = False, camera_block_rows: int = 0, fixed_partner_projection: bool = False, fragment_projection_input: bool = False) -> bytes:
+    if fragment_projection_input and (not projection_input or not projection_only_helper or not stereo or fixed_partner_projection or camera_block_rows):raise ValueError('Fragment projection requires ordinary early projection-only stereo')
     if fixed_partner_projection and not projection_input:raise ValueError('Fixed partner projection requires early projection input')
     if camera_block_rows and (not 4<=camera_block_rows<=128 or geometry or stereo or projection_only_helper or projection_input):raise ValueError('Camera block observer mode/row budget')
     if projection_only_helper and not stereo:raise ValueError('Projection-only helper requires stereo mode')
@@ -79,8 +80,8 @@ def instrument(data: bytes, descriptor_set: int, binding: int, first_row: int, s
     geometry = geometry or stereo
     module = Module(data)
     entries = [args for op, args in module.instructions if op == 15]
-    if len(entries) != 1 or entries[0][0] != 0:
-        raise ValueError("Only a single vertex entry point is supported")
+    if len(entries) != 1 or entries[0][0] != (4 if fragment_projection_input else 0):
+        raise ValueError('Expected a single fragment entry point' if fragment_projection_input else 'Only a single vertex entry point is supported')
     main = entries[0][1]
     decorations = {}
     member_offsets = {}
@@ -166,7 +167,7 @@ def instrument(data: bytes, descriptor_set: int, binding: int, first_row: int, s
     function_type = type_id(33, [void, local_uint_pointer, *([local_vector_pointer] * vector_arguments)])
     position_output = None
     position_member = None
-    if geometry:
+    if geometry and not fragment_projection_input:
         positions = [identifier for identifier in variables if decorations.get(identifier, {}).get(11) == [0]]
         members = [(identifier, index) for identifier, (pointer, storage) in variables.items() if storage == 3
                    for struct, index in position_members if types[pointer] == (32, [3, struct])]
@@ -186,7 +187,10 @@ def instrument(data: bytes, descriptor_set: int, binding: int, first_row: int, s
     added_decorations = []
     if len(vertex_inputs) > 1:
         raise ValueError("Ambiguous VertexIndex builtin")
-    if vertex_inputs:
+    if fragment_projection_input:
+        if vertex_inputs:raise ValueError('Fragment entry cannot have VertexIndex')
+        vertex=None;vertex_type=uint
+    elif vertex_inputs:
         vertex = vertex_inputs[0]
         vertex_pointer = variables[vertex][0]
         vertex_type = types[vertex_pointer][1][1]
@@ -297,7 +301,7 @@ def instrument(data: bytes, descriptor_set: int, binding: int, first_row: int, s
     return module.binary()
 
 
-def build(original: Path, helper: Path, output: Path, tools: Path, descriptor_set: int, binding: int, first_row: int, secondary_binding: int = 1, secondary_row: int = 56, geometry: bool = False, stereo: bool = False, helper_no_telemetry: bool = False, projection_only_helper: bool = False, projection_input: bool = False, camera_block_rows: int = 0, fixed_partner_projection: bool = False):
+def build(original: Path, helper: Path, output: Path, tools: Path, descriptor_set: int, binding: int, first_row: int, secondary_binding: int = 1, secondary_row: int = 56, geometry: bool = False, stereo: bool = False, helper_no_telemetry: bool = False, projection_only_helper: bool = False, projection_input: bool = False, camera_block_rows: int = 0, fixed_partner_projection: bool = False, fragment_projection_input: bool = False):
     if projection_input and not (projection_only_helper and helper_no_telemetry):raise ValueError('Projection input requires a validated projection-only telemetry-free helper')
     if projection_only_helper and not (stereo and helper_no_telemetry):
         raise ValueError('Projection-only helper requires stereo and telemetry-free validation')
@@ -316,8 +320,11 @@ def build(original: Path, helper: Path, output: Path, tools: Path, descriptor_se
             snapshot=Path(directory)/'helper.spv';snapshot.write_bytes(helper_data)
             subprocess.run([str(tools / 'spirv-val'), '--target-env', 'vulkan1.2', str(snapshot)], check=True, capture_output=True)
         (verify_projection_only if projection_only_helper else verify)(helper_data)
+        if fragment_projection_input:
+            from stereo_helper import verify_fragment_input
+            verify_fragment_input(helper_data)
     library.write_bytes(helper_library(helper_data, geometry, stereo,camera_block_rows))
-    caller.write_bytes(instrument(original.read_bytes(), descriptor_set, binding, first_row, secondary_binding, secondary_row, geometry, stereo, projection_only_helper,projection_input,camera_block_rows,fixed_partner_projection))
+    caller.write_bytes(instrument(original.read_bytes(), descriptor_set, binding, first_row, secondary_binding, secondary_row, geometry, stereo, projection_only_helper,projection_input,camera_block_rows,fixed_partner_projection,fragment_projection_input))
     subprocess.run([str(tools / "spirv-link"), "--target-env", "spv1.3", str(caller), str(library), "-o", str(linked)], check=True, capture_output=True)
     subprocess.run([str(tools / "spirv-opt"), "--eliminate-dead-functions", "--eliminate-dead-variables", str(linked), "-o", str(output)], check=True, capture_output=True)
     if stereo:
@@ -332,6 +339,7 @@ def build(original: Path, helper: Path, output: Path, tools: Path, descriptor_se
             module.instructions.insert(index+2, (330, string_words(PROJECTION_MARKER)))
         if projection_input:module.instructions.insert(index+3,(330,string_words('D4VR_PROJECTION_INPUT_1')))
         if fixed_partner_projection:module.instructions.insert(index+4,(330,string_words('D4VR_FIXED_PARTNER_PROJECTION_1')))
+        if fragment_projection_input:module.instructions.insert(index+4,(330,string_words('D4VR_FRAGMENT_PROJECTION_INPUT_1')))
         output.write_bytes(module.binary())
     subprocess.run([str(tools / "spirv-val"), "--target-env", "vulkan1.2", str(output)], check=True, capture_output=True)
     return output
@@ -355,8 +363,9 @@ def main():
     parser.add_argument('--projection-input',action='store_true',help='Transform canonical projection loads before all original vertex computations; diagnostic only')
     parser.add_argument('--camera-block-rows',type=int,default=0,help='Read a bounded camera neighborhood through the matching block-observer helper')
     parser.add_argument('--fixed-partner-projection',action='store_true',help='Owned diagnostic: one fixed transform for source projections 72 and 80; no temporal XR history')
+    parser.add_argument('--fragment-projection-input',action='store_true',help='Explicit fragment-stage early projection loads; requires an unused helper vertex argument')
     args = parser.parse_args()
-    print(build(args.original, args.helper, args.output, args.tools, args.descriptor_set, args.binding, args.first_row, args.secondary_binding, args.secondary_row, args.geometry, args.stereo, args.helper_no_telemetry, args.projection_only_helper,args.projection_input,args.camera_block_rows,args.fixed_partner_projection))
+    print(build(args.original, args.helper, args.output, args.tools, args.descriptor_set, args.binding, args.first_row, args.secondary_binding, args.secondary_row, args.geometry, args.stereo, args.helper_no_telemetry, args.projection_only_helper,args.projection_input,args.camera_block_rows,args.fixed_partner_projection,args.fragment_projection_input))
 
 
 if __name__ == "__main__":

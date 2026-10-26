@@ -33,6 +33,8 @@ struct LibraryStats { uint64_t libraries=0,executables=0,rejected=0,driverFailur
 // creation feedback. Unknown source libraries/ownership/extensions are refused.
 //
 // MarkedStage must identify an already-transformed stereo ABI 1 vertex module
+// or an explicitly marked fragment projection module. A marked fragment does
+// not substitute for the required marked pre-raster vertex in an executable.
 // or a verified identifier of that module. This class does not infer shader
 // identity from an arbitrary handle, catalog candidate or successful compile.
 // Successful registration is NOT a shader/resource audit or replay permission.

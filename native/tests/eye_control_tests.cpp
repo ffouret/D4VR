@@ -33,6 +33,13 @@ int main() try {
     code.back() = 5; require(!tagged(info),"Unrelated constant ID selected for eye injection");
     code.back() = 4; code.push_back(0); info.codeSize = code.size()*4; info.pCode = code.data();
     require(!tagged(info),"Malformed instruction accepted");
+    code.pop_back();
+    auto tag=[&](const char* text,size_t length){auto n=(length+3)/4;code.push_back(uint32_t((n+1)<<16)|330);auto offset=code.size();code.resize(offset+n);std::memcpy(code.data()+offset,text,length);};
+    constexpr char fragmentMarker[]="D4VR_FRAGMENT_PROJECTION_INPUT_1";tag(fragmentMarker,sizeof(fragmentMarker));
+    code.insert(code.end(),{(5u<<16)|15,4,1,0x6e69616d,0});info.codeSize=code.size()*4;info.pCode=code.data();
+    require(fragmentTagged(info),"Explicit fragment projection stage not recognized");
+    code[code.size()-4]=0;require(!fragmentTagged(info),"Fragment marker selected a vertex entry");
+    code[code.size()-4]=4;code.insert(code.end(),{(5u<<16)|15,4,2,0x6e69616d,0});info.codeSize=code.size()*4;info.pCode=code.data();require(!fragmentTagged(info),"Ambiguous fragment entrypoints accepted");
     auto state = d4vr::make_eye_state(1,1,d4vr::identity(),d4vr::identity(),true,1.784022,3.171595,.00001,true);
     d4vr::validate_eye_state(state); state.identity[1] = 1;
     rejects([&] { d4vr::validate_eye_state(state); });

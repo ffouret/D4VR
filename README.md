@@ -10,23 +10,26 @@ répond pas à cet objectif.
 
 ## État du projet
 
-Un [diagnostic de projections partenaires](docs/PARTNER_PROJECTION.md) suit
-maintenant les lectures repérées jusqu'aux sorties originales. La projection
-voisine alimente une autre sortie dans six shaders ; l'inverse contribue à
-d'autres coordonnées et à des conditions dans deux shaders. Un nouveau mode
-expérimental transforme deux projections distinctes avec une transformation
-fixe et conserve l'inverse original. Il passe 48 références GPU par environnement,
-avec contrôles négatifs, mais **n'a pas été lancé dans Diablo**. Les rôles
-temporels et les consommateurs de ces sorties restent à établir avant son essai.
+Le [nouveau diagnostic des fragments](docs/FRAGMENT_PROJECTION.md) suit les
+consommateurs réellement associés aux pipelines observés. Quatre fragments
+recalculent des coordonnées avec la projection source. La construction explicite
+et la couche Vulkan peuvent maintenant leur transmettre le même paquet caméra
+qu'aux sommets, avec barrières GPU adaptées. Les 48 références GPU par environnement
+et les huit essais en fenêtre passent, avec contrôles négatifs.
 
-Un [relevé GPU sans modification de caméra](docs/CAMERA_BLOCK.md) identifie
-maintenant des matrices associées dans Diablo réel : 64 blocs complets retrouvent
-les mêmes couples de matrices inverses et trois variantes de projection. Six des
-huit shaders observés lisent aussi la projection voisine, et deux lisent une
-matrice inverse. Ces lectures restent inchangées par notre mode de projection
-actuel. Cela fournit des dépendances précises à étudier ; leur rôle temporel,
-leur effet sur les pixels et leur responsabilité dans les trous restent à établir.
-Cet essai ne corrige pas la couverture et n'envoie aucune image au Quest.
+Un nouvel essai **dans Diablo réel**, à vue fixe et sans casque, applique cette
+correction à trois vertices et quatre fragments ciblés ; trois chargements de
+fragments sont observés. Six paires successives couvrent référence, champ élargi
+et retour, avec stabilisation avant les mesures. Les 21 zones de terrain admises
+suivent l'échelle optique et retrouvent leurs coordonnées, mais **les grandes zones
+manquantes persistent au champ élargi**. Cette correction partielle ne suffit donc
+pas à rétablir la couverture. Aucun rendu continu de Diablo dans le Quest n'est
+encore établi.
+
+Le [diagnostic de projections partenaires](docs/PARTNER_PROJECTION.md) et le
+[relevé GPU sans modification de caméra](docs/CAMERA_BLOCK.md) conservent les étapes
+précédentes : matrices voisines, routes originales et contrôles indépendants.
+Les rôles temporels, les autres passes et le culling restent à distinguer.
 
 Une [variante de projection en amont des calculs du vertex](docs/PROJECTION_INPUT.md)
 conserve maintenant la cohérence des sorties qui dépendent de cette projection,
