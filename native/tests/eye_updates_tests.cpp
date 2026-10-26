@@ -79,7 +79,11 @@ int main()try{
         require(creates==budget && writes==8 && barriers==16 && resets==4,"Per-update allocation or incomplete recording");finish();
         b.uncovered(q0);b.request(pair(6));b.boundary();b.before(q1);require(b.stats().updates==4,"In-progress external queue operation guessed idle");
         b.after(q0);b.boundary();b.before(q1);require(b.stats().updates==5,"External queue operation coverage did not recover");finish();
+        b.request(pair(7));b.boundary();b.holdWrites();b.holdWrites();b.before(q0);b.after(q0);b.boundary();b.before(q1);
+        require(b.stats().updates==5 && b.stats().writeHolds==2 && b.stats().inhibitedBoundaries==2,"Reentrant coverage cleared runtime inhibition");
+        b.releaseWrites();b.after(q1);b.before(q0);require(b.stats().updates==5,"Nested external scope released early");
+        b.releaseWrites();b.before(q0);require(b.stats().updates==6 && b.packets()[0].header[2]==7 && !b.stats().writeHolds,"External scope did not recover preserved boundary");finish();
     }
     require(creates==destroys && fences.empty(),"Owned resources leaked");
-    std::cout<<"{\"eye_update_ownership_passed\":true,\"bounded_graphics_queues\":2,\"updates\":5,\"late_frames_rejected\":true}\n";return 0;
+    std::cout<<"{\"eye_update_ownership_passed\":true,\"bounded_graphics_queues\":2,\"updates\":6,\"late_frames_rejected\":true}\n";return 0;
 }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}

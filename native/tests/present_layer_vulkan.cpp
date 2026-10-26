@@ -39,9 +39,10 @@ int main(int argc,char** argv)try{
     auto directory=std::filesystem::path(argv[3]);if(!std::filesystem::is_directory(directory))throw std::invalid_argument("Private directory missing");
     auto updateOption=std::getenv("D4VR_GPU_CAMERA_UPDATES");bool cameraUpdates=updateOption && !std::strcmp(updateOption,"1");
     auto poseOption=std::getenv("D4VR_POSE_CAPTURE_DIAGNOSTIC");bool poseCapture=poseOption && !std::strcmp(poseOption,"1");
-    bool foreignProducer=poseCapture && std::getenv("D4VR_POSE_FIXTURE_FOREIGN");
+    bool cooperative=std::getenv("D4VR_COOPERATIVE_XR_DIAGNOSTIC");
+    bool foreignProducer=(poseCapture || cooperative) && std::getenv("D4VR_POSE_FIXTURE_FOREIGN");
     if(poseCapture)text(directory/"pose.request","invalid diagnostic input\n");
-    Window window;Fixture f(true,false,false,false,false,"D4VR presentation selection fixture",cameraUpdates,{"VK_KHR_surface","VK_KHR_xlib_surface"},{VK_KHR_SWAPCHAIN_EXTENSION_NAME},{},cameraUpdates?5:1);
+    Window window;Fixture f(true,false,false,false,false,"D4VR presentation selection fixture",cameraUpdates,{"VK_KHR_surface","VK_KHR_xlib_surface"},{VK_KHR_SWAPCHAIN_EXTENSION_NAME},{},cameraUpdates?5:1,cooperative);
     std::array<VkQueue,5> readerQueues{};if(cameraUpdates)for(unsigned i=0;i<5;++i)vkGetDeviceQueue(f.device,f.family,i,&readerQueues[i]);
     auto createSurface=reinterpret_cast<CreateSurface>(vkGetInstanceProcAddr(f.instance,"vkCreateXlibSurfaceKHR"));if(!createSurface)throw std::runtime_error("Xlib Vulkan surface unavailable");
     XlibSurfaceInfo si{VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR,nullptr,0,window.display,window.window};VkSurfaceKHR surface{};check(createSurface(f.instance,&si,nullptr,&surface));
@@ -83,7 +84,7 @@ int main(int argc,char** argv)try{
     VkSemaphore serial{};if(foreignProducer){VkSemaphoreTypeCreateInfo type{VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO};type.semaphoreType=VK_SEMAPHORE_TYPE_TIMELINE;VkSemaphoreCreateInfo create{VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};create.pNext=&type;check(vkCreateSemaphore(f.device,&create,nullptr,&serial));}
     VkFenceCreateInfo fi{VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};VkFence fence{};check(vkCreateFence(f.device,&fi,nullptr,&fence));auto golden=f.buffer(VkDeviceSize(extent.width)*extent.height*4,VK_BUFFER_USAGE_TRANSFER_DST_BIT);
     text(directory/"eye.selection","2\n");
-    bool cancelPose=poseCapture && std::getenv("D4VR_POSE_FIXTURE_CANCEL");unsigned frameCount=64;if(poseCapture && (std::getenv("D4VR_POSE_FIXTURE_SHORT") || cancelPose))frameCount=8;
+    bool cancelPose=(poseCapture || cooperative) && std::getenv("D4VR_POSE_FIXTURE_CANCEL");unsigned frameCount=64;if((poseCapture || cooperative) && (std::getenv("D4VR_POSE_FIXTURE_SHORT") || cancelPose))frameCount=8;
     for(unsigned frame=0;frame<frameCount;++frame){
         if(cancelPose && frame==6)text(directory/"pose.stop","1\n");
         if(poseCapture && (frame==4 || frame==36)){
@@ -116,20 +117,20 @@ int main(int argc,char** argv)try{
         transition(images[index],VK_IMAGE_LAYOUT_UNDEFINED,VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,0,VK_ACCESS_TRANSFER_WRITE_BIT,VK_PIPELINE_STAGE_TRANSFER_BIT,VK_PIPELINE_STAGE_TRANSFER_BIT);
         VkImageBlit region{};region.srcSubresource=region.dstSubresource={VK_IMAGE_ASPECT_COLOR_BIT,0,0,1};region.srcOffsets[1]=region.dstOffsets[1]={int32_t(extent.width),int32_t(extent.height),1};vkCmdBlitImage(command,source,VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,images[index],VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,1,&region,VK_FILTER_LINEAR);
         transition(images[index],VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,VK_ACCESS_TRANSFER_WRITE_BIT,0,VK_PIPELINE_STAGE_TRANSFER_BIT,VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
-        bool save=poseCapture || frame==0 || frame==8 || frame==28 || frame==63 || (cameraUpdates && (frame==16 || frame==44 || frame==56));
+        bool save=poseCapture || cooperative || frame==0 || frame==8 || frame==28 || frame==63 || (cameraUpdates && (frame==16 || frame==44 || frame==56));
         if(save){VkBufferMemoryBarrier reuse{VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER};reuse.buffer=golden.handle;reuse.size=VK_WHOLE_SIZE;reuse.srcAccessMask=VK_ACCESS_TRANSFER_WRITE_BIT|VK_ACCESS_HOST_READ_BIT;reuse.dstAccessMask=VK_ACCESS_TRANSFER_WRITE_BIT;reuse.srcQueueFamilyIndex=reuse.dstQueueFamilyIndex=VK_QUEUE_FAMILY_IGNORED;vkCmdPipelineBarrier(command,VK_PIPELINE_STAGE_TRANSFER_BIT|VK_PIPELINE_STAGE_HOST_BIT,VK_PIPELINE_STAGE_TRANSFER_BIT,0,0,nullptr,1,&reuse,0,nullptr);
             VkBufferImageCopy copy{};copy.imageSubresource={VK_IMAGE_ASPECT_COLOR_BIT,0,0,1};copy.imageExtent=ici.extent;vkCmdCopyImageToBuffer(command,source,VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,golden.handle,1,&copy);
             VkMemoryBarrier host{VK_STRUCTURE_TYPE_MEMORY_BARRIER};host.srcAccessMask=VK_ACCESS_TRANSFER_WRITE_BIT;host.dstAccessMask=VK_ACCESS_HOST_READ_BIT;vkCmdPipelineBarrier(command,VK_PIPELINE_STAGE_TRANSFER_BIT,VK_PIPELINE_STAGE_HOST_BIT,0,1,&host,0,nullptr,0,nullptr);}
         check(vkEndCommandBuffer(command));VkPipelineStageFlags wait=VK_PIPELINE_STAGE_TRANSFER_BIT;VkSubmitInfo submit{VK_STRUCTURE_TYPE_SUBMIT_INFO};submit.waitSemaphoreCount=1;submit.pWaitSemaphores=&acquired;submit.pWaitDstStageMask=&wait;submit.commandBufferCount=1;submit.pCommandBuffers=&command;submit.signalSemaphoreCount=1;submit.pSignalSemaphores=&finished[index];
         std::array<VkSemaphore,2> waits{acquired,serial};std::array<VkPipelineStageFlags,2> stages{VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,VK_PIPELINE_STAGE_ALL_COMMANDS_BIT};std::array<uint64_t,2> values{0,frame};uint64_t zero=0;VkTimelineSemaphoreSubmitInfo timeline{VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO};
         if(foreignProducer){timeline.waitSemaphoreValueCount=2;timeline.pWaitSemaphoreValues=values.data();timeline.signalSemaphoreValueCount=1;timeline.pSignalSemaphoreValues=&zero;submit.pNext=&timeline;submit.waitSemaphoreCount=2;submit.pWaitSemaphores=waits.data();submit.pWaitDstStageMask=stages.data();}
-        auto producerQueue=foreignProducer && (frame==6 || frame==7)?readerQueues[1]:f.queue;
+        auto producerQueue=foreignProducer && (cooperative?(frame>=2 && frame<12):(frame==6 || frame==7))?readerQueues[1]:f.queue;
         check(vkQueueSubmit(producerQueue,1,&submit,fence));VkPresentInfoKHR present{VK_STRUCTURE_TYPE_PRESENT_INFO_KHR};present.waitSemaphoreCount=1;present.pWaitSemaphores=&finished[index];present.swapchainCount=1;present.pSwapchains=&chain;present.pImageIndices=&index;
-        auto presented=vkQueuePresentKHR(f.queue,&present);if(presented!=VK_SUBOPTIMAL_KHR)check(presented);
+        auto presented=vkQueuePresentKHR(foreignProducer?producerQueue:f.queue,&present);if(presented!=VK_SUBOPTIMAL_KHR)check(presented);
         check(vkWaitForFences(f.device,1,&fence,VK_TRUE,30'000'000'000ull));check(vkResetFences(f.device,1,&fence));
         if(cameraUpdates){for(unsigned i=1;i<5;++i)check(vkQueueSubmit(readerQueues[i],0,nullptr,VK_NULL_HANDLE));check(vkDeviceWaitIdle(f.device));}
-        if(foreignProducer){uint64_t next=frame+1;VkTimelineSemaphoreSubmitInfo signal{VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO};signal.signalSemaphoreValueCount=1;signal.pSignalSemaphoreValues=&next;VkSubmitInfo done{VK_STRUCTURE_TYPE_SUBMIT_INFO};done.pNext=&signal;done.signalSemaphoreCount=1;done.pSignalSemaphores=&serial;check(vkQueueSubmit(f.queue,1,&done,VK_NULL_HANDLE));}
-        if(save){std::string name=poseCapture?"source-frame-"+std::to_string(frame)+".pixels":frame==0?"mono-before.pixels":frame==8?"left-reference.pixels":frame==28?"right-reference.pixels":frame==16?"camera-plus.pixels":frame==44?"camera-minus.pixels":frame==56?"camera-restored-right.pixels":"mono-after.pixels";std::ofstream out(directory/name,std::ios::binary);out.write(static_cast<const char*>(golden.mapped),std::streamsize(extent.width)*extent.height*4);}
+        if(foreignProducer){uint64_t next=frame+1;VkTimelineSemaphoreSubmitInfo signal{VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO};signal.signalSemaphoreValueCount=1;signal.pSignalSemaphoreValues=&next;VkSubmitInfo done{VK_STRUCTURE_TYPE_SUBMIT_INFO};done.pNext=&signal;done.signalSemaphoreCount=1;done.pSignalSemaphores=&serial;check(vkQueueSubmit(producerQueue,1,&done,VK_NULL_HANDLE));}
+        if(save){std::string name=(poseCapture || cooperative)?"source-frame-"+std::to_string(frame)+".pixels":frame==0?"mono-before.pixels":frame==8?"left-reference.pixels":frame==28?"right-reference.pixels":frame==16?"camera-plus.pixels":frame==44?"camera-minus.pixels":frame==56?"camera-restored-right.pixels":"mono-after.pixels";std::ofstream out(directory/name,std::ios::binary);out.write(static_cast<const char*>(golden.mapped),std::streamsize(extent.width)*extent.height*4);}
     }
     check(vkDeviceWaitIdle(f.device));vkDestroyCommandPool(f.device,pool,nullptr);vkDestroyPipeline(f.device,pipeline,nullptr);vkDestroyPipelineLayout(f.device,layout,nullptr);vkDestroyShaderModule(f.device,vertex,nullptr);vkDestroyShaderModule(f.device,fragment,nullptr);
     for(auto s:finished)vkDestroySemaphore(f.device,s,nullptr);

@@ -33,6 +33,12 @@
 #define D4_POC(d, ...)
 #define D4_REPLAY(d,c,call)
 #endif
+#ifdef D4VR_COOPERATIVE_XR
+#include "cooperative_capture.hpp"
+#define D4_COOP(d, ...) if ((d)->cooperativeCapture) { __VA_ARGS__; }
+#else
+#define D4_COOP(d, ...)
+#endif
 #ifdef D4VR_TRACE_XR_BINDING
 #include "xr_binding.hpp"
 #endif
@@ -193,7 +199,7 @@ struct Commands {
     X(CreateImage) X(DestroyImage) X(CreateImageView) X(DestroyImageView) \
     X(CreateShaderModule) X(DestroyShaderModule) X(GetShaderModuleIdentifierEXT) X(GetShaderModuleCreateInfoIdentifierEXT) \
     X(CreateGraphicsPipelines) X(CreateComputePipelines) X(DestroyPipeline) \
-    X(QueueSubmit) X(QueueSubmit2) X(QueueBindSparse) X(QueuePresentKHR) \
+    X(QueueSubmit) X(QueueSubmit2) X(QueueBindSparse) X(QueuePresentKHR) X(QueueWaitIdle) \
     X(EndCommandBuffer) X(DeviceWaitIdle) X(CreatePipelineLayout) X(DestroyPipelineLayout) \
     X(CmdPushConstants) X(CmdSetViewport) X(CmdSetScissor) X(CmdSetStencilReference) \
     X(CreateBuffer) X(DestroyBuffer) X(GetBufferDeviceAddress) \
@@ -232,8 +238,11 @@ struct Device {
     bool cameraFault=false;uint64_t cameraReadErrors=0;
     uint64_t captureSubmission=0;d4vr::CameraInterval cameraInterval;
     bool gpuCaptureDryRun=false;std::atomic<uint64_t> gpuCaptureSequence{0};d4vr::FrameOrder gpuFrameOrder;
-    bool poseDiagnostic=false;std::atomic<uint32_t> poseEye{2};VkQueue poseQueue{};
+    bool poseDiagnostic=false,cooperativeDiagnostic=false;std::atomic<uint32_t> poseEye{2};VkQueue poseQueue{};
     std::unique_ptr<d4vr::present::DiagnosticCapture> poseCapture;
+#ifdef D4VR_COOPERATIVE_XR
+    std::unique_ptr<d4vr::present::CooperativeCapture> cooperativeCapture;
+#endif
     struct PoseChain{VkExtent2D extent;VkFormat format;};std::unordered_map<VkSwapchainKHR,PoseChain> poseChains;
     uint32_t selectedIntervalMask=0;uint64_t selectedIntervalDraws=0;
 #ifdef D4VR_LAYER_REPLAY_POC
@@ -298,7 +307,7 @@ std::string cameraJson(const d4vr::eye::BoundaryUpdates& updates){
     auto s=updates.stats();return "{\"updates\":"+std::to_string(s.updates)+",\"packet_sequence\":"+std::to_string(s.packetSequence)
         +",\"registered_queues\":"+std::to_string(s.registeredQueues)+",\"cross_queue_waits\":"+std::to_string(s.waits)+",\"markers\":"+std::to_string(s.markers)
         +",\"busy_boundaries\":"+std::to_string(s.busyBoundaries)+",\"uncovered_boundaries\":"+std::to_string(s.uncoveredBoundaries)
-        +",\"marker_backpressure\":"+std::to_string(s.markerBackpressure)+",\"xr_pose_known\":false}";
+        +",\"marker_backpressure\":"+std::to_string(s.markerBackpressure)+",\"write_holds\":"+std::to_string(s.writeHolds)+",\"inhibited_boundaries\":"+std::to_string(s.inhibitedBoundaries)+",\"xr_pose_known\":false}";
 }
 // Single atomic-renamed file, no mismatched left/right revisions, no open/read
 // on the submit path. Missing or malformed requests leave the last pair intact.
@@ -336,6 +345,7 @@ bool cameraBefore(Device& d,VkQueue q){
     if(d.cameraFault)return false;
     try{auto old=d.cameraUpdates->stats().updates;d.cameraUpdates->before(q);auto s=d.cameraUpdates->stats();
         if(d.poseCapture){d.poseCapture->after(q);d.poseEye.store(d.poseCapture->wantedEye(),std::memory_order_release);}
+        D4_COOP((&d),d.cooperativeCapture->after());
         if(s.updates!=old && (s.updates<=16 || s.updates%64==0))logFile.write("\"event\":\"camera_update_queued\",\"diagnostic\":"+cameraJson(*d.cameraUpdates));
         return true;}
     catch(const std::exception& e){d.cameraFault=true;logFile.write("\"event\":\"camera_update_fatal\",\"reason\":"+quoted(e.what()));return false;}
@@ -344,7 +354,7 @@ void cameraAfter(Device& d,VkQueue q){
     try{d.cameraUpdates->after(q);}catch(const std::exception& e){d.cameraFault=true;logFile.write("\"event\":\"camera_update_fatal\",\"reason\":"+quoted(e.what()));}
 }
 bool poseBefore(Device& d,VkQueue q){
-    try{if(d.poseCapture)d.poseCapture->before(q);return !d.cameraFault;}
+    try{D4_COOP((&d),if(!d.cooperativeCapture->allowsQueue(q))return false;d.cooperativeCapture->before(q));if(d.poseCapture)d.poseCapture->before(q);return !d.cameraFault;}
     catch(const std::exception& e){d.cameraFault=true;d.poseEye.store(2);logFile.write("\"event\":\"pose_capture_error\",\"reason\":"+quoted(e.what()));return false;}
 }
 uint64_t captureRequest(const char* name,uint64_t fallback=0){
@@ -390,6 +400,24 @@ void ensurePoseCapture(Device& d,VkQueue queue,const VkPresentInfoKHR& info){
     d.poseCapture=std::make_unique<d4vr::present::DiagnosticCapture>(d.handle,d.get,d.setLoaderData,memory,*d.presentation,*d.cameraUpdates,queue,d.cameraFamily,chain->extent,chain->format,[&d](auto pixels){writePosePair(d,std::move(pixels));});d.poseQueue=queue;
     logFile.write("\"event\":\"pose_capture_enabled\",\"mode\":\"successive_diagnostic\",\"actual_xr_pose_source\":false,\"xr_submission\":false");
 }
+#ifdef D4VR_COOPERATIVE_XR
+void ensureCooperativeCapture(Device& d,VkQueue queue,const VkPresentInfoKHR& info){
+    if(d.cooperativeCapture || !d.cameraUpdates || info.swapchainCount!=1 || !info.pSwapchains)return;
+    std::optional<Device::PoseChain> chain;uint32_t index=0;
+    {std::lock_guard<std::mutex> lock(stateMutex);auto q=d.queues.find(queue);auto c=d.poseChains.find(info.pSwapchains[0]);if(q!=d.queues.end() && q->second.first==d.cameraFamily && c!=d.poseChains.end()){chain=c->second;index=q->second.second;}}
+    if(!chain)return;
+    d4vr::xr::BorrowedBinding binding;binding.instance=d.instance->handle;binding.device=d.handle;binding.queue=queue;binding.get=d.get;binding.setLoaderData=d.setLoaderData;
+    binding.family=d.cameraFamily;binding.index=index;binding.api=d.instance->api;binding.uuid=d.deviceUuid;binding.instanceExtensions=d.instance->extensions;binding.deviceExtensions=d.extensions;
+    d.cooperativeCapture=std::make_unique<d4vr::present::CooperativeCapture>(binding,*d.presentation,*d.cameraUpdates,chain->extent,chain->format,d.cameraMutex,d.poseEye,[&d](const auto& request,const auto& frame){
+        auto directory=std::getenv("D4VR_SEQUENTIAL_CAPTURE_DIR");const auto& sample=request.pose->sample();
+        std::string json="{\"mode\":\"successive_diagnostic\",\"pose_origin\":\"xrLocateViews\",\"whole_scene_verified\":false,\"common_scene_time_known\":false,\"session\":"+std::to_string(sample.session)+",\"request\":"+std::to_string(sample.request)+",\"display_time\":"+std::to_string(sample.displayTime)+",\"diagnostic_sample\":"+quoted(d4vr::encode_diagnostic_pose(*request.pose).c_str())+",\"packet_sequence\":"+std::to_string(frame.successive->pose.packetSequence())+",\"eyes\":[";
+        for(unsigned i=0;i<2;++i){const auto& e=frame.successive->eyes[i];if(i)json+=",";json+="{\"eye\":"+std::to_string(i)+",\"lease\":"+std::to_string(e.lease)+",\"capture_sequence\":"+std::to_string(e.captureSequence)+",\"present\":"+std::to_string(e.present)+",\"camera_provenance\":"+frameCameraJson(e.camera)+"}";}
+        json+="]}\n";auto path=std::string(directory)+"/xr-pair-"+std::to_string(sample.request)+".json";
+        if(!writePrivate(path,json.data(),json.size()))throw std::runtime_error("Cooperative receipt export failed");
+    });d.poseQueue=queue;
+    logFile.write("\"event\":\"cooperative_xr_enabled\",\"mode\":\"successive_diagnostic\"");
+}
+#endif
 void poseRequest(Device& d){
     if(!d.poseCapture || d.poseCapture->stats().active || d.poseCapture->stats().stopped || d.poseCapture->stats().requests>=8)return;
     auto path=std::string(std::getenv("D4VR_SEQUENTIAL_CAPTURE_DIR"))+"/pose.request";int fd=open(path.c_str(),O_RDONLY|O_CLOEXEC|O_NOFOLLOW|O_NONBLOCK);if(fd<0)return;
@@ -436,7 +464,7 @@ void finishFrame(const std::shared_ptr<Device>& d, const d4vr::frame::Ticket& ti
 }
 void maybeAttach(const std::shared_ptr<Device>& d, VkQueue queue) {
 #ifdef D4VR_TRACE_XR_BINDING
-    if(d->poseDiagnostic)return; // This diagnostic must never enter XR under its submission lock.
+    if(d->poseDiagnostic || d->cooperativeDiagnostic)return; // This diagnostic must never enter XR under its submission lock.
     static thread_local bool active = false;
     const char* enabled = std::getenv("D4VR_TRACE_XR_BINDING");
     if (active || !enabled || std::strcmp(enabled, "1") != 0) return;
@@ -490,9 +518,10 @@ VKAPI_ATTR VkResult VKAPI_CALL d4CreateInstance(const VkInstanceCreateInfo* info
 #ifdef D4VR_LAYER_REPLAY_POC
     const char* pocEnabled=std::getenv("D4VR_LAYER_REPLAY_POC");
     const char* poseEnabled=std::getenv("D4VR_POSE_CAPTURE_DIAGNOSTIC");
+    const char* cooperativeEnabled=std::getenv("D4VR_COOPERATIVE_XR_DIAGNOSTIC");
     state->pocClient=pocEnabled && std::strcmp(pocEnabled,"1")==0 && info->pApplicationInfo
         && info->pApplicationInfo->pApplicationName && std::strcmp(info->pApplicationInfo->pApplicationName,d4vr::poc::clientName)==0
-        && !(poseEnabled && std::strcmp(poseEnabled,"1")==0);
+        && !(poseEnabled && std::strcmp(poseEnabled,"1")==0) && !(cooperativeEnabled && std::strcmp(cooperativeEnabled,"1")==0);
 #endif
     for (uint32_t i = 0; i < info->enabledExtensionCount; ++i) state->extensions.emplace_back(info->ppEnabledExtensionNames[i]);
     logFile.write("\"event\":\"instance\",\"requested_api\":" + version(api) +
@@ -522,6 +551,7 @@ VKAPI_ATTR VkResult VKAPI_CALL d4CreateDevice(VkPhysicalDevice physical, const V
     if (!create) return VK_ERROR_INITIALIZATION_FAILED;
     auto d = std::make_shared<Device>(); d->get = get;d->setLoaderData=setLoaderData;
     auto poseOption=std::getenv("D4VR_POSE_CAPTURE_DIAGNOSTIC");d->poseDiagnostic=poseOption && !std::strcmp(poseOption,"1");
+    auto cooperativeOption=std::getenv("D4VR_COOPERATIVE_XR_DIAGNOSTIC");d->cooperativeDiagnostic=cooperativeOption && !std::strcmp(cooperativeOption,"1");
     link->u.pLayerInfo = next->pNext;
     auto status = create(physical, info, allocator, result);
     if (status != VK_SUCCESS) return status;
@@ -643,8 +673,15 @@ VKAPI_ATTR VkResult VKAPI_CALL d4CreateDevice(VkPhysicalDevice physical, const V
         if(!formats)throw std::runtime_error("Format properties unavailable");
         auto gpu=std::getenv("D4VR_GPU_CAPTURE_DRY_RUN");d->gpuCaptureDryRun=gpu && !std::strcmp(gpu,"1");
         if(d->poseDiagnostic && (!d->cameraUpdates || d->gpuCaptureDryRun || std::getenv("D4VR_TRACE_XR_BINDING") || std::getenv("D4VR_LAYER_REPLAY_POC")))throw std::invalid_argument("Pose capture requires mutable cameras and exclusive diagnostic mode");
+        if(d->cooperativeDiagnostic){
+#ifndef D4VR_COOPERATIVE_XR
+            throw std::invalid_argument("Cooperative XR support not compiled");
+#else
+            if(!d->cameraUpdates || d->poseDiagnostic || d->gpuCaptureDryRun || std::getenv("D4VR_TRACE_XR_BINDING") || std::getenv("D4VR_LAYER_REPLAY_POC") || !std::getenv("D4VR_XR_LOADER"))throw std::invalid_argument("Cooperative XR requires exclusive diagnostic mode and explicit loader");
+#endif
+        }
         d->presentation=std::make_unique<d4vr::present::Capture>(*result,get,memory,[physical,formats](VkFormat f){VkFormatProperties p{};formats(physical,f,&p);
-            constexpr VkFormatFeatureFlags flags=VK_FORMAT_FEATURE_BLIT_DST_BIT|VK_FORMAT_FEATURE_TRANSFER_SRC_BIT|VK_FORMAT_FEATURE_TRANSFER_DST_BIT;return (p.optimalTilingFeatures&flags)==flags;},d->gpuCaptureDryRun || d->poseDiagnostic?d4vr::present::CaptureMode::gpuStream:d4vr::present::CaptureMode::cpuSnapshots);
+            constexpr VkFormatFeatureFlags flags=VK_FORMAT_FEATURE_BLIT_DST_BIT|VK_FORMAT_FEATURE_TRANSFER_SRC_BIT|VK_FORMAT_FEATURE_TRANSFER_DST_BIT;return (p.optimalTilingFeatures&flags)==flags;},d->gpuCaptureDryRun || d->poseDiagnostic || d->cooperativeDiagnostic?d4vr::present::CaptureMode::gpuStream:d4vr::present::CaptureMode::cpuSnapshots);
     }catch(const std::exception& e){logFile.write("\"event\":\"presentation_error\",\"reason\":"+quoted(e.what()));}
     std::ostringstream queues; queues << '[';
     for (uint32_t i = 0; i < info->queueCreateInfoCount; ++i) {
@@ -685,6 +722,7 @@ VKAPI_ATTR void VKAPI_CALL d4GetDeviceQueue2(VkDevice handle, const VkDeviceQueu
 }
 VKAPI_ATTR void VKAPI_CALL d4DestroyDevice(VkDevice handle, const VkAllocationCallbacks* allocator) {
     auto d = deviceFor(handle);
+    D4_COOP(d,d->DeviceWaitIdle(handle);try{d->cooperativeCapture->shutdown();}catch(const std::exception& e){logFile.write("\"event\":\"cooperative_xr_error\",\"reason\":"+quoted(e.what()));}d->DeviceWaitIdle(handle));
     if(d->poseCapture){d->DeviceWaitIdle(handle);try{d->poseCapture->shutdown();}catch(const std::exception& e){logFile.write("\"event\":\"pose_capture_error\",\"reason\":"+quoted(e.what()));}d->DeviceWaitIdle(handle);}
     std::string record;
     {
@@ -695,15 +733,15 @@ VKAPI_ATTR void VKAPI_CALL d4DestroyDevice(VkDevice handle, const VkAllocationCa
         if (d->pairs) record += ",\"paired_pipelines\":" + pairsJson(*d);
         if(d->presentation && d->gpuCaptureDryRun)record+=",\"gpu_capture\":"+gpuCaptureJson(*d->presentation);
         if(d->cameraUpdates)record+=",\"camera_updates\":"+cameraJson(*d->cameraUpdates);
-        if(d->poseCapture){auto s=d->presentation->stats();record+=",\"pose_capture\":"+poseStats(*d->poseCapture)
-            +",\"pose_producer\":{\"slots\":"+std::to_string(s.slots)+",\"reserved_bytes\":"+std::to_string(s.reservedBytes)+",\"leases_issued\":"+std::to_string(s.leasesIssued)+",\"retire_submissions\":"+std::to_string(s.retireSubmissions)+",\"outstanding_leases\":"+std::to_string(s.outstandingLeases)+"}";}
+        D4_COOP(d,record+=",\"cooperative_xr\":"+d->cooperativeCapture->report());
+        if(d->presentation && (d->poseCapture || d->cooperativeDiagnostic)){auto s=d->presentation->stats();if(d->poseCapture)record+=",\"pose_capture\":"+poseStats(*d->poseCapture);record+=",\"pose_producer\":{\"slots\":"+std::to_string(s.slots)+",\"reserved_bytes\":"+std::to_string(s.reservedBytes)+",\"leases_issued\":"+std::to_string(s.leasesIssued)+",\"retire_submissions\":"+std::to_string(s.retireSubmissions)+",\"outstanding_leases\":"+std::to_string(s.outstandingLeases)+"}";}
 #ifdef D4VR_LAYER_REPLAY_POC
         if(d->poc)record+=",\"poc_application_recordings_submitted\":"+std::to_string(d->poc->applicationRecordingsSubmitted())
             +",\"poc_application_draws_submitted\":"+std::to_string(d->poc->applicationDrawsSubmitted());
 #endif
         devices.erase(key(handle));
     }
-    logFile.write(record); D4_POC(d,d->poc.reset());d->poseCapture.reset();if(d->cameraUpdates){d->DeviceWaitIdle(handle);d->cameraUpdates.reset();} d->presentation.reset(); d->commands.clear();d->pairs.reset(); for (auto& packet : d->pairEyes) packet.reset(); d->eye.reset(); d->DestroyDevice(handle, allocator);
+    logFile.write(record); D4_POC(d,d->poc.reset());D4_COOP(d,d->cooperativeCapture.reset());d->poseCapture.reset();if(d->cameraUpdates){d->DeviceWaitIdle(handle);d->cameraUpdates.reset();} d->presentation.reset(); d->commands.clear();d->pairs.reset(); for (auto& packet : d->pairEyes) packet.reset(); d->eye.reset(); d->DestroyDevice(handle, allocator);
 }
 VKAPI_ATTR VkResult VKAPI_CALL d4CreateCommandPool(VkDevice device,const VkCommandPoolCreateInfo* info,const VkAllocationCallbacks* allocator,VkCommandPool* pool){
     auto d=deviceFor(device);auto r=d->CreateCommandPool(device,info,allocator,pool);
@@ -733,7 +771,7 @@ void reset(Device& d, Commands& command) { command.counts = {}; command.secondar
     command.flags=0;command.selectedMask=0;command.selectedDraws=0;command.selectedPipeline=false;command.selectedLeases.clear();}
 VKAPI_ATTR VkResult VKAPI_CALL d4BeginCommandBuffer(VkCommandBuffer command, const VkCommandBufferBeginInfo* info) {
     auto d = deviceFor(command); auto result = d->BeginCommandBuffer(command, info);
-    auto eye=d->poseDiagnostic?d->poseEye.load(std::memory_order_acquire):d->presentation?captureRequest("eye.selection",2):2;
+    auto eye=(d->poseDiagnostic || d->cooperativeDiagnostic)?d->poseEye.load(std::memory_order_acquire):d->presentation?captureRequest("eye.selection",2):2;
     if (result == VK_SUCCESS) { std::lock_guard<std::mutex> lock(stateMutex); auto it = d->commands.find(command); if (it != d->commands.end()) {reset(*d, it->second);it->second.flags=info->flags;it->second.selectedEye=eye<2?uint32_t(eye):2;} }
     if(result==VK_SUCCESS && d->presentation)d->presentation->reset(command);
     if(result==VK_SUCCESS) { D4_POC(d,try { d->poc->begin(command,*info); } catch(const std::exception& e) { d->poc->reset(command);logFile.write("\"event\":\"poc_error\",\"reason\":"+quoted(e.what())); }); }
@@ -942,7 +980,7 @@ VKAPI_ATTR VkResult VKAPI_CALL d4EndCommandBuffer(VkCommandBuffer command) {
     auto d=deviceFor(command);D4_POC(d,d->poc->end(command));return d->EndCommandBuffer(command);
 }
 VKAPI_ATTR VkResult VKAPI_CALL d4DeviceWaitIdle(VkDevice device) {
-    auto d=deviceFor(device);auto r=d->DeviceWaitIdle(device);
+    auto d=deviceFor(device);D4_COOP(d,{std::lock_guard<std::mutex> lock(d->cameraMutex);if(!d->cooperativeCapture->allowsQueue(d->poseQueue))return VK_ERROR_UNKNOWN;});auto r=d->DeviceWaitIdle(device);
     if(r==VK_SUCCESS) { D4_POC(d,
         const char* directory=std::getenv("D4VR_POC_OUTPUT");
         if(directory && *directory)for(auto& snapshot:d->poc->completed()) {
@@ -970,12 +1008,12 @@ VKAPI_ATTR void VKAPI_CALL d4DestroyImage(VkDevice device, VkImage image, const 
 VKAPI_ATTR VkResult VKAPI_CALL d4CreateSwapchainKHR(VkDevice device,const VkSwapchainCreateInfoKHR* info,const VkAllocationCallbacks* allocator,VkSwapchainKHR* chain){
     auto d=deviceFor(device);auto r=d->CreateSwapchainKHR(device,info,allocator,chain);
     if(r==VK_SUCCESS && d->presentation)try{d->presentation->swapchain(*chain,*info);}catch(...){}
-    if(r==VK_SUCCESS && d->poseDiagnostic){std::lock_guard<std::mutex> lock(stateMutex);if(d->poseChains.size()<16)d->poseChains[*chain]={info->imageExtent,info->imageFormat};}
+    if(r==VK_SUCCESS && (d->poseDiagnostic || d->cooperativeDiagnostic)){std::lock_guard<std::mutex> lock(stateMutex);if(d->poseChains.size()<16)d->poseChains[*chain]={info->imageExtent,info->imageFormat};}
     return r;
 }
 VKAPI_ATTR void VKAPI_CALL d4DestroySwapchainKHR(VkDevice device,VkSwapchainKHR chain,const VkAllocationCallbacks* allocator){
     auto d=deviceFor(device);if(d->presentation)d->presentation->removeSwapchain(chain);d->DestroySwapchainKHR(device,chain,allocator);
-    if(d->poseDiagnostic){std::lock_guard<std::mutex> lock(stateMutex);d->poseChains.erase(chain);}
+    if(d->poseDiagnostic || d->cooperativeDiagnostic){std::lock_guard<std::mutex> lock(stateMutex);d->poseChains.erase(chain);}
 }
 VKAPI_ATTR VkResult VKAPI_CALL d4GetSwapchainImagesKHR(VkDevice device,VkSwapchainKHR chain,uint32_t* count,VkImage* images){
     auto d=deviceFor(device);auto r=d->GetSwapchainImagesKHR(device,chain,count,images);
@@ -985,13 +1023,13 @@ VKAPI_ATTR VkResult VKAPI_CALL d4GetSwapchainImagesKHR(VkDevice device,VkSwapcha
 void captureBlit(const std::shared_ptr<Device>& d,VkCommandBuffer command,VkImage source,VkImageLayout src,VkImage destination,VkImageLayout dst,uint32_t count,const VkImageBlit* regions,VkFilter filter){
     if(!d->presentation)return;
     if(d->gpuCaptureDryRun && d->presentation->stats().leasesIssued>=128)return;
-    auto sequence=d->gpuCaptureDryRun || d->poseDiagnostic?++d->gpuCaptureSequence:captureRequest("present.request");if(!sequence)return;
-    auto eye=d->poseDiagnostic?2:captureRequest("eye.selection",2);bool allowed=false;
+    auto sequence=d->gpuCaptureDryRun || d->poseDiagnostic || d->cooperativeDiagnostic?++d->gpuCaptureSequence:captureRequest("present.request");if(!sequence)return;
+    auto eye=(d->poseDiagnostic || d->cooperativeDiagnostic)?2:captureRequest("eye.selection",2);bool allowed=false;
     {std::lock_guard<std::mutex> lock(stateMutex);auto c=d->commands.find(command);
-        if(c!=d->commands.end()){if(d->poseDiagnostic)eye=c->second.selectedEye;auto pool=d->commandPools.find(c->second.pool);allowed=c->second.level==VK_COMMAND_BUFFER_LEVEL_PRIMARY
+        if(c!=d->commands.end()){if(d->poseDiagnostic || d->cooperativeDiagnostic)eye=c->second.selectedEye;auto pool=d->commandPools.find(c->second.pool);allowed=c->second.level==VK_COMMAND_BUFFER_LEVEL_PRIMARY
             && c->second.flags==VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT && pool!=d->commandPools.end() && !(pool->second&VK_COMMAND_POOL_CREATE_PROTECTED_BIT);}}
     if(eye>1)return;
-    try{if(d->presentation->record(sequence,uint32_t(eye),command,allowed,source,src,destination,dst,count,regions,filter) && !d->gpuCaptureDryRun && !d->poseDiagnostic)
+    try{if(d->presentation->record(sequence,uint32_t(eye),command,allowed,source,src,destination,dst,count,regions,filter) && !d->gpuCaptureDryRun && !d->poseDiagnostic && !d->cooperativeDiagnostic)
         logFile.write("\"event\":\"presentation_recorded\",\"sequence\":"+std::to_string(sequence)+",\"eye\":"+std::to_string(eye));
     }catch(const std::exception& e){logFile.write("\"event\":\"presentation_error\",\"reason\":"+quoted(e.what()));}
 }
@@ -1076,7 +1114,7 @@ VKAPI_ATTR void VKAPI_CALL d4DestroyPipeline(VkDevice device, VkPipeline pipelin
 }
 VKAPI_ATTR VkResult VKAPI_CALL d4QueueSubmit(VkQueue queue, uint32_t n, const VkSubmitInfo* submits, VkFence fence) {
     auto d = deviceFor(queue); Counts counts{}; uint64_t buffers = 0;
-    std::unique_lock<std::mutex> cameraLock(d->cameraMutex,std::defer_lock);bool tracked=cameraQueue(d,queue);if(tracked || d->poseDiagnostic){cameraLock.lock();if(!poseBefore(*d,queue))return VK_ERROR_UNKNOWN;if(tracked && !cameraBefore(*d,queue))return VK_ERROR_UNKNOWN;}
+    std::unique_lock<std::mutex> cameraLock(d->cameraMutex,std::defer_lock);bool tracked=cameraQueue(d,queue);if(tracked || d->poseDiagnostic || d->cooperativeDiagnostic){cameraLock.lock();if(!poseBefore(*d,queue))return VK_ERROR_UNKNOWN;if(tracked && !cameraBefore(*d,queue))return VK_ERROR_UNKNOWN;}
     std::vector<VkCommandBuffer> frames;
     maybeAttach(d, queue);
     { std::lock_guard<std::mutex> lock(stateMutex); for (uint32_t i = 0; i < n; ++i) for (uint32_t j = 0; j < submits[i].commandBufferCount; ++j) { ++buffers; collect(*d, submits[i].pCommandBuffers[j], counts); } }
@@ -1098,7 +1136,7 @@ VKAPI_ATTR VkResult VKAPI_CALL d4QueueSubmit(VkQueue queue, uint32_t n, const Vk
 }
 VKAPI_ATTR VkResult VKAPI_CALL d4QueueSubmit2(VkQueue queue, uint32_t n, const VkSubmitInfo2* submits, VkFence fence) {
     auto d = deviceFor(queue); Counts counts{}; uint64_t buffers = 0;
-    std::unique_lock<std::mutex> cameraLock(d->cameraMutex,std::defer_lock);bool tracked=cameraQueue(d,queue);if(tracked || d->poseDiagnostic){cameraLock.lock();if(!poseBefore(*d,queue))return VK_ERROR_UNKNOWN;if(tracked && !cameraBefore(*d,queue))return VK_ERROR_UNKNOWN;}
+    std::unique_lock<std::mutex> cameraLock(d->cameraMutex,std::defer_lock);bool tracked=cameraQueue(d,queue);if(tracked || d->poseDiagnostic || d->cooperativeDiagnostic){cameraLock.lock();if(!poseBefore(*d,queue))return VK_ERROR_UNKNOWN;if(tracked && !cameraBefore(*d,queue))return VK_ERROR_UNKNOWN;}
     std::vector<VkCommandBuffer> frames;
     maybeAttach(d, queue);
     { std::lock_guard<std::mutex> lock(stateMutex); for (uint32_t i = 0; i < n; ++i) for (uint32_t j = 0; j < submits[i].commandBufferInfoCount; ++j) { ++buffers; collect(*d, submits[i].pCommandBufferInfos[j].commandBuffer, counts); } }
@@ -1119,13 +1157,20 @@ VKAPI_ATTR VkResult VKAPI_CALL d4QueueSubmit2(VkQueue queue, uint32_t n, const V
     submitted(d, counts, buffers, result); finishFrame(d, ticket, result); return result;
 }
 VKAPI_ATTR VkResult VKAPI_CALL d4QueueBindSparse(VkQueue queue,uint32_t count,const VkBindSparseInfo* info,VkFence fence){
-    auto d=deviceFor(queue);std::unique_lock<std::mutex> lock(d->cameraMutex,std::defer_lock);bool tracked=cameraQueue(d,queue);if(tracked || d->poseDiagnostic){lock.lock();if(!poseBefore(*d,queue))return VK_ERROR_UNKNOWN;if(tracked && !cameraBefore(*d,queue))return VK_ERROR_UNKNOWN;}
+    auto d=deviceFor(queue);std::unique_lock<std::mutex> lock(d->cameraMutex,std::defer_lock);bool tracked=cameraQueue(d,queue);if(tracked || d->poseDiagnostic || d->cooperativeDiagnostic){lock.lock();if(!poseBefore(*d,queue))return VK_ERROR_UNKNOWN;if(tracked && !cameraBefore(*d,queue))return VK_ERROR_UNKNOWN;}
     auto result=d->QueueBindSparse(queue,count,info,fence);if(tracked && result==VK_SUCCESS)cameraAfter(*d,queue);return result;
+}
+VKAPI_ATTR VkResult VKAPI_CALL d4QueueWaitIdle(VkQueue queue){
+    auto d=deviceFor(queue);bool tracked=cameraQueue(d,queue);
+    if(d->cameraUpdates){std::lock_guard<std::mutex> lock(d->cameraMutex);D4_COOP(d,if(!d->cooperativeCapture->allowsQueue(queue))return VK_ERROR_UNKNOWN);if(tracked)d->cameraUpdates->uncovered(queue);}
+    auto result=d->QueueWaitIdle(queue);
+    if(tracked){std::lock_guard<std::mutex> lock(d->cameraMutex);if(result==VK_SUCCESS)cameraAfter(*d,queue);}
+    return result;
 }
 VKAPI_ATTR VkResult VKAPI_CALL d4QueuePresentKHR(VkQueue queue, const VkPresentInfoKHR* info) {
     auto d = deviceFor(queue);
     bool tracked=cameraQueue(d,queue);
-    if(tracked){std::lock_guard<std::mutex> lock(d->cameraMutex);d->cameraUpdates->uncovered(queue);}
+    if(d->cameraUpdates){std::lock_guard<std::mutex> lock(d->cameraMutex);D4_COOP(d,if(!d->cooperativeCapture->allowsQueue(queue,true))return VK_ERROR_UNKNOWN);if(tracked)d->cameraUpdates->uncovered(queue);}
     auto result = d->QueuePresentKHR(queue, info);
     std::unique_lock<std::mutex> cameraLock(d->cameraMutex,std::defer_lock);if(d->cameraUpdates)cameraLock.lock();
     if(tracked)cameraAfter(*d,queue);
@@ -1149,6 +1194,17 @@ VKAPI_ATTR VkResult VKAPI_CALL d4QueuePresentKHR(VkQueue queue, const VkPresentI
     if (!record.empty()) logFile.write(record);
     writeFrames(ready);
     if(d->presentation)try{
+#ifdef D4VR_COOPERATIVE_XR
+        if(d->cooperativeDiagnostic){
+            ensureCooperativeCapture(*d,queue,*info);
+            if(d->cooperativeCapture && queue==d->poseQueue && captureRequest("pose.stop")==1)d->cooperativeCapture->stop();
+            for(const auto& frame:d->presentation->presentedGpu(*info,result,present,selectedMask,selectedDraws,&cameraInterval)){
+                if(d->cooperativeCapture)d->cooperativeCapture->offer(frame,queue);
+                else if(frame.queue==queue)d->presentation->retire(frame.lease,queue);
+            }
+            if(d->cooperativeCapture && queue==d->poseQueue)d->cooperativeCapture->present(present);
+        }else
+#endif
         if(d->poseDiagnostic){
             ensurePoseCapture(*d,queue,*info);
             if(d->poseCapture && queue==d->poseQueue && captureRequest("pose.stop")==1)d->poseCapture->stop();
@@ -1178,7 +1234,11 @@ VKAPI_ATTR VkResult VKAPI_CALL d4QueuePresentKHR(VkQueue queue, const VkPresentI
         } else for(const auto& s:d->presentation->presented(*info,result,present,selectedMask,selectedDraws,&cameraInterval))writePresentation(*d,s);
     }
     catch(const std::exception& e){logFile.write("\"event\":\"presentation_error\",\"reason\":"+quoted(e.what()));}
-    if(d->cameraUpdates && !d->cameraFault && (result==VK_SUCCESS || result==VK_SUBOPTIMAL_KHR)){if(!d->poseDiagnostic)cameraRequest(*d);d->cameraUpdates->boundary();}
+    if(d->cameraUpdates && !d->cameraFault && (result==VK_SUCCESS || result==VK_SUBOPTIMAL_KHR)){if(!d->poseDiagnostic && !d->cooperativeDiagnostic)cameraRequest(*d);d->cameraUpdates->boundary();}
+    // The original present caller still owns this queue's external sync. No
+    // state/camera lock crosses runtime calls, including construction/cleanup.
+    if(cameraLock.owns_lock())cameraLock.unlock();
+    D4_COOP(d,if(queue==d->poseQueue)try{d->cooperativeCapture->advance();}catch(const std::exception& e){std::lock_guard<std::mutex> lock(d->cameraMutex);d->cooperativeCapture->stop();logFile.write("\"event\":\"cooperative_xr_error\",\"reason\":"+quoted(e.what()));});
     return result;
 }
 #ifdef D4VR_LAYER_REPLAY_POC

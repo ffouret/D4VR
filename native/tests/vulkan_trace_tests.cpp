@@ -8,7 +8,7 @@
 namespace {
 void require(bool condition, const char* message) { if (!condition) throw std::runtime_error(message); }
 struct Handle { void* dispatch; };
-uint32_t drawCalls = 0, dgcCalls = 0, submitCalls = 0;
+uint32_t drawCalls = 0, dgcCalls = 0, submitCalls = 0, idleCalls = 0;
 VkResult submitResult = VK_SUCCESS;
 VkCommandBuffer expectedCommand{};
 const VkGeneratedCommandsInfoEXT* expectedGenerated{};
@@ -71,6 +71,7 @@ VKAPI_ATTR void VKAPI_CALL generated(VkCommandBuffer command, VkBool32 preproces
     require(command == expectedCommand && preprocessed == VK_TRUE && info == expectedGenerated, "DGC arguments changed"); ++dgcCalls;
 }
 VKAPI_ATTR void VKAPI_CALL execute(VkCommandBuffer, uint32_t, const VkCommandBuffer*) {}
+VKAPI_ATTR VkResult VKAPI_CALL waitQueue(VkQueue queue) {require(queue==expectedQueue,"Queue idle arguments changed");++idleCalls;return submitResult;}
 VKAPI_ATTR VkResult VKAPI_CALL submit2(VkQueue, uint32_t n, const VkSubmitInfo2* info, VkFence fence) {
     require(n == 1 && info == expectedSubmit && fence == VK_NULL_HANDLE, "Submit2 arguments changed"); ++submitCalls; return submitResult;
 }
@@ -154,7 +155,7 @@ int main() try {
     auto d = std::make_shared<Device>(); d->handle = handle; d->get = proc;
     d->GetDeviceQueue = getQueue;
     d->CmdDraw = draw; d->CmdExecuteGeneratedCommandsEXT = generated; d->CmdExecuteCommands = execute;
-    d->QueueSubmit2 = submit2; d->BeginCommandBuffer = begin; d->ResetCommandPool = resetPool; d->DestroyCommandPool = destroyPool;
+    d->QueueWaitIdle=waitQueue;d->QueueSubmit2 = submit2; d->BeginCommandBuffer = begin; d->ResetCommandPool = resetPool; d->DestroyCommandPool = destroyPool;
     devices[key(handle)] = d;
     expectedQueue = queue; VkQueue returned{}; d4GetDeviceQueue(handle, 3, 2, &returned);
     require(returned == queue && d->queues.at(queue) == std::make_pair(3u, 2u), "Queue association lost");
@@ -163,6 +164,7 @@ int main() try {
     require(!d4GetDeviceProcAddr(handle, "vkCmdDrawIndirectCount"), "Unsupported function advertised");
     require(!d4GetDeviceProcAddr(handle, "vkQueueSubmit2"), "Unavailable core alias advertised");
     require(d4GetDeviceProcAddr(handle, "vkQueueSubmit2KHR") == reinterpret_cast<PFN_vkVoidFunction>(d4QueueSubmit2), "KHR alias missing");
+    require(d4QueueWaitIdle(queue)==VK_SUCCESS && idleCalls==1,"Queue idle forwarding failed");submitResult=VK_ERROR_DEVICE_LOST;require(d4QueueWaitIdle(queue)==VK_ERROR_DEVICE_LOST && idleCalls==2,"Queue idle error changed");submitResult=VK_SUCCESS;
     expectedCommand = secondary;
     d4CmdDraw(secondary, 3, 2, 1, 7);
     int generatedInfo = 0; expectedGenerated = reinterpret_cast<const VkGeneratedCommandsInfoEXT*>(&generatedInfo);

@@ -11,6 +11,9 @@
 #include <cstring>
 #include <vector>
 #include <array>
+#include <fstream>
+#include <string>
+#include <thread>
 
 #ifdef NDEBUG
 #undef NDEBUG
@@ -55,7 +58,10 @@ void verifyPixels(XrSession s,const XrCompositionLayerProjection& projection) {
     VkMemoryBarrier host{VK_STRUCTURE_TYPE_MEMORY_BARRIER};host.srcAccessMask=VK_ACCESS_TRANSFER_WRITE_BIT;host.dstAccessMask=VK_ACCESS_HOST_READ_BIT;vkCmdPipelineBarrier(command,VK_PIPELINE_STAGE_TRANSFER_BIT,VK_PIPELINE_STAGE_HOST_BIT,0,1,&host,0,nullptr,0,nullptr);assert(vkEndCommandBuffer(command)==VK_SUCCESS);
     VkFenceCreateInfo fi{VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};assert(vkCreateFence(d,&fi,nullptr,&fence)==VK_SUCCESS);VkSubmitInfo submit{VK_STRUCTURE_TYPE_SUBMIT_INFO};submit.commandBufferCount=1;submit.pCommandBuffers=&command;assert(vkQueueSubmit(s->queue,1,&submit,fence)==VK_SUCCESS);assert(vkWaitForFences(d,1,&fence,VK_TRUE,UINT64_MAX)==VK_SUCCESS);
     void* raw{};assert(vkMapMemory(d,memory,0,2*bytes,0,&raw)==VK_SUCCESS);auto pixels=static_cast<const unsigned char*>(raw);
-    if(std::getenv("D4VR_MOCK_XR_EXTERNAL_REFERENCE")){
+    if(auto directory=std::getenv("D4VR_MOCK_XR_LAYER_OUTPUT")){
+        for(unsigned i=0;i<2;++i){std::ofstream out(std::string(directory)+"/xr-request-"+std::to_string(s->ticks)+"-eye-"+std::to_string(i)+".pixels",std::ios::binary);out.write(reinterpret_cast<const char*>(pixels+i*bytes),std::streamsize(bytes));assert(out.good());}
+        std::fputs("D4VR mock XR layer pixels exported for original-source comparison\n",stderr);
+    }else if(std::getenv("D4VR_MOCK_XR_EXTERNAL_REFERENCE")){
         for(unsigned i=0;i<2;++i){auto& ref=references[i];assert(ref.request==s->ticks && ref.width==left->width && ref.height==left->height && ref.bytes.size()==bytes);
             assert(!std::memcmp(pixels+i*bytes,ref.bytes.data(),size_t(bytes)));ref={};}
         std::fputs("D4VR mock XR independent geometry pixels verified\n",stderr);
@@ -86,6 +92,7 @@ XR_FN(xrCreateSession)(XrInstance,const XrSessionCreateInfo* info,XrSession* out
     // This used to replace and free the presenter closure while its binding
     // was still referenced. The first post-session dispatch then jumped to heap.
     VkQueue queue{};vkGetDeviceQueue(b.device,b.queueFamilyIndex,b.queueIndex,&queue);assert(queue);
+    if(std::getenv("D4VR_MOCK_XR_LAYER_OUTPUT"))assert(vkQueueWaitIdle(queue)==VK_SUCCESS);
     std::fputs("D4VR mock XR queue reentry completed\n",stderr);
     if(std::getenv("D4VR_MOCK_XR_FAIL_SESSION"))return XR_ERROR_INITIALIZATION_FAILED;
     active=new XrSession_T{b};active->queue=queue;*out=active;return XR_SUCCESS;
@@ -95,6 +102,7 @@ XR_FN(xrDestroySession)(XrSession s) {
     assert(!s->frameOpen && s->acquires==s->releases);std::fprintf(stderr,"D4VR mock XR image lifecycle: %u acquires, %u releases\n",s->acquires,s->releases);
     // No wait here: the presenter must complete work enqueued by xrEndFrame,
     // including this runtime's own query/buffer use, before destroying session.
+    if(s->fence)assert(vkGetFenceStatus(d,s->fence)==VK_SUCCESS);
     if(s->query)vkDestroyQueryPool(d,s->query,nullptr);
     if(s->buffer)vkDestroyBuffer(d,s->buffer,nullptr);
     if(s->memory)vkFreeMemory(d,s->memory,nullptr);
@@ -139,6 +147,20 @@ XR_FN(xrEndSession)(XrSession s) { assert(!s->frameOpen);std::fputs("D4VR mock X
 XR_FN(xrWaitFrame)(XrSession s,const XrFrameWaitInfo*,XrFrameState* out) { assert(!s->frameOpen);++s->ticks;out->shouldRender=std::getenv("D4VR_MOCK_XR_HIDDEN")?XR_FALSE:XR_TRUE;out->predictedDisplayTime=s->ticks*10000000;out->predictedDisplayPeriod=10000000;return XR_SUCCESS; }
 XR_FN(xrBeginFrame)(XrSession s,const XrFrameBeginInfo*) { assert(!s->frameOpen);s->frameOpen=true;return XR_SUCCESS; }
 XR_FN(xrLocateViews)(XrSession s,const XrViewLocateInfo*,XrViewState* state,uint32_t capacity,uint32_t* count,XrView* out) {
+    if(std::getenv("D4VR_MOCK_XR_LAYER_OUTPUT")){
+        assert(vkQueueSubmit(s->queue,0,nullptr,VK_NULL_HANDLE)==VK_SUCCESS);
+        assert(vkQueueSubmit2(s->queue,0,nullptr,VK_NULL_HANDLE)==VK_SUCCESS);
+        if(std::getenv("D4VR_MOCK_XR_DENY_THREAD")){
+            VkResult status=VK_SUCCESS;std::thread other([&]{status=vkQueueSubmit(s->queue,0,nullptr,VK_NULL_HANDLE);});other.join();assert(status==VK_ERROR_UNKNOWN);
+            std::fputs("D4VR mock XR overlapping worker rejected without blocking\n",stderr);
+        }
+        if(std::getenv("D4VR_MOCK_XR_OTHER_QUEUE")){
+            VkQueue other{};vkGetDeviceQueue(s->binding.device,s->binding.queueFamilyIndex,1,&other);assert(other && other!=s->queue);
+            assert(vkQueueSubmit2(other,0,nullptr,VK_NULL_HANDLE)==VK_ERROR_UNKNOWN);
+            std::fputs("D4VR mock XR foreign runtime queue rejected\n",stderr);
+        }
+        std::fputs("D4VR mock XR Submit/Submit2 reentry completed\n",stderr);
+    }
     assert(capacity>=2);*count=2;state->viewStateFlags=XR_VIEW_STATE_ORIENTATION_VALID_BIT|XR_VIEW_STATE_POSITION_VALID_BIT|XR_VIEW_STATE_ORIENTATION_TRACKED_BIT|XR_VIEW_STATE_POSITION_TRACKED_BIT;
     if(std::getenv("D4VR_MOCK_XR_UNTRACKED"))state->viewStateFlags=0;
     for(unsigned i=0;i<2;++i){out[i].pose.orientation={0,0,0,1};out[i].pose.position={(s->ticks-1)*.025f+(i?.032f:-.032f),0,0};out[i].fov={-.8f,.8f,.8f,-.8f};}return XR_SUCCESS;
@@ -165,7 +187,7 @@ XR_FN(xrEndFrame)(XrSession s,const XrFrameEndInfo* info) {
             VkCommandBufferBeginInfo begin{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};begin.flags=VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;assert(vkBeginCommandBuffer(command,&begin)==VK_SUCCESS);
             vkCmdResetQueryPool(command,s->query,0,1);vkCmdWriteTimestamp(command,VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,s->query,0);vkCmdFillBuffer(command,s->buffer,0,16,0x12345678);assert(vkEndCommandBuffer(command)==VK_SUCCESS);
             VkFenceCreateInfo fi{VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};assert(vkCreateFence(d,&fi,nullptr,&s->fence)==VK_SUCCESS);
-            VkSubmitInfo submit{VK_STRUCTURE_TYPE_SUBMIT_INFO};submit.commandBufferCount=1;submit.pCommandBuffers=&command;assert(vkQueueSubmit(s->queue,1,&submit,s->fence)==VK_SUCCESS);
+            VkSubmitInfo submit{VK_STRUCTURE_TYPE_SUBMIT_INFO};submit.commandBufferCount=1;submit.pCommandBuffers=&command;if(std::getenv("D4VR_MOCK_XR_LAYER_OUTPUT")){VkCommandBufferSubmitInfo cb{VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO};cb.commandBuffer=command;VkSubmitInfo2 submit2{VK_STRUCTURE_TYPE_SUBMIT_INFO_2};submit2.commandBufferInfoCount=1;submit2.pCommandBufferInfos=&cb;assert(vkQueueSubmit2(s->queue,1,&submit2,s->fence)==VK_SUCCESS);}else assert(vkQueueSubmit(s->queue,1,&submit,s->fence)==VK_SUCCESS);
             std::fputs("D4VR mock XR asynchronous runtime work submitted\n",stderr);
         }
     }return XR_SUCCESS;

@@ -9,8 +9,8 @@ struct UpdateBinding {
     uint32_t family=VK_QUEUE_FAMILY_IGNORED,queueCount=0;bool timelineEnabled=false;
 };
 struct UpdateStats {
-    uint64_t updates=0,waits=0,markers=0,busyBoundaries=0,uncoveredBoundaries=0,markerBackpressure=0;
-    uint32_t packetSequence=0,registeredQueues=0;
+    uint64_t updates=0,waits=0,markers=0,busyBoundaries=0,uncoveredBoundaries=0,markerBackpressure=0,inhibitedBoundaries=0;
+    uint32_t packetSequence=0,registeredQueues=0,writeHolds=0;
 };
 // All methods are caller-serialized. before + original submit + after MUST be
 // one critical section across ALL registered graphics queues. Queue calls use
@@ -34,6 +34,10 @@ public:
     // device submission mutex. Mark it uncovered first, then after() under the
     // mutex on return, while still holding that queue's external synchronization.
     void uncovered(VkQueue);
+    // Caller-serialized, nestable external runtime scope. after()/boundary()
+    // cannot release it. before() still inserts prior write dependencies, but
+    // cannot queue a new camera revision until every scope has ended.
+    void holdWrites();void releaseWrites() noexcept;
     std::array<EyeState,2> packets() const; // Queued packet, not a claim of frame execution/presentation.
     UpdateStats stats() const;
 private:

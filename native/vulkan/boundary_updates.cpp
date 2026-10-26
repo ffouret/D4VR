@@ -74,7 +74,8 @@ void BoundaryUpdates::boundary(){impl->openBoundary=true;}
 void BoundaryUpdates::before(VkQueue h){
     auto& p=*impl;auto& q=p.queue(h);
     if(p.writePending && p.done(p.writeFence))p.writePending=false;
-    if(p.openBoundary){p.openBoundary=false;if(p.requested[0].header[2]>p.current[0].header[2] && !p.writePending && p.idle())p.write(q);}
+    if(p.openBoundary && p.counts.writeHolds){++p.counts.inhibitedBoundaries;}
+    if(p.openBoundary && !p.counts.writeHolds){p.openBoundary=false;if(p.requested[0].header[2]>p.current[0].header[2] && !p.writePending && p.idle())p.write(q);}
     // Every queue needs its own semaphore memory dependency, even when the
     // writer fence is already signaled at the CPU. Same-family is not enough.
     if(q.waited<p.value){VkTimelineSemaphoreSubmitInfo ti{VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO};ti.waitSemaphoreValueCount=1;ti.pWaitSemaphoreValues=&p.value;VkPipelineStageFlags stage=VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
@@ -86,6 +87,8 @@ void BoundaryUpdates::after(VkQueue h){
         check(p.ResetFences(p.binding.device,1,&m.fence));check(p.QueueSubmit(h,0,nullptr,m.fence));m.pending=true;q.last=i;q.covered=q.submitted;++p.counts.markers;return;}
     ++p.counts.markerBackpressure; // No queue is inferred idle after a missing marker.
 }
+void BoundaryUpdates::holdWrites(){++impl->counts.writeHolds;}
+void BoundaryUpdates::releaseWrites() noexcept{if(impl->counts.writeHolds)--impl->counts.writeHolds;}
 void BoundaryUpdates::uncovered(VkQueue h){++impl->queue(h).submitted;}
 std::array<EyeState,2> BoundaryUpdates::packets() const{return impl->current;}
 UpdateStats BoundaryUpdates::stats() const{auto out=impl->counts;out.packetSequence=impl->current[0].header[2];out.registeredQueues=uint32_t(std::count_if(impl->queues.begin(),impl->queues.end(),[](const auto& q){return q.handle!=VK_NULL_HANDLE;}));return out;}

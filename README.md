@@ -10,6 +10,16 @@ répond pas à cet objectif.
 
 ## État du projet
 
+Le [raccordement coopératif de la couche Vulkan à OpenXR](docs/COOPERATIVE_LAYER_XR.md)
+transmet maintenant les images du producteur GPU au présentateur, avec poses
+issues de `xrLocateViews`, sans répéter les commandes de l'application. Les
+16 contrôles en fenêtre Vulkan utilisent une scène possédée et un **runtime XR
+simulé** : 7 864 320 octets d'images arrivées dans XR correspondent exactement
+aux vues originales retenues. Les arrêts et les accès de queue refusés sont
+vérifiés, avec 11 contrôles de non-régression. Ce nouveau chemin n'a pas été
+lancé dans Diablo ou SteamVR physique ; la projection du jeu reste à calibrer,
+et les deux vues restent successives et partielles.
+
 Le [cinquième essai réel de vues successives](docs/SEQUENTIAL_CAPTURE.md#cinquième-essai-réel--plafond-de-pipelines-élargi-et-vérifié)
 étend le décalage géométrique observé dans **Diablo IV, en 2560 × 1440** : les
 24 zones de terrain acceptées se décalent entre les yeux et reviennent à leur
