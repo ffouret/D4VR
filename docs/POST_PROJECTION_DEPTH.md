@@ -83,7 +83,8 @@ Missing environments or negative controls, static-only proofs, invalid metrics
 and source mismatches are refused. Before linking, original stores and suffix
 arithmetic keep their exact instructions and operands. After linking, the full
 write policy is checked and original Output-store counts are preserved.
-Private snapshots and results have restricted filesystem permissions.
+Private snapshots and results use mode 0700/0600 on the tested POSIX host.
+These mode bits do not establish a Windows ACL policy.
 
 Two original modules have been recognized, constructed and SPIR-V validated.
 Only Function stores are added; the original suffixes remain. Their results

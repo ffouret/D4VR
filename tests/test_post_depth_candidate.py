@@ -7,6 +7,7 @@ from copy import deepcopy
 from hashlib import sha256
 import json
 import math
+import os
 from pathlib import Path
 import stat
 import struct
@@ -250,8 +251,9 @@ class PostDepthCandidate(unittest.TestCase):
         self.assertEqual(result['helper_certificate_sha256'],sha256(json.dumps(self.helper_cert).encode()).hexdigest())
         for key in ('game_bundle_authorized','game_executed','xr_submission','coverage_repaired'):
             self.assertIs(result[key],False)
-        self.assertEqual(stat.S_IMODE(args.output.stat().st_mode),0o700)
-        self.assertEqual(stat.S_IMODE((args.output/'candidate.json').stat().st_mode),0o600)
+        if os.name == 'posix':
+            self.assertEqual(stat.S_IMODE(args.output.stat().st_mode),0o700)
+            self.assertEqual(stat.S_IMODE((args.output/'candidate.json').stat().st_mode),0o600)
         self.assertTrue((args.output/'original.snapshot.spv').read_bytes()==self.source)
         self.assertTrue((args.output/'helper.snapshot.spv').read_bytes()==self.helper_bytes)
 
