@@ -116,7 +116,7 @@ void facetDeclarations(){
         REQUIRE(p->structureReasons==0&&p->unknownFlags==0&&p->recognizedRenderingFlags==(flags[i]&fsr));REQUIRE(p->layoutKnown&&p->viewportDeclarationKnown&&p->scissorDeclarationKnown);
         REQUIRE(snap.push.byteKnownMask==0x0fffffffu&&snap.push.compatibleWordMask==127&&snap.push.imageIndex==5553&&snap.push.samplerIndex==41);
         REQUIRE(snap.viewport.effectiveKnown&&snap.scissor.effectiveKnown&&snap.viewport.setterOrdinal==457&&snap.scissor.setterOrdinal==458);REQUIRE(p->complete==!(flags[i]&fsr));
-        REQUIRE(p->rateReasons&reason(Reason::fragmentShadingRateUnobserved));const auto text=json(snap);REQUIRE(text.find("\"schema_version\":2")!=std::string::npos&&text.find("\"fragment_shading_rate_known\":false")!=std::string::npos&&text.find("\"effective_write_coverage_known\":false")!=std::string::npos);reports.emplace_back(names[i],snap);
+        REQUIRE(p->rateReasons&reason(Reason::fragmentShadingRateUnobserved));const auto text=json(snap);REQUIRE(text.find("\"schema_version\":3")!=std::string::npos&&text.find("\"fragment_shading_rate_known\":false")!=std::string::npos&&text.find("\"effective_write_coverage_known\":false")!=std::string::npos);reports.emplace_back(names[i],snap);
     }
     Input input(h<VkPipelineLayout>(1),Mode::dynamic,Mode::dynamic);input.info.flags=descriptor|fsr;
     VkPipelineCreateFlags2CreateInfoKHR flags2{VK_STRUCTURE_TYPE_PIPELINE_CREATE_FLAGS_2_CREATE_INFO_KHR};flags2.flags=0;input.info.pNext=&flags2;
@@ -161,13 +161,85 @@ void facetDeclarations(){
     Input missingState(h<VkPipelineLayout>(1));missingState.info.pRasterizationState=nullptr;auto absentRaster=capturePipeline(1400,missingState.info,c);REQUIRE(absentRaster->raster.dynamicInfoAbsent&&absentRaster->raster.rasterInfoAbsent&&!absentRaster->raster.rasterInfoObserved&&!absentRaster->raster.viewportInfoObserved);
     missingState.info.pRasterizationState=&missingState.raster;missingState.info.pViewportState=nullptr;auto absentViewport=capturePipeline(1401,missingState.info,c);REQUIRE(absentViewport->raster.rasterInfoObserved&&absentViewport->raster.viewportInfoAbsent&&!absentViewport->raster.viewportInfoObserved);
     Input invalidHeader(h<VkPipelineLayout>(1));invalidHeader.info.pDynamicState=&invalidHeader.dynamic;invalidHeader.dynamic.sType=VK_STRUCTURE_TYPE_APPLICATION_INFO;invalidHeader.dynamic.pNext=h<const void*>(1);invalidHeader.dynamic.pDynamicStates=h<const VkDynamicState*>(1);invalidHeader.info.pRasterizationState=h<const VkPipelineRasterizationStateCreateInfo*>(1);auto invalidDynamic=capturePipeline(1402,invalidHeader.info,c);REQUIRE(!invalidDynamic->raster.dynamicInfoObserved&&!invalidDynamic->raster.dynamicInfoAbsent&&invalidDynamic->viewportReasons==reason(Reason::invalidDynamicInfo));
-    REQUIRE(reasonNames.size()==37&&reason(Reason::fsrDynamicDeclaration)==(uint64_t(1)<<36));
+    REQUIRE(reasonNames.size()==39&&reason(Reason::fsrDynamicDeclaration)==(uint64_t(1)<<36));
+}
+void rawSetterArguments(){
+    // No pipeline admission is needed to retain safely observed argument bits.
+    Recording r;VkViewport v{0,0,2560,-1440,-0.f,1};const uint32_t nan=0x7fc12345u;std::memcpy(&v.x,&nan,4);
+    const VkRect2D sc{{INT32_MIN,-1},{UINT32_MAX,0}};r.viewport(0,1,&v,2);r.scissor(0,1,&sc,3,true);
+    auto unknown=r.draw(4);REQUIRE(unknown.viewport.mode==Mode::unknown&&!unknown.viewport.valueKnown&&!unknown.viewport.effectiveKnown);
+    REQUIRE(unknown.rawViewport.valueCaptured&&unknown.rawViewport.recordingBankKnown&&unknown.rawViewport.originOrdinal==2&&unknown.rawViewport.captureEpoch==unknown.rawViewport.recordingEpoch);
+    REQUIRE(!unknown.rawViewport.withCount&&unknown.rawViewport.first==0&&unknown.rawViewport.count==1&&unknown.rawViewport.value.bits[0]==nan&&unknown.rawViewport.value.bits[4]==0x80000000u&&!unknown.rawViewport.value.valid);
+    REQUIRE(unknown.rawScissor.valueCaptured&&unknown.rawScissor.withCount&&unknown.rawScissor.originOrdinal==3&&unknown.rawScissor.value.value.offset.x==INT32_MIN&&unknown.rawScissor.value.value.extent.width==UINT32_MAX);
+    const auto frozen=json(unknown);REQUIRE(frozen.find("\"effective_operand_claimed\":false")!=std::string::npos);reports.emplace_back("raw_unknown_mode_exact_nan_signed_zero_and_scissor_extremes",unknown);
+    // The latest call can address another index without replacing the index0
+    // candidate. Its array is intentionally unreadable.
+    r.viewport(5,UINT32_MAX,h<const VkViewport*>(1),5);r.scissor(7,1,h<const VkRect2D*>(1),6);
+    const auto otherIndex=r.draw(7);REQUIRE(otherIndex.rawViewport.valueCaptured&&otherIndex.rawViewport.originOrdinal==2&&otherIndex.rawViewport.lastOrdinal==5&&otherIndex.rawViewport.lastFirst==5&&otherIndex.rawViewport.lastCount==UINT32_MAX&&!otherIndex.rawViewport.lastPayloadCaptured);
+    REQUIRE(otherIndex.rawScissor.originOrdinal==3&&otherIndex.rawScissor.withCount&&!otherIndex.rawScissor.lastWithCount&&otherIndex.rawScissor.lastFirst==7&&otherIndex.rawScissor.lastOrdinal==6);
+    reports.emplace_back("raw_candidate_origin_distinct_from_latest_other_index_call",otherIndex);
+    r.viewport(0,0,nullptr,8,true);r.scissor(0,2,h<const VkRect2D*>(1),9,true);const auto unavailable=r.draw(10);
+    REQUIRE(!unavailable.rawViewport.valueCaptured&&unavailable.rawViewport.originOrdinal==8&&unavailable.rawViewport.withCount&&unavailable.rawViewport.count==0&&!unavailable.rawViewport.lastPayloadCaptured);
+    REQUIRE(!unavailable.rawScissor.valueCaptured&&unavailable.rawScissor.originOrdinal==9&&unavailable.rawScissor.count==2&&!unavailable.rawScissor.lastPayloadCaptured);reports.emplace_back("raw_zero_with_count_and_multiple_values_have_no_payload",unavailable);
+    r.viewport(0,1,nullptr,11);r.scissor(0,1,h<const VkRect2D*>(1),12,false,false);const auto refused=r.draw(13);
+    REQUIRE(!refused.rawViewport.valueCaptured&&refused.rawViewport.originOrdinal==11&&!refused.rawViewport.withCount&&refused.rawViewport.count==1);
+    REQUIRE(!refused.rawScissor.valueCaptured&&refused.rawScissor.originOrdinal==12&&!refused.rawScissor.lastPayloadCaptured);reports.emplace_back("raw_null_or_refused_chain_does_not_reuse_prior_bytes",refused);
+    // Static/unknown binds and invalidation keep a historical origin, while
+    // the current recording bank and epoch explicitly cease to match it.
+    LayoutCatalog c;layout(c,1);const auto fixed=pipeline(900,c,1),dynamic=pipeline(901,c,1,Mode::dynamic,Mode::dynamic);
+    VkViewport finite{0,0,2560,1440,0,1};const VkRect2D rect{{0,0},{2560,1440}};
+    r.viewport(0,1,&finite,14,true);r.scissor(0,1,&rect,15,true);const auto beforeBind=r.draw(16);r.bind(fixed,17);const auto afterBind=r.draw(18);
+    REQUIRE(afterBind.rawViewport.valueCaptured&&afterBind.rawViewport.originOrdinal==14&&afterBind.rawViewport.captureEpoch==beforeBind.rawViewport.captureEpoch&&afterBind.rawViewport.captureEpoch!=afterBind.rawViewport.recordingEpoch&&!afterBind.rawViewport.recordingBankKnown);
+    REQUIRE(afterBind.viewport.mode==Mode::staticValue&&afterBind.viewport.setterOrdinal==0);reports.emplace_back("raw_historical_setter_not_retagged_by_static_bind",afterBind);
+    r.bind({},19);r.invalidate();r.bind(dynamic,20);const auto invalidated=r.draw(21);
+    REQUIRE(invalidated.rawViewport.valueCaptured&&invalidated.rawViewport.originOrdinal==14&&!invalidated.rawViewport.recordingBankKnown&&!invalidated.viewport.valueKnown&&invalidated.rawViewport.captureEpoch!=invalidated.rawViewport.recordingEpoch);reports.emplace_back("raw_historical_setter_survives_unknown_invalidation_without_interpretation",invalidated);
+    // Refused ordinal/overflow calls cannot fabricate a new ordered capture or
+    // dereference poison arrays. New recording generations clear every origin.
+    r.viewport(0,1,h<const VkViewport*>(1),0);const auto unordered=r.draw(21);REQUIRE(!unordered.rawViewport.valueCaptured&&unordered.rawViewport.originOrdinal==14&&unordered.rawViewport.lastOrdinal==14);reports.emplace_back("raw_zero_ordinal_is_unavailable_without_invented_origin",unordered);
+    r.overflow=true;r.viewport(0,1,h<const VkViewport*>(1),22);const auto overflow=r.draw(23);REQUIRE(overflow.rawViewport.originOrdinal==14&&!overflow.rawViewport.valueCaptured&&!overflow.rawViewport.recordingBankKnown&&overflow.overflow);reports.emplace_back("raw_overflow_has_no_new_ordered_observation",overflow);
+    r={};const auto reset=r.draw(24);REQUIRE(!reset.rawViewport.valueCaptured&&!reset.rawScissor.valueCaptured&&reset.rawViewport.originOrdinal==0&&reset.rawViewport.lastOrdinal==0);reports.emplace_back("raw_new_recording_has_no_old_origin",reset);
+    v={};REQUIRE(json(unknown)==frozen&&unknown.rawViewport.value.bits[0]==nan&&unknown.rawViewport.originOrdinal==2);
+}
+void depthClipDeclarations(){
+    LayoutCatalog c;const auto l=layout(c,1);const VkViewport vp{-0.f,1440,2560,-1440,0,1};const VkRect2D sc{{0,0},{2560,1440}};
+    const auto draw=[&](const PipelineRef& p){Recording r;r.bind(p,1);const std::array<uint32_t,8> words{{1,2,3,4,5,6,7,8}};r.push(l,VK_SHADER_STAGE_VERTEX_BIT|VK_SHADER_STAGE_FRAGMENT_BIT,0,32,words.data(),2);r.viewport(0,1,&vp,3,true);r.scissor(0,1,&sc,4,true);return r.draw(5,DrawArguments::direct(3,1,0,0));};
+    Input base(h<VkPipelineLayout>(1),Mode::withCount,Mode::withCount);const auto plain=capturePipeline(2000,base.info,c);const auto plainDraw=draw(plain);REQUIRE(plainDraw.viewport.effectiveKnown&&plainDraw.scissor.effectiveKnown);reports.emplace_back("depth_clip_absent_control",plainDraw);
+    VkPipelineRasterizationDepthClipStateCreateInfoEXT clip{VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_DEPTH_CLIP_STATE_CREATE_INFO_EXT};base.raster.pNext=&clip;
+    DrawSnapshot retained;std::string retainedText;
+    for(uint32_t payload:{0u,1u,0xdeadbeefu}){clip.depthClipEnable=payload;const auto p=capturePipeline(2001+payload,base.info,c);const auto snap=draw(p);
+        REQUIRE(p->layoutKnown&&p->viewportDeclarationKnown&&p->scissorDeclarationKnown&&p->raster.rasterChain.count==1&&!p->raster.rasterChain.truncated&&p->raster.rasterChain.types[0]==VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_DEPTH_CLIP_STATE_CREATE_INFO_EXT);
+        REQUIRE(p->raster.depthClipDeclared&&p->raster.depthClipFlagsKnownMask==1&&p->raster.depthClipFlags[0]==0);
+        REQUIRE(snap.push.compatibleWordMask==255&&snap.viewport.effectiveKnown&&snap.scissor.effectiveKnown&&snap.viewport.value.bits==plainDraw.viewport.value.bits&&snap.scissor.value.value.extent.width==plainDraw.scissor.value.value.extent.width);
+        REQUIRE(!p->raster.viewportInfoObserved&&!p->raster.viewportInfoAbsent);const auto text=json(snap);REQUIRE(text.find("\"depth_clip_value_known\":false")!=std::string::npos&&text.find("depth_clip_unobserved")!=std::string::npos);
+        if(payload==0){retained=snap;retainedText=text;}reports.emplace_back("depth_clip_flags_zero_payload_"+std::to_string(payload),snap);
+    }
+    clip.flags=1;clip.depthClipEnable=VK_FALSE;auto nonzero=capturePipeline(2100,base.info,c);REQUIRE(nonzero->layoutKnown&&!nonzero->viewportDeclarationKnown&&!nonzero->scissorDeclarationKnown);const auto refused=draw(nonzero);REQUIRE(refused.rawViewport.valueCaptured&&!refused.viewport.valueKnown&&json(refused).find("depth_clip_flags")!=std::string::npos);reports.emplace_back("depth_clip_nonzero_reserved_flags_refused",refused);
+    REQUIRE(json(retained)==retainedText);clip.flags=0;
+    VkBaseInStructure sibling{VK_STRUCTURE_TYPE_APPLICATION_INFO,nullptr};clip.pNext=&sibling;const auto unknown=capturePipeline(2101,base.info,c);REQUIRE(unknown->layoutKnown&&!unknown->viewportDeclarationKnown&&unknown->raster.rasterChain.count==2&&unknown->raster.depthClipFlagsKnownMask==1);reports.emplace_back("depth_clip_unknown_sibling_still_refuses_raster",draw(unknown));
+    sibling.pNext=reinterpret_cast<const VkBaseInStructure*>(&clip);clip.pNext=nullptr;base.raster.pNext=&sibling;const auto reversed=capturePipeline(2107,base.info,c);REQUIRE(!reversed->viewportDeclarationKnown&&reversed->raster.depthClipFlagsKnownMask==2&&reversed->raster.rasterChain.types[1]==clip.sType);reports.emplace_back("depth_clip_flags_diagnostic_keeps_original_chain_index",draw(reversed));sibling.pNext=nullptr;base.raster.pNext=&clip;
+    VkPipelineRasterizationDepthClipStateCreateInfoEXT duplicate=clip;duplicate.pNext=nullptr;clip.pNext=&duplicate;const auto twice=capturePipeline(2102,base.info,c);REQUIRE(!twice->viewportDeclarationKnown&&twice->raster.rasterChain.duplicate&&twice->raster.depthClipDeclared&&!twice->raster.depthClipFlagsKnownMask);reports.emplace_back("depth_clip_duplicate_type_refused",draw(twice));
+    std::array<VkBaseInStructure,9> chain{};for(uint32_t i=0;i<chain.size();++i){chain[i].sType=VK_STRUCTURE_TYPE_APPLICATION_INFO;chain[i].pNext=i+1<chain.size()?&chain[i+1]:nullptr;}clip.pNext=chain.data();const auto tooLong=capturePipeline(2103,base.info,c);REQUIRE(!tooLong->viewportDeclarationKnown&&tooLong->raster.rasterChain.count==8&&tooLong->raster.rasterChain.truncated&&!tooLong->raster.depthClipFlagsKnownMask);reports.emplace_back("depth_clip_subchain_limit_refused",draw(tooLong));
+    clip.pNext=nullptr;
+    for(bool discard:{false,true}){base.raster.flags=discard?0:1;base.raster.rasterizerDiscardEnable=discard?VK_TRUE:VK_FALSE;const auto parentRefused=capturePipeline(2110+unsigned(discard),base.info,c);REQUIRE(!parentRefused->viewportDeclarationKnown&&parentRefused->raster.depthClipDeclared&&!parentRefused->raster.depthClipFlagsKnownMask);reports.emplace_back(discard?"depth_clip_discarded_parent_does_not_read_node_flags":"depth_clip_parent_flags_refusal_does_not_read_node_flags",draw(parentRefused));}
+    base.raster.flags=0;base.raster.rasterizerDiscardEnable=VK_FALSE;const auto originalRaster=base.raster;base.raster.sType=VK_STRUCTURE_TYPE_APPLICATION_INFO;base.raster.pNext=h<const void*>(1);const auto invalidHeader=capturePipeline(2112,base.info,c);REQUIRE(!invalidHeader->viewportDeclarationKnown&&!invalidHeader->raster.rasterInfoObserved&&!invalidHeader->raster.depthClipDeclared);base.raster=originalRaster;reports.emplace_back("depth_clip_invalid_parent_header_does_not_read_chain",draw(invalidHeader));
+    // This review admits neither a dynamic depth-clip setter declaration nor
+    // the distinct viewport depth-clip-control structure.
+    Input dynamicClip(h<VkPipelineLayout>(1),Mode::withCount,Mode::withCount);dynamicClip.states[0]=VK_DYNAMIC_STATE_DEPTH_CLIP_ENABLE_EXT;REQUIRE(!capturePipeline(2105,dynamicClip.info,c)->viewportDeclarationKnown);
+    Input viewportClip(h<VkPipelineLayout>(1),Mode::dynamic,Mode::dynamic);VkBaseInStructure control{VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_DEPTH_CLIP_CONTROL_CREATE_INFO_EXT,nullptr};viewportClip.views.pNext=&control;REQUIRE(!capturePipeline(2106,viewportClip.info,c)->viewportDeclarationKnown);
+    // A fragment-only GPL body is ignored. A fake header whose flags payload
+    // does not exist would fault if the ignored raster pointer were inspected.
+    Input ignored(h<VkPipelineLayout>(1));VkGraphicsPipelineLibraryCreateInfoEXT gpl{VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_LIBRARY_CREATE_INFO_EXT};gpl.flags=VK_GRAPHICS_PIPELINE_LIBRARY_FRAGMENT_SHADER_BIT_EXT;ignored.info.flags=VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;ignored.info.pNext=&gpl;ignored.info.pRasterizationState=h<const VkPipelineRasterizationStateCreateInfo*>(1);ignored.info.pDynamicState=h<const VkPipelineDynamicStateCreateInfo*>(1);ignored.info.pViewportState=h<const VkPipelineViewportStateCreateInfo*>(1);
+    const auto fragment=capturePipeline(2200,ignored.info,c);REQUIRE(fragment->fragmentLayout&&!fragment->raster.rasterInfoObserved&&fragment->raster.rasterChain.count==0);
+    gpl.flags=VK_GRAPHICS_PIPELINE_LIBRARY_PRE_RASTERIZATION_SHADERS_BIT_EXT;base.info.flags=VK_PIPELINE_CREATE_LIBRARY_BIT_KHR;base.info.pNext=&gpl;const auto owner=capturePipeline(2201,base.info,c);REQUIRE(owner->raster.complete&&owner->raster.rasterChain.count==1);
+    std::vector<PipelineRef> libraries{owner,fragment};for(uint32_t part:{1u,8u}){gpl.flags=part;libraries.push_back(capturePipeline(2210+part,ignored.info,c));REQUIRE(!libraries.back()->raster.rasterInfoObserved);}
+    VkPipelineLibraryCreateInfoKHR link{VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR};link.libraryCount=4;link.pLibraries=h<const VkPipeline*>(1);VkGraphicsPipelineCreateInfo final{VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO};final.pNext=&link;final.pRasterizationState=h<const VkPipelineRasterizationStateCreateInfo*>(1);final.pViewportState=h<const VkPipelineViewportStateCreateInfo*>(1);final.pDynamicState=h<const VkPipelineDynamicStateCreateInfo*>(1);const auto joined=capturePipeline(2202,final,c,libraries);const auto linked=draw(joined);REQUIRE(joined->layoutKnown&&joined->viewportDeclarationKnown&&linked.viewport.effectiveKnown&&joined->raster.ownerGeneration==owner->generation);reports.emplace_back("depth_clip_gpl_uses_only_immutable_pre_raster_owner",linked);
+    clip.flags=99;clip.pNext=&sibling;REQUIRE(json(retained)==retainedText&&owner->raster.rasterChain.count==1&&joined->raster.ownerGeneration==2201);
 }
 void immutableAndBudget(){
     DrawSnapshot selected;std::string before;{
         LayoutCatalog c;auto l=layout(c,1);Recording r;Input selectedInput(h<VkPipelineLayout>(1),Mode::dynamic,Mode::dynamic);selectedInput.info.flags=VK_PIPELINE_CREATE_RENDERING_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR|VK_PIPELINE_CREATE_DESCRIPTOR_BUFFER_BIT_EXT;r.bind(capturePipeline(1,selectedInput.info,c),1);uint32_t value=71;r.push(l,VK_SHADER_STAGE_FRAGMENT_BIT,8,4,&value,2);value=72;r.push(l,VK_SHADER_STAGE_FRAGMENT_BIT,24,4,&value,3);VkViewport viewport{0,0,2560,1440,0,1};VkRect2D scissor{{0,0},{2560,1440}};r.viewport(0,1,&viewport,4);r.scissor(0,1,&scissor,5);selected=r.draw(6,DrawArguments::direct(3,1,0,0));before=json(selected);
         for(uint32_t i=0;i<80;++i){r={};c.destroyed(h<VkPipelineLayout>(1));auto fresh=layout(c,1);r.bind(pipeline(2+i,c,1),10+i);value=900+i;r.push(fresh,VK_SHADER_STAGE_FRAGMENT_BIT,8,4,&value,20+i);REQUIRE(json(selected)==before);}
-    }REQUIRE(json(selected)==before&&selected.push.imageIndex==71&&selected.push.samplerIndex==72);reports.emplace_back("retained_after_destroy_80",selected);
+    }REQUIRE(json(selected)==before&&selected.push.imageIndex==71&&selected.push.samplerIndex==72&&selected.rawViewport.originOrdinal==4&&selected.rawScissor.originOrdinal==5&&selected.rawViewport.valueCaptured);reports.emplace_back("retained_after_destroy_80",selected);
     const auto fallback=json(selected,64);REQUIRE(fallback.size()<=64&&fallback.find("serialization_budget")!=std::string::npos);REQUIRE(json(selected,2)=="{}"&&json(selected,1)=="0");
     for(std::size_t cap:{0u,1u,2u,16u,64u,1024u,16384u})REQUIRE(json(selected,cap).size()<=cap);
     // Simulated maximum signature repetition exercises the serializer budget;
@@ -178,7 +250,7 @@ void immutableAndBudget(){
 }
 }
 int main(int argc,char** argv)try {
-    layoutLifetimes();pushValues();rasterValues();librariesAndIgnoredPointers();facetDeclarations();immutableAndBudget();
+    layoutLifetimes();pushValues();rasterValues();librariesAndIgnoredPointers();facetDeclarations();rawSetterArguments();depthClipDeclarations();immutableAndBudget();
     if(argc==3&&std::string(argv[1])=="--report"){std::ofstream out(argv[2]);out<<"{\"cases\":[";for(std::size_t i=0;i<reports.size();++i){if(i)out<<',';out<<"{\"name\":\""<<reports[i].first<<"\",\"draw\":"<<json(reports[i].second)<<'}';}out<<"]}\n";REQUIRE(bool(out));}else REQUIRE(argc==1);
-    std::cout<<"{\"sampled_writer_state_cpu_passed\":true,\"assertions\":"<<assertions<<",\"cases\":"<<reports.size()<<",\"discarded_recordings\":80,\"recording_bytes\":"<<sizeof(Recording)<<",\"draw_snapshot_bytes\":"<<sizeof(DrawSnapshot)<<",\"layout_snapshot_bytes\":"<<sizeof(PushLayoutSnapshot)<<",\"pipeline_snapshot_bytes\":"<<sizeof(PipelineSnapshot)<<",\"raster_declaration_bytes\":"<<sizeof(RasterDeclaration)<<",\"gpu_execution_performed\":false}\n";return 0;
+    std::cout<<"{\"sampled_writer_state_cpu_passed\":true,\"assertions\":"<<assertions<<",\"cases\":"<<reports.size()<<",\"discarded_recordings\":80,\"recording_bytes\":"<<sizeof(Recording)<<",\"draw_snapshot_bytes\":"<<sizeof(DrawSnapshot)<<",\"layout_snapshot_bytes\":"<<sizeof(PushLayoutSnapshot)<<",\"pipeline_snapshot_bytes\":"<<sizeof(PipelineSnapshot)<<",\"raster_declaration_bytes\":"<<sizeof(RasterDeclaration)<<",\"raw_viewport_snapshot_bytes\":"<<sizeof(RawSetterObservation<ViewportBits>)<<",\"raw_scissor_snapshot_bytes\":"<<sizeof(RawSetterObservation<ScissorValue>)<<",\"gpu_execution_performed\":false}\n";return 0;
 }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}

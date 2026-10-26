@@ -55,17 +55,23 @@ int main(int argc,char** argv)try{
     bool sourceConsumerFixture=std::getenv("D4VR_SOURCE_CONSUMER_FIXTURE");
     bool sampledWriterFixture=std::getenv("D4VR_SAMPLED_WRITER_FIXTURE");
     const auto fsrOption=std::getenv("D4VR_SAMPLED_WRITER_FSR_FIXTURE");const bool sampledWriterFsrFixture=fsrOption && !std::strcmp(fsrOption,"1");
+    const auto rawOption=std::getenv("D4VR_SAMPLED_WRITER_RAW_FIXTURE");const bool sampledWriterRawFixture=rawOption && !std::strcmp(rawOption,"1");
     bool foreignProducer=(poseCapture || cooperative) && std::getenv("D4VR_POSE_FIXTURE_FOREIGN");
     if(heldDepthFixture && (!poseCapture || !heldView || !cameraUpdates || depthFixture || transferFixture || auditFixture || cooperative || foreignProducer))throw std::invalid_argument("Held depth fixture requires the monoscopic pose-camera fixture alone");
     if(sourceHistoryFixture && !heldDepthFixture)throw std::invalid_argument("Source history fixture requires held geometric depth");
     if(sourceConsumerFixture && !sourceHistoryFixture)throw std::invalid_argument("Source consumer fixture requires source history workload");
     if(sampledWriterFixture && !sourceConsumerFixture)throw std::invalid_argument("Writer state controls require the source consumer fixture");
     if(sampledWriterFsrFixture && !sampledWriterFixture)throw std::invalid_argument("FSR flag controls require the writer state fixture");
+    if(sampledWriterRawFixture && (!sampledWriterFixture || !sampledWriterFsrFixture))throw std::invalid_argument("Raw setter controls require the feature-enabled writer facet fixture");
     if(poseCapture)text(directory/"pose.request","invalid diagnostic input\n");
-    Window window;Fixture f(true,false,sourceConsumerFixture,false,false,"D4VR presentation selection fixture",cameraUpdates || auditFixture,{"VK_KHR_surface","VK_KHR_xlib_surface"},{VK_KHR_SWAPCHAIN_EXTENSION_NAME},{},cameraUpdates?5:1,cooperative || auditFixture || heldDepthFixture,sampledWriterFixture,sampledWriterFsrFixture);
+    Window window;Fixture f(true,false,sourceConsumerFixture,false,false,"D4VR presentation selection fixture",cameraUpdates || auditFixture,{"VK_KHR_surface","VK_KHR_xlib_surface"},{VK_KHR_SWAPCHAIN_EXTENSION_NAME},{},cameraUpdates?5:1,cooperative || auditFixture || heldDepthFixture,sampledWriterFixture,sampledWriterFsrFixture,sampledWriterRawFixture);
     if(sampledWriterFsrFixture && !f.writerFsrAttachmentEnabled){
         vkDestroyDevice(f.device,nullptr);vkDestroyInstance(f.instance,nullptr);
         std::cout<<"{\"sampled_writer_fsr_fixture_skipped\":true,\"reason\":\"extension_or_attachment_feature_unavailable\",\"test_executed\":false}\n";return 77;
+    }
+    if(sampledWriterRawFixture && !f.writerDepthClipEnabled){
+        vkDestroyDevice(f.device,nullptr);vkDestroyInstance(f.instance,nullptr);
+        std::cout<<"{\"sampled_writer_raw_fixture_skipped\":true,\"reason\":\"extension_or_depth_clip_feature_unavailable\",\"test_executed\":false}\n";return 77;
     }
     std::array<VkQueue,5> readerQueues{};if(cameraUpdates)for(unsigned i=0;i<5;++i)vkGetDeviceQueue(f.device,f.family,i,&readerQueues[i]);
     auto createSurface=reinterpret_cast<CreateSurface>(vkGetInstanceProcAddr(f.instance,"vkCreateXlibSurfaceKHR"));if(!createSurface)throw std::runtime_error("Xlib Vulkan surface unavailable");
@@ -101,6 +107,8 @@ int main(int argc,char** argv)try{
     VkPipelineVertexInputStateCreateInfo input{VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO};VkPipelineInputAssemblyStateCreateInfo assembly{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO};assembly.topology=VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     VkViewport vp{0,0,float(extent.width),float(extent.height),0,1};VkRect2D sc{{0,0},extent};VkPipelineViewportStateCreateInfo viewport{VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO};viewport.viewportCount=viewport.scissorCount=1;viewport.pViewports=&vp;viewport.pScissors=&sc;
     VkPipelineRasterizationStateCreateInfo raster{VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO};raster.polygonMode=VK_POLYGON_MODE_FILL;raster.lineWidth=1;
+    VkPipelineRasterizationDepthClipStateCreateInfoEXT clip{VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_DEPTH_CLIP_STATE_CREATE_INFO_EXT};clip.depthClipEnable=VK_TRUE;
+    if(sampledWriterRawFixture)raster.pNext=&clip;
     VkPipelineMultisampleStateCreateInfo ms{VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO};ms.rasterizationSamples=VK_SAMPLE_COUNT_1_BIT;
     VkPipelineColorBlendAttachmentState color{};color.colorWriteMask=15;VkPipelineColorBlendStateCreateInfo blend{VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO};blend.attachmentCount=1;blend.pAttachments=&color;
     VkPipelineRenderingCreateInfo rendering{VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO};rendering.colorAttachmentCount=1;rendering.pColorAttachmentFormats=&ici.format;
@@ -211,6 +219,7 @@ int main(int argc,char** argv)try{
     if(sourceConsumerFixture)std::cout<<",\"source_consumer_fixture\":true,\"original_descriptor_image_queries\":8,\"descriptor_queries_bound_or_sampled\":false";
     if(sampledWriterFixture)std::cout<<",\"sampled_writer_state_fixture\":true,\"original_writer_draw_states\":"<<frameCount*2<<",\"writer_dynamic_count_enabled\":"<<(f.writerDynamicCountEnabled?"true":"false")<<",\"writer_maintenance6_enabled\":"<<(f.writerMaintenance6Enabled?"true":"false")<<",\"fragment_push_constants_read_by_shader\":false";
     if(sampledWriterFsrFixture)std::cout<<",\"sampled_writer_fsr_fixture\":true,\"writer_attachment_fsr_enabled\":true,\"writer_pipeline_fsr_flag\":"<<VK_PIPELINE_CREATE_RENDERING_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR<<",\"writer_rate_attachment_present\":false,\"writer_static_rate_pnext_present\":false,\"writer_dynamic_rate_declared\":false";
+    if(sampledWriterRawFixture)std::cout<<",\"sampled_writer_raw_fixture\":true,\"depth_clip_feature_enabled\":true,\"depth_clip_chain_type\":"<<VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_DEPTH_CLIP_STATE_CREATE_INFO_EXT<<",\"depth_clip_state_flags\":0,\"depth_clip_enable_payload\":true";
     std::cout<<"}\n";
     return 0;
 }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}

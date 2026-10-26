@@ -11,6 +11,11 @@ This extends the [capture-owned writer prefix](CAPTURED_WRITERS.md). The
 [owned evidence](proofs/sampled-writer-state-v1.json) is separate from every game
 trial and from the earlier [sampled-image pixel control](SAMPLED_WRITER_CONTROL.md).
 
+The later [schema 3 extension](RAW_WRITER_ARGUMENTS.md) retains raw setter
+arguments independently of pipeline interpretation and narrowly reviews a
+depth-clip declaration. Historical observations and their unknowns remain
+unchanged; no old receipt acquires missing arguments retrospectively.
+
 ## Configuration and unchanged forwarding
 
 The state option requires the existing `D4VR_DEPTH_SOURCE_HISTORY=1` and

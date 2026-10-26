@@ -19,6 +19,11 @@ push words; their conventional viewport/scissor declarations remain unknown
 because of the precisely recorded depth-clip raster subchain. This observation
 does not identify a sampled resource or repair the persistent cutouts.
 
+The later [schema 3 extension](RAW_WRITER_ARGUMENTS.md) preserves raw setters
+even when a declaration remains unknown. Its separate game trial observes full
+source viewport/scissor operands in seven targeted draws; this does not change
+the earlier trial's saved unknowns or establish effective GPU coverage.
+
 | Facet | Required captured evidence | Meaning of a known facet |
 | --- | --- | --- |
 | `push_layout` | Complete immutable layout ranges, unique GPL owners and the existing exact push-range comparison | Saved fragment words can be checked against the original bound layout. It does not resolve a descriptor or prove a shader read. |

@@ -78,11 +78,11 @@ enum class Reason : uint32_t {
     unsupportedDynamicState,conflictingViewportModes,conflictingScissorModes,missingRasterState,
     invalidRasterState,unknownRasterChain,rasterFlags,rasterizerDiscard,missingViewportState,
     invalidViewportState,unknownViewportChain,viewportFlags,fragmentShadingRateUnobserved,
-    renderingFsrAttachment,fsrStaticDeclaration,fsrDynamicDeclaration
+    renderingFsrAttachment,fsrStaticDeclaration,fsrDynamicDeclaration,depthClipFlags,depthClipUnobserved
 };
 using ReasonMask=uint64_t;
 inline constexpr ReasonMask reason(Reason r) noexcept {return ReasonMask(1)<<uint32_t(r);}
-inline constexpr std::array<const char*,37> reasonNames{{
+inline constexpr std::array<const char*,39> reasonNames{{
     "no_pipeline","invalid_pipeline_create","unknown_pipeline_flags","unknown_pipeline_chain",
     "duplicate_pipeline_chain","pipeline_chain_limit","incomplete_library_list","missing_library",
     "overlapping_library_parts","invalid_library_parts","missing_required_owner","library_not_executable",
@@ -91,7 +91,7 @@ inline constexpr std::array<const char*,37> reasonNames{{
     "unsupported_dynamic_state","conflicting_viewport_modes","conflicting_scissor_modes","missing_raster_state",
     "invalid_raster_state","unknown_raster_chain","raster_flags","rasterizer_discard","missing_viewport_state",
     "invalid_viewport_state","unknown_viewport_chain","viewport_flags","fragment_shading_rate_unobserved",
-    "rendering_fsr_attachment","fsr_static_declaration","fsr_dynamic_declaration"
+    "rendering_fsr_attachment","fsr_static_declaration","fsr_dynamic_declaration","depth_clip_flags","depth_clip_unobserved"
 }};
 template<std::size_t N> struct ChainTypes {
     std::array<VkStructureType,N> types{};uint32_t count=0;bool truncated=false,duplicate=false;
@@ -111,6 +111,7 @@ struct RasterDeclaration {
     uint32_t dynamicCount=0,dynamicRetained=0,rejectedDynamicCount=0;bool dynamicTruncated=false,fsrDynamicDeclared=false;
     bool dynamicInfoObserved=false,rasterInfoObserved=false,viewportInfoObserved=false;
     bool dynamicInfoAbsent=false,rasterInfoAbsent=false,viewportInfoAbsent=false;
+    std::array<uint32_t,8> depthClipFlags{};uint8_t depthClipFlagsKnownMask=0;bool depthClipDeclared=false;
 };
 struct PipelineSnapshot {
     uint64_t generation=0;uint32_t ownParts=0,parts=0,preRasterOwners=0,fragmentOwners=0;
@@ -153,9 +154,21 @@ inline RasterDeclaration captureRaster(const VkGraphicsPipelineCreateInfo& info)
     const auto& raster=*info.pRasterizationState;
     if(raster.sType!=VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO){both(Reason::invalidRasterState);return r;}
     r.rasterInfoObserved=true;r.rasterChain=chainTypes<8>(raster.pNext);
-    if(raster.pNext)both(Reason::unknownRasterChain);
     if(raster.flags)both(Reason::rasterFlags);
     if(raster.rasterizerDiscardEnable)both(Reason::rasterizerDiscard);
+    // This reviewed declaration controls clipping, not conventional viewport or
+    // scissor operands. Read only its reserved flags, never depthClipEnable.
+    // A refused chain retains its observed types without reading any body.
+    for(uint32_t i=0;i<r.rasterChain.count;++i)if(r.rasterChain.types[i]==VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_DEPTH_CLIP_STATE_CREATE_INFO_EXT)r.depthClipDeclared=true;
+    if(r.rasterChain.truncated || r.rasterChain.duplicate || r.viewportReasons){if(raster.pNext)both(Reason::unknownRasterChain);}
+    else {auto* node=static_cast<const VkBaseInStructure*>(raster.pNext);
+        for(uint32_t i=0;i<r.rasterChain.count;++i,node=node->pNext){
+            if(node->sType==VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_DEPTH_CLIP_STATE_CREATE_INFO_EXT){
+                r.depthClipFlags[i]=reinterpret_cast<const VkPipelineRasterizationDepthClipStateCreateInfoEXT*>(node)->flags;r.depthClipFlagsKnownMask|=uint8_t(1u<<i);
+                if(r.depthClipFlags[i])both(Reason::depthClipFlags);
+            }else both(Reason::unknownRasterChain);
+        }
+    }
     // An unmodeled raster declaration cannot justify reading a viewport pointer.
     if(r.viewportReasons || r.scissorReasons)return r;
     r.viewportMode=countViewport?Mode::withCount:dynamicViewport?Mode::dynamic:Mode::staticValue;r.scissorMode=countScissor?Mode::withCount:dynamicScissor?Mode::dynamic:Mode::staticValue;
@@ -240,9 +253,14 @@ struct PushObservation {
     LayoutRef boundLayout;
     uint64_t boundLayoutGeneration=0;bool layoutKnown=false,imageIndexKnown=false,samplerIndexKnown=false,littleEndian=true;uint32_t imageIndex=0,samplerIndex=0;
 };
-template<class T> struct DynamicValue {T value{};uint64_t ordinal=0,epoch=0,countOrdinal=0;uint32_t first=0,count=0,dynamicCount=0,lastFirst=0,lastCount=0;uint64_t lastOrdinal=0;bool known=false,withCount=false,countKnown=false;};
+template<class T> struct DynamicValue {T value{};uint64_t ordinal=0,epoch=0,countOrdinal=0;uint32_t first=0,count=0,dynamicCount=0,lastFirst=0,lastCount=0;uint64_t lastOrdinal=0;bool known=false,withCount=false,countKnown=false,argumentCaptured=false,lastWithCount=false,lastPayloadCaptured=false;};
+// Historical arguments are independent of declaration admission and current
+// dynamic-state knowledge. They describe one index-zero candidate, not an array
+// or the current/effective operand. The latest observed call can be different.
+template<class T> struct RawSetterObservation {T value{};uint64_t originOrdinal=0,captureEpoch=0,recordingEpoch=0,lastOrdinal=0;uint32_t first=0,count=0,lastFirst=0,lastCount=0;bool valueCaptured=false,recordingBankKnown=false,withCount=false,lastWithCount=false,lastPayloadCaptured=false;};
+static_assert(sizeof(RawSetterObservation<ViewportBits>)<=128 && sizeof(RawSetterObservation<ScissorValue>)<=128,"Bounded single-index raw setter snapshots");
 template<class T> struct RasterObservation {T value{};Mode mode=Mode::unknown;bool valueKnown=false,effectiveKnown=false,countKnown=false;uint32_t count=0,declaredFirst=0,declaredCount=0,lastFirst=0,lastCount=0;uint64_t setterOrdinal=0,countOrdinal=0,epoch=0,pipelineGeneration=0,lastOrdinal=0;};
-struct DrawSnapshot {uint64_t ordinal=0,pipelineGeneration=0,pipelineFlags=0,pipelineUnknownFlags=0;DrawArguments arguments{};PushObservation push{};RasterObservation<ViewportBits> viewport{};RasterObservation<ScissorValue> scissor{};bool overflow=false,pipelineDeclarationsComplete=false;PipelineRef pipelineDeclaration;};
+struct DrawSnapshot {uint64_t ordinal=0,pipelineGeneration=0,pipelineFlags=0,pipelineUnknownFlags=0;DrawArguments arguments{};PushObservation push{};RasterObservation<ViewportBits> viewport{};RasterObservation<ScissorValue> scissor{};RawSetterObservation<ViewportBits> rawViewport{};RawSetterObservation<ScissorValue> rawScissor{};bool overflow=false,pipelineDeclarationsComplete=false;PipelineRef pipelineDeclaration;};
 struct Recording {
     PipelineRef pipeline;PushObservation pushState{};DynamicValue<ViewportBits> viewportState{};DynamicValue<ScissorValue> scissorState{};uint64_t epoch=1;bool overflow=false;
     void invalidateRaster() noexcept {viewportState.known=scissorState.known=false;viewportState.countKnown=scissorState.countKnown=false;if(epoch==UINT64_MAX)overflow=true;else ++epoch;}
@@ -257,14 +275,22 @@ struct Recording {
             if(known){std::memcpy(pushState.bytes.data()+word*4,static_cast<const uint8_t*>(values)+(word*4-offset),4);pushState.byteKnownMask|=mask;}}
     }
     template<class T,class Input> void set(DynamicValue<T>& state,uint32_t first,uint32_t count,const Input* values,uint64_t ordinal,bool withCount,bool chainComplete) noexcept {
-        state.lastFirst=first;state.lastCount=count;state.lastOrdinal=ordinal;
+        // An unordered/refused occurrence cannot create a new raw origin.
+        if(overflow || !ordinal){state.known=false;state.countKnown=false;state.argumentCaptured=false;state.lastPayloadCaptured=false;return;}
+        state.lastFirst=first;state.lastCount=count;state.lastOrdinal=ordinal;state.lastWithCount=withCount;state.lastPayloadCaptured=false;
         if(withCount){state.countKnown=!overflow && ordinal && chainComplete && first==0;state.dynamicCount=count;state.countOrdinal=ordinal;}
-        if(!chainComplete || (first==0&&count)){state.first=first;state.count=count;state.ordinal=ordinal;state.epoch=epoch;state.withCount=withCount;state.known=false;state.value={};
-            if(!overflow && ordinal && chainComplete && first==0 && count==1 && values){state.value=T::capture(values[0]);state.known=true;}}
+        if(!chainComplete || (first==0&&(count||withCount))){state.first=first;state.count=count;state.ordinal=ordinal;state.epoch=epoch;state.withCount=withCount;state.known=false;state.argumentCaptured=false;state.value={};
+            if(chainComplete && first==0 && count==1 && values){state.value=T::capture(values[0]);state.known=true;state.argumentCaptured=true;state.lastPayloadCaptured=true;}}
         if(withCount && !count)state.known=false;
     }
     void viewport(uint32_t first,uint32_t count,const VkViewport* values,uint64_t ordinal,bool withCount=false,bool chainComplete=true) noexcept {set(viewportState,first,count,values,ordinal,withCount,chainComplete);}
     void scissor(uint32_t first,uint32_t count,const VkRect2D* values,uint64_t ordinal,bool withCount=false,bool chainComplete=true) noexcept {set(scissorState,first,count,values,ordinal,withCount,chainComplete);}
+    template<class T> RawSetterObservation<T> raw(const DynamicValue<T>& state) const noexcept {
+        RawSetterObservation<T> r;r.recordingEpoch=epoch;r.originOrdinal=state.ordinal;r.captureEpoch=state.epoch;r.first=state.first;r.count=state.count;r.withCount=state.withCount;
+        r.valueCaptured=state.argumentCaptured;r.recordingBankKnown=!overflow && state.known && state.epoch==epoch;r.lastOrdinal=state.lastOrdinal;r.lastFirst=state.lastFirst;r.lastCount=state.lastCount;r.lastWithCount=state.lastWithCount;r.lastPayloadCaptured=state.lastPayloadCaptured;
+        if(r.valueCaptured)r.value=state.value;
+        return r;
+    }
     template<class T> RasterObservation<T> observe(const DynamicValue<T>& state,Mode mode,uint32_t staticCount,const T& staticValue,bool staticKnown,bool declarationKnown) const noexcept {
         RasterObservation<T> r;r.epoch=epoch;r.pipelineGeneration=pipeline?(mode==Mode::staticValue?pipeline->raster.ownerGeneration:pipeline->generation):0;r.lastFirst=state.lastFirst;r.lastCount=state.lastCount;r.lastOrdinal=state.lastOrdinal;
         if(overflow || !pipeline || !declarationKnown)return r;
@@ -276,6 +302,7 @@ struct Recording {
     }
     DrawSnapshot draw(uint64_t ordinal,const DrawArguments& args=DrawArguments{}) const noexcept {
         DrawSnapshot r;r.ordinal=ordinal;r.arguments=args;r.pipelineGeneration=pipeline?pipeline->generation:0;r.pipelineFlags=pipeline?pipeline->flags:0;r.pipelineUnknownFlags=pipeline?pipeline->unknownFlags:0;r.pipelineDeclarationsComplete=pipeline&&pipeline->complete;r.push=pushState;r.overflow=overflow;r.pipelineDeclaration=pipeline;
+        r.rawViewport=raw(viewportState);r.rawScissor=raw(scissorState);
         const uint32_t endian=1;r.push.littleEndian=*reinterpret_cast<const uint8_t*>(&endian)==1;r.push.layoutKnown=pipeline&&pipeline->layoutKnown;r.push.boundLayout=r.push.layoutKnown?pipeline->layout:LayoutRef{};r.push.boundLayoutGeneration=r.push.layoutKnown?pipeline->layout->generation:0;
         for(unsigned i=0;i<8;++i){const uint32_t mask=0xfu<<(i*4);const bool known=(r.push.byteKnownMask&mask)==mask;if(known && r.push.layoutKnown && compatible(r.push.words[i].layout,pipeline->layout))r.push.compatibleWordMask|=uint8_t(1u<<i);if(!known)std::fill_n(r.push.bytes.begin()+i*4,4,0);}
         r.push.imageIndexKnown=(r.push.compatibleWordMask&4)!=0;r.push.samplerIndexKnown=(r.push.compatibleWordMask&64)!=0;if(r.push.imageIndexKnown)std::memcpy(&r.push.imageIndex,r.push.bytes.data()+8,4);if(r.push.samplerIndexKnown)std::memcpy(&r.push.samplerIndex,r.push.bytes.data()+24,4);
@@ -285,6 +312,17 @@ struct Recording {
 inline void layoutJson(std::ostream& out,const LayoutRef& l){out<<"{\"generation\":"<<(l?l->generation:0)<<",\"raw_handle\":"<<(l?l->rawHandle:0)<<",\"flags\":"<<(l?l->flags:0)<<",\"ranges_complete\":"<<(l&&l->complete)<<",\"ranges\":[";if(l)for(uint32_t i=0;i<l->rangeCount;++i){if(i)out<<',';out<<"{\"stage_flags\":"<<l->ranges[i].stageFlags<<",\"offset\":"<<l->ranges[i].offset<<",\"size\":"<<l->ranges[i].size<<'}';}out<<"],\"chain_types\":[";if(l)for(uint32_t i=0;i<l->chainCount;++i){if(i)out<<',';out<<int32_t(l->chainTypes[i]);}out<<"]}";}
 template<class T> inline void rasterJson(std::ostream& out,const RasterObservation<T>& r){out<<"{\"mode\":\""<<modeName(r.mode)<<"\",\"value_known\":"<<r.valueKnown<<",\"effective_known\":"<<r.effectiveKnown<<",\"count_known\":"<<r.countKnown<<",\"count\":"<<r.count<<",\"declared_first\":"<<r.declaredFirst<<",\"declared_count\":"<<r.declaredCount<<",\"setter_ordinal\":"<<r.setterOrdinal<<",\"count_ordinal\":"<<r.countOrdinal<<",\"epoch\":"<<r.epoch<<",\"pipeline_generation\":"<<r.pipelineGeneration<<",\"last_first\":"<<r.lastFirst<<",\"last_count\":"<<r.lastCount<<",\"last_ordinal\":"<<r.lastOrdinal<<",\"effective_known_scope\":\"single_conventional_operand\"";
     if constexpr(std::is_same<T,ViewportBits>::value){out<<",\"bits\":[";for(unsigned i=0;i<6;++i){if(i)out<<',';out<<r.value.bits[i];}out<<"],\"finite\":"<<r.value.finite;}else out<<",\"offset\":["<<r.value.value.offset.x<<','<<r.value.value.offset.y<<"],\"extent\":["<<r.value.value.extent.width<<','<<r.value.value.extent.height<<']';out<<",\"conventional_valid\":"<<r.value.valid<<'}';
+}
+inline const char* setterForm(uint64_t ordinal,bool withCount) noexcept {return !ordinal?"unknown":withCount?"with_count":"regular";}
+template<class T> inline void rawSetterJson(std::ostream& out,const RawSetterObservation<T>& r){
+    out<<"{\"scope\":\"index_zero_argument_snapshot\",\"value_captured\":"<<r.valueCaptured<<",\"origin_ordinal\":"<<r.originOrdinal<<",\"capture_epoch\":"<<r.captureEpoch<<",\"recording_epoch\":"<<r.recordingEpoch<<",\"recording_epoch_matches\":"<<(r.captureEpoch && r.captureEpoch==r.recordingEpoch)<<",\"recording_bank_known\":"<<r.recordingBankKnown<<",\"form\":\""<<setterForm(r.originOrdinal,r.withCount)<<"\",\"first\":";
+    if(r.originOrdinal&&!r.withCount)out<<r.first;else out<<"null";
+    out<<",\"count\":"<<r.count;
+    if constexpr(std::is_same<T,ViewportBits>::value){out<<",\"bits\":";if(r.valueCaptured){out<<'[';for(uint32_t i=0;i<6;++i){if(i)out<<',';out<<r.value.bits[i];}out<<']';}else out<<"null";}
+    else {out<<",\"offset\":";if(r.valueCaptured)out<<'['<<r.value.value.offset.x<<','<<r.value.value.offset.y<<']';else out<<"null";out<<",\"extent\":";if(r.valueCaptured)out<<'['<<r.value.value.extent.width<<','<<r.value.value.extent.height<<']';else out<<"null";}
+    out<<",\"last_observed_call\":{\"ordinal\":"<<r.lastOrdinal<<",\"form\":\""<<setterForm(r.lastOrdinal,r.lastWithCount)<<"\",\"first\":";
+    if(r.lastOrdinal&&!r.lastWithCount)out<<r.lastFirst;else out<<"null";
+    out<<",\"count\":"<<r.lastCount<<",\"payload_captured_for_this_call\":"<<r.lastPayloadCaptured<<"},\"effective_operand_claimed\":false}";
 }
 inline void reasonsJson(std::ostream& out,ReasonMask mask){out<<'[';bool comma=false;for(uint32_t i=0;i<reasonNames.size();++i)if(mask&(ReasonMask(1)<<i)){if(comma)out<<',';out<<'"'<<reasonNames[i]<<'"';comma=true;}out<<']';}
 template<class T,std::size_t N> inline void enumArrayJson(std::ostream& out,const std::array<T,N>& values,uint32_t count){out<<'[';for(uint32_t i=0;i<std::min<uint32_t>(count,uint32_t(N));++i){if(i)out<<',';out<<int32_t(values[i]);}out<<']';}
@@ -304,14 +342,16 @@ inline void pipelineJson(std::ostream& out,const PipelineRef& p){
     out<<",\"rejected_dynamic_count\":"<<d.rejectedDynamicCount<<",\"dynamic_chain_types\":";enumArrayJson(out,d.dynamicChain.types,d.dynamicChain.count);
     out<<",\"dynamic_chain_truncated\":"<<d.dynamicChain.truncated<<",\"raster_chain_types\":";enumArrayJson(out,d.rasterChain.types,d.rasterChain.count);
     out<<",\"raster_chain_truncated\":"<<d.rasterChain.truncated<<",\"viewport_chain_types\":";enumArrayJson(out,d.viewportChain.types,d.viewportChain.count);
-    out<<",\"viewport_chain_truncated\":"<<d.viewportChain.truncated<<",\"viewport_mode\":\""<<modeName(d.viewportMode)<<"\",\"scissor_mode\":\""<<modeName(d.scissorMode)<<"\",\"viewport_count\":"<<d.viewportCount<<",\"scissor_count\":"<<d.scissorCount<<",\"fsr_dynamic_declared\":"<<d.fsrDynamicDeclared<<"},\"fragment_shading_rate_known\":false,\"effective_write_coverage_known\":false,\"conventional_operand_scope\":true";
+    out<<",\"viewport_chain_truncated\":"<<d.viewportChain.truncated<<",\"viewport_mode\":\""<<modeName(d.viewportMode)<<"\",\"scissor_mode\":\""<<modeName(d.scissorMode)<<"\",\"viewport_count\":"<<d.viewportCount<<",\"scissor_count\":"<<d.scissorCount<<",\"fsr_dynamic_declared\":"<<d.fsrDynamicDeclared<<",\"depth_clip_declared\":"<<d.depthClipDeclared<<",\"reviewed_depth_clip_nodes\":[";
+    bool comma=false;for(uint32_t i=0;i<d.rasterChain.count;++i)if(d.rasterChain.types[i]==VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_DEPTH_CLIP_STATE_CREATE_INFO_EXT){if(comma)out<<',';comma=true;const bool known=(d.depthClipFlagsKnownMask&(1u<<i))!=0;out<<"{\"chain_index\":"<<i<<",\"flags_known\":"<<known<<",\"flags\":";if(known)out<<d.depthClipFlags[i];else out<<"null";out<<'}';}
+    out<<"]},\"depth_clip_value_known\":false,\"effective_clipping_known\":false,\"clipping_reasons\":[\"depth_clip_unobserved\"],\"clipping_reason_mask\":"<<reason(Reason::depthClipUnobserved)<<",\"fragment_shading_rate_known\":false,\"effective_write_coverage_known\":false,\"conventional_operand_scope\":true";
 }
 inline std::string json(const DrawSnapshot& r,std::size_t cap=16384) noexcept {
-    try {std::ostringstream out;out<<std::boolalpha<<"{\"schema_version\":2,\"available\":true,\"ordinal\":"<<r.ordinal<<",\"pipeline_generation\":"<<r.pipelineGeneration<<",\"pipeline_flags\":"<<r.pipelineFlags<<",\"pipeline_unknown_flags\":"<<r.pipelineUnknownFlags<<",\"pipeline_declarations_complete\":"<<r.pipelineDeclarationsComplete<<",\"overflow\":"<<r.overflow;pipelineJson(out,r.pipelineDeclaration);out<<",\"push\":{\"raw_hex\":\"";
+    try {std::ostringstream out;out<<std::boolalpha<<"{\"schema_version\":3,\"available\":true,\"ordinal\":"<<r.ordinal<<",\"pipeline_generation\":"<<r.pipelineGeneration<<",\"pipeline_flags\":"<<r.pipelineFlags<<",\"pipeline_unknown_flags\":"<<r.pipelineUnknownFlags<<",\"pipeline_declarations_complete\":"<<r.pipelineDeclarationsComplete<<",\"overflow\":"<<r.overflow;pipelineJson(out,r.pipelineDeclaration);out<<",\"push\":{\"raw_hex\":\"";
         for(auto b:r.push.bytes)out<<"0123456789abcdef"[b>>4]<<"0123456789abcdef"[b&15];
         out<<"\",\"byte_known_mask\":"<<r.push.byteKnownMask<<",\"compatible_word_mask\":"<<unsigned(r.push.compatibleWordMask)<<",\"host_little_endian\":"<<r.push.littleEndian<<",\"bound_layout_generation\":"<<r.push.boundLayoutGeneration<<",\"bound_layout\":";layoutJson(out,r.push.boundLayout);out<<",\"layout_known\":"<<r.push.layoutKnown<<",\"image_index_known\":"<<r.push.imageIndexKnown<<",\"image_index\":";if(r.push.imageIndexKnown)out<<r.push.imageIndex;else out<<"null";out<<",\"sampler_index_known\":"<<r.push.samplerIndexKnown<<",\"sampler_index\":";if(r.push.samplerIndexKnown)out<<r.push.samplerIndex;else out<<"null";out<<",\"words\":[";
         for(unsigned i=0;i<8;++i){if(i)out<<',';const auto& w=r.push.words[i];out<<"{\"word\":"<<i<<",\"known\":"<<((r.push.byteKnownMask&(0xfu<<(i*4)))==(0xfu<<(i*4)))<<",\"compatible\":"<<bool(r.push.compatibleWordMask&(1u<<i))<<",\"ordinal\":"<<w.ordinal<<",\"stage_flags\":"<<w.stages<<",\"offset\":"<<w.offset<<",\"size\":"<<w.size<<",\"layout\":";layoutJson(out,w.layout);out<<'}';}
-        out<<"]},\"viewport\":";rasterJson(out,r.viewport);out<<",\"scissor\":";rasterJson(out,r.scissor);const auto& a=r.arguments;out<<",\"arguments\":{\"kind\":\""<<(a.kind==DrawArguments::Kind::direct?"direct":a.kind==DrawArguments::Kind::indexed?"indexed":"unknown")<<"\",\"command_kind\":"<<a.commandKind<<",\"count\":"<<a.count<<",\"instance_count\":"<<a.instanceCount<<",\"first\":"<<a.first<<",\"first_instance\":"<<a.firstInstance<<",\"vertex_offset\":"<<a.vertexOffset<<"},\"effective_raster_state_known\":false,\"descriptor_placement_known\":false,\"sampled_resource_known\":false,\"coverage_known\":false}";
+        out<<"]},\"viewport\":";rasterJson(out,r.viewport);out<<",\"scissor\":";rasterJson(out,r.scissor);out<<",\"raw_setter_arguments\":{\"viewport\":";rawSetterJson(out,r.rawViewport);out<<",\"scissor\":";rawSetterJson(out,r.rawScissor);out<<'}';const auto& a=r.arguments;out<<",\"arguments\":{\"kind\":\""<<(a.kind==DrawArguments::Kind::direct?"direct":a.kind==DrawArguments::Kind::indexed?"indexed":"unknown")<<"\",\"command_kind\":"<<a.commandKind<<",\"count\":"<<a.count<<",\"instance_count\":"<<a.instanceCount<<",\"first\":"<<a.first<<",\"first_instance\":"<<a.firstInstance<<",\"vertex_offset\":"<<a.vertexOffset<<"},\"effective_raster_state_known\":false,\"descriptor_placement_known\":false,\"sampled_resource_known\":false,\"coverage_known\":false}";
         auto value=out.str();if(value.size()<=cap)return value;const std::string fallback="{\"available\":false,\"unavailable_reason\":\"serialization_budget\"}";if(fallback.size()<=cap)return fallback;if(cap>=2)return "{}";return cap?"0":"";
     }catch(...){return cap>=2?"{}":cap?"0":"";}
 }

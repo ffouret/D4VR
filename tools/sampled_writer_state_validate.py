@@ -19,7 +19,8 @@ import captured_writer_validate as writer
 NO_INFERENCE = (*writer.NO_INFERENCE, 'effective_raster_state_known',
                 'descriptor_placement_known', 'sampled_resource_known', 'coverage_known',
                 'fragment_shading_rate_known', 'effective_write_coverage_known',
-                'push_values_identify_sampled_resource', 'fragment_shader_reads_push_constants')
+                'push_values_identify_sampled_resource', 'fragment_shader_reads_push_constants',
+                'depth_clip_value_known', 'effective_clipping_known', 'effective_operand_claimed')
 MODES = {'unknown', 'static', 'dynamic', 'with_count'}
 UINT32 = (1 << 32)-1
 FSR_ATTACHMENT = 0x00200000
@@ -29,6 +30,7 @@ LEGACY_ALLOWED_FLAGS = 0x20800fc7
 PIPELINE_CHAIN_TYPES = {1000320002, 1000290000, 1000470005, 1000226001, 1000044002, 1000192000}
 FSR_STATIC_TYPE = 1000226001
 FSR_DYNAMIC_TYPE = 1000226000
+DEPTH_CLIP_TYPE = 1000102001
 REGULAR_DYNAMIC = (0, 1)
 COUNT_DYNAMIC = (1000267003, 1000267004)
 ALLOWED_DYNAMIC = set(range(9)) | set(range(1000267000, 1000267012)) | {1000377002, 1000377004, FSR_DYNAMIC_TYPE}
@@ -43,7 +45,8 @@ REASONS = (
     'unsupported_dynamic_state', 'conflicting_viewport_modes', 'conflicting_scissor_modes', 'missing_raster_state',
     'invalid_raster_state', 'unknown_raster_chain', 'raster_flags', 'rasterizer_discard', 'missing_viewport_state',
     'invalid_viewport_state', 'unknown_viewport_chain', 'viewport_flags', 'fragment_shading_rate_unobserved',
-    'rendering_fsr_attachment', 'fsr_static_declaration', 'fsr_dynamic_declaration')
+    'rendering_fsr_attachment', 'fsr_static_declaration', 'fsr_dynamic_declaration',
+    'depth_clip_flags', 'depth_clip_unobserved')
 REASON_BITS = {name: 1 << index for index, name in enumerate(REASONS)}
 
 
@@ -122,8 +125,9 @@ def audit_facets(value):
             or not isinstance(reasons, dict) or set(reasons) != set(REASON_GROUPS)
             or not isinstance(masks, dict) or set(masks) != set(REASON_GROUPS)):
         raise ValueError('Schema2 facet names or reason groups changed')
+    version = value['schema_version']
     for group in REASON_GROUPS:
-        mask = integer(masks[group], 0, (1 << len(REASONS))-1)
+        mask = integer(masks[group], 0, (1 << (38 if version == 3 else 37))-1)
         names = [name for index, name in enumerate(REASONS) if mask & (1 << index)]
         if reasons[group] != names:
             raise ValueError('Facet reason names disagree with their fixed bit assignments')
@@ -253,7 +257,10 @@ def audit_facets(value):
         truncated = writer.boolean(raster[prefix+'_chain_truncated'], prefix+'_chain_truncated')
         if truncated and len(types) != 8:
             raise ValueError('Raster subchain truncation lost its bounded prefix')
-        if (types or truncated) and any(not masks[facet] & REASON_BITS[reason_name]
+        unreviewed = bool(types or truncated)
+        if version == 3 and prefix == 'raster':
+            unreviewed = audit_depth_clip(value, types, truncated)
+        if unreviewed and any(not masks[facet] & REASON_BITS[reason_name]
                                       for facet in ('viewport_declaration', 'scissor_declaration')):
             raise ValueError('Unreviewed raster subchain was cleared by another facet')
     writer.boolean(raster['fsr_dynamic_declared'], 'fsr_dynamic_declared')
@@ -295,10 +302,51 @@ def audit_facets(value):
     return facets
 
 
+def audit_depth_clip(value, types, truncated):
+    """Review a declaration's flags only, never its clipping payload or effect."""
+    raster = value['raster_declarations']
+    declared = writer.boolean(raster['depth_clip_declared'], 'depth_clip_declared')
+    indices = [index for index, item in enumerate(types) if item == DEPTH_CLIP_TYPE]
+    if declared != bool(indices):
+        raise ValueError('DepthClip declaration presence differs from the retained type list')
+    nodes = raster['reviewed_depth_clip_nodes']
+    if not isinstance(nodes, list) or len(nodes) != len(indices):
+        raise ValueError('Reviewed DepthClip node count differs from the original bounded chain')
+    prior_refusal = any(value['pipeline_facet_reason_masks'][facet] & (
+        REASON_BITS['raster_flags'] | REASON_BITS['rasterizer_discard'])
+        for facet in ('viewport_declaration', 'scissor_declaration'))
+    reviewable = raster['raster_info_observed'] and not truncated and len(set(types)) == len(types) and not prior_refusal
+    bad_flags = False
+    for node, index in zip(nodes, indices):
+        if set(node) != {'chain_index', 'flags_known', 'flags'} or integer(node['chain_index'], 0, 7) != index:
+            raise ValueError('DepthClip flags were attributed to a different original chain position')
+        known = writer.boolean(node['flags_known'], 'flags_known')
+        if known != reviewable:
+            raise ValueError('DepthClip flags were promoted from an unreviewed chain or erased after review')
+        if known:
+            bad_flags |= bool(integer(node['flags']))
+        elif node['flags'] is not None:
+            raise ValueError('Unknown DepthClip flags contain a current value')
+    for facet in ('viewport_declaration', 'scissor_declaration'):
+        if bool(value['pipeline_facet_reason_masks'][facet] & REASON_BITS['depth_clip_flags']) != bad_flags:
+            raise ValueError('Nonzero DepthClip flags lost their independent conventional-operand refusal')
+    if (value.get('depth_clip_value_known') is not False or value.get('effective_clipping_known') is not False
+            or value.get('clipping_reasons') != ['depth_clip_unobserved']
+            or value.get('clipping_reason_mask') != REASON_BITS['depth_clip_unobserved']):
+        raise ValueError('A reviewed declaration was promoted to a known clipping value or effect')
+    return bool(types) and (not reviewable or any(item != DEPTH_CLIP_TYPE for item in types))
+
+
 def golden(value):
     if not isinstance(value, dict) or type(value.get('schema_version')) is not int or value['schema_version'] != 1:
         raise ValueError('Owned draw state control schema is unavailable')
     claims(value)
+    clip_fields = ('depth_clip_feature_enabled', 'depth_clip_chain_type', 'depth_clip_state_flags', 'depth_clip_enable_payload')
+    if any(key in value for key in clip_fields):
+        if (value.get('depth_clip_feature_enabled') is not True or value.get('depth_clip_chain_type') != DEPTH_CLIP_TYPE
+                or type(value.get('depth_clip_state_flags')) is not int or value['depth_clip_state_flags'] != 0
+                or value.get('depth_clip_enable_payload') is not True):
+            raise ValueError('Owned DepthClip control did not preserve its explicitly enabled fixed configuration')
     flags = integer(value.get('pipeline_flags', 0), 0, (1 << 64)-1)
     if flags:
         if flags != FSR_ATTACHMENT or value.get('attachment_fsr_feature_enabled') is not True:
@@ -382,14 +430,129 @@ def rectangle(value, *, viewport):
     return value
 
 
+def audit_raw_setters(value, *, original=None):
+    """Audit saved call arguments independently of pipeline applicability."""
+    banks = value['raw_setter_arguments']
+    if not isinstance(banks, dict) or set(banks) != {'viewport', 'scissor'}:
+        raise ValueError('Raw setter banks are not the two fixed argument snapshots')
+    epochs, setter_occurrences = [], []
+    for name in ('viewport', 'scissor'):
+        raw, interpreted = banks[name], value[name]
+        if raw.get('scope') != 'index_zero_argument_snapshot' or raw.get('effective_operand_claimed') is not False:
+            raise ValueError('A raw setter argument was promoted to a current effective operand')
+        captured = writer.boolean(raw['value_captured'], 'value_captured')
+        bank_known = writer.boolean(raw['recording_bank_known'], 'recording_bank_known')
+        origin = integer(raw['origin_ordinal'], 0, (1 << 64)-1)
+        captured_epoch = integer(raw['capture_epoch'], 0, (1 << 64)-1)
+        epoch = integer(raw['recording_epoch'], 1, (1 << 64)-1);epochs.append(epoch)
+        if captured_epoch > epoch:
+            raise ValueError('Historical setter capture epoch is later than its recording epoch')
+        matches = writer.boolean(raw['recording_epoch_matches'], 'recording_epoch_matches')
+        if matches != bool(origin and captured_epoch == epoch):
+            raise ValueError('Raw setter capture epoch was relabeled as the current recording epoch')
+        form, first, count = raw['form'], raw['first'], integer(raw['count'])
+        if form not in ('unknown', 'regular', 'with_count'):
+            raise ValueError('Raw setter API form was invented')
+        if form == 'regular': integer(first)
+        elif first is not None:
+            raise ValueError('WithCount or absent setter acquired an invented first argument')
+        if origin:
+            if not origin < value['ordinal'] or not captured_epoch or form == 'unknown':
+                raise ValueError('Raw setter origin is late, unordered or lacks its original form/epoch')
+        elif captured or captured_epoch or count or form != 'unknown':
+            raise ValueError('An absent setter acquired historical arguments')
+        payload_fields = ('bits',) if name == 'viewport' else ('offset', 'extent')
+        if captured:
+            if not origin or count != 1 or form == 'regular' and first != 0:
+                raise ValueError('Raw payload was read outside its safe single index-zero original call')
+            if name == 'viewport': array(raw['bits'], 6)
+            else:
+                array(raw['offset'], 2, -(1 << 31), (1 << 31)-1);array(raw['extent'], 2)
+        elif any(raw[field] is not None for field in payload_fields):
+            raise ValueError('Unavailable raw setter payload retained bytes from another call')
+        if bank_known and (not captured or not matches or value['overflow']):
+            raise ValueError('Historical raw arguments were promoted to a known current recording bank')
+        last = raw['last_observed_call']
+        last_ordinal = integer(last['ordinal'], 0, (1 << 64)-1)
+        last_count = integer(last['count']);last_form, last_first = last['form'], last['first']
+        last_captured = writer.boolean(last['payload_captured_for_this_call'], 'payload_captured_for_this_call')
+        if last_form not in ('unknown', 'regular', 'with_count'):
+            raise ValueError('Last observed setter API form was invented')
+        if last_form == 'regular': integer(last_first)
+        elif last_first is not None:
+            raise ValueError('Last WithCount or absent call acquired an invented first argument')
+        if last_ordinal:
+            if not origin <= last_ordinal < value['ordinal'] or last_form == 'unknown':
+                raise ValueError('Last observed call is late or precedes the saved candidate origin')
+            if not origin and (last_form == 'with_count' or last_first == 0 and last_count):
+                raise ValueError('An observed candidate-changing call lost its original candidate metadata')
+        elif last_count or last_form != 'unknown' or origin:
+            raise ValueError('Absent last call was retagged with a candidate or arguments')
+        if last_captured != bool(captured and origin == last_ordinal):
+            raise ValueError('The last observed call was confused with an older captured argument')
+        if origin == last_ordinal and origin and (form, first, count) != (last_form, last_first, last_count):
+            raise ValueError('The same original setter occurrence has two different argument forms')
+        if origin and last_ordinal > origin and not (last_form == 'regular' and (last_first > 0 or last_count == 0)):
+            raise ValueError('A later candidate-changing call retained an earlier payload origin')
+        if interpreted['epoch'] and interpreted['epoch'] != epoch:
+            raise ValueError('Raw and interpreted snapshots came from different recording epochs')
+        if value['pipeline_generation'] and (last_ordinal, last_count, 0 if last_first is None else last_first) != (
+                interpreted['last_ordinal'], interpreted['last_count'], interpreted['last_first']):
+            raise ValueError('Raw last-call arguments differ from the same draw snapshot metadata')
+        mode = interpreted['mode']
+        if mode in ('static', 'dynamic') and interpreted['count_known'] and interpreted['count'] != value['raster_declarations'][name+'_count']:
+            raise ValueError('Conventional count was changed from its immutable pipeline declaration')
+        if mode == 'static' and (interpreted['declared_first'] or interpreted['declared_count'] != interpreted['count']
+                                  or interpreted['setter_ordinal'] or interpreted['count_ordinal']):
+            raise ValueError('A static conventional operand was attributed to a different declaration or setter')
+        if mode == 'dynamic' and interpreted['count_ordinal']:
+            raise ValueError('Regular dynamic mode acquired a WithCount count origin')
+        if mode == 'with_count':
+            count_ordinal = interpreted['count_ordinal']
+            if (count_ordinal and not count_ordinal < value['ordinal']) or interpreted['count_known'] and not count_ordinal:
+                raise ValueError('WithCount knowledge was attributed to an unordered or late count occurrence')
+            if interpreted['value_known'] and interpreted['count_known'] and (count_ordinal != origin or interpreted['count'] != count):
+                raise ValueError('Known WithCount operands and count came from different original setter occurrences')
+        if interpreted['value_known'] and interpreted['mode'] in ('dynamic', 'with_count'):
+            if (not captured or not bank_known or not matches or origin != interpreted['setter_ordinal']
+                    or form != ('regular' if interpreted['mode'] == 'dynamic' else 'with_count')
+                    or count != interpreted['declared_count'] or interpreted['declared_first'] != 0):
+                raise ValueError('Interpreted conventional operand was promoted from an unrelated raw setter')
+            if any(raw[field] != interpreted[field] for field in payload_fields):
+                raise ValueError('Interpreted operand bytes differ from the original captured setter arguments')
+        if original is not None:
+            if original['mode'] == 'static':
+                if captured or origin or last_ordinal:
+                    raise ValueError('Owned first static draw was retagged with a setter from another draw')
+            else:
+                expected_form = 'with_count' if original['mode'] == 'with_count' else 'regular'
+                if (not captured or not bank_known or not matches or form != expected_form or count != 1
+                        or last_ordinal != origin or not last_captured):
+                    raise ValueError('Owned dynamic draw lost its exact original raw argument occurrence')
+                for field in payload_fields:
+                    golden_field = 'viewport_bits' if field == 'bits' else 'scissor_'+field
+                    if raw[field] != original[golden_field]:
+                        raise ValueError('Raw setter bytes differ from independently saved original application arguments')
+        setter_occurrences.append({origin, last_ordinal, interpreted['count_ordinal']} - {0})
+    if epochs[0] != epochs[1]:
+        raise ValueError('Raw viewport/scissor arguments were taken from different recordings')
+    if setter_occurrences[0] & setter_occurrences[1]:
+        raise ValueError('Distinct original viewport/scissor calls acquired the same command ordinal')
+    return banks
+
+
 def audit_state(value, *, original=None, ordinal=None):
-    if not isinstance(value, dict) or type(value.get('schema_version')) is not int or value['schema_version'] not in (1, 2):
+    if not isinstance(value, dict) or type(value.get('schema_version')) is not int or value['schema_version'] not in (1, 2, 3):
         raise ValueError('Frozen per-draw writer state schema is missing')
     version = value['schema_version']
     if version == 1 and any(key in value for key in ('pipeline_facet_known', 'pipeline_recognized_rendering_flags',
             'pipeline_facet_reasons', 'pipeline_facet_reason_masks', 'pipeline_creation', 'raster_declarations',
             'fragment_shading_rate_known', 'effective_write_coverage_known', 'conventional_operand_scope')):
         raise ValueError('Schema1 receipt was retroactively retagged with newer facet semantics')
+    if version < 3 and (any(key in value for key in ('raw_setter_arguments', 'depth_clip_value_known',
+            'effective_clipping_known', 'clipping_reasons', 'clipping_reason_mask'))
+            or any(key in value.get('raster_declarations', {}) for key in ('depth_clip_declared', 'reviewed_depth_clip_nodes'))):
+        raise ValueError('Historical receipt was retroactively retagged with raw setter or DepthClip semantics')
     claims(value)
     for field in ('effective_raster_state_known', 'descriptor_placement_known', 'sampled_resource_known', 'coverage_known'):
         if value[field] is not False:
@@ -463,7 +626,9 @@ def audit_state(value, *, original=None, ordinal=None):
             raise ValueError('Unknown shader index was serialized as a current value')
     viewport = rectangle(value['viewport'], viewport=True)
     scissor = rectangle(value['scissor'], viewport=False)
-    facets = audit_facets(value) if version == 2 else None
+    facets = audit_facets(value) if version >= 2 else None
+    if version == 3:
+        audit_raw_setters(value, original=original)
     if version == 1 and (value['pipeline_unknown_flags'] or not value['pipeline_declarations_complete']):
         if push['layout_known'] or any(r['value_known'] or r['count_known'] or r['effective_known'] for r in (viewport, scissor)):
             raise ValueError('Legacy unknown whole-pipeline gate was silently upgraded to independent facets')
@@ -476,7 +641,7 @@ def audit_state(value, *, original=None, ordinal=None):
     if original is not None:
         original = golden(original)
         expected_flags = original.get('pipeline_flags', 0)
-        if version == 2:
+        if version >= 2:
             creation = value['pipeline_creation']
             if (value['pipeline_flags'] != expected_flags or value['pipeline_unknown_flags'] != 0
                     or not all(facets.values()) or not creation['structural_known']
@@ -490,8 +655,10 @@ def audit_state(value, *, original=None, ordinal=None):
                 raise ValueError('Owned narrow facet control differs from its exact original pipeline declaration')
             raster = value['raster_declarations']
             expected_dynamic = [] if original['mode'] == 'static' else list(COUNT_DYNAMIC if original['mode'] == 'with_count' else REGULAR_DYNAMIC)
+            expected_raster_chain = [DEPTH_CLIP_TYPE] if version == 3 and 'depth_clip_chain_type' in original else []
             if (raster['dynamic_state_types'] != expected_dynamic or raster['dynamic_state_count'] != len(expected_dynamic)
-                    or any(raster[key] for key in ('dynamic_chain_types', 'raster_chain_types', 'viewport_chain_types'))
+                    or any(raster[key] for key in ('dynamic_chain_types', 'viewport_chain_types'))
+                    or raster['raster_chain_types'] != expected_raster_chain
                     or raster['dynamic_info_observed'] != (original['mode'] != 'static')
                     or raster['dynamic_info_absent'] != (original['mode'] == 'static')
                     or raster['raster_info_observed'] is not True or raster['raster_info_absent']
@@ -551,14 +718,20 @@ def audit_state(value, *, original=None, ordinal=None):
             'sampled_resource_known': False, 'coverage_known': False}
     if original is not None:
         result['owned_original_aliases_at_delivered_draw'] = [original[key] for key in ('push_command', 'viewport_command', 'scissor_command')]
-    if version == 2:
-        result.update(writer_state_schema_version=2, pipeline_facet_known=dict(facets),
+    if version >= 2:
+        result.update(writer_state_schema_version=version, pipeline_facet_known=dict(facets),
                       pipeline_recognized_rendering_flags=value['pipeline_recognized_rendering_flags'],
                       fragment_shading_rate_known=False, coverage_known=False)
+    if version == 3:
+        result.update(raw_argument_banks_audited=2,
+                      raw_captured_payload_banks=sum(bank['value_captured'] for bank in value['raw_setter_arguments'].values()),
+                      depth_clip_declared=value['raster_declarations']['depth_clip_declared'],
+                      depth_clip_value_known=False, effective_clipping_known=False)
     return result
 
 
-def audit_receipt(receipt, controls, *, observer_enabled=True, require_facets=False):
+def audit_receipt(receipt, controls, *, observer_enabled=True, require_facets=False, require_raw=False):
+    require_facets = require_facets or require_raw
     prefix = receipt['captured_writer_prefix']
     observed = receipt['source_blit']
     writer.audit_prefix(prefix, original=observed['original'],
@@ -580,9 +753,13 @@ def audit_receipt(receipt, controls, *, observer_enabled=True, require_facets=Fa
     for index, event in enumerate(draws):
         if source not in event.get('draw_color_images', []):
             raise ValueError('Per-draw state is attached to an unrelated source lifetime')
+        if require_raw and controls[(present-1, index)].get('depth_clip_feature_enabled') is not True:
+            raise ValueError('Required raw control lacks the independently saved original DepthClip feature/configuration')
         if observer_enabled:
-            if require_facets and event['writer_state'].get('schema_version') != 2:
-                raise ValueError('New FSR facet control requires a newly produced schema2 observation')
+            if require_facets and event['writer_state'].get('schema_version') not in (2, 3):
+                raise ValueError('New FSR facet control requires a newly produced facet observation')
+            if require_raw and event['writer_state'].get('schema_version') != 3:
+                raise ValueError('New raw setter control requires a newly produced schema3 observation')
             if event['writer_state_original_pipeline_handle'] != controls[(present-1, index)]['pipeline_handle']:
                 raise ValueError('State pipeline was joined to a different raw original draw handle')
             results.append(audit_state(event['writer_state'], original=controls[(present-1, index)], ordinal=event['ordinal']))
@@ -593,10 +770,13 @@ def audit_receipt(receipt, controls, *, observer_enabled=True, require_facets=Fa
             'states': results}
 
 
-def audit_directory(directory, *, observer_enabled=True, shader_directory=None, require_facets=False):
+def audit_directory(directory, *, observer_enabled=True, shader_directory=None, require_facets=False, require_raw=False):
+    require_facets = require_facets or require_raw
     directory = Path(directory)
     base = writer.audit_directory(directory, require_available=True, shader_directory=shader_directory)
     originals = [golden(row) for row in blit.json_lines(directory/'sampled-writer-fixture.jsonl')]
+    if require_raw and any(row.get('depth_clip_feature_enabled') is not True for row in originals):
+        raise ValueError('Required raw setter trial did not preserve the explicit original DepthClip feature/configuration')
     controls = {(row['frame'], row['draw_index']): row for row in originals}
     if len(originals) != 128 or len(controls) != 128 or set(controls) != {(frame, draw) for frame in range(64) for draw in range(2)}:
         raise ValueError('Original fixture must retain exactly128 unique original draw controls')
@@ -611,7 +791,8 @@ def audit_directory(directory, *, observer_enabled=True, shader_directory=None, 
         receipts.extend(blit.decode(blit.read(path))['eyes'])
     for path in sorted(directory.glob('vulkan-*.jsonl')):
         receipts.extend(row for row in blit.json_lines(path) if row.get('event') == 'gpu_capture_lease')
-    rows = [audit_receipt(receipt, controls, observer_enabled=observer_enabled, require_facets=require_facets) for receipt in receipts]
+    rows = [audit_receipt(receipt, controls, observer_enabled=observer_enabled, require_facets=require_facets,
+                          require_raw=require_raw) for receipt in receipts]
     dynamic_count, maintenance6 = next(iter(features))
     compared = [state for row in rows for state in row['states']]
     result = {'schema_version': 1, 'observation_only': True, 'observer_enabled': observer_enabled,
@@ -628,10 +809,14 @@ def audit_directory(directory, *, observer_enabled=True, shader_directory=None, 
                                              | {row['push_command'] for row in originals}),
             'sampled_resource_known': False, 'coverage_known': False, 'xr_submission': False,
             'receipts': rows, 'input_sha256': base['input_sha256']}
-    if require_facets or any(row.get('writer_state_schema_version') == 2 for row in compared):
+    if require_facets or any(row.get('writer_state_schema_version') in (2, 3) for row in compared):
         result.update(facet_schema_required=require_facets, application_pipeline_flags=next(iter(flags)),
                       newly_produced_schema2_draws=sum(row.get('writer_state_schema_version') == 2 for row in compared),
                       fragment_shading_rate_known=False)
+    if require_raw or any(row.get('writer_state_schema_version') == 3 for row in compared):
+        result.update(raw_schema_required=require_raw,
+                      newly_produced_schema3_draws=sum(row.get('writer_state_schema_version') == 3 for row in compared),
+                      depth_clip_value_known=False, effective_clipping_known=False)
     return result
 
 
@@ -641,10 +826,12 @@ def main():
     parser.add_argument('--observer-disabled', action='store_true')
     parser.add_argument('--shader-directory', type=Path)
     parser.add_argument('--require-facets', action='store_true', help='Require new schema2 states from the controlled FSR pipeline-flag configuration')
+    parser.add_argument('--require-raw', action='store_true', help='Require schema3 raw arguments and the controlled original DepthClip configuration')
     args = parser.parse_args()
     print(json.dumps({'new_gpu_execution_performed': False,
                       'audit': audit_directory(args.validation, observer_enabled=not args.observer_disabled,
-                                               shader_directory=args.shader_directory, require_facets=args.require_facets)}, indent=2))
+                                               shader_directory=args.shader_directory, require_facets=args.require_facets,
+                                               require_raw=args.require_raw)}, indent=2))
 
 
 if __name__ == '__main__':

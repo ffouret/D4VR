@@ -69,6 +69,7 @@ struct SampledWriterFixture {
            <<"],\"viewport_count\":1,\"scissor_count\":1,\"draw_arguments\":{\"count\":3,\"instance_count\":1,\"first\":0,\"first_instance\":0},\"dynamic_count_enabled\":"<<(f.writerDynamicCountEnabled?"true":"false")
            <<",\"maintenance6_enabled\":"<<(f.writerMaintenance6Enabled?"true":"false");
         if(f.writerFsrAttachmentEnabled)out<<",\"pipeline_flags\":"<<originalFlags<<",\"attachment_fsr_feature_enabled\":true,\"rate_attachment_present\":false,\"static_rate_pnext_present\":false,\"dynamic_rate_declared\":false";
+        if(f.writerDepthClipEnabled)out<<",\"depth_clip_feature_enabled\":true,\"depth_clip_chain_type\":"<<VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_DEPTH_CLIP_STATE_CREATE_INFO_EXT<<",\"depth_clip_state_flags\":0,\"depth_clip_enable_payload\":true";
         out<<",\"fragment_shader_reads_push_constants\":false,\"push_values_identify_sampled_resource\":false}\n";
         out.flush();if(!out)throw std::runtime_error("Owned original writer argument write failed");
     }

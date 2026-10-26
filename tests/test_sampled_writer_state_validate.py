@@ -166,6 +166,41 @@ def unknown_rectangles(value):
         value[name].update(mode='unknown', value_known=False, count_known=False, effective_known=False)
 
 
+def clip_owned(frame=0, draw=0):
+    value = fsr_owned(frame, draw)
+    value.update(depth_clip_feature_enabled=True, depth_clip_chain_type=audit.DEPTH_CLIP_TYPE,
+                 depth_clip_state_flags=0, depth_clip_enable_payload=True)
+    return value
+
+
+def raw_state(original=None, ordinal=10):
+    original = original or clip_owned()
+    value = facet_state(original, ordinal)
+    value.update(schema_version=3, depth_clip_value_known=False, effective_clipping_known=False,
+                 clipping_reasons=['depth_clip_unobserved'], clipping_reason_mask=audit.REASON_BITS['depth_clip_unobserved'])
+    clip = 'depth_clip_chain_type' in original
+    value['raster_declarations'].update(depth_clip_declared=clip,
+        reviewed_depth_clip_nodes=[{'chain_index': 0, 'flags_known': True, 'flags': 0}] if clip else [],
+        raster_chain_types=[audit.DEPTH_CLIP_TYPE] if clip else [])
+    banks = {}
+    for name in ('viewport', 'scissor'):
+        interpreted = value[name];dynamic = original['mode'] != 'static'
+        origin = interpreted['setter_ordinal'] if dynamic else 0
+        form = ('with_count' if original['mode'] == 'with_count' else 'regular') if dynamic else 'unknown'
+        first = 0 if form == 'regular' else None
+        bank = {'scope': 'index_zero_argument_snapshot', 'value_captured': dynamic, 'origin_ordinal': origin,
+                'capture_epoch': interpreted['epoch'] if dynamic else 0, 'recording_epoch': interpreted['epoch'],
+                'recording_epoch_matches': dynamic, 'recording_bank_known': dynamic, 'form': form,
+                'first': first, 'count': 1 if dynamic else 0,
+                'last_observed_call': {'ordinal': origin, 'form': form, 'first': first, 'count': 1 if dynamic else 0,
+                                       'payload_captured_for_this_call': dynamic}, 'effective_operand_claimed': False}
+        for field in (('bits',) if name == 'viewport' else ('offset', 'extent')):
+            bank[field] = deepcopy(interpreted[field]) if dynamic else None
+        banks[name] = bank
+    value['raw_setter_arguments'] = banks
+    return value
+
+
 class SampledWriterStateAudit(unittest.TestCase):
     def check(self, value=None, original=None, ordinal=10):
         with patch('subprocess.Popen', side_effect=AssertionError('Read-only CPU audit cannot execute a process')):
@@ -505,6 +540,171 @@ class SampledWriterStateAudit(unittest.TestCase):
             unknown_rectangles(value);audit.audit_state(value)
             raster[info+'_info_absent'] = True
             with self.subTest(info=info), self.assertRaises(ValueError): audit.audit_state(value)
+
+    def test_schema3_exact_raw_arguments_and_reviewed_depthclip_keep_effects_unknown(self):
+        for original in (clip_owned(), clip_owned(0, 1), clip_owned(1, 1), fsr_owned(1, 1)):
+            value = raw_state(original)
+            result = audit.audit_state(value, original=original)
+            self.assertEqual(result['writer_state_schema_version'], 3)
+            self.assertTrue(all(result['pipeline_facet_known'].values()))
+            self.assertFalse(value['depth_clip_value_known'])
+            self.assertFalse(value['effective_clipping_known'])
+
+    def test_schema3_depthclip_flags_unknown_siblings_duplicates_and_retained_positions(self):
+        value = raw_state(clip_owned(1, 1))
+        value['raster_declarations']['reviewed_depth_clip_nodes'][0]['flags'] = 1
+        for group in ('viewport_declaration', 'scissor_declaration'): set_reason(value, group, 'depth_clip_flags')
+        unknown_rectangles(value);audit.audit_state(value)
+        for change in (lambda v: set_reason(v, 'viewport_declaration'),
+                       lambda v: v['raster_declarations']['reviewed_depth_clip_nodes'][0].update(chain_index=1),
+                       lambda v: v['raster_declarations']['reviewed_depth_clip_nodes'][0].update(flags_known=False),
+                       lambda v: v.update(depth_clip_value_known=True),
+                       lambda v: v.update(effective_clipping_known=True),
+                       lambda v: v.update(clipping_reasons=[])):
+            changed = deepcopy(value);change(changed)
+            with self.subTest(change=change), self.assertRaises(ValueError): audit.audit_state(changed)
+        value = raw_state(clip_owned(1, 1));value['raster_declarations']['raster_chain_types'].append(123456)
+        for group in ('viewport_declaration', 'scissor_declaration'): set_reason(value, group, 'unknown_raster_chain')
+        unknown_rectangles(value);audit.audit_state(value)
+        value['raster_declarations']['raster_chain_types'][1] = audit.DEPTH_CLIP_TYPE
+        value['raster_declarations']['reviewed_depth_clip_nodes'] = [
+            {'chain_index': index, 'flags_known': False, 'flags': None} for index in (0, 1)]
+        audit.audit_state(value)
+        value['raster_declarations']['reviewed_depth_clip_nodes'][0].update(flags_known=True, flags=0)
+        with self.assertRaises(ValueError): audit.audit_state(value)
+
+    def test_schema3_raw_capture_origin_form_epoch_and_interpretation_cannot_be_retagged(self):
+        changes = (lambda r: r.update(origin_ordinal=10), lambda r: r.update(origin_ordinal=4),
+                   lambda r: r.update(capture_epoch=1), lambda r: r.update(recording_epoch=3),
+                   lambda r: r.update(recording_epoch_matches=False), lambda r: r.update(recording_bank_known=False),
+                   lambda r: r.update(form='regular'), lambda r: r.update(first=0), lambda r: r.update(count=2),
+                   lambda r: r.update(value_captured=False), lambda r: r['bits'].__setitem__(0, 1),
+                   lambda r: r['last_observed_call'].update(ordinal=9),
+                   lambda r: r['last_observed_call'].update(payload_captured_for_this_call=False),
+                   lambda r: r.update(effective_operand_claimed=True))
+        for change in changes:
+            value = raw_state(clip_owned(1, 1));change(value['raw_setter_arguments']['viewport'])
+            with self.subTest(change=change), self.assertRaises(ValueError): audit.audit_state(value)
+
+    def test_schema3_historical_raw_inputs_survive_unknown_mode_without_becoming_current(self):
+        value = raw_state(clip_owned(1, 1));value['raster_declarations']['raster_chain_types'].append(123456)
+        for group in ('viewport_declaration', 'scissor_declaration'): set_reason(value, group, 'unknown_raster_chain')
+        unknown_rectangles(value)
+        for name, raw in value['raw_setter_arguments'].items():
+            raw.update(recording_epoch=3, recording_epoch_matches=False, recording_bank_known=False)
+            value[name]['epoch'] = 3
+        audit.audit_state(value)
+        changed = deepcopy(value);changed['raw_setter_arguments']['viewport']['recording_bank_known'] = True
+        with self.assertRaises(ValueError): audit.audit_state(changed)
+        changed = deepcopy(value);changed['viewport'].update(value_known=True, effective_known=True)
+        with self.assertRaises(ValueError): audit.audit_state(changed)
+
+    def test_schema3_last_nonzero_index_or_regular_zero_count_call_is_not_the_candidate(self):
+        for first, count in ((3, 2), (0, 0)):
+            value = raw_state(clip_owned(0, 1));raw = value['raw_setter_arguments']['viewport']
+            raw['last_observed_call'].update(ordinal=9, first=first, count=count, payload_captured_for_this_call=False)
+            value['viewport'].update(last_ordinal=9, last_first=first, last_count=count)
+            audit.audit_state(value)
+            raw['last_observed_call']['payload_captured_for_this_call'] = True
+            with self.assertRaises(ValueError): audit.audit_state(value)
+
+    def test_schema3_unavailable_attempt_uses_null_payload_and_same_original_call(self):
+        for form, first, count in (('regular', 0, 2), ('with_count', None, 0)):
+            value = raw_state(clip_owned(1, 1));raw = value['raw_setter_arguments']['viewport']
+            raw.update(value_captured=False, recording_bank_known=False, origin_ordinal=8, form=form, first=first, count=count, bits=None)
+            raw['last_observed_call'].update(ordinal=8, form=form, first=first, count=count, payload_captured_for_this_call=False)
+            value['viewport'].update(value_known=False, effective_known=False, setter_ordinal=8,
+                                     declared_count=count, last_ordinal=8, last_first=0, last_count=count)
+            audit.audit_state(value)
+            raw['bits'] = [0]*6
+            with self.assertRaises(ValueError): audit.audit_state(value)
+
+    def test_schema3_new_semantics_require_new_receipts_and_explicit_owned_feature_control(self):
+        for version in (1, 2):
+            value = raw_state();value['schema_version'] = version
+            with self.assertRaises(ValueError): audit.audit_state(value)
+        for change in (lambda v: v.update(depth_clip_feature_enabled=False),
+                       lambda v: v.update(depth_clip_state_flags=1), lambda v: v.update(depth_clip_enable_payload=False),
+                       lambda v: v.update(depth_clip_chain_type=123456)):
+            original = clip_owned();change(original)
+            with self.assertRaises(ValueError): audit.golden(original)
+        receipt, controls = delivered(1)
+        with self.assertRaises(ValueError): audit.audit_receipt(receipt, controls, require_raw=True)
+
+    def test_schema3_ignored_depthclip_flags_cannot_be_promoted_after_raster_refusal(self):
+        for reason in ('raster_flags', 'rasterizer_discard'):
+            value = raw_state(clip_owned(1, 1))
+            node = value['raster_declarations']['reviewed_depth_clip_nodes'][0]
+            node.update(flags_known=False, flags=None)
+            for group in ('viewport_declaration', 'scissor_declaration'):
+                set_reason(value, group, reason, 'unknown_raster_chain')
+            unknown_rectangles(value);audit.audit_state(value)
+            node.update(flags_known=True, flags=0)
+            with self.subTest(reason=reason), self.assertRaises(ValueError): audit.audit_state(value)
+
+    def test_schema3_absent_candidate_and_latest_candidate_changing_call_cannot_conflict(self):
+        for form, first, count in (('regular', 0, 1), ('with_count', None, 0)):
+            value = raw_state();raw = value['raw_setter_arguments']['viewport']
+            raw['last_observed_call'].update(ordinal=8, form=form, first=first, count=count)
+            value['viewport'].update(last_ordinal=8, last_first=0, last_count=count)
+            with self.subTest(form=form), self.assertRaises(ValueError): audit.audit_state(value)
+        value = raw_state();raw = value['raw_setter_arguments']['viewport']
+        raw['last_observed_call'].update(ordinal=8, form='regular', first=3, count=2)
+        value['viewport'].update(last_ordinal=8, last_first=3, last_count=2)
+        audit.audit_state(value)  # First>0 was observed without reading an array.
+
+    def test_schema3_raw_nan_signed_zero_and_extreme_scissor_are_exact_uninterpreted_arguments(self):
+        value = raw_state(clip_owned(1, 1));raster = value['raster_declarations']
+        raster['raster_chain_types'].append(123456)
+        for group in ('viewport_declaration', 'scissor_declaration'): set_reason(value, group, 'unknown_raster_chain')
+        unknown_rectangles(value)
+        value['raw_setter_arguments']['viewport']['bits'] = [0x7fc12345, 0x80000000, 0, 0xc3800000, 0, 0x3f800000]
+        value['raw_setter_arguments']['scissor'].update(offset=[-(1 << 31), (1 << 31)-1], extent=[audit.UINT32, 0])
+        audit.audit_state(value)
+        for name in ('viewport', 'scissor'):
+            changed = deepcopy(value);changed[name].update(value_known=True, effective_known=True)
+            with self.subTest(name=name), self.assertRaises(ValueError): audit.audit_state(changed)
+
+    def test_schema3_selected_prefix_requires_its_own_original_raw_and_depthclip_controls(self):
+        receipt, controls = delivered(1)
+        for index, draw in enumerate(receipt['captured_writer_prefix']['occurrences'][0]['commands'][0]['events'][1:]):
+            original = clip_owned(1, index);controls[(1, index)] = original
+            draw['writer_state'] = raw_state(original, draw['ordinal'])
+        result = audit.audit_receipt(receipt, controls, require_raw=True)
+        self.assertEqual(result['draw_states_compared'], 2)
+        self.assertEqual(sum(item['raw_argument_banks_audited'] for item in result['states']), 4)
+        self.assertEqual(sum(item['raw_captured_payload_banks'] for item in result['states']), 2)
+        altered = deepcopy(controls);altered[(1, 0)] = fsr_owned(1, 0)
+        with self.assertRaises(ValueError): audit.audit_receipt(receipt, altered, require_raw=True)
+
+    def test_schema3_future_raw_capture_epoch_cannot_hide_behind_an_unknown_mode(self):
+        value = raw_state(clip_owned(1, 1));value['raster_declarations']['raster_chain_types'].append(123456)
+        for group in ('viewport_declaration', 'scissor_declaration'): set_reason(value, group, 'unknown_raster_chain')
+        unknown_rectangles(value)
+        raw = value['raw_setter_arguments']['viewport']
+        raw.update(capture_epoch=3, recording_epoch_matches=False, recording_bank_known=False)
+        with self.assertRaises(ValueError): audit.audit_state(value)
+
+    def test_schema3_interpreted_counts_and_origins_match_their_immutable_declaration_or_setter(self):
+        cases = ((clip_owned(), lambda v: v['raster_declarations'].update(viewport_count=2)),
+                 (clip_owned(0, 1), lambda v: v['raster_declarations'].update(viewport_count=2)),
+                 (clip_owned(), lambda v: v['viewport'].update(declared_count=7)),
+                 (clip_owned(), lambda v: v['viewport'].update(setter_ordinal=1)),
+                 (clip_owned(0, 1), lambda v: v['viewport'].update(count_ordinal=1)),
+                 (clip_owned(1, 1), lambda v: v['viewport'].update(count_ordinal=110)),
+                 (clip_owned(1, 1), lambda v: v['viewport'].update(count_ordinal=0)),
+                 (clip_owned(1, 1), lambda v: v['viewport'].update(count_ordinal=4)),
+                 (clip_owned(1, 1), lambda v: v['viewport'].update(declared_first=99)))
+        for original, change in cases:
+            value = raw_state(original);change(value)
+            with self.subTest(mode=original['mode'], change=change), self.assertRaises(ValueError): audit.audit_state(value)
+
+    def test_schema3_viewport_and_scissor_setters_cannot_share_a_command_occurrence(self):
+        value = raw_state(clip_owned(1, 1))
+        vp, sc = value['raw_setter_arguments']['viewport'], value['raw_setter_arguments']['scissor']
+        sc['origin_ordinal'] = sc['last_observed_call']['ordinal'] = vp['origin_ordinal']
+        value['scissor'].update(setter_ordinal=vp['origin_ordinal'], count_ordinal=vp['origin_ordinal'], last_ordinal=vp['origin_ordinal'])
+        with self.assertRaises(ValueError): audit.audit_state(value)
 
 
 if __name__ == '__main__':

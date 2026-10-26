@@ -10,10 +10,20 @@ répond pas à cet objectif.
 
 ## État du projet
 
-Le [relevé distingue désormais les déclarations indépendantes du pipeline](docs/SAMPLED_PIPELINE_FACETS.md).
-Un [nouvel essai court dans Diablo](docs/proofs/diablo-sampled-pipeline-facets-v1.json)
+Le [relevé conserve désormais les arguments bruts des setters](docs/RAW_WRITER_ARGUMENTS.md)
+indépendamment de l'interprétation du pipeline. Un
+[nouvel essai court dans Diablo](docs/proofs/diablo-raw-writer-arguments-v1.json)
+observe sept dessins ciblés : viewport et scissor déclarent tous les deux la
+source entière, dans les vues de référence et élargie. Aucun rectangle central
+n'est déclaré par ces paramètres dans ces sept dessins. Cela ne prouve ni la
+couverture GPU ni la cause du défaut ; l'entrée échantillonnée et les UV restent
+à vérifier. Les découpes et le rectangle persistent. Le jeu est fermé, les
+originaux restent identiques et aucune image de Diablo n'a atteint le Quest.
+
+Le [relevé précédent distingue les déclarations indépendantes du pipeline](docs/SAMPLED_PIPELINE_FACETS.md).
+Son [essai court dans Diablo](docs/proofs/diablo-sampled-pipeline-facets-v1.json)
 conserve quatre paires successives et établit la compatibilité des sept mots
-push de sept dessins ciblés. Les déclarations viewport/scissor restent inconnues :
+push de sept dessins ciblés. Les déclarations viewport/scissor y restent inconnues :
 le relevé identifie précisément une extension de découpage de profondeur encore
 non classifiée par l'observateur. Aucune modification de son comportement n'est
 appliquée au jeu. Les découpes persistent, le jeu est fermé et les originaux
@@ -34,8 +44,8 @@ Le [contrôle ciblé de la passe couleur](docs/SAMPLED_WRITER_CONTROL.md) utilis
 ses deux modules originaux inchangés sur des textures possédées. Dix-huit cas
 GPU en natif et dans le runtime Steam comparent exactement 265 420 800 octets,
 sans erreur de synchronisation Khronos. Ils distinguent l’image choisie, le
-décalage UV, le sampler et la couverture viewport/scissor. Les valeurs réelles
-de sélection et de couverture dans Diablo restent à établir ; les découpes ne sont pas réparées.
+décalage UV, le sampler et la couverture viewport/scissor. L'image effectivement
+échantillonnée et la couverture GPU dans Diablo restent à établir ; les découpes ne sont pas réparées.
 
 Les [préfixes attachés aux captures](docs/CAPTURED_WRITERS.md) suivent maintenant
 les opérations du jeu sur ses véritables images sources. Un nouvel essai relie
