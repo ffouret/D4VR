@@ -83,7 +83,7 @@ bool CopyReadback::arm(const Request& r,const EyeState* expected){auto& p=*impl;
     if(expected){try{validate_eye_state(*expected);}catch(const std::invalid_argument&){return false;}if(expected->identity[0]!=0)return false;}
     p.request=r;p.expectedHeldPacket=expected?std::optional<EyeState>(*expected):std::nullopt;p.requestHigh=r.sequence;return true;}
 void CopyReadback::halt(){std::lock_guard<std::mutex> lock(impl->mutex);impl->halt();}
-bool CopyReadback::record(VkCommandBuffer cb,const VkCopyImageInfo2& i){auto& p=*impl;std::lock_guard<std::mutex> lock(p.mutex);
+bool CopyReadback::record(VkCommandBuffer cb,const VkCopyImageInfo2& i,const HistoryCopyRef& history){auto& p=*impl;std::lock_guard<std::mutex> lock(p.mutex);
     auto reject=[&](size_t index){++p.counters.rejected[index];return false;};
     auto command=p.commands.find(cb);if(command==p.commands.end())return p.request.copies?reject(0):false;auto& c=command->second;++c.ordinal;
     if(p.counters.halted || !p.request.copies)return false;
@@ -102,7 +102,7 @@ bool CopyReadback::record(VkCommandBuffer cb,const VkCopyImageInfo2& i){auto& p=
     if(mr.size>p.budget-p.counters.reservedBytes){p.request.copies=0;++p.counters.refused;return false;}
     VkMemoryAllocateInfo ai{VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};ai.allocationSize=mr.size;ai.memoryTypeIndex=p.type(mr.memoryTypeBits);check(p.AllocateMemory(p.device,&ai,nullptr,&s.memory));check(p.BindBufferMemory(p.device,s.buffer,s.memory,0));check(p.MapMemory(p.device,s.memory,0,bytes,0,&s.mapped));
     s.command=cb;s.snapshot={p.request.sequence,p.slots.size()+1,source.generation,destination.generation,c.recording,c.ordinal,0,0,c.family,source.extent,source.format,VkImageAspectFlags(aspects),{}};
-    s.snapshot.recordingEye=c.eye;s.snapshot.expectedHeldPacket=p.expectedHeldPacket;
+    s.snapshot.sourceHistory=history;s.snapshot.recordingEye=c.eye;s.snapshot.expectedHeldPacket=p.expectedHeldPacket;
     const auto index=uint32_t(p.slots.size());p.slots.push_back(std::move(slot));p.counters.reservedBytes+=mr.size;++p.counters.recorded;--p.request.copies;c.slots.push_back(index);
     // This is a COPY-stage DEPTH read, a subset of the original COPY's source
     // aspects/footprint. No barrier, transition or write touches the source.

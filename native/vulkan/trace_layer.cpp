@@ -28,6 +28,8 @@
 #include "depth_readback.hpp"
 #include "depth_audit.hpp"
 #include "depth_copy_readback.hpp"
+#include "source_history.hpp"
+#define D4_HISTORY(d, ...) if((d)->sourceHistory){try{__VA_ARGS__;}catch(...){(d)->sourceHistory->fault();}}
 #define D4_AUDIT(d, ...) if((d)->depthAudit){try{__VA_ARGS__;}catch(...){(d)->depthAudit->fault();}}
 #define D4_COPY(d, ...) if((d)->copyReadback){try{__VA_ARGS__;}catch(...){(d)->copyReadback->halt();}}
 #include "../core/diagnostic_pose.hpp"
@@ -216,7 +218,9 @@ struct Commands {
     X(CreateDescriptorSetLayout) X(DestroyDescriptorSetLayout) X(GetDescriptorSetLayoutSizeEXT) X(GetDescriptorSetLayoutBindingOffsetEXT) X(GetDescriptorEXT) \
     X(CmdBindDescriptorBuffersEXT) X(CmdSetDescriptorBufferOffsetsEXT) X(CmdBindDescriptorSets) \
     X(CreateSwapchainKHR) X(DestroySwapchainKHR) X(GetSwapchainImagesKHR) X(CmdBlitImage) X(CmdBlitImage2) X(CreateCommandPool) \
-    X(CmdCopyImage) X(CmdCopyImage2) X(CmdCopyImageToBuffer) X(CmdCopyImageToBuffer2)
+    X(CmdCopyImage) X(CmdCopyImage2) X(CmdCopyImageToBuffer) X(CmdCopyImageToBuffer2) \
+    X(CmdClearDepthStencilImage) X(CmdClearAttachments) X(CmdCopyBufferToImage) X(CmdCopyBufferToImage2) \
+    X(CmdPipelineBarrier) X(CmdPipelineBarrier2) X(CreateSemaphore) X(DestroySemaphore)
 struct Device {
     VkDevice handle{};
     PFN_vkGetDeviceProcAddr get{};
@@ -246,6 +250,8 @@ struct Device {
     std::mutex depthReportMutex;uint64_t depthReports=0,depthAuditRequest=0;
     std::atomic<uint64_t> depthSubmission{0};
     d4vr::frame::Tracker frame;
+    std::unique_ptr<d4vr::history::SourceHistory> sourceHistory;
+    std::mutex historyReportMutex;uint64_t historyReports=0,historyRequest=0;
     std::unique_ptr<d4vr::eye::Control> eye;
     // Declaration order also keeps packets alive until private graphs die.
     std::array<std::unique_ptr<d4vr::eye::Control>,2> pairEyes;
@@ -299,6 +305,7 @@ template<class T> std::shared_ptr<Device> deviceFor(T handle) {
     auto found = devices.find(key(handle)); return found == devices.end() ? nullptr : found->second;
 }
 void count(const std::shared_ptr<Device>& d, VkCommandBuffer command, Counter c) {
+    D4_HISTORY(d,if(c<=IndexedIndirectCount)d->sourceHistory->draw(command,c);else if(c==GeneratedEXT || c==GeneratedNV)d->sourceHistory->unknown(command,d4vr::history::Gap::generated));
     std::lock_guard<std::mutex> lock(stateMutex);
     auto found = d->commands.find(command);
     if (found != d->commands.end()) {
@@ -467,13 +474,27 @@ void writeCopy(Device& d,uint64_t present,bool final=false){
     for(const auto& s:d.copyReadback->ready()){
         const auto base=std::string(dir)+"/depth-copy-"+std::to_string(getpid())+"-"+std::to_string(d.id)+"-"+std::to_string(s.copy);
         bool raw=writePrivate(base+".bin",s.words.data(),s.words.size()*4);
-        const auto data="{\"schema_version\":1,\"request\":"+std::to_string(s.request)+",\"copy\":"+std::to_string(s.copy)+",\"source_generation\":"+std::to_string(s.sourceGeneration)+",\"destination_generation\":"+std::to_string(s.destinationGeneration)+",\"recording\":"+std::to_string(s.recording)+",\"copy_ordinal\":"+std::to_string(s.ordinal)+",\"submission\":"+std::to_string(s.submission)+",\"epoch\":"+std::to_string(s.epoch)+",\"family\":"+std::to_string(s.family)+",\"format\":"+std::to_string(s.format)+",\"width\":"+std::to_string(s.extent.width)+",\"height\":"+std::to_string(s.extent.height)+",\"original_aspects\":"+std::to_string(s.originalAspects)+",\"private_read_aspects\":2,\"word_encoding\":"+quoted(s.format==VK_FORMAT_D24_UNORM_S8_UINT?"native_uint32_low24_unorm":"native_binary32")+",\"raw_complete\":"+(raw?"true":"false")+",\"recording_eye\":"+std::to_string(s.recordingEye)+",\"capture_submission\":"+std::to_string(s.captureSubmission)+",\"copy_submit_camera\":"+observationJson(s.copySubmit)+",\"expected_held_packet\":"+(s.expectedHeldPacket?observationJson(d4vr::CameraObservation{d4vr::CameraStatus::uniform,0,0,*s.expectedHeldPacket}):"null")+",\"whole_scene_verified\":false,\"initialized_pixels_verified\":false,\"common_scene_time_known\":false,\"xr_pose_known\":false}\n";
+        const auto data="{\"schema_version\":1,\"request\":"+std::to_string(s.request)+",\"copy\":"+std::to_string(s.copy)+",\"source_generation\":"+std::to_string(s.sourceGeneration)+",\"destination_generation\":"+std::to_string(s.destinationGeneration)+",\"recording\":"+std::to_string(s.recording)+",\"copy_ordinal\":"+std::to_string(s.ordinal)+",\"submission\":"+std::to_string(s.submission)+",\"epoch\":"+std::to_string(s.epoch)+",\"family\":"+std::to_string(s.family)+",\"format\":"+std::to_string(s.format)+",\"width\":"+std::to_string(s.extent.width)+",\"height\":"+std::to_string(s.extent.height)+",\"original_aspects\":"+std::to_string(s.originalAspects)+",\"private_read_aspects\":2,\"word_encoding\":"+quoted(s.format==VK_FORMAT_D24_UNORM_S8_UINT?"native_uint32_low24_unorm":"native_binary32")+",\"raw_complete\":"+(raw?"true":"false")+",\"recording_eye\":"+std::to_string(s.recordingEye)+",\"capture_submission\":"+std::to_string(s.captureSubmission)+",\"copy_submit_camera\":"+observationJson(s.copySubmit)+",\"expected_held_packet\":"+(s.expectedHeldPacket?observationJson(d4vr::CameraObservation{d4vr::CameraStatus::uniform,0,0,*s.expectedHeldPacket}):"null")+",\"source_history\":"+(s.sourceHistory?std::string("{\"observer_session\":")+std::to_string(s.sourceHistory.observerSession)+",\"source_image\":"+std::to_string(s.sourceHistory.sourceImage)+",\"destination_image\":"+std::to_string(s.sourceHistory.destinationImage)+",\"recording\":"+std::to_string(s.sourceHistory.recording)+",\"ordinal\":"+std::to_string(s.sourceHistory.ordinal)+"}":"null")+",\"whole_scene_verified\":false,\"initialized_pixels_verified\":false,\"common_scene_time_known\":false,\"xr_pose_known\":false}\n";
         bool meta=writePrivate(base+".json",data.data(),data.size());logFile.write("\"event\":\"depth_copy_export\",\"copy\":"+std::to_string(s.copy)+",\"request\":"+std::to_string(s.request)+",\"complete\":"+(raw && meta?"true":"false"));
     }
     std::lock_guard<std::mutex> lock(d.depthReportMutex);if(d.copyReports>=32)return;auto request=frameRequest("depth-copy-status.request");if(!final && !(present && !(present&(present-1))) && request<=d.copyStatusRequest)return;
     const auto s=d.copyReadback->stats();auto data="{\"schema_version\":1,\"process_id\":"+std::to_string(getpid())+",\"device\":"+std::to_string(d.id)+",\"report_sequence\":"+std::to_string(++d.copyReports)+",\"observed_present_boundary\":"+std::to_string(present)+",\"external_request\":"+std::to_string(request)+",\"final\":"+(final?"true":"false")+",\"recorded\":"+std::to_string(s.recorded)+",\"exported\":"+std::to_string(s.exported)+",\"submissions\":"+std::to_string(s.submissions)+",\"private_fences\":"+std::to_string(s.completions)+",\"invalidations\":"+std::to_string(s.invalidations)+",\"late_returns\":"+std::to_string(s.lateReturns)+",\"app_fence_bypass\":"+std::to_string(s.appFenceBypass)+",\"refused\":"+std::to_string(s.refused)+",\"allocation_failures\":"+std::to_string(s.allocationFailures)+",\"original_failures\":"+std::to_string(s.originalFailures)+",\"reserved_bytes\":"+std::to_string(s.reservedBytes)+",\"halted\":"+(s.halted?"true":"false")+",\"gpu_waits_or_extra_queue_submissions\":0}\n";
     auto at=data.rfind('}');if(at!=std::string::npos){data.insert(at,",\"held_depth_mode\":"+std::string(d.heldDepth?"true":"false")+",\"held_phase_requests_seen\":"+std::to_string(d.heldDepthRequestHigh.load())+",\"held_phase_rejected\":"+std::to_string(d.heldDepthRejected.load()));at=data.rfind('}');std::string rejected=",\"rejected\":[";for(size_t i=0;i<s.rejected.size();++i)rejected+=(i?",":"")+std::to_string(s.rejected[i]);rejected+="],\"last_depth_candidate\":[";for(size_t i=0;i<s.candidate.size();++i)rejected+=(i?",":"")+std::to_string(s.candidate[i]);data.insert(at,rejected+"]");}
     if(writePrivate(std::string(dir)+"/depth-copy-status-"+std::to_string(getpid())+"-"+std::to_string(d.id)+"-"+std::to_string(d.copyReports)+".json",data.data(),data.size()))d.copyStatusRequest=std::max(d.copyStatusRequest,request);
+}
+void writeHistory(Device& d,bool final=false){
+    if(!d.sourceHistory)return;
+    const auto dir=std::getenv("D4VR_TRACE_DIR");if(!dir)return;
+    std::lock_guard<std::mutex> lock(d.historyReportMutex);const auto request=frameRequest("source-history.request");
+    if(d.historyReports>=16 || (!final && request<=d.historyRequest))return;
+    auto payload=d.sourceHistory->report();auto data="{\"schema_version\":1,\"process_id\":"+std::to_string(getpid())+",\"device\":"+std::to_string(d.id)+",\"report_sequence\":"+std::to_string(++d.historyReports)+",\"external_request\":"+std::to_string(request)+",\"final\":"+(final?"true":"false")+",\"frame_trace_enabled\":"+(d.frame.enabled?"true":"false")+",\"history\":"+payload+"}\n";
+    if(writePrivate(std::string(dir)+"/source-history-"+std::to_string(getpid())+"-"+std::to_string(d.id)+"-"+std::to_string(d.historyReports)+".json",data.data(),data.size()))d.historyRequest=std::max(d.historyRequest,request);
+}
+template<class T>d4vr::history::HistorySubmission historyBefore(Device& d,VkQueue q,uint32_t n,const T* submits){
+    if(!d.sourceHistory)return {};
+    uint32_t family=VK_QUEUE_FAMILY_IGNORED,index=UINT32_MAX;uint64_t serial=0;
+    {std::lock_guard<std::mutex> lock(stateMutex);auto found=d.queues.find(q);if(found!=d.queues.end()){family=found->second.first;index=found->second.second;}if(d.heldDepth)serial=d.captureSubmission+1;}
+    return d.sourceHistory->before(q,family,index,n,submits,serial);
 }
 template<class T>d4vr::depth::CopyTicket copyBefore(Device& d,VkQueue q,uint32_t n,const T* submits,VkFence fence,const d4vr::CameraPair* camera){
     d4vr::depth::CopyTicket ticket;ticket.forwardedFence=fence;if(!d.copyReadback)return ticket;
@@ -729,7 +750,7 @@ VKAPI_ATTR VkResult VKAPI_CALL d4CreateDevice(VkPhysicalDevice physical, const V
     D4_ALIAS(CmdBeginRenderPass2) D4_ALIAS(CmdBeginRendering) D4_ALIAS(QueueSubmit2)
     D4_ALIAS(CmdEndRenderPass2) D4_ALIAS(CmdEndRendering)
     D4_ALIAS(GetBufferDeviceAddress) D4_ALIAS(BindBufferMemory2)
-    D4_ALIAS(CmdBlitImage2) D4_ALIAS(CmdCopyImage2) D4_ALIAS(CmdCopyImageToBuffer2)
+    D4_ALIAS(CmdBlitImage2) D4_ALIAS(CmdCopyImage2) D4_ALIAS(CmdCopyImageToBuffer2) D4_ALIAS(CmdCopyBufferToImage2) D4_ALIAS(CmdPipelineBarrier2)
 #undef D4_ALIAS
     if(!d->CmdSetViewportWithCount)d->CmdSetViewportWithCount=reinterpret_cast<PFN_vkCmdSetViewportWithCount>(get(*result,"vkCmdSetViewportWithCountEXT"));
 #ifdef VK_KHR_map_memory2
@@ -738,6 +759,12 @@ VKAPI_ATTR VkResult VKAPI_CALL d4CreateDevice(VkPhysicalDevice physical, const V
 #endif
     const char* frameEnabled = std::getenv("D4VR_FRAME_TRACE");
     d->frame.enabled = frameEnabled && std::strcmp(frameEnabled, "1") == 0;
+    if(enabled("D4VR_DEPTH_SOURCE_HISTORY"))try{
+        auto number=[](const char* name,uint32_t fallback){auto v=std::getenv(name);if(!v)return fallback;char* end=nullptr;auto n=std::strtoul(v,&end,10);if(!*v || *end || !n || n>4096)throw std::invalid_argument("History footprint");return uint32_t(n);};
+        auto stamp=uint64_t(std::chrono::steady_clock::now().time_since_epoch().count())^uint64_t(getpid());if(!stamp)stamp=1;
+        d->sourceHistory=std::make_unique<d4vr::history::SourceHistory>(VkExtent2D{number("D4VR_SOURCE_HISTORY_WIDTH",1707),number("D4VR_SOURCE_HISTORY_HEIGHT",960)},VkFormat(number("D4VR_SOURCE_HISTORY_FORMAT",129)),stamp);
+        d->frame.pipelineCatalogOnly=true;
+    }catch(...){logFile.write("\"event\":\"source_history_unavailable\"");}
     d->frame.hasSwapchain = std::find(d->extensions.begin(), d->extensions.end(), VK_KHR_SWAPCHAIN_EXTENSION_NAME) != d->extensions.end();
     // Observation mode never activates the strict reader, even if conflicting
     // environment options are present. It must not reject application calls.
@@ -767,7 +794,7 @@ VKAPI_ATTR VkResult VKAPI_CALL d4CreateDevice(VkPhysicalDevice physical, const V
     if (properties2) {
         VkPhysicalDeviceIDProperties id{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES};
         VkPhysicalDeviceShaderModuleIdentifierPropertiesEXT identifiers{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SHADER_MODULE_IDENTIFIER_PROPERTIES_EXT};
-        if (d->frame.enabled && std::find(d->extensions.begin(), d->extensions.end(), VK_EXT_SHADER_MODULE_IDENTIFIER_EXTENSION_NAME) != d->extensions.end()) id.pNext = &identifiers;
+        if ((d->frame.enabled || d->frame.pipelineCatalogOnly) && std::find(d->extensions.begin(), d->extensions.end(), VK_EXT_SHADER_MODULE_IDENTIFIER_EXTENSION_NAME) != d->extensions.end()) id.pNext = &identifiers;
         VkPhysicalDeviceProperties2 p{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2}; p.pNext = &id;
         properties2(physical, &p); std::copy(id.deviceUUID, id.deviceUUID + VK_UUID_SIZE, d->deviceUuid.begin());
         if (id.pNext) d->frame.identifierAlgorithm = d4vr::frame::hexBytes(identifiers.shaderModuleIdentifierAlgorithmUUID, VK_UUID_SIZE);
@@ -927,6 +954,7 @@ VKAPI_ATTR void VKAPI_CALL d4GetDeviceQueue2(VkDevice handle, const VkDeviceQueu
 VKAPI_ATTR void VKAPI_CALL d4DestroyDevice(VkDevice handle, const VkAllocationCallbacks* allocator) {
     auto d = deviceFor(handle);
     writeDepthAudit(*d,d->presents,true);
+    D4_HISTORY(d,writeHistory(*d,true));
     if(d->copyReadback){auto idle=d->DeviceWaitIdle(handle);if(idle!=VK_SUCCESS)d->copyReadback->halt();D4_COPY(d,writeCopy(*d,d->presents,true));d->copyReadback.reset();}
     if(d->depthReadback){d->DeviceWaitIdle(handle);try{writeDepth(*d);}catch(const std::exception& e){logFile.write("\"event\":\"depth_error\",\"reason\":"+quoted(e.what()));}d->depthReadback.reset();}
     D4_COOP(d,d->DeviceWaitIdle(handle);try{d->cooperativeCapture->shutdown();}catch(const std::exception& e){logFile.write("\"event\":\"cooperative_xr_error\",\"reason\":"+quoted(e.what()));}d->DeviceWaitIdle(handle));
@@ -953,7 +981,7 @@ VKAPI_ATTR void VKAPI_CALL d4DestroyDevice(VkDevice handle, const VkAllocationCa
 }
 VKAPI_ATTR VkResult VKAPI_CALL d4CreateCommandPool(VkDevice device,const VkCommandPoolCreateInfo* info,const VkAllocationCallbacks* allocator,VkCommandPool* pool){
     auto d=deviceFor(device);auto r=d->CreateCommandPool(device,info,allocator,pool);
-    if(r==VK_SUCCESS && (d->presentation || d->depthReadback || d->copyReadback || d->depthAudit)){std::lock_guard<std::mutex> lock(stateMutex);if(d->commandPools.size()<4096){d->commandPools[*pool]=info->flags;if((d->depthReadback && !info->pNext) || d->copyReadback || d->depthAudit)d->depthPoolFamilies[*pool]=info->queueFamilyIndex;if(d->depthAudit || d->copyReadback)d->depthPoolHasNext[*pool]=bool(info->pNext);}}
+    if(r==VK_SUCCESS && (d->presentation || d->depthReadback || d->copyReadback || d->depthAudit || d->sourceHistory)){std::lock_guard<std::mutex> lock(stateMutex);if(d->commandPools.size()<4096){d->commandPools[*pool]=info->flags;if((d->depthReadback && !info->pNext) || d->copyReadback || d->depthAudit || d->sourceHistory)d->depthPoolFamilies[*pool]=info->queueFamilyIndex;if(d->depthAudit || d->copyReadback || d->sourceHistory)d->depthPoolHasNext[*pool]=bool(info->pNext);}}
     return r;
 }
 VKAPI_ATTR VkResult VKAPI_CALL d4AllocateCommandBuffers(VkDevice handle, const VkCommandBufferAllocateInfo* info, VkCommandBuffer* buffers) {
@@ -972,7 +1000,7 @@ VKAPI_ATTR void VKAPI_CALL d4FreeCommandBuffers(VkDevice handle, VkCommandPool p
         D4_POC(d,d->poc->reset(buffers[i]));
         if(d->presentation)d->presentation->reset(buffers[i]);
         if(d->depthReadback)d->depthReadback->reset(buffers[i]);
-        D4_AUDIT(d,d->depthAudit->reset(buffers[i]));D4_COPY(d,d->copyReadback->reset(buffers[i]));
+        D4_AUDIT(d,d->depthAudit->reset(buffers[i]));D4_COPY(d,d->copyReadback->reset(buffers[i]));D4_HISTORY(d,d->sourceHistory->reset(buffers[i]));
         auto it = d->commands.find(buffers[i]); if (it != d->commands.end()) { d->frame.reset(it->second.frame); d->commands.erase(it); }
     } }
     d->FreeCommandBuffers(handle, pool, n, buffers);
@@ -989,9 +1017,10 @@ VKAPI_ATTR VkResult VKAPI_CALL d4BeginCommandBuffer(VkCommandBuffer command, con
         {std::lock_guard<std::mutex> lock(stateMutex);auto c=d->commands.find(command);if(c!=d->commands.end()){level=c->second.level;auto pool=d->commandPools.find(c->second.pool);auto f=d->depthPoolFamilies.find(c->second.pool);if(pool!=d->commandPools.end() && f!=d->depthPoolFamilies.end()){family=f->second;protectedPool=info->pNext || bool(pool->second&VK_COMMAND_POOL_CREATE_PROTECTED_BIT);}}}
         d->depthReadback->begin(command,level,info->flags,protectedPool,family);
     }
-    if(result==VK_SUCCESS && (d->depthAudit || d->copyReadback)){
+    if(result==VK_SUCCESS && (d->depthAudit || d->copyReadback || d->sourceHistory)){
         uint32_t family=VK_QUEUE_FAMILY_IGNORED;bool known=false,next=false;VkCommandPoolCreateFlags poolFlags=0;VkCommandBufferLevel level=VK_COMMAND_BUFFER_LEVEL_SECONDARY;
         {std::lock_guard<std::mutex> lock(stateMutex);auto c=d->commands.find(command);if(c!=d->commands.end()){level=c->second.level;auto pool=d->commandPools.find(c->second.pool);auto f=d->depthPoolFamilies.find(c->second.pool);if(pool!=d->commandPools.end() && f!=d->depthPoolFamilies.end()){family=f->second;poolFlags=pool->second;known=true;next=d->depthPoolHasNext[c->second.pool];}}}
+        D4_HISTORY(d,d->sourceHistory->begin(command,level,info->flags,family,uint32_t(eye),known && !next && !info->pNext && !(poolFlags&VK_COMMAND_POOL_CREATE_PROTECTED_BIT)));
         D4_AUDIT(d,d->depthAudit->begin(command,level,info->flags,bool(info->pNext),known,poolFlags,next,family));
         copyRequest(*d);D4_COPY(d,d->copyReadback->begin(command,level,info->flags,!known || next || info->pNext || bool(poolFlags&VK_COMMAND_POOL_CREATE_PROTECTED_BIT),family,uint32_t(eye)));
     }
@@ -1004,22 +1033,22 @@ VKAPI_ATTR VkResult VKAPI_CALL d4ResetCommandBuffer(VkCommandBuffer command, VkC
     if(result==VK_SUCCESS) { D4_POC(d,d->poc->reset(command)); }
     if(result==VK_SUCCESS && d->presentation)d->presentation->reset(command);
     if(result==VK_SUCCESS && d->depthReadback)d->depthReadback->reset(command);
-    if(result==VK_SUCCESS){D4_AUDIT(d,d->depthAudit->reset(command));D4_COPY(d,d->copyReadback->reset(command));}
+    if(result==VK_SUCCESS){D4_AUDIT(d,d->depthAudit->reset(command));D4_COPY(d,d->copyReadback->reset(command));D4_HISTORY(d,d->sourceHistory->reset(command));}
     return result;
 }
 VKAPI_ATTR VkResult VKAPI_CALL d4ResetCommandPool(VkDevice handle, VkCommandPool pool, VkCommandPoolResetFlags flags) {
     auto d = deviceFor(handle); auto result = d->ResetCommandPool(handle, pool, flags);
-    if (result == VK_SUCCESS) { std::lock_guard<std::mutex> lock(stateMutex); for (auto& pair : d->commands) if (pair.second.pool == pool) { D4_POC(d,d->poc->reset(pair.first));if(d->presentation)d->presentation->reset(pair.first);if(d->depthReadback)d->depthReadback->reset(pair.first);D4_AUDIT(d,d->depthAudit->reset(pair.first));D4_COPY(d,d->copyReadback->reset(pair.first)); reset(*d, pair.second); } }
+    if (result == VK_SUCCESS) { std::lock_guard<std::mutex> lock(stateMutex); for (auto& pair : d->commands) if (pair.second.pool == pool) { D4_POC(d,d->poc->reset(pair.first));if(d->presentation)d->presentation->reset(pair.first);if(d->depthReadback)d->depthReadback->reset(pair.first);D4_AUDIT(d,d->depthAudit->reset(pair.first));D4_COPY(d,d->copyReadback->reset(pair.first));D4_HISTORY(d,d->sourceHistory->reset(pair.first)); reset(*d, pair.second); } }
     return result;
 }
 VKAPI_ATTR void VKAPI_CALL d4DestroyCommandPool(VkDevice handle, VkCommandPool pool, const VkAllocationCallbacks* allocator) {
     auto d = deviceFor(handle);
-    { std::lock_guard<std::mutex> lock(stateMutex);d->commandPools.erase(pool);d->depthPoolFamilies.erase(pool);d->depthPoolHasNext.erase(pool); for (auto it = d->commands.begin(); it != d->commands.end();) { if (it->second.pool == pool) { D4_POC(d,d->poc->reset(it->first));if(d->presentation)d->presentation->reset(it->first);if(d->depthReadback)d->depthReadback->reset(it->first);D4_AUDIT(d,d->depthAudit->reset(it->first));D4_COPY(d,d->copyReadback->reset(it->first)); d->frame.reset(it->second.frame); it = d->commands.erase(it); } else ++it; } }
+    { std::lock_guard<std::mutex> lock(stateMutex);d->commandPools.erase(pool);d->depthPoolFamilies.erase(pool);d->depthPoolHasNext.erase(pool); for (auto it = d->commands.begin(); it != d->commands.end();) { if (it->second.pool == pool) { D4_POC(d,d->poc->reset(it->first));if(d->presentation)d->presentation->reset(it->first);if(d->depthReadback)d->depthReadback->reset(it->first);D4_AUDIT(d,d->depthAudit->reset(it->first));D4_COPY(d,d->copyReadback->reset(it->first));D4_HISTORY(d,d->sourceHistory->reset(it->first)); d->frame.reset(it->second.frame); it = d->commands.erase(it); } else ++it; } }
     d->DestroyCommandPool(handle, pool, allocator);
 }
 VKAPI_ATTR void VKAPI_CALL d4CmdExecuteCommands(VkCommandBuffer command, uint32_t n, const VkCommandBuffer* secondary) {
     auto d = deviceFor(command);
-    D4_AUDIT(d,d->depthAudit->secondary(n));
+    D4_AUDIT(d,d->depthAudit->secondary(n));D4_HISTORY(d,d->sourceHistory->unknown(command,d4vr::history::Gap::secondary));
     D4_POC(d,d->poc->unsupported(command));
     {
         std::lock_guard<std::mutex> lock(stateMutex); auto it = d->commands.find(command);
@@ -1142,25 +1171,25 @@ VKAPI_ATTR void VKAPI_CALL d4CmdDispatchIndirect(VkCommandBuffer command, VkBuff
 VKAPI_ATTR void VKAPI_CALL d4CmdBeginRenderPass(VkCommandBuffer command, const VkRenderPassBeginInfo* info, VkSubpassContents contents) {
     auto d = deviceFor(command); count(d, command, RenderPass);
     D4_POC(d,d->poc->unsupported(command));
-    frameCommand(d, command, [&](auto& t, auto& c) { t.legacy(c, *info); }); d->CmdBeginRenderPass(command, info, contents);
+    frameCommand(d, command, [&](auto& t, auto& c) { t.legacy(c, *info); });D4_HISTORY(d,d->sourceHistory->unknown(command,d4vr::history::Gap::legacy)); d->CmdBeginRenderPass(command, info, contents);
 }
 VKAPI_ATTR void VKAPI_CALL d4CmdBeginRenderPass2(VkCommandBuffer command, const VkRenderPassBeginInfo* info, const VkSubpassBeginInfo* subpass) {
     auto d = deviceFor(command); count(d, command, RenderPass);
     D4_POC(d,d->poc->unsupported(command));
-    frameCommand(d, command, [&](auto& t, auto& c) { t.legacy(c, *info); }); d->CmdBeginRenderPass2(command, info, subpass);
+    frameCommand(d, command, [&](auto& t, auto& c) { t.legacy(c, *info); });D4_HISTORY(d,d->sourceHistory->unknown(command,d4vr::history::Gap::legacy)); d->CmdBeginRenderPass2(command, info, subpass);
 }
 VKAPI_ATTR void VKAPI_CALL d4CmdBeginRendering(VkCommandBuffer command, const VkRenderingInfo* info) {
     auto d = deviceFor(command); count(d, command, DynamicRendering);
     frameCommand(d, command, [&](auto& t, auto& c) { t.begin(c, *info); });
     if(d->depthReadback)d->depthReadback->beginRendering(command,*info);
-    D4_AUDIT(d,d->depthAudit->beginRendering(command,*info));
+    D4_AUDIT(d,d->depthAudit->beginRendering(command,*info));D4_HISTORY(d,d->sourceHistory->beginRendering(command,*info));
     D4_POC(d,if(d->poc->recording(command)) { d->poc->beginRendering(command,*info);return; }); d->CmdBeginRendering(command, info);
 }
 VKAPI_ATTR void VKAPI_CALL d4CmdEndRendering(VkCommandBuffer command) {
     auto d = deviceFor(command); frameCommand(d, command, [](auto& t, auto& c) { t.end(c); });
     D4_POC(d,if(d->poc->recording(command)) { d->poc->endRendering(command);return; }); d->CmdEndRendering(command);
     if(d->depthReadback)try{d->depthReadback->endRendering(command);}catch(const std::exception& e){d->depthReadback->cancel();logFile.write("\"event\":\"depth_error\",\"reason\":"+quoted(e.what()));}
-    D4_AUDIT(d,d->depthAudit->endRendering(command));
+    D4_AUDIT(d,d->depthAudit->endRendering(command));D4_HISTORY(d,d->sourceHistory->endRendering(command));
 }
 VKAPI_ATTR void VKAPI_CALL d4CmdEndRenderPass(VkCommandBuffer command) {
     auto d = deviceFor(command); frameCommand(d, command, [](auto& t, auto& c) { t.end(c); }); d->CmdEndRenderPass(command);
@@ -1169,7 +1198,7 @@ VKAPI_ATTR void VKAPI_CALL d4CmdEndRenderPass2(VkCommandBuffer command, const Vk
     auto d = deviceFor(command); frameCommand(d, command, [](auto& t, auto& c) { t.end(c); }); d->CmdEndRenderPass2(command, info);
 }
 VKAPI_ATTR void VKAPI_CALL d4CmdBindPipeline(VkCommandBuffer command, VkPipelineBindPoint point, VkPipeline pipeline) {
-    auto d = deviceFor(command); frameCommand(d, command, [&](auto& t, auto& c) { t.bind(c, point, pipeline); });
+    auto d = deviceFor(command);const auto original=pipeline; frameCommand(d, command, [&](auto& t, auto& c) { t.bind(c, point, pipeline); });
     if(d->presentation && point==VK_PIPELINE_BIND_POINT_GRAPHICS)try {
         auto lease=d->pairs->lookup(pipeline);std::lock_guard<std::mutex> lock(stateMutex);auto c=d->commands.find(command);
         if(c!=d->commands.end()){
@@ -1180,6 +1209,7 @@ VKAPI_ATTR void VKAPI_CALL d4CmdBindPipeline(VkCommandBuffer command, VkPipeline
             }
         }
     }catch(...){logFile.write("\"event\":\"presentation_error\",\"reason\":\"pipeline_selection_failed\"");}
+    if(d->sourceHistory && point==VK_PIPELINE_BIND_POINT_GRAPHICS){std::shared_ptr<const d4vr::frame::Pipeline> metadata;{std::lock_guard<std::mutex> lock(stateMutex);metadata=d->frame.pipelineSnapshot(original);}D4_HISTORY(d,d->sourceHistory->bind(command,metadata,pipeline,pipeline!=original));}
     if(point==VK_PIPELINE_BIND_POINT_GRAPHICS) { D4_REPLAY(d,command,bindPipeline(pipeline)); }
     D4_POC(d,d->poc->unsupported(command));d->CmdBindPipeline(command, point, pipeline);
 }
@@ -1220,7 +1250,7 @@ VKAPI_ATTR VkResult VKAPI_CALL d4EndCommandBuffer(VkCommandBuffer command) {
 }
 VKAPI_ATTR VkResult VKAPI_CALL d4DeviceWaitIdle(VkDevice device) {
     auto d=deviceFor(device);D4_COOP(d,{std::lock_guard<std::mutex> lock(d->cameraMutex);if(!d->cooperativeCapture->allowsQueue(d->poseQueue))return VK_ERROR_UNKNOWN;});auto r=d->DeviceWaitIdle(device);
-    if(d->copyReadback){if(r!=VK_SUCCESS)d->copyReadback->halt();D4_COPY(d,writeCopy(*d,d->presents));}
+    if(d->copyReadback){if(r!=VK_SUCCESS)d->copyReadback->halt();D4_COPY(d,writeCopy(*d,d->presents));}D4_HISTORY(d,writeHistory(*d));
     if(r==VK_SUCCESS && d->depthReadback)try{writeDepth(*d);}catch(const std::exception& e){logFile.write("\"event\":\"depth_error\",\"reason\":"+quoted(e.what()));}
     if(r==VK_SUCCESS) { D4_POC(d,
         const char* directory=std::getenv("D4VR_POC_OUTPUT");
@@ -1240,7 +1270,7 @@ VKAPI_ATTR VkResult VKAPI_CALL d4CreateImage(VkDevice device, const VkImageCreat
     if(result==VK_SUCCESS) { D4_POC(d,d->poc->image(*image,*info)); }
     if(result==VK_SUCCESS && d->presentation)try{d->presentation->image(*image,*info);}catch(...){}
     if(result==VK_SUCCESS && d->depthReadback)d->depthReadback->image(*image,*info);
-    if(result==VK_SUCCESS){D4_AUDIT(d,d->depthAudit->image(*image,*info));D4_COPY(d,d->copyReadback->image(*image,*info));}
+    if(result==VK_SUCCESS){D4_AUDIT(d,d->depthAudit->image(*image,*info));D4_COPY(d,d->copyReadback->image(*image,*info));D4_HISTORY(d,d->sourceHistory->image(*image,*info));}
     if (result == VK_SUCCESS && d->frame.enabled) { std::lock_guard<std::mutex> lock(stateMutex); d->frame.image(*image, *info); } return result;
 }
 VKAPI_ATTR void VKAPI_CALL d4DestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks* allocator) {
@@ -1248,7 +1278,7 @@ VKAPI_ATTR void VKAPI_CALL d4DestroyImage(VkDevice device, VkImage image, const 
     D4_POC(d,d->poc->removeImage(image));
     if(d->presentation)d->presentation->removeImage(image);
     if(d->depthReadback)d->depthReadback->removeImage(image);
-    D4_AUDIT(d,d->depthAudit->removeImage(image));D4_COPY(d,d->copyReadback->removeImage(image));
+    D4_AUDIT(d,d->depthAudit->removeImage(image));D4_COPY(d,d->copyReadback->removeImage(image));D4_HISTORY(d,d->sourceHistory->removeImage(image));
 }
 VKAPI_ATTR VkResult VKAPI_CALL d4CreateSwapchainKHR(VkDevice device,const VkSwapchainCreateInfoKHR* info,const VkAllocationCallbacks* allocator,VkSwapchainKHR* chain){
     auto d=deviceFor(device);auto r=d->CreateSwapchainKHR(device,info,allocator,chain);
@@ -1281,27 +1311,41 @@ void captureBlit(const std::shared_ptr<Device>& d,VkCommandBuffer command,VkImag
 }
 VKAPI_ATTR void VKAPI_CALL d4CmdBlitImage(VkCommandBuffer command,VkImage source,VkImageLayout src,VkImage destination,VkImageLayout dst,uint32_t count,const VkImageBlit* regions,VkFilter filter){
     auto d=deviceFor(command);D4_POC(d,d->poc->unsupported(command));captureBlit(d,command,source,src,destination,dst,count,regions,filter);
-    D4_AUDIT(d,d->depthAudit->transfers().blit(command,source,src,destination,dst,count,regions,filter));
+    D4_AUDIT(d,d->depthAudit->transfers().blit(command,source,src,destination,dst,count,regions,filter));D4_HISTORY(d,d->sourceHistory->unknown(command,d4vr::history::Gap::missingRoute));
     d->CmdBlitImage(command,source,src,destination,dst,count,regions,filter);
 }
 VKAPI_ATTR void VKAPI_CALL d4CmdBlitImage2(VkCommandBuffer command,const VkBlitImageInfo2* info){
     auto d=deviceFor(command);D4_POC(d,d->poc->unsupported(command));
-    D4_AUDIT(d,d->depthAudit->transfers().blit2(command,info));
+    D4_AUDIT(d,d->depthAudit->transfers().blit2(command,info));D4_HISTORY(d,d->sourceHistory->unknown(command,d4vr::history::Gap::missingRoute));
     if(!info->pNext && info->regionCount==1 && info->pRegions && !info->pRegions[0].pNext){const auto& r=info->pRegions[0];VkImageBlit region{};
         region.srcSubresource=r.srcSubresource;region.dstSubresource=r.dstSubresource;std::copy(r.srcOffsets,r.srcOffsets+2,region.srcOffsets);std::copy(r.dstOffsets,r.dstOffsets+2,region.dstOffsets);
         captureBlit(d,command,info->srcImage,info->srcImageLayout,info->dstImage,info->dstImageLayout,1,&region,info->filter);}
     d->CmdBlitImage2(command,info);
 }
+VKAPI_ATTR VkResult VKAPI_CALL d4CreateSemaphore(VkDevice device,const VkSemaphoreCreateInfo* info,const VkAllocationCallbacks* allocator,VkSemaphore* out){auto d=deviceFor(device);auto result=d->CreateSemaphore(device,info,allocator,out);if(result==VK_SUCCESS){D4_HISTORY(d,d->sourceHistory->semaphore(*out,*info));}return result;}
+VKAPI_ATTR void VKAPI_CALL d4DestroySemaphore(VkDevice device,VkSemaphore semaphore,const VkAllocationCallbacks* allocator){auto d=deviceFor(device);D4_HISTORY(d,d->sourceHistory->removeSemaphore(semaphore));d->DestroySemaphore(device,semaphore,allocator);}
+VKAPI_ATTR void VKAPI_CALL d4CmdClearDepthStencilImage(VkCommandBuffer command,VkImage image,VkImageLayout layout,const VkClearDepthStencilValue* clear,uint32_t count,const VkImageSubresourceRange* ranges){auto d=deviceFor(command);D4_POC(d,d->poc->unsupported(command));D4_HISTORY(d,d->sourceHistory->clearDepthStencil(command,image,layout,clear,count,ranges));d->CmdClearDepthStencilImage(command,image,layout,clear,count,ranges);}
+VKAPI_ATTR void VKAPI_CALL d4CmdClearAttachments(VkCommandBuffer command,uint32_t count,const VkClearAttachment* attachments,uint32_t rectCount,const VkClearRect* rects){auto d=deviceFor(command);D4_POC(d,d->poc->unsupported(command));D4_HISTORY(d,d->sourceHistory->clearAttachments(command,count,attachments,rectCount,rects));d->CmdClearAttachments(command,count,attachments,rectCount,rects);}
+VKAPI_ATTR void VKAPI_CALL d4CmdCopyBufferToImage(VkCommandBuffer command,VkBuffer buffer,VkImage image,VkImageLayout layout,uint32_t count,const VkBufferImageCopy* regions){auto d=deviceFor(command);D4_POC(d,d->poc->unsupported(command));D4_HISTORY(d,d->sourceHistory->unknown(command,d4vr::history::Gap::missingRoute));d->CmdCopyBufferToImage(command,buffer,image,layout,count,regions);}
+VKAPI_ATTR void VKAPI_CALL d4CmdCopyBufferToImage2(VkCommandBuffer command,const VkCopyBufferToImageInfo2* info){auto d=deviceFor(command);D4_POC(d,d->poc->unsupported(command));D4_HISTORY(d,d->sourceHistory->unknown(command,d4vr::history::Gap::missingRoute));d->CmdCopyBufferToImage2(command,info);}
+VKAPI_ATTR void VKAPI_CALL d4CmdPipelineBarrier2(VkCommandBuffer command,const VkDependencyInfo* info){auto d=deviceFor(command);D4_POC(d,d->poc->unsupported(command));D4_HISTORY(d,d->sourceHistory->barrier(command,*info));d->CmdPipelineBarrier2(command,info);}
+VKAPI_ATTR void VKAPI_CALL d4CmdPipelineBarrier(VkCommandBuffer command,VkPipelineStageFlags src,VkPipelineStageFlags dst,VkDependencyFlags flags,uint32_t memoryCount,const VkMemoryBarrier* memory,uint32_t bufferCount,const VkBufferMemoryBarrier* buffers,uint32_t imageCount,const VkImageMemoryBarrier* images){
+    auto d=deviceFor(command);D4_POC(d,d->poc->unsupported(command));
+    D4_HISTORY(d,if(imageCount<=64 && (!imageCount || images)){std::vector<VkImageMemoryBarrier2> values;for(uint32_t j=0;j<imageCount;++j){const auto& in=images[j];VkImageMemoryBarrier2 out{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2};out.pNext=in.pNext;out.srcStageMask=src;out.dstStageMask=dst;out.srcAccessMask=in.srcAccessMask;out.dstAccessMask=in.dstAccessMask;out.oldLayout=in.oldLayout;out.newLayout=in.newLayout;out.srcQueueFamilyIndex=in.srcQueueFamilyIndex;out.dstQueueFamilyIndex=in.dstQueueFamilyIndex;out.image=in.image;out.subresourceRange=in.subresourceRange;values.push_back(out);}VkDependencyInfo info{VK_STRUCTURE_TYPE_DEPENDENCY_INFO};info.dependencyFlags=flags;info.imageMemoryBarrierCount=imageCount;info.pImageMemoryBarriers=values.data();d->sourceHistory->barrier(command,info);if(memoryCount || bufferCount)d->sourceHistory->unknown(command,d4vr::history::Gap::missingRoute);}else d->sourceHistory->unknown(command,d4vr::history::Gap::missingRoute));
+    d->CmdPipelineBarrier(command,src,dst,flags,memoryCount,memory,bufferCount,buffers,imageCount,images);
+}
 VKAPI_ATTR void VKAPI_CALL d4CmdCopyImage(VkCommandBuffer command,VkImage source,VkImageLayout src,VkImage destination,VkImageLayout dst,uint32_t count,const VkImageCopy* regions){
     auto d=deviceFor(command);D4_POC(d,d->poc->unsupported(command));
     D4_AUDIT(d,d->depthAudit->transfers().copy(command,source,src,destination,dst,count,regions));
-    if(d->copyReadback && count==1 && regions){VkImageCopy2 r{VK_STRUCTURE_TYPE_IMAGE_COPY_2};r.srcSubresource=regions[0].srcSubresource;r.dstSubresource=regions[0].dstSubresource;r.srcOffset=regions[0].srcOffset;r.dstOffset=regions[0].dstOffset;r.extent=regions[0].extent;VkCopyImageInfo2 i{VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2};i.srcImage=source;i.dstImage=destination;i.srcImageLayout=src;i.dstImageLayout=dst;i.regionCount=1;i.pRegions=&r;D4_COPY(d,d->copyReadback->record(command,i));}
+    if(count==1 && regions){VkImageCopy2 r{VK_STRUCTURE_TYPE_IMAGE_COPY_2};r.srcSubresource=regions[0].srcSubresource;r.dstSubresource=regions[0].dstSubresource;r.srcOffset=regions[0].srcOffset;r.dstOffset=regions[0].dstOffset;r.extent=regions[0].extent;VkCopyImageInfo2 i{VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2};i.srcImage=source;i.dstImage=destination;i.srcImageLayout=src;i.dstImageLayout=dst;i.regionCount=1;i.pRegions=&r;
+        d4vr::HistoryCopyRef ref;D4_HISTORY(d,ref=d->sourceHistory->sourceCopy(command,i));bool selected=false;D4_COPY(d,selected=d->copyReadback->record(command,i,ref));D4_HISTORY(d,if(selected)d->sourceHistory->capture(ref));
+    }else {D4_HISTORY(d,d->sourceHistory->unknown(command,d4vr::history::Gap::missingRoute));}
     d->CmdCopyImage(command,source,src,destination,dst,count,regions);
 }
 VKAPI_ATTR void VKAPI_CALL d4CmdCopyImage2(VkCommandBuffer command,const VkCopyImageInfo2* info){
     auto d=deviceFor(command);D4_POC(d,d->poc->unsupported(command));
     D4_AUDIT(d,d->depthAudit->transfers().copy2(command,info));
-    D4_COPY(d,d->copyReadback->record(command,*info));d->CmdCopyImage2(command,info);
+    d4vr::HistoryCopyRef ref;D4_HISTORY(d,ref=d->sourceHistory->sourceCopy(command,*info));bool selected=false;D4_COPY(d,selected=d->copyReadback->record(command,*info,ref));D4_HISTORY(d,if(selected)d->sourceHistory->capture(ref));d->CmdCopyImage2(command,info);
 }
 VKAPI_ATTR void VKAPI_CALL d4CmdCopyImageToBuffer(VkCommandBuffer command,VkImage source,VkImageLayout layout,VkBuffer destination,uint32_t count,const VkBufferImageCopy* regions){
     auto d=deviceFor(command);D4_POC(d,d->poc->unsupported(command,true));
@@ -1316,25 +1360,25 @@ VKAPI_ATTR VkResult VKAPI_CALL d4CreateImageView(VkDevice device, const VkImageV
     auto d = deviceFor(device); auto result = d->CreateImageView(device, info, allocator, view);
     if(result==VK_SUCCESS) { D4_POC(d,d->poc->view(*view,*info)); }
     if(result==VK_SUCCESS && d->depthReadback)d->depthReadback->view(*view,*info);
-    if(result==VK_SUCCESS){D4_AUDIT(d,d->depthAudit->view(*view,*info));}
+    if(result==VK_SUCCESS){D4_AUDIT(d,d->depthAudit->view(*view,*info));D4_HISTORY(d,d->sourceHistory->view(*view,*info));}
     if (result == VK_SUCCESS && d->frame.enabled) { std::lock_guard<std::mutex> lock(stateMutex); d->frame.view(*view, *info); } return result;
 }
 VKAPI_ATTR void VKAPI_CALL d4DestroyImageView(VkDevice device, VkImageView view, const VkAllocationCallbacks* allocator) {
     auto d = deviceFor(device); if (d->frame.enabled) { std::lock_guard<std::mutex> lock(stateMutex); d->frame.removeView(view); } d->DestroyImageView(device, view, allocator);
     D4_POC(d,d->poc->removeView(view));
     if(d->depthReadback)d->depthReadback->removeView(view);
-    D4_AUDIT(d,d->depthAudit->removeView(view));
+    D4_AUDIT(d,d->depthAudit->removeView(view));D4_HISTORY(d,d->sourceHistory->removeView(view));
 }
 VKAPI_ATTR VkResult VKAPI_CALL d4CreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* info, const VkAllocationCallbacks* allocator, VkShaderModule* module) {
     auto d = deviceFor(device); auto result = d->CreateShaderModule(device, info, allocator, module);
     if(result==VK_SUCCESS) { D4_POC(d,d->poc->module(*module,*info)); }
-    if (result == VK_SUCCESS && d->frame.enabled) { std::lock_guard<std::mutex> lock(stateMutex); d->frame.module(*module, *info); }
+    if (result == VK_SUCCESS && (d->frame.enabled || d->frame.pipelineCatalogOnly)) { std::lock_guard<std::mutex> lock(stateMutex); try{d->frame.module(*module, *info);}catch(...){if(d->sourceHistory)d->sourceHistory->fault();if(d->frame.enabled)d->frame.resourceFailure();} }
     if (result == VK_SUCCESS && d->eye) d->eye->module(*module,*info);
     if (result == VK_SUCCESS && d->pairs) d->pairEyes[0]->module(*module,*info);
     return result;
 }
 VKAPI_ATTR void VKAPI_CALL d4DestroyShaderModule(VkDevice device, VkShaderModule module, const VkAllocationCallbacks* allocator) {
-    auto d = deviceFor(device); if (d->frame.enabled) { std::lock_guard<std::mutex> lock(stateMutex); d->frame.removeModule(module); }
+    auto d = deviceFor(device); if (d->frame.enabled || d->frame.pipelineCatalogOnly) { std::lock_guard<std::mutex> lock(stateMutex); try{d->frame.removeModule(module);}catch(...){if(d->sourceHistory)d->sourceHistory->fault();if(d->frame.enabled)d->frame.resourceFailure();} }
     if (d->eye) d->eye->removeModule(module);
     if (d->pairs) d->pairEyes[0]->removeModule(module);
     D4_POC(d,d->poc->removeModule(module));
@@ -1373,16 +1417,16 @@ VKAPI_ATTR VkResult VKAPI_CALL d4CreateGraphicsPipelines(VkDevice device, VkPipe
             + ",\"result\":" + std::to_string(result) + ",\"control\":" + d->eye->json());
     }
     // Some creations can succeed even when the batch returns a failure code.
-    if (d->frame.enabled) { std::lock_guard<std::mutex> lock(stateMutex); for (uint32_t i = 0; i < n; ++i) if (pipelines[i]) d->frame.graphicsPipeline(pipelines[i], info[i]); } return result;
+    if (d->frame.enabled || d->frame.pipelineCatalogOnly) { std::lock_guard<std::mutex> lock(stateMutex); try{for (uint32_t i = 0; i < n; ++i) if (pipelines[i]) d->frame.graphicsPipeline(pipelines[i], info[i]);}catch(...){if(d->sourceHistory)d->sourceHistory->fault();if(d->frame.enabled)d->frame.resourceFailure();} } return result;
 }
 VKAPI_ATTR VkResult VKAPI_CALL d4CreateComputePipelines(VkDevice device, VkPipelineCache cache, uint32_t n, const VkComputePipelineCreateInfo* info, const VkAllocationCallbacks* allocator, VkPipeline* pipelines) {
     auto d = deviceFor(device); auto result = d->CreateComputePipelines(device, cache, n, info, allocator, pipelines);
-    if (d->frame.enabled) { std::lock_guard<std::mutex> lock(stateMutex); for (uint32_t i = 0; i < n; ++i) if (pipelines[i]) d->frame.computePipeline(pipelines[i], info[i]); } return result;
+    if (d->frame.enabled || d->frame.pipelineCatalogOnly) { std::lock_guard<std::mutex> lock(stateMutex); try{for (uint32_t i = 0; i < n; ++i) if (pipelines[i]) d->frame.computePipeline(pipelines[i], info[i]);}catch(...){if(d->sourceHistory)d->sourceHistory->fault();if(d->frame.enabled)d->frame.resourceFailure();} } return result;
 }
 VKAPI_ATTR void VKAPI_CALL d4DestroyPipeline(VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks* allocator) {
     auto d = deviceFor(device); if (d->pairs) d->pairs->remove(pipeline);
     D4_POC(d,d->poc->removePipeline(pipeline));
-    if (d->frame.enabled) { std::lock_guard<std::mutex> lock(stateMutex); d->frame.removePipeline(pipeline); } d->DestroyPipeline(device, pipeline, allocator);
+    if (d->frame.enabled || d->frame.pipelineCatalogOnly) { std::lock_guard<std::mutex> lock(stateMutex); try{d->frame.removePipeline(pipeline);}catch(...){if(d->sourceHistory)d->sourceHistory->fault();if(d->frame.enabled)d->frame.resourceFailure();} } D4_HISTORY(d,d->sourceHistory->removePipeline(pipeline));d->DestroyPipeline(device, pipeline, allocator);
 }
 VKAPI_ATTR VkResult VKAPI_CALL d4QueueSubmit(VkQueue queue, uint32_t n, const VkSubmitInfo* submits, VkFence fence) {
     auto d = deviceFor(queue); Counts counts{}; uint64_t buffers = 0;
@@ -1396,9 +1440,10 @@ VKAPI_ATTR VkResult VKAPI_CALL d4QueueSubmit(VkQueue queue, uint32_t n, const Vk
     if(!depthPreflight(*d,queue,n,submits,frames))return VK_ERROR_VALIDATION_FAILED_EXT;
     auto ticket = frameSubmission(d, queue, frames, buffers);
     const auto camera=submissionCamera(d,queue,tracked);
+    auto historyTicket=historyBefore(*d,queue,n,submits);
     auto copyTicket=copyBefore(*d,queue,n,submits,fence,camera?&*camera:nullptr);
     auto result = d->QueueSubmit(queue, n, submits, copyTicket.forwardedFence);
-    D4_COPY(d,d->copyReadback->after(copyTicket,result));
+    D4_COPY(d,d->copyReadback->after(copyTicket,result));D4_HISTORY(d,d->sourceHistory->after(historyTicket,result));
     D4_AUDIT(d,if(audit.sequence)d->depthAudit->after(audit,result));
     if(result==VK_SUCCESS)depthSubmitted(*d,queue,frames,camera?&*camera:nullptr);
     if(tracked && result==VK_SUCCESS)cameraAfter(*d,queue);
@@ -1425,9 +1470,10 @@ VKAPI_ATTR VkResult VKAPI_CALL d4QueueSubmit2(VkQueue queue, uint32_t n, const V
     if(!depthPreflight(*d,queue,n,submits,frames))return VK_ERROR_VALIDATION_FAILED_EXT;
     auto ticket = frameSubmission(d, queue, frames, buffers);
     const auto camera=submissionCamera(d,queue,tracked);
+    auto historyTicket=historyBefore(*d,queue,n,submits);
     auto copyTicket=copyBefore(*d,queue,n,submits,fence,camera?&*camera:nullptr);
     auto result = d->QueueSubmit2(queue, n, submits, copyTicket.forwardedFence);
-    D4_COPY(d,d->copyReadback->after(copyTicket,result));
+    D4_COPY(d,d->copyReadback->after(copyTicket,result));D4_HISTORY(d,d->sourceHistory->after(historyTicket,result));
     D4_AUDIT(d,if(audit.sequence)d->depthAudit->after(audit,result));
     if(result==VK_SUCCESS)depthSubmitted(*d,queue,frames,camera?&*camera:nullptr);
     if(tracked && result==VK_SUCCESS)cameraAfter(*d,queue);
@@ -1443,7 +1489,7 @@ VKAPI_ATTR VkResult VKAPI_CALL d4QueueSubmit2(VkQueue queue, uint32_t n, const V
     submitted(d, counts, buffers, result); finishFrame(d, ticket, result); return result;
 }
 VKAPI_ATTR VkResult VKAPI_CALL d4QueueBindSparse(VkQueue queue,uint32_t count,const VkBindSparseInfo* info,VkFence fence){
-    auto d=deviceFor(queue);if(d->copyReadback)d->copyReadback->halt();d4vr::depth::AuditSubmission audit;D4_AUDIT(d,audit=d->depthAudit->sparse(queue,count));if(d->depthReadback){logFile.write("\"event\":\"depth_submit_refused\",\"reason\":\"sparse_outside_contract\"");return VK_ERROR_VALIDATION_FAILED_EXT;}std::unique_lock<std::mutex> lock(d->cameraMutex,std::defer_lock);bool tracked=cameraQueue(d,queue);if(tracked || d->poseDiagnostic || d->cooperativeDiagnostic){lock.lock();if(!poseBefore(*d,queue))return VK_ERROR_UNKNOWN;if(tracked && !cameraBefore(*d,queue))return VK_ERROR_UNKNOWN;}
+    auto d=deviceFor(queue);D4_HISTORY(d,d->sourceHistory->fault());if(d->copyReadback)d->copyReadback->halt();d4vr::depth::AuditSubmission audit;D4_AUDIT(d,audit=d->depthAudit->sparse(queue,count));if(d->depthReadback){logFile.write("\"event\":\"depth_submit_refused\",\"reason\":\"sparse_outside_contract\"");return VK_ERROR_VALIDATION_FAILED_EXT;}std::unique_lock<std::mutex> lock(d->cameraMutex,std::defer_lock);bool tracked=cameraQueue(d,queue);if(tracked || d->poseDiagnostic || d->cooperativeDiagnostic){lock.lock();if(!poseBefore(*d,queue))return VK_ERROR_UNKNOWN;if(tracked && !cameraBefore(*d,queue))return VK_ERROR_UNKNOWN;}
     auto result=d->QueueBindSparse(queue,count,info,fence);D4_AUDIT(d,if(audit.sequence)d->depthAudit->after(audit,result));if(tracked && result==VK_SUCCESS)cameraAfter(*d,queue);return result;
 }
 VKAPI_ATTR VkResult VKAPI_CALL d4QueueWaitIdle(VkQueue queue){
@@ -1528,7 +1574,7 @@ VKAPI_ATTR VkResult VKAPI_CALL d4QueuePresentKHR(VkQueue queue, const VkPresentI
     // state/camera lock crosses runtime calls, including construction/cleanup.
     if(cameraLock.owns_lock())cameraLock.unlock();
     drainHeldPixels(*d);
-    D4_COPY(d,writeCopy(*d,present));
+    D4_COPY(d,writeCopy(*d,present));D4_HISTORY(d,writeHistory(*d));
     D4_COOP(d,if(queue==d->poseQueue)try{d->cooperativeCapture->advance();}catch(const std::exception& e){std::lock_guard<std::mutex> lock(d->cameraMutex);d->cooperativeCapture->stop();logFile.write("\"event\":\"cooperative_xr_error\",\"reason\":"+quoted(e.what()));});
     return result;
 }
@@ -1549,7 +1595,7 @@ PFN_vkVoidFunction intercepted(const char* name) {
     D4_MATCH_ALIAS(CmdBeginRenderPass2) D4_MATCH_ALIAS(CmdBeginRendering) D4_MATCH_ALIAS(QueueSubmit2)
     D4_MATCH_ALIAS(CmdEndRenderPass2) D4_MATCH_ALIAS(CmdEndRendering)
     D4_MATCH_ALIAS(GetBufferDeviceAddress) D4_MATCH_ALIAS(BindBufferMemory2)
-    D4_MATCH_ALIAS(CmdBlitImage2) D4_MATCH_ALIAS(CmdCopyImage2) D4_MATCH_ALIAS(CmdCopyImageToBuffer2)
+    D4_MATCH_ALIAS(CmdBlitImage2) D4_MATCH_ALIAS(CmdCopyImage2) D4_MATCH_ALIAS(CmdCopyImageToBuffer2) D4_MATCH_ALIAS(CmdCopyBufferToImage2) D4_MATCH_ALIAS(CmdPipelineBarrier2)
     if(std::strcmp(name,"vkCmdSetViewportWithCountEXT")==0)return reinterpret_cast<PFN_vkVoidFunction>(d4CmdSetViewportWithCount);
 #undef D4_MATCH_ALIAS
 #ifdef VK_KHR_map_memory2

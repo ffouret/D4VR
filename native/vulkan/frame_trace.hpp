@@ -190,7 +190,8 @@ public:
         resourceFaulted=true;bufferRanges.invalidate();layouts.invalidate();receipts.invalidate();memory.invalidate();
         if(c){liveResourceEvents-=c->resources.size();c->resources.clear();c->truncated=true;}
     }
-    bool enabled = false, hasSwapchain = false;
+    bool enabled = false, hasSwapchain = false, pipelineCatalogOnly = false;
+    std::shared_ptr<const Pipeline> pipelineSnapshot(VkPipeline h) const { return pipeline(h); }
     uint32_t deviceId = 0;
     std::string identifierAlgorithm;
     explicit Tracker(bool on = false): enabled(on) {}
@@ -274,12 +275,12 @@ public:
         auto e=resource(c,ResourceEvent::classicDescriptors);if(e){e->point=point;e->first=first;e->count=n;e->layout=layouts.snapshot(layout);e->truncated = !e->layout || !e->layout->complete;}
     }
     void module(VkShaderModule handle, const VkShaderModuleCreateInfo& info) {
-        if (enabled && modules.size() < resourceLimit && info.pCode && info.codeSize >= 20)
+        if ((enabled || pipelineCatalogOnly) && modules.size() < resourceLimit && info.pCode && info.codeSize >= 20)
             modules[handle] = {VkShaderStageFlagBits(0), digest(info.pCode, info.codeSize), info.codeSize, true};
     }
-    void removeModule(VkShaderModule handle) { if (enabled) modules.erase(handle); }
+    void removeModule(VkShaderModule handle) { if (enabled || pipelineCatalogOnly) modules.erase(handle); }
     void graphicsPipeline(VkPipeline handle, const VkGraphicsPipelineCreateInfo& info) {
-        if (!enabled || !handle || pipelines.size() >= resourceLimit) return;
+        if ((!enabled && !pipelineCatalogOnly) || !handle || pipelines.size() >= resourceLimit) return;
         auto result = std::make_shared<Pipeline>(); result->id = nextPipeline++; result->graphics = true;
         VkPipelineCreateFlags2KHR flags = info.flags; bool hasParts = false;
         for (auto p = static_cast<const VkBaseInStructure*>(info.pNext); p; p = p->pNext) {
@@ -331,10 +332,10 @@ public:
         pipelines[handle] = result;
     }
     void computePipeline(VkPipeline handle, const VkComputePipelineCreateInfo& info) {
-        if (!enabled || !handle || pipelines.size() >= resourceLimit) return;
+        if ((!enabled && !pipelineCatalogOnly) || !handle || pipelines.size() >= resourceLimit) return;
         auto result = std::make_shared<Pipeline>(); result->id = nextPipeline++; result->layout=layouts.snapshot(info.layout);result->shaders.push_back(shader(info.stage)); pipelines[handle] = result;
     }
-    void removePipeline(VkPipeline handle) { if (enabled) pipelines.erase(handle); }
+    void removePipeline(VkPipeline handle) { if (enabled || pipelineCatalogOnly) pipelines.erase(handle); }
     void bind(Command& c, VkPipelineBindPoint point, VkPipeline handle) {
         if (!enabled) return;
         if (point == VK_PIPELINE_BIND_POINT_GRAPHICS) c.graphics = pipeline(handle);

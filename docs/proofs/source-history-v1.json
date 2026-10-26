@@ -1,0 +1,458 @@
+{
+  "schema_version": 1,
+  "owned_geometry": true,
+  "actual_wsi_loader": true,
+  "observation_only": true,
+  "gpu_execution_order_known": false,
+  "extra_gpu_commands_or_submissions_from_observer": 0,
+  "game_rendered": false,
+  "xr_submission": false,
+  "common_scene_time_known": false,
+  "whole_scene_verified": false,
+  "validation_errors": 0,
+  "unit": {
+    "source_history_observation_passed": true,
+    "same_session_lifetimes": true,
+    "copy_prefix_exact": true,
+    "reset_resubmit_reverse_after": true,
+    "two_queues_exact_timeline": true,
+    "rolling_9000_frames_three_captures": true,
+    "gpu_dispatch_waits_or_rejections": 0
+  },
+  "cases": [
+    {
+      "case": "history-off-native",
+      "observer_enabled": false,
+      "actual_x11_wsi": true,
+      "original_controls": {
+        "presentation_layer_fixture_passed": true,
+        "frames": 64,
+        "game_stereo_submitted": false,
+        "held_depth_geometry": true,
+        "original_depth_copies": 64,
+        "original_null_fence_submits": 64,
+        "original_copy_stage_mask": 4294967296,
+        "original_blit_stage_mask": 17179869184,
+        "application_completion": "device_wait_idle_after_present",
+        "depth_color_common_instant_claimed": false,
+        "source_history_fixture": true,
+        "original_late_source_clears": 64,
+        "original_twin_clears": 64,
+        "twin_lifetimes": 2,
+        "history_gpu_execution_order_inferred": false
+      },
+      "history_copy_matches": [],
+      "exact_original_reference_bytes": 33554432,
+      "all_original_bytes_unchanged": false,
+      "validation_errors": 0
+    },
+    {
+      "case": "history-on-native",
+      "observer_enabled": true,
+      "actual_x11_wsi": true,
+      "original_controls": {
+        "presentation_layer_fixture_passed": true,
+        "frames": 64,
+        "game_stereo_submitted": false,
+        "held_depth_geometry": true,
+        "original_depth_copies": 64,
+        "original_null_fence_submits": 64,
+        "original_copy_stage_mask": 4294967296,
+        "original_blit_stage_mask": 17179869184,
+        "application_completion": "device_wait_idle_after_present",
+        "depth_color_common_instant_claimed": false,
+        "source_history_fixture": true,
+        "original_late_source_clears": 64,
+        "original_twin_clears": 64,
+        "twin_lifetimes": 2,
+        "history_gpu_execution_order_inferred": false
+      },
+      "history_copy_matches": [
+        {
+          "request": 3,
+          "target_copy": {
+            "observer_session": 9810908053251,
+            "source_image": 2,
+            "destination_image": 3,
+            "recording": 17,
+            "ordinal": 10
+          },
+          "target_submission": 81,
+          "capture_submission": 81,
+          "original_semaphore_scopes_exact": true,
+          "target_prefix_events": 7,
+          "geometric_draws": 2,
+          "prior_late_source_clears_observed": 7,
+          "history_prefix_missing": true,
+          "target_command_gaps": [
+            "write_route_missing",
+            "effective_write_state_unknown"
+          ],
+          "original_shader_fingerprints_exact": true,
+          "substituted_pipeline_metadata_known": false,
+          "incomplete": [
+            "image_memory_aliasing_not_observed",
+            "all_write_routes_not_observed"
+          ]
+        },
+        {
+          "request": 5,
+          "target_copy": {
+            "observer_session": 9810908053251,
+            "source_image": 2,
+            "destination_image": 3,
+            "recording": 49,
+            "ordinal": 10
+          },
+          "target_submission": 241,
+          "capture_submission": 241,
+          "original_semaphore_scopes_exact": true,
+          "target_prefix_events": 7,
+          "geometric_draws": 2,
+          "prior_late_source_clears_observed": 7,
+          "history_prefix_missing": true,
+          "target_command_gaps": [
+            "write_route_missing",
+            "effective_write_state_unknown"
+          ],
+          "original_shader_fingerprints_exact": true,
+          "substituted_pipeline_metadata_known": false,
+          "incomplete": [
+            "image_memory_aliasing_not_observed",
+            "all_write_routes_not_observed"
+          ]
+        }
+      ],
+      "exact_original_reference_bytes": 33554432,
+      "all_original_bytes_unchanged": true,
+      "validation_errors": 0
+    },
+    {
+      "case": "history-off-runtime",
+      "observer_enabled": false,
+      "actual_x11_wsi": true,
+      "original_controls": {
+        "presentation_layer_fixture_passed": true,
+        "frames": 64,
+        "game_stereo_submitted": false,
+        "held_depth_geometry": true,
+        "original_depth_copies": 64,
+        "original_null_fence_submits": 64,
+        "original_copy_stage_mask": 4294967296,
+        "original_blit_stage_mask": 17179869184,
+        "application_completion": "device_wait_idle_after_present",
+        "depth_color_common_instant_claimed": false,
+        "source_history_fixture": true,
+        "original_late_source_clears": 64,
+        "original_twin_clears": 64,
+        "twin_lifetimes": 2,
+        "history_gpu_execution_order_inferred": false
+      },
+      "history_copy_matches": [],
+      "exact_original_reference_bytes": 33554432,
+      "all_original_bytes_unchanged": false,
+      "validation_errors": 0
+    },
+    {
+      "case": "history-on-runtime",
+      "observer_enabled": true,
+      "actual_x11_wsi": true,
+      "original_controls": {
+        "presentation_layer_fixture_passed": true,
+        "frames": 64,
+        "game_stereo_submitted": false,
+        "held_depth_geometry": true,
+        "original_depth_copies": 64,
+        "original_null_fence_submits": 64,
+        "original_copy_stage_mask": 4294967296,
+        "original_blit_stage_mask": 17179869184,
+        "application_completion": "device_wait_idle_after_present",
+        "depth_color_common_instant_claimed": false,
+        "source_history_fixture": true,
+        "original_late_source_clears": 64,
+        "original_twin_clears": 64,
+        "twin_lifetimes": 2,
+        "history_gpu_execution_order_inferred": false
+      },
+      "history_copy_matches": [
+        {
+          "request": 3,
+          "target_copy": {
+            "observer_session": 9814853497532,
+            "source_image": 2,
+            "destination_image": 3,
+            "recording": 17,
+            "ordinal": 10
+          },
+          "target_submission": 81,
+          "capture_submission": 81,
+          "original_semaphore_scopes_exact": true,
+          "target_prefix_events": 7,
+          "geometric_draws": 2,
+          "prior_late_source_clears_observed": 7,
+          "history_prefix_missing": true,
+          "target_command_gaps": [
+            "write_route_missing",
+            "effective_write_state_unknown"
+          ],
+          "original_shader_fingerprints_exact": true,
+          "substituted_pipeline_metadata_known": false,
+          "incomplete": [
+            "image_memory_aliasing_not_observed",
+            "all_write_routes_not_observed"
+          ]
+        },
+        {
+          "request": 5,
+          "target_copy": {
+            "observer_session": 9814853497532,
+            "source_image": 2,
+            "destination_image": 3,
+            "recording": 49,
+            "ordinal": 10
+          },
+          "target_submission": 241,
+          "capture_submission": 241,
+          "original_semaphore_scopes_exact": true,
+          "target_prefix_events": 7,
+          "geometric_draws": 2,
+          "prior_late_source_clears_observed": 7,
+          "history_prefix_missing": true,
+          "target_command_gaps": [
+            "write_route_missing",
+            "effective_write_state_unknown"
+          ],
+          "original_shader_fingerprints_exact": true,
+          "substituted_pipeline_metadata_known": false,
+          "incomplete": [
+            "image_memory_aliasing_not_observed",
+            "all_write_routes_not_observed"
+          ]
+        }
+      ],
+      "exact_original_reference_bytes": 33554432,
+      "all_original_bytes_unchanged": true,
+      "validation_errors": 0
+    }
+  ],
+  "layer_sha256": "3ad2fd9baaf2b18798c9916c35d875a18607bd3318d4b5d7e657794ad50be85c",
+  "fixture_sha256": "59d511227add06f5a69e6a5cb0cd7f9ab28c7f33e86866d5e8a05ee55968fa3e",
+  "unit_sha256": "82af5d9373f43f79c918a45d5287dbdbde96a231dbed4f8dbe9c3a0bf64280b3",
+  "forwarding_sha256": "c37c1af071ca5b9cfc4b1dd5f3e25253e7a6eb5db29a17adfa376efdeb98469c",
+  "source_sha256": {
+    "native/tests/present_layer_vulkan.cpp": "ba7e91d552d2259db4349e4bea2e98f06b9fe11d03ae0b8a2472bc5a6223e63a",
+    "native/tests/held_depth_fixture.hpp": "528fbe98d6fc2312ede16b6f57736a3a1f745c473ab538054c43d9ce2bfbf4de",
+    "native/tests/present_eye.vert": "cb8f7898c8e2f65a0245eeaf9247838ec7b35501931859e8b21af77b5d8e2257",
+    "native/tests/present_eye.frag": "93eea131bfdeb6d05a97b7b477fe8a60476551af985d6fdb303572aa2dd3063f",
+    "native/vulkan/trace_layer.cpp": "ceda5b1425c0733edcd32685a85ea5bbaa51a6ff6ac87cb76de5da749cc12c7a",
+    "native/vulkan/source_history.hpp": "422d765bde02e6a12d7e5fb9ce48eeaf9f584915d1ed1a1b44186563cda151aa",
+    "native/vulkan/source_history.cpp": "729f0b10c70ed7a31cbe50a7fea58449ddf8db302bef39c81c70b40505b1567b",
+    "native/core/source_history_id.hpp": "c69654ca919d47987f335ee5bf1c76865e0db85928f834121254e53fdccae64c",
+    "native/tests/source_history_tests.cpp": "b99b33254d5afa95866e50d7d0f3da9e1f9f20d1f95cdc38dd88f22c95923737",
+    "native/vulkan/frame_trace.hpp": "ee67603816d152e2117e4e82932259ac63b8191a51c7dde635551990782ee734",
+    "native/vulkan/depth_copy_readback.hpp": "bf0530d6781aade400c758fadcef7851b290ac94b1af024b15442b382c1bdce8",
+    "native/vulkan/depth_copy_readback.cpp": "31546d34e22053393db3970983f882cf262cbad5bf5232d70754a1cfa54c69dd",
+    "tools/source_history_validate.py": "7bc33ab9dc520aedd69ca620e1445516aa22abec2cc6930e16c28851d6ebfd2e",
+    "tools/held_depth_validate.py": "f1ab9adeb99933d57e27341cd65c5323d34f336a6f9685a36324d9cb9a4933fb"
+  },
+  "scope": "Owned geometric Vulkan X11/WSI and CPU SourceHistory observation; separate from Diablo and physical OpenXR evidence",
+  "private_proof_sha256": "e334024fdd72a2f085ce9fa08b4ead80be373fb0fbdadf7f4c2afc24f053972f",
+  "khronos_synchronization_validation_loaded": true,
+  "initialized_pixels_verified": false,
+  "last_gpu_writer_known": false,
+  "all_write_routes_observed": false,
+  "image_memory_aliasing_observed": false,
+  "summary": {
+    "owned_gpu_executions": 4,
+    "enabled_gpu_executions": 2,
+    "exact_original_reference_bytes_per_enabled_case": 33554432,
+    "total_original_depth_color_bytes_unchanged": 67108864,
+    "matched_depth_exports": 4,
+    "target_prefix_events_per_export": 7,
+    "geometric_draws_per_export": 2,
+    "prior_late_source_clears_per_report": 7,
+    "retained_occurrences_per_report": 8,
+    "retained_events_per_report": 91,
+    "history_prefix_missing": true,
+    "application_device_wait_idle_after_each_present": true,
+    "actual_gpu_twin_handle_reuse_observed": false,
+    "forced_handle_reuse_cpu_test_passed": true,
+    "game_source_history_captured_by_this_proof": false
+  },
+  "independent_cpu_reference_audit": [
+    {
+      "environment": "native",
+      "original_reference_files": 128,
+      "exact_original_reference_bytes": 33554432,
+      "all_original_bytes_unchanged": true,
+      "retained_reports": [
+        {
+          "target_copy": {
+            "observer_session": 9810908053251,
+            "source_image": 2,
+            "destination_image": 3,
+            "recording": 17,
+            "ordinal": 10
+          },
+          "occurrences": 8,
+          "events": 91,
+          "history_prefix_missing": true
+        },
+        {
+          "target_copy": {
+            "observer_session": 9810908053251,
+            "source_image": 2,
+            "destination_image": 3,
+            "recording": 49,
+            "ordinal": 10
+          },
+          "occurrences": 8,
+          "events": 91,
+          "history_prefix_missing": true
+        }
+      ],
+      "actual_gpu_twin_handle_reuse_observed": false
+    },
+    {
+      "environment": "runtime",
+      "original_reference_files": 128,
+      "exact_original_reference_bytes": 33554432,
+      "all_original_bytes_unchanged": true,
+      "retained_reports": [
+        {
+          "target_copy": {
+            "observer_session": 9814853497532,
+            "source_image": 2,
+            "destination_image": 3,
+            "recording": 17,
+            "ordinal": 10
+          },
+          "occurrences": 8,
+          "events": 91,
+          "history_prefix_missing": true
+        },
+        {
+          "target_copy": {
+            "observer_session": 9814853497532,
+            "source_image": 2,
+            "destination_image": 3,
+            "recording": 49,
+            "ordinal": 10
+          },
+          "occurrences": 8,
+          "events": 91,
+          "history_prefix_missing": true
+        }
+      ],
+      "actual_gpu_twin_handle_reuse_observed": false
+    }
+  ],
+  "forwarding_cpu_controls": {
+    "binary_sha256": "c37c1af071ca5b9cfc4b1dd5f3e25253e7a6eb5db29a17adfa376efdeb98469c",
+    "source_sha256": {
+      "native/tests/vulkan_trace_tests.cpp": "add4d718ef8ffaff3f24242277edccdfd7d775b4b2bff3f93cc27d01537e9a35"
+    },
+    "observer_modes": [
+      "absent",
+      "active",
+      "faulted"
+    ],
+    "command_calls_forwarded": 24,
+    "submission_calls_forwarded": 18,
+    "semaphore_creation_attempts": 6,
+    "semaphore_destructions": 3,
+    "core_khr_aliases": true,
+    "original_pointers_masks_device_masks_extension_data_fences_results_preserved": true,
+    "catalogue_only_keeps_frame_capture_disabled": true,
+    "gpu_operations": 0
+  },
+  "negative_validator_cpu_controls": {
+    "mode": "cpu_synthetic_validator_controls",
+    "synthetic_artifacts": true,
+    "healthy_synthetic_schema_passed": true,
+    "alterations_rejected": 10,
+    "owned_gpu_cases_executed": 0,
+    "actual_subprocesses": 0,
+    "attempted_subprocesses": 0,
+    "gpu_operations": 0,
+    "actual_wsi_executions": 0,
+    "validator_sha256": "7bc33ab9dc520aedd69ca620e1445516aa22abec2cc6930e16c28851d6ebfd2e",
+    "control_script_sha256": "b7ab702a91075268e3515c792d2e01a096fbbeb50271ab568fb5fa883abb1571",
+    "cases": [
+      {
+        "alteration": null,
+        "healthy_synthetic_schema_passed": true
+      },
+      {
+        "alteration": "late_clear_after_copy",
+        "rejected": true,
+        "reason": "A later command contaminated the target COPY prefix"
+      },
+      {
+        "alteration": "same_sized_twin_alias",
+        "rejected": true,
+        "reason": "A same-sized twin or unrelated image contaminated source history"
+      },
+      {
+        "alteration": "invented_gpu_execution_order",
+        "rejected": true,
+        "reason": "CPU history inferred GPU execution order"
+      },
+      {
+        "alteration": "wrong_copy_destination",
+        "rejected": true,
+        "reason": "History reference does not identify the exact original COPY"
+      },
+      {
+        "alteration": "wrong_original_shader_hash",
+        "rejected": true,
+        "reason": "Recorded original shader fingerprint differs from the owned source SPIR-V"
+      },
+      {
+        "alteration": "invented_substituted_pipeline_metadata",
+        "rejected": true,
+        "reason": "Original shader catalog was attributed to the substituted pipeline"
+      },
+      {
+        "alteration": "altered_original_signal_scope",
+        "rejected": true,
+        "reason": "Observer changed or retagged original queue/semaphore values and COPY/BLIT scopes"
+      },
+      {
+        "alteration": "conflated_candidate_lifetimes",
+        "rejected": true,
+        "reason": "Source/destination and two distinct same-sized twin lifetimes were conflated"
+      },
+      {
+        "alteration": "excessive_captured_occurrences",
+        "rejected": true,
+        "reason": "Source report exceeded its captured occurrence/event tail bounds"
+      },
+      {
+        "alteration": "excessive_captured_events",
+        "rejected": true,
+        "reason": "Source report exceeded its captured occurrence/event tail bounds"
+      }
+    ],
+    "private_proof_sha256": "ef972b387bb830bc87abe95b4eb93d9d89f85d6d65f02f62d903394aa7344f2e"
+  },
+  "limits": {
+    "live_event_nodes": 8192,
+    "snapshot_references": 32768,
+    "rolling_occurrences": 64,
+    "reports": 8,
+    "events_per_report": 512,
+    "occurrences_per_report": 8,
+    "serialized_bytes_per_aggregate": 8388608,
+    "export_files_per_device": 16,
+    "allocator_and_borrowed_catalog_bytes_in_event_payload": false
+  },
+  "limits_and_nonclaims": [
+    "CPU submission traversal and original CPU return values do not establish GPU execution order or completion.",
+    "Eight-occurrence/512-event source tails are bounded and explicitly incomplete; aliasing, all write routes and effective write state remain unknown.",
+    "Original pipeline metadata is not attributed to a substituted private pipeline.",
+    "Fixture-owned DeviceWaitIdle after each present does not certify general asynchronous multiqueue cadence.",
+    "The two same-sized twin GPU lifetimes used different raw handles in these executions; handle reuse is forced only in CPU controls.",
+    "This owned proof establishes no game capture, old-session image-generation join, initialized-pixel proof, whole-scene proof, common-time proof or XR submission."
+  ]
+}

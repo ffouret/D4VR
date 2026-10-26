@@ -6,6 +6,16 @@ using namespace d4vr::frame;
 static void require(bool b, const char* message) { if (!b) throw std::runtime_error(message); }
 template<class T> T handle(uintptr_t n) { return reinterpret_cast<T>(n); }
 int main() try {
+    // A pipeline-only observer must not activate frame/descriptor/memory capture.
+    {Tracker catalog;catalog.pipelineCatalogOnly=true;
+     uint32_t words[]{0x07230203,0x00010000,0,1,0};VkShaderModuleCreateInfo mi{VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO};mi.pCode=words;mi.codeSize=sizeof(words);
+     auto mh=handle<VkShaderModule>(900);auto ph=handle<VkPipeline>(901);catalog.module(mh,mi);
+     VkPipelineShaderStageCreateInfo stage{VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO};stage.stage=VK_SHADER_STAGE_VERTEX_BIT;stage.module=mh;
+     VkGraphicsPipelineCreateInfo pi{VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO};pi.stageCount=1;pi.pStages=&stage;catalog.graphicsPipeline(ph,pi);
+     auto metadata=catalog.pipelineSnapshot(ph);require(metadata && metadata->shaders.size()==1 && metadata->shaders[0].known,"Narrow shader catalog missing");
+     auto command=catalog.command();catalog.bind(command,VK_PIPELINE_BIND_POINT_GRAPHICS,ph);VkRenderingInfo rendering{VK_STRUCTURE_TYPE_RENDERING_INFO};catalog.begin(command,rendering);catalog.draw(command,0);
+     require(!catalog.enabled && !command.id && command.ops.empty() && command.resources.empty() && !command.graphics,"Catalog enabled a full frame path");
+     catalog.removeModule(mh);catalog.removePipeline(ph);require(!catalog.pipelineSnapshot(ph) && metadata->shaders[0].known,"Catalog removal changed immutable pipeline");}
     Tracker t(true); t.deviceId = 7; t.hasSwapchain = true;
     auto c = t.command(), secondary = t.command();
     VkImageCreateInfo image{VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO}; image.format = VK_FORMAT_R16G16B16A16_SFLOAT;

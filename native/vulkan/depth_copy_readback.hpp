@@ -1,6 +1,7 @@
 #pragma once
 #include "depth_readback.hpp"
 #include <array>
+#include "../core/source_history_id.hpp"
 namespace d4vr::depth {
 struct CopyDeviceFeatures {bool known=true,synchronization2=false,singleDevice=true;uint32_t nodes=0;};
 // CPU inspection only; unknown unrelated feature nodes are forwarded unchanged.
@@ -25,6 +26,7 @@ struct CopySnapshot {
     uint32_t recordingEye=2;
     std::optional<EyeState> expectedHeldPacket;
     CameraObservation copySubmit{};
+    HistoryCopyRef sourceHistory{};
     uint64_t captureSubmission=0; // Shared capture identity; distinct from submission.
 };
 struct CopyEpoch {
@@ -59,7 +61,7 @@ public:
     bool arm(const Request&,const EyeState* expectedHeldPacket=nullptr);void halt();
     // BEFORE the original COPY. This inserts only COPY source reads from the
     // original depth aspect/footprint, and barriers on our own mapped buffer.
-    bool record(VkCommandBuffer,const VkCopyImageInfo2&);
+    bool record(VkCommandBuffer,const VkCopyImageInfo2&,const HistoryCopyRef& history={});
     // BEFORE EVERY public submit. Serializes invalidation against CPU readout;
     // releases its lock before the caller forwards the original call.
     // Caller snapshots packets under its camera/update protection. Pass nullptr

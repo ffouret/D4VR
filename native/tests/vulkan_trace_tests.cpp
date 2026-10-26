@@ -153,6 +153,125 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL proc(VkDevice, const char* name) {
 }
 } // namespace
 
+// New observer hooks must remain exact pass-throughs even after a local
+// metadata failure. All downstream functions below are CPU stubs, not Vulkan.
+namespace history_forwarding {
+struct Inputs {
+    VkDevice device{};VkCommandBuffer command{};VkQueue queue{};VkImage image{};VkBuffer buffer{};
+    VkSemaphore semaphore{};VkFence fence{};const VkAllocationCallbacks* allocator{};
+    const VkSemaphoreCreateInfo* create{};VkSemaphore* output{};
+    const VkClearDepthStencilValue* clear{};const VkImageSubresourceRange* range{};
+    const VkClearAttachment* attachments{};const VkClearRect* rects{};
+    const VkBufferImageCopy* bufferCopy{};const VkCopyBufferToImageInfo2* bufferCopy2{};
+    const VkMemoryBarrier* memory{};const VkBufferMemoryBarrier* buffers{};const VkImageMemoryBarrier* images{};
+    const VkDependencyInfo* dependency{};const VkSubmitInfo* submit{};const VkSubmitInfo2* submit2{};
+    VkResult result=VK_SUCCESS;unsigned creates=0,destroys=0,commands=0,submits=0;
+} input;
+VKAPI_ATTR VkResult VKAPI_CALL createSemaphore(VkDevice d,const VkSemaphoreCreateInfo* info,const VkAllocationCallbacks* allocator,VkSemaphore* out){
+    require(d==input.device && info==input.create && allocator==input.allocator && out==input.output,"History semaphore create pointers changed");
+    ++input.creates;if(input.result==VK_SUCCESS)*out=input.semaphore;return input.result;
+}
+VKAPI_ATTR void VKAPI_CALL destroySemaphore(VkDevice d,VkSemaphore semaphore,const VkAllocationCallbacks* allocator){
+    require(d==input.device && semaphore==input.semaphore && allocator==input.allocator,"History semaphore destroy arguments changed");++input.destroys;
+}
+VKAPI_ATTR void VKAPI_CALL clearDepth(VkCommandBuffer c,VkImage image,VkImageLayout layout,const VkClearDepthStencilValue* clear,uint32_t n,const VkImageSubresourceRange* ranges){
+    require(c==input.command && image==input.image && layout==VK_IMAGE_LAYOUT_GENERAL && clear==input.clear && n==1 && ranges==input.range,"History depth-clear arguments changed");++input.commands;
+}
+VKAPI_ATTR void VKAPI_CALL clearAttachments(VkCommandBuffer c,uint32_t n,const VkClearAttachment* attachments,uint32_t nr,const VkClearRect* rects){
+    require(c==input.command && n==1 && attachments==input.attachments && nr==1 && rects==input.rects,"History attachment-clear pointers changed");++input.commands;
+}
+VKAPI_ATTR void VKAPI_CALL copyToImage(VkCommandBuffer c,VkBuffer buffer,VkImage image,VkImageLayout layout,uint32_t n,const VkBufferImageCopy* regions){
+    require(c==input.command && buffer==input.buffer && image==input.image && layout==VK_IMAGE_LAYOUT_GENERAL && n==1 && regions==input.bufferCopy,"History buffer/image arguments changed");++input.commands;
+}
+VKAPI_ATTR void VKAPI_CALL copyToImage2(VkCommandBuffer c,const VkCopyBufferToImageInfo2* info){
+    require(c==input.command && info==input.bufferCopy2,"History buffer/image2 pointer changed");++input.commands;
+}
+VKAPI_ATTR void VKAPI_CALL barrier(VkCommandBuffer c,VkPipelineStageFlags src,VkPipelineStageFlags dst,VkDependencyFlags flags,uint32_t nm,const VkMemoryBarrier* memory,uint32_t nb,const VkBufferMemoryBarrier* buffers,uint32_t ni,const VkImageMemoryBarrier* images){
+    require(c==input.command && src==(VK_PIPELINE_STAGE_TRANSFER_BIT|VK_PIPELINE_STAGE_HOST_BIT) && dst==(VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT|VK_PIPELINE_STAGE_TRANSFER_BIT) && flags==VK_DEPENDENCY_BY_REGION_BIT
+        && nm==1 && memory==input.memory && nb==1 && buffers==input.buffers && ni==1 && images==input.images,"History legacy barrier masks/pointers changed");++input.commands;
+}
+VKAPI_ATTR void VKAPI_CALL barrier2(VkCommandBuffer c,const VkDependencyInfo* info){
+    require(c==input.command && info==input.dependency,"History barrier2 pointer changed");++input.commands;
+}
+VKAPI_ATTR VkResult VKAPI_CALL submit(VkQueue q,uint32_t n,const VkSubmitInfo* info,VkFence fence){
+    require(q==input.queue && n==1 && info==input.submit && fence==input.fence,"History legacy submission/fence changed");++input.submits;return input.result;
+}
+VKAPI_ATTR VkResult VKAPI_CALL submit2(VkQueue q,uint32_t n,const VkSubmitInfo2* info,VkFence fence){
+    require(q==input.queue && n==1 && info==input.submit2 && fence==input.fence,"History submission2/fence changed");++input.submits;return input.result;
+}
+VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get(VkDevice d,const char* name){
+    if(!std::strcmp(name,"vkCreateSemaphore"))return reinterpret_cast<PFN_vkVoidFunction>(createSemaphore);
+    if(!std::strcmp(name,"vkDestroySemaphore"))return reinterpret_cast<PFN_vkVoidFunction>(destroySemaphore);
+    if(!std::strcmp(name,"vkCmdClearDepthStencilImage"))return reinterpret_cast<PFN_vkVoidFunction>(clearDepth);
+    if(!std::strcmp(name,"vkCmdClearAttachments"))return reinterpret_cast<PFN_vkVoidFunction>(clearAttachments);
+    if(!std::strcmp(name,"vkCmdCopyBufferToImage"))return reinterpret_cast<PFN_vkVoidFunction>(copyToImage);
+    if(!std::strcmp(name,"vkCmdCopyBufferToImage2") || !std::strcmp(name,"vkCmdCopyBufferToImage2KHR"))return reinterpret_cast<PFN_vkVoidFunction>(copyToImage2);
+    if(!std::strcmp(name,"vkCmdPipelineBarrier"))return reinterpret_cast<PFN_vkVoidFunction>(barrier);
+    if(!std::strcmp(name,"vkCmdPipelineBarrier2") || !std::strcmp(name,"vkCmdPipelineBarrier2KHR"))return reinterpret_cast<PFN_vkVoidFunction>(barrier2);
+    if(!std::strcmp(name,"vkQueueSubmit"))return reinterpret_cast<PFN_vkVoidFunction>(submit);
+    if(!std::strcmp(name,"vkQueueSubmit2") || !std::strcmp(name,"vkQueueSubmit2KHR"))return reinterpret_cast<PFN_vkVoidFunction>(submit2);
+    return proc(d,name);
+}
+void check(const std::shared_ptr<Device>& d,VkDevice device,VkCommandBuffer command,VkQueue queue){
+    auto savedGet=d->get;const bool savedFrame=d->frame.enabled,savedCatalog=d->frame.pipelineCatalogOnly;
+    d->get=get;d->frame.enabled=false;d->frame.pipelineCatalogOnly=true;
+    d->CreateSemaphore=createSemaphore;d->DestroySemaphore=destroySemaphore;d->CmdClearDepthStencilImage=clearDepth;d->CmdClearAttachments=clearAttachments;
+    d->CmdCopyBufferToImage=copyToImage;d->CmdCopyBufferToImage2=copyToImage2;d->CmdPipelineBarrier=barrier;d->CmdPipelineBarrier2=barrier2;
+    d->QueueSubmit=submit;d->QueueSubmit2=submit2;
+    input.device=device;input.command=command;input.queue=queue;input.image=object<VkImage>(0xb001);input.buffer=object<VkBuffer>(0xb002);input.semaphore=object<VkSemaphore>(0xb003);input.fence=object<VkFence>(0xb004);
+    VkAllocationCallbacks allocator{};input.allocator=&allocator;
+    VkSemaphoreTypeCreateInfo timeline{VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO};timeline.semaphoreType=VK_SEMAPHORE_TYPE_TIMELINE;timeline.initialValue=7;
+    VkSemaphoreCreateInfo semaphoreInfo{VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};semaphoreInfo.pNext=&timeline;input.create=&semaphoreInfo;
+    VkClearDepthStencilValue clear{.625f,0x12345678};input.clear=&clear;VkImageSubresourceRange range{VK_IMAGE_ASPECT_DEPTH_BIT|VK_IMAGE_ASPECT_STENCIL_BIT,0,1,0,1};input.range=&range;
+    VkClearAttachment attachment{};attachment.aspectMask=range.aspectMask;attachment.clearValue.depthStencil=clear;input.attachments=&attachment;
+    VkClearRect rect{{{7,11},{17,19}},0,1};input.rects=&rect;
+    VkBufferImageCopy region{};region.bufferOffset=128;region.bufferRowLength=8;region.imageSubresource={VK_IMAGE_ASPECT_DEPTH_BIT,0,0,1};region.imageOffset={1,2,0};region.imageExtent={2,2,1};input.bufferCopy=&region;
+    VkBaseInStructure unknown{VK_STRUCTURE_TYPE_APPLICATION_INFO,nullptr};
+    VkBufferImageCopy2 region2{VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2};region2.pNext=&unknown;region2.bufferOffset=region.bufferOffset;region2.bufferRowLength=region.bufferRowLength;region2.imageSubresource=region.imageSubresource;region2.imageOffset=region.imageOffset;region2.imageExtent=region.imageExtent;
+    VkCopyBufferToImageInfo2 image2{VK_STRUCTURE_TYPE_COPY_BUFFER_TO_IMAGE_INFO_2};image2.pNext=&unknown;image2.srcBuffer=input.buffer;image2.dstImage=input.image;image2.dstImageLayout=VK_IMAGE_LAYOUT_GENERAL;image2.regionCount=1;image2.pRegions=&region2;input.bufferCopy2=&image2;
+    VkMemoryBarrier memory{VK_STRUCTURE_TYPE_MEMORY_BARRIER};memory.srcAccessMask=VK_ACCESS_TRANSFER_WRITE_BIT;memory.dstAccessMask=VK_ACCESS_SHADER_READ_BIT;input.memory=&memory;
+    VkBufferMemoryBarrier buffer{VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER};buffer.buffer=input.buffer;buffer.offset=128;buffer.size=256;buffer.srcQueueFamilyIndex=buffer.dstQueueFamilyIndex=VK_QUEUE_FAMILY_IGNORED;input.buffers=&buffer;
+    VkImageMemoryBarrier image{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};image.pNext=&unknown;image.image=input.image;image.oldLayout=image.newLayout=VK_IMAGE_LAYOUT_GENERAL;image.subresourceRange=range;image.srcQueueFamilyIndex=image.dstQueueFamilyIndex=VK_QUEUE_FAMILY_IGNORED;input.images=&image;
+    VkImageMemoryBarrier2 imageBarrier2{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2};imageBarrier2.pNext=&unknown;imageBarrier2.image=input.image;imageBarrier2.srcStageMask=VK_PIPELINE_STAGE_2_COPY_BIT;imageBarrier2.dstStageMask=VK_PIPELINE_STAGE_2_CLEAR_BIT;imageBarrier2.srcAccessMask=VK_ACCESS_2_TRANSFER_READ_BIT;imageBarrier2.dstAccessMask=VK_ACCESS_2_TRANSFER_WRITE_BIT;imageBarrier2.oldLayout=imageBarrier2.newLayout=VK_IMAGE_LAYOUT_GENERAL;imageBarrier2.subresourceRange=range;
+    VkDependencyInfo dependency{VK_STRUCTURE_TYPE_DEPENDENCY_INFO};dependency.pNext=&unknown;dependency.dependencyFlags=VK_DEPENDENCY_BY_REGION_BIT;dependency.imageMemoryBarrierCount=1;dependency.pImageMemoryBarriers=&imageBarrier2;input.dependency=&dependency;
+    VkPipelineStageFlags waitStage=VK_PIPELINE_STAGE_TRANSFER_BIT;uint64_t waitValue=11,signalValue=12;
+    VkTimelineSemaphoreSubmitInfo values{VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO};values.waitSemaphoreValueCount=values.signalSemaphoreValueCount=1;values.pWaitSemaphoreValues=&waitValue;values.pSignalSemaphoreValues=&signalValue;
+    VkSubmitInfo legacy{VK_STRUCTURE_TYPE_SUBMIT_INFO};legacy.pNext=&values;legacy.waitSemaphoreCount=legacy.signalSemaphoreCount=legacy.commandBufferCount=1;legacy.pWaitSemaphores=legacy.pSignalSemaphores=&input.semaphore;legacy.pWaitDstStageMask=&waitStage;legacy.pCommandBuffers=&command;input.submit=&legacy;
+    VkSemaphoreSubmitInfo wait{VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO};wait.semaphore=input.semaphore;wait.value=11;wait.stageMask=VK_PIPELINE_STAGE_2_COPY_BIT;
+    VkSemaphoreSubmitInfo signal{VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO};signal.semaphore=input.semaphore;signal.value=12;signal.stageMask=VK_PIPELINE_STAGE_2_BLIT_BIT;
+    VkCommandBufferSubmitInfo cb{VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO};cb.commandBuffer=command;cb.deviceMask=0;
+    VkLatencySubmissionPresentIdNV latency{VK_STRUCTURE_TYPE_LATENCY_SUBMISSION_PRESENT_ID_NV};latency.presentID=0x123456789abcdef0ull;
+    VkSubmitInfo2 modern{VK_STRUCTURE_TYPE_SUBMIT_INFO_2};modern.pNext=&latency;modern.waitSemaphoreInfoCount=modern.signalSemaphoreInfoCount=modern.commandBufferInfoCount=1;modern.pWaitSemaphoreInfos=&wait;modern.pSignalSemaphoreInfos=&signal;modern.pCommandBufferInfos=&cb;input.submit2=&modern;
+    const auto originalImage2=image2;const auto originalRegion2=region2;const auto originalDependency=dependency;
+    const auto originalBarrier2=imageBarrier2;const auto originalLegacy=legacy;const auto originalModern=modern;
+    for(unsigned mode=0;mode<3;++mode){
+        if(mode){d->sourceHistory=std::make_unique<d4vr::history::SourceHistory>(VkExtent2D{2,2},VK_FORMAT_D32_SFLOAT,123+mode);d->sourceHistory->begin(command,VK_COMMAND_BUFFER_LEVEL_PRIMARY,0,3,0);if(mode==2)d->sourceHistory->fault();}
+        VkSemaphore out=object<VkSemaphore>(0xbeef);input.output=&out;input.result=VK_ERROR_OUT_OF_HOST_MEMORY;
+        require(d4CreateSemaphore(device,&semaphoreInfo,&allocator,&out)==input.result && out==object<VkSemaphore>(0xbeef),"Observer replaced a failed semaphore result/output");input.result=VK_SUCCESS;
+        require(d4CreateSemaphore(device,&semaphoreInfo,&allocator,&out)==VK_SUCCESS && out==input.semaphore,"Observer changed semaphore success/output");
+        d4CmdClearDepthStencilImage(command,input.image,VK_IMAGE_LAYOUT_GENERAL,&clear,1,&range);
+        d4CmdClearAttachments(command,1,&attachment,1,&rect);
+        d4CmdCopyBufferToImage(command,input.buffer,input.image,VK_IMAGE_LAYOUT_GENERAL,1,&region);
+        d4CmdPipelineBarrier(command,VK_PIPELINE_STAGE_TRANSFER_BIT|VK_PIPELINE_STAGE_HOST_BIT,VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT|VK_PIPELINE_STAGE_TRANSFER_BIT,VK_DEPENDENCY_BY_REGION_BIT,1,&memory,1,&buffer,1,&image);
+        for(const char* suffix:{"","KHR"}){
+            auto copy=reinterpret_cast<PFN_vkCmdCopyBufferToImage2>(d4GetDeviceProcAddr(device,(std::string("vkCmdCopyBufferToImage2")+suffix).c_str()));require(copy==d4CmdCopyBufferToImage2,"History buffer/image2 alias missing");copy(command,&image2);
+            auto sync=reinterpret_cast<PFN_vkCmdPipelineBarrier2>(d4GetDeviceProcAddr(device,(std::string("vkCmdPipelineBarrier2")+suffix).c_str()));require(sync==d4CmdPipelineBarrier2,"History barrier2 alias missing");sync(command,&dependency);
+            auto queue2=reinterpret_cast<PFN_vkQueueSubmit2>(d4GetDeviceProcAddr(device,(std::string("vkQueueSubmit2")+suffix).c_str()));require(queue2==d4QueueSubmit2,"History submit2 alias missing");
+            input.result=VK_SUCCESS;require(queue2(queue,1,&modern,input.fence)==VK_SUCCESS,"History changed successful original Submit2");
+            input.result=VK_ERROR_DEVICE_LOST;require(queue2(queue,1,&modern,input.fence)==input.result,"History changed failed original Submit2");
+        }
+        input.result=VK_SUCCESS;require(d4QueueSubmit(queue,1,&legacy,input.fence)==VK_SUCCESS,"History changed successful legacy Submit");
+        input.result=VK_ERROR_DEVICE_LOST;require(d4QueueSubmit(queue,1,&legacy,input.fence)==input.result,"History changed failed legacy Submit");
+        d4DestroySemaphore(device,out,&allocator);d->sourceHistory.reset();
+    }
+    require(input.creates==6 && input.destroys==3 && input.commands==24 && input.submits==18,"History hook duplicated or skipped an original call");
+    require(!std::memcmp(&image2,&originalImage2,sizeof(image2)) && !std::memcmp(&region2,&originalRegion2,sizeof(region2)) && !std::memcmp(&dependency,&originalDependency,sizeof(dependency)) && !std::memcmp(&imageBarrier2,&originalBarrier2,sizeof(imageBarrier2))
+        && !std::memcmp(&legacy,&originalLegacy,sizeof(legacy)) && !std::memcmp(&modern,&originalModern,sizeof(modern)) && wait.stageMask==VK_PIPELINE_STAGE_2_COPY_BIT && signal.stageMask==VK_PIPELINE_STAGE_2_BLIT_BIT && cb.deviceMask==0 && latency.presentID==0x123456789abcdef0ull && waitValue==11 && signalValue==12,"History rewrote original masks, structures or extension data");
+    require(!d->frame.enabled && !d->frame.command().id,"Pipeline catalogue silently enabled frame capture");
+    d->get=savedGet;d->frame.enabled=savedFrame;d->frame.pipelineCatalogOnly=savedCatalog;
+}
+} // namespace history_forwarding
+
 int main() try {
     // Control files must not follow links or read a pipe/special file. The
     // observer shares this bounded counter parser with frame metadata.
@@ -339,6 +458,7 @@ int main() try {
     require(d4CreateBuffer(handle,&bi,expectedAllocator,&created)==bufferResult,"Failed buffer create result changed");d4CmdBindDescriptorBuffersEXT(primary,1,&binding);
     require(events.back().buffers[0].status==d4vr::frame::BufferRange::unknown,"Failed creation or destroyed handle remained addressable");
     require(bufferCreates==2 && bufferDestroys==1 && addressQueries==1 && bufferBinds==2 && offsetBinds==1 && classicBinds==2,"Resource API was not forwarded exactly once");
+    history_forwarding::check(d,handle,primary,queue);
     d4DestroyDevice(handle,nullptr);
     std::cout << "Vulkan forwarding, DGC, aliases, secondary/reused command buffers, errors and reset lifetime: passed\n";
     return 0;

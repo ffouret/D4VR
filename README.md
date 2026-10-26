@@ -10,6 +10,17 @@ répond pas à cet objectif.
 
 ## État du projet
 
+Le [suivi de la source de profondeur](docs/SOURCE_HISTORY.md) relie maintenant les
+lectures aux utilisations exactes de leur image, dans la même session. Un
+[nouvel essai Diablo](docs/proofs/diablo-source-history-v1.json) garde trois ponts
+vérifiés vers 21 scopes d’attachement et 38 pipelines d’application par historique.
+Une déclaration de clear et 67 dessins sans variante privée sont observés ; leur
+contribution réelle à la profondeur et la cause des trous restent à établir.
+Les historiques sont partiels et ne prouvent pas l’initialisation des pixels.
+Quatre contrôles en fenêtre préservent 67 108 864 octets de références, sans erreur
+Khronos. Le jeu est sorti normalement, les originaux restent identiques et aucune
+image de Diablo n’a atteint le Quest.
+
 Le [diagnostic combiné profondeur/couleur sous une vue maintenue](docs/HELD_DEPTH_COLOR.md)
 est maintenant implémenté. Quatre contrôles réels en fenêtre, natifs et dans le
 runtime Steam, vérifient des triangles écrivant leur profondeur, les images couleur
