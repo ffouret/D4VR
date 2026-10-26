@@ -10,12 +10,21 @@ répond pas à cet objectif.
 
 ## État du projet
 
-L’[observation des transferts originaux](docs/ORIGINAL_DEPTH_TRANSFERS.md) trouve
-dans Diablo une copie de profondeur D24 en 1707 × 960, dont le compteur augmente
-pendant l’affichage du monde. C’est un point concret pour préparer la capture au
-même type d’accès GPU. Aucun pixel de profondeur du jeu n’a encore été lu par
-notre sonde : la copie privée, sa fin d’écriture et la réutilisation des commandes
-restent à implémenter et tester. Les trous au champ élargi persistent.
+Le [producteur borné de profondeur au point COPY](docs/DEPTH_COPY_READBACK.md)
+est maintenant implémenté dans la couche Vulkan. Il conserve ses buffers et fences,
+invalide les anciennes lectures avant une nouvelle soumission et préserve les
+scopes originaux. Douze contrôles GPU en natif et dans le runtime Steam vérifient
+des profondeurs géométriques, la couleur et le stencil originaux, les commandes
+réutilisées, les dépendances futures et les fences applicatives, sans erreur de
+synchronisation détectée. Ces scènes de test restent distinctes du jeu réel.
+
+Un [nouvel essai dans Diablo réel](docs/proofs/diablo-depth-copy-v1.json)
+exporte désormais **une profondeur D24 de 1707 × 960**, soit 6 554 880 octets et
+223 074 valeurs distinctes. L’aperçu permet de reconnaître le personnage, le
+terrain et la falaise. La caméra et les shaders restent originaux ; le jeu est
+sorti normalement et les fichiers vérifiés sont identiques. Ce relevé brut ne
+prouve pas l’initialisation de chaque pixel ni une profondeur complète de scène.
+Les trous au champ élargi persistent et aucune image de Diablo n’a atteint le Quest.
 
 Un [audit sans lecture GPU, essayé dans Diablo](docs/DEPTH_AUDIT.md), établit
 que la [sonde de profondeur préparée](docs/DEPTH_READBACK.md) ne peut pas encore
@@ -23,10 +32,9 @@ y être activée : les scopes de synchronisation, commandes et descriptions de
 ressources sortent de ses conditions admises. Sur 400 573 soumissions observées,
 377 890 sortent de cette politique ; les 35 configurations de rendu avec profondeur
 sont également exclues. Les appels du jeu sont transmis sans modification ni refus.
-Le jeu est sorti normalement et les originaux sont préservés. L’observation
-ci-dessus identifie une lecture originale à examiner pour préparer une
-capture qui respecte sa synchronisation. Aucun pixel de profondeur de Diablo
-n’a encore été lu et les trous au champ élargi restent présents.
+Le jeu est sorti normalement et les originaux sont préservés. Cette observation
+avait identifié la lecture originale utilisée pour préparer le producteur COPY. Le nouveau producteur COPY est distinct
+de cette ancienne sonde ; ses résultats et limites sont décrits ci-dessus.
 
 Le [maintien explicite d’une vue diagnostique](docs/FIXED_VIEW_HOLD.md) corrige
 une erreur du protocole précédent : cinq secondes entre les demandes ne

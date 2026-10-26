@@ -1,0 +1,176 @@
+{
+  "schema_version": 1,
+  "owned_scene": true,
+  "game_rendered": false,
+  "xr_submission": false,
+  "cases": [
+    {
+      "environment": "geometry-disabled-native",
+      "actual_wsi": false,
+      "producer_enabled": false,
+      "unchanged_original_bytes": 0,
+      "private_depth_bytes": 0,
+      "validation_errors": 0,
+      "layer_exports": 0
+    },
+    {
+      "environment": "geometry-direct-native",
+      "actual_wsi": false,
+      "producer_enabled": true,
+      "unchanged_original_bytes": 104448,
+      "private_depth_bytes": 36864,
+      "validation_errors": 0,
+      "layer_exports": 0
+    },
+    {
+      "environment": "geometry-loader-disabled-native",
+      "actual_wsi": false,
+      "producer_enabled": false,
+      "unchanged_original_bytes": 0,
+      "private_depth_bytes": 0,
+      "validation_errors": 0,
+      "layer_exports": 0
+    },
+    {
+      "environment": "geometry-layer-native",
+      "actual_wsi": false,
+      "producer_enabled": true,
+      "unchanged_original_bytes": 104448,
+      "private_depth_bytes": 36864,
+      "validation_errors": 0,
+      "layer_exports": 3
+    },
+    {
+      "environment": "wsi-disabled-native",
+      "actual_wsi": true,
+      "producer_enabled": false,
+      "unchanged_original_bytes": 0,
+      "private_depth_bytes": 0,
+      "validation_errors": 0,
+      "layer_exports": 0
+    },
+    {
+      "environment": "wsi-layer-native",
+      "actual_wsi": true,
+      "producer_enabled": true,
+      "unchanged_original_bytes": 1050112,
+      "private_depth_bytes": 256,
+      "validation_errors": 0,
+      "layer_exports": 1
+    },
+    {
+      "environment": "geometry-disabled-runtime",
+      "actual_wsi": false,
+      "producer_enabled": false,
+      "unchanged_original_bytes": 0,
+      "private_depth_bytes": 0,
+      "validation_errors": 0,
+      "layer_exports": 0
+    },
+    {
+      "environment": "geometry-direct-runtime",
+      "actual_wsi": false,
+      "producer_enabled": true,
+      "unchanged_original_bytes": 104448,
+      "private_depth_bytes": 36864,
+      "validation_errors": 0,
+      "layer_exports": 0
+    },
+    {
+      "environment": "geometry-loader-disabled-runtime",
+      "actual_wsi": false,
+      "producer_enabled": false,
+      "unchanged_original_bytes": 0,
+      "private_depth_bytes": 0,
+      "validation_errors": 0,
+      "layer_exports": 0
+    },
+    {
+      "environment": "geometry-layer-runtime",
+      "actual_wsi": false,
+      "producer_enabled": true,
+      "unchanged_original_bytes": 104448,
+      "private_depth_bytes": 36864,
+      "validation_errors": 0,
+      "layer_exports": 3
+    },
+    {
+      "environment": "wsi-disabled-runtime",
+      "actual_wsi": true,
+      "producer_enabled": false,
+      "unchanged_original_bytes": 0,
+      "private_depth_bytes": 0,
+      "validation_errors": 0,
+      "layer_exports": 0
+    },
+    {
+      "environment": "wsi-layer-runtime",
+      "actual_wsi": true,
+      "producer_enabled": true,
+      "unchanged_original_bytes": 1050112,
+      "private_depth_bytes": 256,
+      "validation_errors": 0,
+      "layer_exports": 1
+    }
+  ],
+  "unit": {
+    "depth_copy_ownership_passed": true,
+    "late_epochs": true,
+    "app_fence_preserved": true,
+    "cpu_read_excludes_resubmit": true,
+    "budgets_failures_reset": true,
+    "gpu_waits_or_queue_submits": 0
+  },
+  "validation_errors": 0,
+  "layer_sha256": "cf138edc0e181dcea0a9727858abe233758bbe5e1b3ef12045452626dc2230fe",
+  "fixture_sha256": "be200420682087d2aa924ed72c61a2239242028a229de621405d842e81676e42",
+  "wsi_fixture_sha256": "5968cf57b7016a417261c7f17b7e404ebe110de6751141f772e0f396883d8aac",
+  "unit_sha256": "66c01a3605acfab0ecd7931b5bba17b66c75149838f3eae5e9bfbd3852a87156",
+  "forwarding_sha256": "f13282fc2085175b218a66faf682ebb141727524fb46856e0c06275469eea6e1",
+  "source_sha256": {
+    "native/vulkan/depth_copy_readback.hpp": "6dd8f43f660e8f38438181adff21206221ca2f23e0f1cd8c89b77b4520eb73b6",
+    "native/vulkan/depth_copy_readback.cpp": "1ce1ca427c9f521ad727676acb6ce2166e4eaf25086bdbcf50ed349e3d1a430e",
+    "native/vulkan/trace_layer.cpp": "590dc5a69c1767897400e4a271b899dc0424d643e987979aebc08afaeb85106c",
+    "native/tests/depth_copy_readback_tests.cpp": "c58c15f98488bba3638b848d7eb69a9d81feda800ff0cd572146394bd4f91841",
+    "native/tests/depth_copy_vulkan.cpp": "f3c8a8a9f516e893205b47c881397e8e9e96aa7b868183040b1cc45b887a0492",
+    "native/tests/depth_copy.vert": "5c88c7d4bcec190f031bbe1754536cff1244c9bd0d7c769611b8d6bb7774d5c5",
+    "native/tests/depth_copy.frag": "64f3d808b46be683c72667847292bd80fd576e7094ce516db4d4b5c3ae480e85",
+    "native/tests/depth_transfer_fixture.hpp": "2b4d7e2b5db952b2baadcd614276af138e320efb2824e4d8e1c3c48f3526fc74",
+    "native/tests/present_layer_vulkan.cpp": "4796b32f1f51927c1aaa0400c02a85d54f97605c4761463da6406f13d5e64cb3",
+    "native/tests/vulkan_trace_tests.cpp": "b6c6eced7cceab4e4c0b6d78664f01826cae6640dea999b27be5b735e3589752",
+    "tools/depth_copy_validate.py": "48585890d1560c68f0948d291d1b00505cc549308bbc824c341fbedfed2e9993"
+  },
+  "game_proof": "diablo-depth-copy-v1.json",
+  "python_tests": 201,
+  "latency_annotations_preserved_per_geometry_execution": 6,
+  "geometry_depth_not_clear_only": true,
+  "wsi_depth_clear_only": true,
+  "mutable_destination_format_list_covered": true,
+  "unadmitted_sources_still_refused": true,
+  "added_queue_submissions": 0,
+  "added_gpu_waits": 0,
+  "cpu_read_mutex_negative_control": {
+    "cpu_only": true,
+    "gpu_calls": 0,
+    "production_source_unchanged": true,
+    "mutation": "Remove only ready() producer mutex in private temporary source",
+    "test_source_sha256": "c58c15f98488bba3638b848d7eb69a9d81feda800ff0cd572146394bd4f91841",
+    "production_source_sha256": "1ce1ca427c9f521ad727676acb6ce2166e4eaf25086bdbcf50ed349e3d1a430e",
+    "negative_results": [
+      {
+        "returncode": 1,
+        "stderr": "COPY ownership invariant 76"
+      },
+      {
+        "returncode": 1,
+        "stderr": "COPY ownership invariant 76"
+      },
+      {
+        "returncode": 1,
+        "stderr": "COPY ownership invariant 76"
+      }
+    ],
+    "gate_wait_ms": 100,
+    "scheduler_limit": "A bounded opportunity for contention, not a formal exhaustive scheduler proof."
+  }
+}

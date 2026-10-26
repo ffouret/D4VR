@@ -1,6 +1,8 @@
 #pragma once
 // Original application commands only. Known clear depth, not geometry/scene depth.
 inline void depthTransferFixture(Fixture& f,const std::filesystem::path& directory){
+    const bool copyReadback=std::getenv("D4VR_DEPTH_COPY_FIXTURE");
+    if(copyReadback){text(directory/"depth-copy.request","D4VR_DEPTH_1 1 8 8 126 1\n");std::this_thread::sleep_for(std::chrono::milliseconds(30));}
     VkFormatProperties properties{};vkGetPhysicalDeviceFormatProperties(f.physical,VK_FORMAT_D32_SFLOAT,&properties);
     const auto required=VK_FORMAT_FEATURE_BLIT_SRC_BIT|VK_FORMAT_FEATURE_BLIT_DST_BIT;
     if((properties.optimalTilingFeatures&required)!=required)throw std::runtime_error("D32 blit control unsupported");
@@ -32,7 +34,10 @@ inline void depthTransferFixture(Fixture& f,const std::filesystem::path& directo
     VkCommandBufferSubmitInfo command{VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO};command.commandBuffer=cb;command.deviceMask=0;
     VkSemaphoreSubmitInfo signal{VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO};signal.semaphore=timeline;signal.stageMask=VK_PIPELINE_STAGE_2_COPY_BIT|VK_PIPELINE_STAGE_2_BLIT_BIT;
     VkSubmitInfo2 submit{VK_STRUCTURE_TYPE_SUBMIT_INFO_2};submit.commandBufferInfoCount=1;submit.pCommandBufferInfos=&command;submit.signalSemaphoreInfoCount=1;submit.pSignalSemaphoreInfos=&signal;
-    for(unsigned pass=1;pass<=2;++pass){signal.value=pass;check(vkQueueSubmit2(f.queue,1,&submit,fence));check(vkWaitForFences(f.device,1,&fence,VK_TRUE,30'000'000'000ull));check(vkResetFences(f.device,1,&fence));uint64_t value=0;check(vkGetSemaphoreCounterValue(f.device,timeline,&value));if(value!=pass)throw std::runtime_error("Original transfer signal changed");
+    for(unsigned pass=1;pass<=2;++pass){signal.value=pass;check(vkQueueSubmit2(f.queue,1,&submit,copyReadback?VK_NULL_HANDLE:fence));
+        if(copyReadback){uint64_t target=pass;VkSemaphoreWaitInfo w{VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO};w.semaphoreCount=1;w.pSemaphores=&timeline;w.pValues=&target;check(vkWaitSemaphores(f.device,&w,30'000'000'000ull));check(vkQueueWaitIdle(f.queue));}
+        else{check(vkWaitForFences(f.device,1,&fence,VK_TRUE,30'000'000'000ull));check(vkResetFences(f.device,1,&fence));}
+        uint64_t value=0;check(vkGetSemaphoreCounterValue(f.device,timeline,&value));if(value!=pass)throw std::runtime_error("Original transfer signal changed");
         auto words=static_cast<const uint32_t*>(buffer.mapped);for(unsigned k=0;k<192;++k)if(words[k]!=0x3e800000u)throw std::runtime_error("Original depth transfer pixels changed");std::ofstream out(directory/("transfer-original-"+std::to_string(pass)+".pixels"),std::ios::binary);out.write(static_cast<const char*>(buffer.mapped),768);}
     vkDestroyFence(f.device,fence,nullptr);vkDestroySemaphore(f.device,timeline,nullptr);vkDestroyCommandPool(f.device,pool,nullptr);
     vkUnmapMemory(f.device,buffer.memory);vkDestroyBuffer(f.device,buffer.handle,nullptr);vkFreeMemory(f.device,buffer.memory,nullptr);
