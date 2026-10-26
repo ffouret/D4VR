@@ -2,7 +2,7 @@
 
 `present::CaptureProjection` now connects the **existing reusable Capture GPU producer** to the deferred `ProjectionSource` protocol. It uses `PoseMailbox` and actual `BoundaryUpdates` state, and returns the producer's images directly. It does not create a second capture pool, redraw the scene, upload substitute pixels, or turn successive game presentations into a common scene snapshot.
 
-This is a reusable native adapter, tested with owned geometry. **It has not been installed in the game's trace-layer cycle or run in Diablo.** No game image has been submitted to SteamVR/Quest by this change. Windows compiles the common adapter and exercises the portable receipt guards in CI; the Linux loader adapter and native Windows D3D12 game integration remain separate work.
+This is a reusable native adapter, tested with owned geometry. The regular trace layer now instantiates it in an external-pose/readback diagnostic cycle; see [LAYER_CAPTURE_SOURCE.md](LAYER_CAPTURE_SOURCE.md). **That new binary has not been run in Diablo.** No game image has been submitted to SteamVR/Quest by these changes. Windows compiles the common adapter and exercises the portable receipt guards in CI; native Windows D3D12 game integration remains separate work.
 
 ## Ownership and producer integration
 
@@ -41,6 +41,6 @@ The new source/receipt code also triggers the previous immediate/deferred/pump r
 
 ## Still required for Diablo
 
-Wire this adapter into the trace layer's actual submit/present/eye-selection lifecycle, preserving exact frame provenance and correct queue ownership. Coordinate all real runtime and application queue operations, including runtime reentry, without holding a non-reentrant layer mutex across XR calls or hiding waiting work from BoundaryUpdates. The fixture has one serialized caller and explicitly marks XR/runtime access uncovered then covered; it is not evidence that the game's threads are safely coordinated. No background XR worker was added.
+The trace layer's diagnostic submit/present/eye-selection wiring now exists, with no XR calls in that driver. Coordinate all real runtime and application queue operations, including runtime reentry, without holding a non-reentrant layer mutex across XR calls or hiding waiting work from BoundaryUpdates. The earlier XR fixture has one serialized caller and explicitly marks XR/runtime access uncovered then covered; it is not evidence that the game's threads are safely coordinated. No background XR worker was added.
 
 Calibrate game VIEW units into the XR head anchor and the actual headset FOV, measure deadlines/cadence, and validate partial-pass behavior with real game pixels. The earlier physical SteamVR validation issues are not resolved by a clean mock runtime. A simultaneous full-scene producer remains needed for the user's intended immersive continuous rendering; this explicit successive mode is only a diagnostic step toward testing the real connection.

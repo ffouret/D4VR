@@ -1,0 +1,561 @@
+{
+  "schema_version": 1,
+  "synthetic_scene": true,
+  "actual_wsi_loader": true,
+  "actual_capture_producer": true,
+  "actual_gpu_image_consumer": true,
+  "actual_xr_pose_source": false,
+  "diablo_rendered": false,
+  "actual_steamvr_submission": false,
+  "whole_scene_verified": false,
+  "common_scene_time_known": false,
+  "khronos_synchronization_validation_loaded": true,
+  "validation_errors": 0,
+  "portable": {
+    "diagnostic_pose_passed": true,
+    "exact_packet_bytes": 352,
+    "invalid_inputs_refused": 9,
+    "real_xr_source_claimed": false
+  },
+  "layer_sha256": "f928b26cf35457c3a00ff58edb99c589d67a1b26b529bea3efba2ba8fcebfdbf",
+  "fixture_sha256": "5eac8260d8ef30cee507a158a9513a349249210b937cc365ab9ec9332deb66b8",
+  "cases": [
+    {
+      "case": "native",
+      "pairs": [
+        {
+          "request": 1,
+          "packet_sequence": 2,
+          "source_presents": [
+            6,
+            7
+          ],
+          "source_capture_sequences": [
+            6,
+            7
+          ],
+          "disparities_pixels": [
+            14.607794894025403,
+            7.31257269928156
+          ],
+          "exact_original_pixel_bytes": 524288
+        },
+        {
+          "request": 2,
+          "packet_sequence": 3,
+          "source_presents": [
+            38,
+            39
+          ],
+          "source_capture_sequences": [
+            38,
+            39
+          ],
+          "disparities_pixels": [
+            14.621196616026268,
+            7.306103556969134
+          ],
+          "exact_original_pixel_bytes": 524288
+        }
+      ],
+      "frames": 64,
+      "original_submissions": 320,
+      "original_draws": 128,
+      "exact_original_pixel_bytes": 1048576,
+      "view_translation_pixels_by_eye": [
+        [
+          -14.268041486120978,
+          -7.131363657080357
+        ],
+        [
+          -14.281443208121843,
+          -7.124894514767931
+        ]
+      ],
+      "registered_graphics_queues": 5,
+      "foreign_acquisition_fence_waited": false,
+      "driver": {
+        "requests": 2,
+        "pairs": 2,
+        "unavailable": 0,
+        "rejected_leases": 1,
+        "deferred_queue_leases": 0,
+        "active": false,
+        "consumer_pending": false,
+        "stopped": false,
+        "fault": false,
+        "actual_xr_pose_source": false,
+        "xr_submission": false
+      },
+      "producer": {
+        "slots": 3,
+        "reserved_bytes": 786432,
+        "leases_issued": 5,
+        "retire_submissions": 5,
+        "outstanding_leases": 0
+      },
+      "validation_errors": 0
+    },
+    {
+      "case": "short-native",
+      "pairs": [
+        {
+          "request": 1,
+          "packet_sequence": 2,
+          "source_presents": [
+            6,
+            7
+          ],
+          "source_capture_sequences": [
+            6,
+            7
+          ],
+          "disparities_pixels": [
+            14.607794894025403,
+            7.31257269928156
+          ],
+          "exact_original_pixel_bytes": 524288
+        }
+      ],
+      "frames": 8,
+      "original_submissions": 40,
+      "original_draws": 16,
+      "exact_original_pixel_bytes": 524288,
+      "view_translation_pixels_by_eye": [],
+      "registered_graphics_queues": 5,
+      "foreign_acquisition_fence_waited": false,
+      "driver": {
+        "requests": 1,
+        "pairs": 1,
+        "unavailable": 0,
+        "rejected_leases": 0,
+        "deferred_queue_leases": 0,
+        "active": false,
+        "consumer_pending": false,
+        "stopped": false,
+        "fault": false,
+        "actual_xr_pose_source": false,
+        "xr_submission": false
+      },
+      "producer": {
+        "slots": 2,
+        "reserved_bytes": 524288,
+        "leases_issued": 2,
+        "retire_submissions": 2,
+        "outstanding_leases": 0
+      },
+      "validation_errors": 0
+    },
+    {
+      "case": "foreign-native",
+      "pairs": [
+        {
+          "request": 1,
+          "packet_sequence": 2,
+          "source_presents": [
+            6,
+            9
+          ],
+          "source_capture_sequences": [
+            6,
+            9
+          ],
+          "disparities_pixels": [
+            14.607794894025403,
+            7.31257269928156
+          ],
+          "exact_original_pixel_bytes": 524288
+        },
+        {
+          "request": 2,
+          "packet_sequence": 3,
+          "source_presents": [
+            61,
+            62
+          ],
+          "source_capture_sequences": [
+            61,
+            62
+          ],
+          "disparities_pixels": [
+            14.621196616026268,
+            7.306103556969134
+          ],
+          "exact_original_pixel_bytes": 524288
+        }
+      ],
+      "frames": 64,
+      "original_submissions": 384,
+      "original_draws": 128,
+      "exact_original_pixel_bytes": 1048576,
+      "view_translation_pixels_by_eye": [
+        [
+          -14.268041486120978,
+          -7.131363657080357
+        ],
+        [
+          -14.281443208121843,
+          -7.124894514767931
+        ]
+      ],
+      "registered_graphics_queues": 5,
+      "foreign_acquisition_fence_waited": true,
+      "driver": {
+        "requests": 2,
+        "pairs": 2,
+        "unavailable": 0,
+        "rejected_leases": 0,
+        "deferred_queue_leases": 2,
+        "active": false,
+        "consumer_pending": false,
+        "stopped": false,
+        "fault": false,
+        "actual_xr_pose_source": false,
+        "xr_submission": false
+      },
+      "producer": {
+        "slots": 2,
+        "reserved_bytes": 524288,
+        "leases_issued": 6,
+        "retire_submissions": 6,
+        "outstanding_leases": 0
+      },
+      "validation_errors": 0
+    },
+    {
+      "case": "cancel-native",
+      "pairs": [],
+      "frames": 8,
+      "original_submissions": 40,
+      "original_draws": 16,
+      "exact_original_pixel_bytes": 0,
+      "view_translation_pixels_by_eye": [],
+      "registered_graphics_queues": 5,
+      "foreign_acquisition_fence_waited": false,
+      "driver": {
+        "requests": 1,
+        "pairs": 0,
+        "unavailable": 0,
+        "rejected_leases": 1,
+        "deferred_queue_leases": 0,
+        "active": false,
+        "consumer_pending": false,
+        "stopped": true,
+        "fault": false,
+        "actual_xr_pose_source": false,
+        "xr_submission": false
+      },
+      "producer": {
+        "slots": 2,
+        "reserved_bytes": 524288,
+        "leases_issued": 2,
+        "retire_submissions": 2,
+        "outstanding_leases": 0
+      },
+      "validation_errors": 0
+    },
+    {
+      "case": "steam-runtime",
+      "pairs": [
+        {
+          "request": 1,
+          "packet_sequence": 2,
+          "source_presents": [
+            6,
+            7
+          ],
+          "source_capture_sequences": [
+            6,
+            7
+          ],
+          "disparities_pixels": [
+            14.607794894025403,
+            7.31257269928156
+          ],
+          "exact_original_pixel_bytes": 524288
+        },
+        {
+          "request": 2,
+          "packet_sequence": 3,
+          "source_presents": [
+            38,
+            39
+          ],
+          "source_capture_sequences": [
+            38,
+            39
+          ],
+          "disparities_pixels": [
+            14.621196616026268,
+            7.306103556969134
+          ],
+          "exact_original_pixel_bytes": 524288
+        }
+      ],
+      "frames": 64,
+      "original_submissions": 320,
+      "original_draws": 128,
+      "exact_original_pixel_bytes": 1048576,
+      "view_translation_pixels_by_eye": [
+        [
+          -14.268041486120978,
+          -7.131363657080357
+        ],
+        [
+          -14.281443208121843,
+          -7.124894514767931
+        ]
+      ],
+      "registered_graphics_queues": 5,
+      "foreign_acquisition_fence_waited": false,
+      "driver": {
+        "requests": 2,
+        "pairs": 2,
+        "unavailable": 0,
+        "rejected_leases": 1,
+        "deferred_queue_leases": 0,
+        "active": false,
+        "consumer_pending": false,
+        "stopped": false,
+        "fault": false,
+        "actual_xr_pose_source": false,
+        "xr_submission": false
+      },
+      "producer": {
+        "slots": 3,
+        "reserved_bytes": 786432,
+        "leases_issued": 5,
+        "retire_submissions": 5,
+        "outstanding_leases": 0
+      },
+      "validation_errors": 0
+    },
+    {
+      "case": "short-steam-runtime",
+      "pairs": [
+        {
+          "request": 1,
+          "packet_sequence": 2,
+          "source_presents": [
+            6,
+            7
+          ],
+          "source_capture_sequences": [
+            6,
+            7
+          ],
+          "disparities_pixels": [
+            14.607794894025403,
+            7.31257269928156
+          ],
+          "exact_original_pixel_bytes": 524288
+        }
+      ],
+      "frames": 8,
+      "original_submissions": 40,
+      "original_draws": 16,
+      "exact_original_pixel_bytes": 524288,
+      "view_translation_pixels_by_eye": [],
+      "registered_graphics_queues": 5,
+      "foreign_acquisition_fence_waited": false,
+      "driver": {
+        "requests": 1,
+        "pairs": 1,
+        "unavailable": 0,
+        "rejected_leases": 0,
+        "deferred_queue_leases": 0,
+        "active": false,
+        "consumer_pending": false,
+        "stopped": false,
+        "fault": false,
+        "actual_xr_pose_source": false,
+        "xr_submission": false
+      },
+      "producer": {
+        "slots": 2,
+        "reserved_bytes": 524288,
+        "leases_issued": 2,
+        "retire_submissions": 2,
+        "outstanding_leases": 0
+      },
+      "validation_errors": 0
+    },
+    {
+      "case": "foreign-steam-runtime",
+      "pairs": [
+        {
+          "request": 1,
+          "packet_sequence": 2,
+          "source_presents": [
+            6,
+            9
+          ],
+          "source_capture_sequences": [
+            6,
+            9
+          ],
+          "disparities_pixels": [
+            14.607794894025403,
+            7.31257269928156
+          ],
+          "exact_original_pixel_bytes": 524288
+        },
+        {
+          "request": 2,
+          "packet_sequence": 3,
+          "source_presents": [
+            42,
+            43
+          ],
+          "source_capture_sequences": [
+            42,
+            43
+          ],
+          "disparities_pixels": [
+            14.621196616026268,
+            7.306103556969134
+          ],
+          "exact_original_pixel_bytes": 524288
+        }
+      ],
+      "frames": 64,
+      "original_submissions": 384,
+      "original_draws": 128,
+      "exact_original_pixel_bytes": 1048576,
+      "view_translation_pixels_by_eye": [
+        [
+          -14.268041486120978,
+          -7.131363657080357
+        ],
+        [
+          -14.281443208121843,
+          -7.124894514767931
+        ]
+      ],
+      "registered_graphics_queues": 5,
+      "foreign_acquisition_fence_waited": true,
+      "driver": {
+        "requests": 2,
+        "pairs": 2,
+        "unavailable": 0,
+        "rejected_leases": 0,
+        "deferred_queue_leases": 2,
+        "active": false,
+        "consumer_pending": false,
+        "stopped": false,
+        "fault": false,
+        "actual_xr_pose_source": false,
+        "xr_submission": false
+      },
+      "producer": {
+        "slots": 2,
+        "reserved_bytes": 524288,
+        "leases_issued": 6,
+        "retire_submissions": 6,
+        "outstanding_leases": 0
+      },
+      "validation_errors": 0
+    },
+    {
+      "case": "cancel-steam-runtime",
+      "pairs": [],
+      "frames": 8,
+      "original_submissions": 40,
+      "original_draws": 16,
+      "exact_original_pixel_bytes": 0,
+      "view_translation_pixels_by_eye": [],
+      "registered_graphics_queues": 5,
+      "foreign_acquisition_fence_waited": false,
+      "driver": {
+        "requests": 1,
+        "pairs": 0,
+        "unavailable": 0,
+        "rejected_leases": 1,
+        "deferred_queue_leases": 0,
+        "active": false,
+        "consumer_pending": false,
+        "stopped": true,
+        "fault": false,
+        "actual_xr_pose_source": false,
+        "xr_submission": false
+      },
+      "producer": {
+        "slots": 2,
+        "reserved_bytes": 524288,
+        "leases_issued": 2,
+        "retire_submissions": 2,
+        "outstanding_leases": 0
+      },
+      "validation_errors": 0
+    }
+  ],
+  "legacy_wsi": {
+    "purpose": "sequential_presentation_capture",
+    "schema_version": 1,
+    "layer_sha256": "f928b26cf35457c3a00ff58edb99c589d67a1b26b529bea3efba2ba8fcebfdbf",
+    "wsi_loader_capture_passed": true,
+    "original_pixels_restored": true,
+    "synthetic_scene": true,
+    "game_stereo_submitted": false,
+    "cases": [
+      {
+        "case": "native",
+        "reference_equal_bytes": 1048576,
+        "original_restored_bytes": 262144,
+        "disparities_pixels": [
+          14.607794894025403,
+          7.31257269928156
+        ],
+        "different_pixel_bytes": 3330,
+        "repeated_capture_frames": 4,
+        "sequential_quota_verified": true
+      },
+      {
+        "case": "disabled",
+        "disabled_capture_verified": true,
+        "original_restored_bytes": 262144
+      },
+      {
+        "case": "steam-runtime",
+        "reference_equal_bytes": 1048576,
+        "original_restored_bytes": 262144,
+        "disparities_pixels": [
+          14.607794894025403,
+          7.31257269928156
+        ],
+        "different_pixel_bytes": 3330,
+        "repeated_capture_frames": 4,
+        "sequential_quota_verified": true
+      }
+    ],
+    "forwarding_tests_passed": true
+  },
+  "tested_source_parent": "42c3f2d34226ed0cc0b3f62e7b7b3cbe6c4e771f",
+  "checks_passed": 11,
+  "python_tests_passed": 170,
+  "exact_original_pixel_bytes_total": 5242880,
+  "requests_tested_total": 12,
+  "pairs_exported_total": 10,
+  "foreign_queue_lease_retirements_total": 4,
+  "source_sha256": {
+    "native/core/diagnostic_pose.hpp": "49a2d01d86399ecb4733c9c041e1c8cda031e2a896696421feb277148dd2c849",
+    "native/vulkan/diagnostic_capture.hpp": "f0c6fb2fd84d13d3ce4795bca29d6c7bd7554841e6a071e1256d04b9a54cb49d",
+    "native/vulkan/diagnostic_capture.cpp": "ca8ee101bd1fa9329a9261145b5245b453a7a9b43262e6720498626ce72adf8e",
+    "native/vulkan/trace_layer.cpp": "81abd401cfecb3e93d1394e862402a7d377114545dcd5164dd9e5f03e236fb2c",
+    "native/vulkan/capture_projection.hpp": "52ada97dd1b83dd85813ce141258d29a0d1eadb9761f4f77539eb04e81e3f7f5",
+    "native/vulkan/capture_projection.cpp": "d29d32077db70d928fc721d0408152b41736ccb967ac83a2c53386848a0fe166",
+    "native/tests/present_layer_vulkan.cpp": "f06082211dd68a3a41391e8ed38b2556a677bd08014b0452a760e637c8cecc13",
+    "native/tests/diagnostic_pose_tests.cpp": "c4a867289f84d6140b172a14b02117040b63d35c4460e746e493a13b90fda9eb",
+    "tools/pose_layer_validate.py": "316c9cc2926681a4b9732498bf96e3580eb5a4fd87eca75b271668a9d4c58f8f"
+  },
+  "limits": [
+    "New regular trace layer binary has not been run in Diablo; latest real game proof remains diablo-camera-updates-v1.json source e8b2702. No game/HMD was launched in this milestone.",
+    "The runtime pose source is an external diagnostic text file; supplied XR-like poses/time are not a real OpenXR observation or current display-time claim. No OpenXR call or SteamVR submission occurs in this layer mode.",
+    "Same actual CaptureProjection adapter and Capture GPU leases are wired to the original-render layer cycle, with an isolated GPU-to-CPU readback consumer for verification. This is not the intended GPU-only XR presentation path.",
+    "All views are successive, keep distinct original capture/present IDs and sceneSequence zero. Whole scene, simultaneous time, game optical/depth projection and continuous immersive stereo are unverified.",
+    "The tagged WSI shader retains its original projection and exercises requested eye/game-view translation. Real Diablo projection/clip/scale conventions must be calibrated before a new game-to-XR trial.",
+    "Foreign-producer WSI fixture uses explicit application timeline ordering and a host acquisition fence. Clean final synchronization validation does not prove asynchronous multiqueue game/runtime coordination; earlier insufficient fixture acquisition paths are not part of this proof.",
+    "Normal layer path polls its consumer fence; file reads, CPU copies/private exports and teardown can block. A request without an admissible left image has no automatic timeout; pose.stop or game/device teardown cancels it.",
+    "Common diagnostic codec/consumer compile under Windows in CI, but native Windows D3D12 game/VR integration and physical SteamVR validation issues remain unresolved."
+  ]
+}
