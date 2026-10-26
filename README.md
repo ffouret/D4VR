@@ -10,11 +10,20 @@ répond pas à cet objectif.
 
 ## État du projet
 
+Le [relevé distingue désormais les déclarations indépendantes du pipeline](docs/SAMPLED_PIPELINE_FACETS.md).
+Un [nouvel essai court dans Diablo](docs/proofs/diablo-sampled-pipeline-facets-v1.json)
+conserve quatre paires successives et établit la compatibilité des sept mots
+push de sept dessins ciblés. Les déclarations viewport/scissor restent inconnues :
+le relevé identifie précisément une extension de découpage de profondeur encore
+non classifiée par l'observateur. Aucune modification de son comportement n'est
+appliquée au jeu. Les découpes persistent, le jeu est fermé et les originaux
+restent identiques. Aucune image de Diablo n'a atteint le Quest.
+
 Le [relevé par dessin](docs/SAMPLED_WRITER_STATE.md) conserve maintenant les
 push constants et les déclarations viewport/scissor dans les préfixes des images
 livrées. Quatre contrôles en fenêtre préservent les pixels originaux et comparent
 seize états aux vrais appels de leur application, sans erreur Khronos.
-Un [nouvel essai Diablo](docs/proofs/diablo-sampled-writer-state-v1.json) sauve
+Un [premier essai Diablo](docs/proofs/diablo-sampled-writer-state-v1.json) sauve
 six paires successives et les 28 octets push de onze dessins du writer ciblé.
 Un flag de pipeline non modélisé maintient leur compatibilité de layout et leurs
 viewport/scissor inconnus : le rectangle ne peut pas encore leur être attribué.

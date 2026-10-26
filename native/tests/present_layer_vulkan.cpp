@@ -54,13 +54,19 @@ int main(int argc,char** argv)try{
     bool sourceHistoryFixture=std::getenv("D4VR_SOURCE_HISTORY_FIXTURE");
     bool sourceConsumerFixture=std::getenv("D4VR_SOURCE_CONSUMER_FIXTURE");
     bool sampledWriterFixture=std::getenv("D4VR_SAMPLED_WRITER_FIXTURE");
+    const auto fsrOption=std::getenv("D4VR_SAMPLED_WRITER_FSR_FIXTURE");const bool sampledWriterFsrFixture=fsrOption && !std::strcmp(fsrOption,"1");
     bool foreignProducer=(poseCapture || cooperative) && std::getenv("D4VR_POSE_FIXTURE_FOREIGN");
     if(heldDepthFixture && (!poseCapture || !heldView || !cameraUpdates || depthFixture || transferFixture || auditFixture || cooperative || foreignProducer))throw std::invalid_argument("Held depth fixture requires the monoscopic pose-camera fixture alone");
     if(sourceHistoryFixture && !heldDepthFixture)throw std::invalid_argument("Source history fixture requires held geometric depth");
     if(sourceConsumerFixture && !sourceHistoryFixture)throw std::invalid_argument("Source consumer fixture requires source history workload");
     if(sampledWriterFixture && !sourceConsumerFixture)throw std::invalid_argument("Writer state controls require the source consumer fixture");
+    if(sampledWriterFsrFixture && !sampledWriterFixture)throw std::invalid_argument("FSR flag controls require the writer state fixture");
     if(poseCapture)text(directory/"pose.request","invalid diagnostic input\n");
-    Window window;Fixture f(true,false,sourceConsumerFixture,false,false,"D4VR presentation selection fixture",cameraUpdates || auditFixture,{"VK_KHR_surface","VK_KHR_xlib_surface"},{VK_KHR_SWAPCHAIN_EXTENSION_NAME},{},cameraUpdates?5:1,cooperative || auditFixture || heldDepthFixture,sampledWriterFixture);
+    Window window;Fixture f(true,false,sourceConsumerFixture,false,false,"D4VR presentation selection fixture",cameraUpdates || auditFixture,{"VK_KHR_surface","VK_KHR_xlib_surface"},{VK_KHR_SWAPCHAIN_EXTENSION_NAME},{},cameraUpdates?5:1,cooperative || auditFixture || heldDepthFixture,sampledWriterFixture,sampledWriterFsrFixture);
+    if(sampledWriterFsrFixture && !f.writerFsrAttachmentEnabled){
+        vkDestroyDevice(f.device,nullptr);vkDestroyInstance(f.instance,nullptr);
+        std::cout<<"{\"sampled_writer_fsr_fixture_skipped\":true,\"reason\":\"extension_or_attachment_feature_unavailable\",\"test_executed\":false}\n";return 77;
+    }
     std::array<VkQueue,5> readerQueues{};if(cameraUpdates)for(unsigned i=0;i<5;++i)vkGetDeviceQueue(f.device,f.family,i,&readerQueues[i]);
     auto createSurface=reinterpret_cast<CreateSurface>(vkGetInstanceProcAddr(f.instance,"vkCreateXlibSurfaceKHR"));if(!createSurface)throw std::runtime_error("Xlib Vulkan surface unavailable");
     XlibSurfaceInfo si{VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR,nullptr,0,window.display,window.window};VkSurfaceKHR surface{};check(createSurface(f.instance,&si,nullptr,&surface));
@@ -102,6 +108,7 @@ int main(int argc,char** argv)try{
     if(depthFixture)rendering.depthAttachmentFormat=rendering.stencilAttachmentFormat=VK_FORMAT_D24_UNORM_S8_UINT;
     if(heldDepthFixture){rendering.depthAttachmentFormat=VK_FORMAT_D32_SFLOAT;depthState.depthTestEnable=depthState.depthWriteEnable=VK_TRUE;depthState.depthCompareOp=VK_COMPARE_OP_LESS;}
     VkGraphicsPipelineCreateInfo gp{VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO};gp.pNext=&rendering;gp.stageCount=2;gp.pStages=stages;gp.pVertexInputState=&input;gp.pInputAssemblyState=&assembly;
+    if(sampledWriterFsrFixture)gp.flags|=VK_PIPELINE_CREATE_RENDERING_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR;
     gp.pViewportState=&viewport;gp.pRasterizationState=&raster;gp.pMultisampleState=&ms;gp.pColorBlendState=&blend;gp.layout=layout;
     if(depthFixture || heldDepthFixture)gp.pDepthStencilState=&depthState;
     VkPipeline pipeline{};check(vkCreateGraphicsPipelines(f.device,VK_NULL_HANDLE,1,&gp,nullptr,&pipeline));
@@ -203,6 +210,7 @@ int main(int argc,char** argv)try{
     if(sourceHistoryFixture)std::cout<<",\"source_history_fixture\":true,\"original_late_source_clears\":"<<frameCount<<",\"original_twin_clears\":"<<frameCount<<",\"twin_lifetimes\":2,\"history_gpu_execution_order_inferred\":false";
     if(sourceConsumerFixture)std::cout<<",\"source_consumer_fixture\":true,\"original_descriptor_image_queries\":8,\"descriptor_queries_bound_or_sampled\":false";
     if(sampledWriterFixture)std::cout<<",\"sampled_writer_state_fixture\":true,\"original_writer_draw_states\":"<<frameCount*2<<",\"writer_dynamic_count_enabled\":"<<(f.writerDynamicCountEnabled?"true":"false")<<",\"writer_maintenance6_enabled\":"<<(f.writerMaintenance6Enabled?"true":"false")<<",\"fragment_push_constants_read_by_shader\":false";
+    if(sampledWriterFsrFixture)std::cout<<",\"sampled_writer_fsr_fixture\":true,\"writer_attachment_fsr_enabled\":true,\"writer_pipeline_fsr_flag\":"<<VK_PIPELINE_CREATE_RENDERING_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR<<",\"writer_rate_attachment_present\":false,\"writer_static_rate_pnext_present\":false,\"writer_dynamic_rate_declared\":false";
     std::cout<<"}\n";
     return 0;
 }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}

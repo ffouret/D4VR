@@ -14,10 +14,10 @@ struct Buffer { VkBuffer handle; VkDeviceMemory memory; void* mapped; VkDeviceAd
 struct Fixture {
     VkInstance instance{}; VkPhysicalDevice physical{}; VkDevice device{}; VkQueue queue{};
     VkPhysicalDeviceMemoryProperties memory{}; uint32_t family{};
-    bool writerDynamicCountEnabled=false,writerMaintenance6Enabled=false;
+    bool writerDynamicCountEnabled=false,writerMaintenance6Enabled=false,writerFsrAttachmentEnabled=false;
     Fixture(bool dynamic, bool identifiers,bool descriptorBuffers = false,bool extended = false,bool libraries = false,const char* appName = "D4VR observer fixture",bool timeline = false,
             const std::vector<const char*>& instanceExtensions = {},const std::vector<const char*>& deviceExtensions = {},
-            const std::vector<const char*>& instanceLayers = {},uint32_t queueCount = 1,bool synchronization2 = false,bool writerStateFixture = false) {
+            const std::vector<const char*>& instanceLayers = {},uint32_t queueCount = 1,bool synchronization2 = false,bool writerStateFixture = false,bool writerFsrFixture = false) {
         VkApplicationInfo app{VK_STRUCTURE_TYPE_APPLICATION_INFO}; app.pApplicationName = appName; app.apiVersion = dynamic ? VK_API_VERSION_1_3 : VK_API_VERSION_1_2;
         VkInstanceCreateInfo create{VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO}; create.pApplicationInfo = &app;
         create.enabledExtensionCount=uint32_t(instanceExtensions.size());create.ppEnabledExtensionNames=instanceExtensions.data();
@@ -49,6 +49,7 @@ struct Fixture {
         VkPhysicalDeviceGraphicsPipelineLibraryFeaturesEXT libraryFeature{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_GRAPHICS_PIPELINE_LIBRARY_FEATURES_EXT};libraryFeature.graphicsPipelineLibrary=VK_TRUE;
         if (libraries) { libraryFeature.pNext=features13.pNext;features13.pNext=&libraryFeature; }
         VkPhysicalDeviceExtendedDynamicStateFeaturesEXT writerDynamic{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT};
+        VkPhysicalDeviceFragmentShadingRateFeaturesKHR writerRate{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FRAGMENT_SHADING_RATE_FEATURES_KHR};
 #ifdef VK_KHR_maintenance6
         VkPhysicalDeviceMaintenance6FeaturesKHR writerMaintenance{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MAINTENANCE_6_FEATURES_KHR};
 #endif
@@ -59,10 +60,19 @@ struct Fixture {
             auto has=[&](const char* name){for(const auto& extension:available)if(!std::strcmp(extension.extensionName,name))return true;return false;};
             VkPhysicalDeviceFeatures2 supported{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2};
             if(has(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME)){writerDynamic.pNext=supported.pNext;supported.pNext=&writerDynamic;}
+            if(writerFsrFixture && has(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME)){writerRate.pNext=supported.pNext;supported.pNext=&writerRate;}
 #ifdef VK_KHR_maintenance6
             if(has(VK_KHR_MAINTENANCE_6_EXTENSION_NAME)){writerMaintenance.pNext=supported.pNext;supported.pNext=&writerMaintenance;}
 #endif
             vkGetPhysicalDeviceFeatures2(physical,&supported);
+            if(writerFsrFixture && has(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME) && writerRate.attachmentFragmentShadingRate){
+                writerFsrAttachmentEnabled=true;
+                // Only the attachment feature is needed for this flag-only
+                // control. Pipeline/primitive rate defaults remain 1x1/KEEP.
+                writerRate.pipelineFragmentShadingRate=writerRate.primitiveFragmentShadingRate=VK_FALSE;
+                writerRate.pNext=features13.pNext;features13.pNext=&writerRate;
+                writerExtensions.push_back(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+            }
             if(has(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME) && writerDynamic.extendedDynamicState){
                 writerDynamicCountEnabled=true;writerDynamic.pNext=features13.pNext;features13.pNext=&writerDynamic;
                 writerExtensions.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);

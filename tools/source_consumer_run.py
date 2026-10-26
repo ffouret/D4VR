@@ -24,7 +24,8 @@ def validate(a):
     a.output.mkdir(mode=0o700, parents=True)
     root = Path(__file__).resolve().parents[1]
     host = paired_capture.host_command()
-    require_state = bool(getattr(a, 'require_writer_state', False))
+    require_facets = bool(getattr(a, 'require_writer_facets', False))
+    require_state = bool(getattr(a, 'require_writer_state', False)) or require_facets
     frozen_sources = {}
     frozen_binaries = {}
     if require_state:
@@ -93,7 +94,7 @@ def validate(a):
         baseline = None
         baseline_state_controls = None
         for enabled in (False, True):
-            name = (('writer-state-on' if enabled else 'writer-state-off') if require_state else ('consumer-on' if enabled else 'consumer-off'))+('-runtime' if runtime else '-native')
+            name = ((('writer-facets-on' if enabled else 'writer-facets-off') if require_facets else ('writer-state-on' if enabled else 'writer-state-off')) if require_state else ('consumer-on' if enabled else 'consumer-off'))+('-runtime' if runtime else '-native')
             directory = (a.output/name).resolve();directory.mkdir(mode=0o700)
             variables = {'VK_INSTANCE_LAYERS': vulkan_trace.LAYER+':VK_LAYER_KHRONOS_validation',
                          'VK_ADD_LAYER_PATH': str(a.layer.resolve())+':'+str(a.validation_layer.resolve()),
@@ -112,6 +113,8 @@ def validate(a):
             if require_state:
                 variables['D4VR_SAMPLED_WRITER_FIXTURE'] = '1'
                 variables['D4VR_SAMPLED_WRITER_STATE'] = '1' if enabled else '0'
+            if require_facets:
+                variables['D4VR_SAMPLED_WRITER_FSR_FIXTURE'] = '1'
             for eye, side in enumerate(('left', 'right')):
                 path = directory/(side+'.bin');path.write_bytes(eye_control.encode(eye, separation=.128));path.chmod(0o600)
                 variables['D4VR_PAIR_'+side.upper()+'_FILE'] = str(path)
@@ -126,6 +129,7 @@ def validate(a):
                         'D4VR_SOURCE_HISTORY_FIXTURE', 'D4VR_DEPTH_SOURCE_HISTORY',
                         'D4VR_SOURCE_CONSUMER_HISTORY','D4VR_SOURCE_CONSUMER_FIXTURE',
                         'D4VR_SAMPLED_WRITER_FIXTURE', 'D4VR_SAMPLED_WRITER_STATE',
+                        'D4VR_SAMPLED_WRITER_FSR_FIXTURE',
                         'D4VR_SOURCE_HISTORY_WIDTH', 'D4VR_SOURCE_HISTORY_HEIGHT', 'D4VR_SOURCE_HISTORY_FORMAT',
                         'D4VR_DEPTH_TRANSFER_FIXTURE', 'D4VR_DEPTH_COPY_FIXTURE',
                         'D4VR_DEPTH_LAYER_FIXTURE', 'D4VR_DEPTH_AUDIT_FIXTURE',
@@ -154,7 +158,7 @@ def validate(a):
             state = None
             if require_state:
                 from sampled_writer_state_validate import audit_directory
-                state = audit_directory(directory, observer_enabled=enabled)
+                state = audit_directory(directory, observer_enabled=enabled, require_facets=require_facets)
                 summary = data['summary']
                 if (summary.get('sampled_writer_state_fixture') is not True
                         or summary.get('original_writer_draw_states') != 128
@@ -162,6 +166,12 @@ def validate(a):
                         or summary.get('writer_dynamic_count_enabled') != state['dynamic_count_enabled']
                         or summary.get('writer_maintenance6_enabled') != state['maintenance6_enabled']):
                     raise ValueError('Original fixture feature/unused-fragment controls differ from their saved draw arguments')
+                if require_facets and (summary.get('sampled_writer_fsr_fixture') is not True
+                        or summary.get('writer_attachment_fsr_enabled') is not True
+                        or summary.get('writer_pipeline_fsr_flag') != 0x200000
+                        or any(summary.get(key) is not False for key in ('writer_rate_attachment_present',
+                                   'writer_static_rate_pnext_present', 'writer_dynamic_rate_declared'))):
+                    raise ValueError('Required flag-only FSR application configuration was not executed exactly')
                 controls = (state['dynamic_count_enabled'], state['maintenance6_enabled'], state['original_setter_aliases'])
                 if baseline_state_controls is None:
                     baseline_state_controls = controls
@@ -204,6 +214,11 @@ def validate(a):
                      before_execution_binary_sha256=frozen_binaries,
                      only_new_observer_varies=True, descriptor_placement_known=False,
                      sampled_resource_known=False, coverage_known=False)
+        if require_facets:
+            proof.update(sampled_writer_facets_required=True, writer_snapshot_schema_version=2,
+                         original_application_fsr_flag=0x200000, original_attachment_fsr_feature_enabled=True,
+                         original_rate_attachment_present=False, original_static_rate_pnext_present=False,
+                         original_dynamic_rate_declared=False, fragment_shading_rate_known=False)
     probe.write_json(a.output/'proof.json', proof)
     return proof
 
@@ -216,6 +231,7 @@ if __name__ == '__main__':
     parser.add_argument('--require-writer-prefix', action='store_true', help='Audit saved source prefixes against owned render scopes')
     parser.add_argument('--require-blit-stages', action='store_true', help='Audit saved lifecycle values against original app arguments/pixels')
     parser.add_argument('--require-writer-state', action='store_true', help='Opt-in state observer off/on; same original state calls and consumer history in both controls')
+    parser.add_argument('--require-writer-facets', action='store_true', help='Require schema2 independent facets under an identical, feature-enabled FSR-attachment pipeline flag off/on control; unsupported feature is not a pass')
     parser.add_argument('--writer-state-unit', type=Path, help='Portable SourceHistory per-writer state integration controls')
     parser.add_argument('--runtime', type=Path)
     parser.add_argument('--validator', type=Path)

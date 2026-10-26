@@ -94,6 +94,78 @@ def delivered(frame=0, enabled=True):
     return receipt, controls
 
 
+def fsr_owned(frame=0, draw=0):
+    value = owned(frame, draw)
+    value.update(pipeline_flags=audit.FSR_ATTACHMENT, attachment_fsr_feature_enabled=True,
+                 rate_attachment_present=False, static_rate_pnext_present=False, dynamic_rate_declared=False)
+    return value
+
+
+def facet_state(original=None, ordinal=10):
+    original = original or fsr_owned()
+    value = state(original, ordinal)
+    flags = original.get('pipeline_flags', 0)
+    mode = original['mode']
+    dynamic = [] if mode == 'static' else list(audit.COUNT_DYNAMIC if mode == 'with_count' else audit.REGULAR_DYNAMIC)
+    masks = dict.fromkeys(audit.REASON_GROUPS, 0)
+    masks['fragment_shading_rate'] = audit.REASON_BITS['fragment_shading_rate_unobserved']
+    if flags & audit.FSR_ATTACHMENT:
+        masks['fragment_shading_rate'] |= audit.REASON_BITS['rendering_fsr_attachment']
+    value.update(schema_version=2, pipeline_flags=flags, pipeline_unknown_flags=0,
+                 pipeline_declarations_complete=not bool(flags),
+                 pipeline_declarations_complete_scope='legacy_header_admission_summary',
+                 pipeline_recognized_rendering_flags=flags & audit.FSR_ATTACHMENT,
+                 pipeline_facet_known=dict.fromkeys(audit.FACETS, True),
+                 pipeline_facet_reason_masks=masks,
+                 pipeline_facet_reasons={group: [name for name in audit.REASONS if mask & audit.REASON_BITS[name]]
+                                        for group, mask in masks.items()},
+                 fragment_shading_rate_known=False, effective_write_coverage_known=False, conventional_operand_scope=True,
+                 pipeline_creation={'own_parts': 15, 'parts': 15, 'pre_raster_owners': 1, 'fragment_owners': 1,
+                    'legacy_flags': flags, 'flag_source': 'legacy', 'inherited_rendering_flags': 0,
+                    'inherited_unknown_flags': 0, 'structural_known': True, 'chain_types': [1000044002],
+                    'chain_truncated': False, 'chain_duplicate': False, 'unknown_chain_types': [],
+                    'unknown_chain_count': 0, 'fsr_static_declared': False, 'fsr_static_declared_scope': 'own_parts'},
+                 raster_declarations={'owner_generation': 15, 'dynamic_state_types': dynamic,
+                    'scope': 'pre_raster_owner', 'dynamic_info_observed': mode != 'static',
+                    'dynamic_info_absent': mode == 'static', 'raster_info_observed': True,
+                    'raster_info_absent': False, 'viewport_info_observed': mode != 'with_count',
+                    'viewport_info_absent': False,
+                    'dynamic_state_count': len(dynamic), 'dynamic_truncated': False,
+                    'rejected_dynamic_types': [], 'rejected_dynamic_count': 0,
+                    'dynamic_chain_types': [], 'dynamic_chain_truncated': False,
+                    'raster_chain_types': [], 'raster_chain_truncated': False,
+                    'viewport_chain_types': [], 'viewport_chain_truncated': False,
+                    'viewport_mode': mode, 'scissor_mode': mode,
+                    'viewport_count': 0 if mode == 'with_count' else 1,
+                    'scissor_count': 0 if mode == 'with_count' else 1,
+                    'fsr_dynamic_declared': False})
+    for key in ('viewport', 'scissor'):
+        value[key]['effective_known_scope'] = 'single_conventional_operand'
+    return value
+
+
+def set_reason(value, group, *names):
+    mask = sum(audit.REASON_BITS[name] for name in names)
+    value['pipeline_facet_reason_masks'][group] = mask
+    value['pipeline_facet_reasons'][group] = [name for name in audit.REASONS if mask & audit.REASON_BITS[name]]
+    if group in audit.FACETS:
+        value['pipeline_facet_known'][group] = mask == 0
+
+
+def unknown_bound_push(value):
+    push = value['push']
+    push.update(layout_known=False, bound_layout_generation=0, compatible_word_mask=0,
+                bound_layout={'generation': 0, 'raw_handle': 0, 'flags': 0, 'ranges_complete': False,
+                              'ranges': [], 'chain_types': []},
+                image_index_known=False, image_index=None, sampler_index_known=False, sampler_index=None)
+    for word in push['words']: word['compatible'] = False
+
+
+def unknown_rectangles(value):
+    for name in ('viewport', 'scissor'):
+        value[name].update(mode='unknown', value_known=False, count_known=False, effective_known=False)
+
+
 class SampledWriterStateAudit(unittest.TestCase):
     def check(self, value=None, original=None, ordinal=10):
         with patch('subprocess.Popen', side_effect=AssertionError('Read-only CPU audit cannot execute a process')):
@@ -227,6 +299,212 @@ class SampledWriterStateAudit(unittest.TestCase):
                        lambda v: v.update(push_values_identify_sampled_resource=True)):
             original = owned();change(original)
             with self.assertRaises(ValueError): audit.golden(original)
+
+    def test_schema2_fsr_flag_keeps_three_independent_facets_and_separate_rate_gap(self):
+        for original in (fsr_owned(), fsr_owned(0, 1), fsr_owned(1, 1)):
+            value = facet_state(original)
+            result = self.check(value, original)
+            self.assertEqual(result['writer_state_schema_version'], 2)
+            self.assertTrue(all(result['pipeline_facet_known'].values()))
+            self.assertEqual(result['pipeline_recognized_rendering_flags'], audit.FSR_ATTACHMENT)
+            self.assertFalse(result['fragment_shading_rate_known'])
+            self.assertFalse(value['pipeline_declarations_complete'])
+        original = owned()
+        self.check(facet_state(original), original)
+
+    def test_schema2_reason_names_masks_and_known_booleans_cannot_contradict(self):
+        changes = (lambda v: v['pipeline_facet_known'].update(push_layout=False),
+                   lambda v: v['pipeline_facet_reason_masks'].update(push_layout=1 << 40),
+                   lambda v: v['pipeline_facet_reason_masks'].update(push_layout=1),
+                   lambda v: v['pipeline_facet_reasons'].update(push_layout=['unknown_push_layout']),
+                   lambda v: v['pipeline_facet_reasons']['fragment_shading_rate'].reverse(),
+                   lambda v: v['pipeline_facet_known'].update(sampled_resource=True),
+                   lambda v: v['pipeline_creation'].update(structural_known=False),
+                   lambda v: v.update(pipeline_declarations_complete=True))
+        for change in changes:
+            value = facet_state();change(value)
+            with self.subTest(change=change), self.assertRaises(ValueError): self.check(value, fsr_owned())
+
+    def test_schema2_recognized_fsr_flags_do_not_erase_other_flags_or_structural_gaps(self):
+        value = facet_state();value['pipeline_flags'] |= 1 << 63;value['pipeline_unknown_flags'] = 1 << 63
+        value['pipeline_creation']['flag_source'] = 'flags2'
+        value['pipeline_creation']['chain_types'].append(1000470005)
+        value['pipeline_creation']['structural_known'] = False
+        for group in ('structure', *audit.FACETS): set_reason(value, group, 'unknown_pipeline_flags')
+        unknown_bound_push(value);unknown_rectangles(value)
+        audit.audit_state(value)
+        for change in (lambda v: v.update(pipeline_unknown_flags=0),
+                       lambda v: v.update(pipeline_recognized_rendering_flags=audit.FSR_ATTACHMENT | (1 << 63)),
+                       lambda v: set_reason(v, 'push_layout'),
+                       lambda v: v['pipeline_facet_known'].update(push_layout=True)):
+            changed = deepcopy(value);change(changed)
+            with self.assertRaises(ValueError): audit.audit_state(changed)
+
+    def test_schema2_push_can_remain_known_when_an_unreviewed_raster_chain_is_explicit(self):
+        value = facet_state();value['raster_declarations']['raster_chain_types'] = [123456]
+        for group in ('viewport_declaration', 'scissor_declaration'): set_reason(value, group, 'unknown_raster_chain')
+        unknown_rectangles(value)
+        result = audit.audit_state(value)
+        self.assertTrue(result['pipeline_facet_known']['push_layout'])
+        self.assertFalse(result['pipeline_facet_known']['viewport_declaration'])
+        changed = deepcopy(value);set_reason(changed, 'viewport_declaration')
+        with self.assertRaises(ValueError): audit.audit_state(changed)
+
+    def test_schema2_unknown_push_signature_does_not_erase_observed_conventional_rectangles(self):
+        value = facet_state();set_reason(value, 'push_layout', 'unknown_push_layout');unknown_bound_push(value)
+        result = audit.audit_state(value)
+        self.assertFalse(result['pipeline_facet_known']['push_layout'])
+        self.assertTrue(result['pipeline_facet_known']['viewport_declaration'])
+        value['push'].update(image_index_known=True, image_index=7)
+        with self.assertRaises(ValueError): audit.audit_state(value)
+
+    def test_schema2_chain_dynamic_bounds_unknown_types_flags2_and_gpl_owner_falsifications(self):
+        changes = (lambda v: v['pipeline_creation'].update(chain_types=[1000044002]*33),
+                   lambda v: v['pipeline_creation'].update(chain_types=[1000044002]*2),
+                   lambda v: v['pipeline_creation'].update(chain_types=[123456], unknown_chain_types=[], unknown_chain_count=0),
+                   lambda v: v['pipeline_creation'].update(flag_source='flags2'),
+                   lambda v: v['pipeline_creation'].update(pre_raster_owners=2),
+                   lambda v: v['pipeline_creation'].update(unknown_chain_types=[1]*9),
+                   lambda v: v['raster_declarations'].update(dynamic_state_types=[0]*65),
+                   lambda v: v['raster_declarations'].update(dynamic_state_count=65),
+                   lambda v: v['raster_declarations'].update(rejected_dynamic_types=[123], rejected_dynamic_count=1),
+                   lambda v: v['raster_declarations'].update(viewport_mode='unknown'))
+        for change in changes:
+            value = facet_state();change(value)
+            with self.subTest(change=change), self.assertRaises(ValueError): audit.audit_state(value)
+
+    def test_schema2_fsr_static_and_dynamic_declarations_never_establish_rate_values(self):
+        value = facet_state();value['pipeline_creation']['chain_types'].append(audit.FSR_STATIC_TYPE)
+        value['pipeline_creation']['fsr_static_declared'] = True
+        set_reason(value, 'fragment_shading_rate', 'fragment_shading_rate_unobserved', 'rendering_fsr_attachment', 'fsr_static_declaration')
+        audit.audit_state(value)
+        changed = deepcopy(value);changed['pipeline_creation']['fsr_static_declared_scope'] = 'all_linked_payloads'
+        with self.assertRaises(ValueError): audit.audit_state(changed)
+        original = fsr_owned(0, 1);value = facet_state(original)
+        value['raster_declarations']['dynamic_state_types'].append(audit.FSR_DYNAMIC_TYPE)
+        value['raster_declarations'].update(dynamic_state_count=3, fsr_dynamic_declared=True)
+        set_reason(value, 'fragment_shading_rate', 'fragment_shading_rate_unobserved', 'rendering_fsr_attachment', 'fsr_dynamic_declaration')
+        audit.audit_state(value)
+        for key in ('fragment_shading_rate_known', 'effective_write_coverage_known'):
+            changed = deepcopy(value);changed[key] = True
+            with self.assertRaises(ValueError): audit.audit_state(changed)
+        set_reason(value, 'fragment_shading_rate', 'rendering_fsr_attachment', 'fsr_dynamic_declaration')
+        with self.assertRaises(ValueError): audit.audit_state(value)
+
+    def test_schema1_old_receipt_cannot_be_reinterpreted_as_newer_facet_proof(self):
+        old = state();self.check(old)
+        upgraded = facet_state();upgraded['schema_version'] = 1
+        with self.assertRaises(ValueError): audit.audit_state(upgraded)
+        old['pipeline_flags'] = old['pipeline_unknown_flags'] = audit.FSR_ATTACHMENT
+        old['pipeline_declarations_complete'] = False
+        with self.assertRaises(ValueError): audit.audit_state(old)
+        unknown_bound_push(old);unknown_rectangles(old)
+        audit.audit_state(old)
+        old['schema_version'] = 2
+        with self.assertRaises((KeyError, ValueError)): audit.audit_state(old)
+
+    def test_schema2_conventional_scope_and_original_fsr_feature_configuration_are_explicit(self):
+        for change in (lambda v: v.update(conventional_operand_scope=False),
+                       lambda v: v.update(pipeline_declarations_complete_scope='whole_pipeline'),
+                       lambda v: v['viewport'].update(effective_known_scope='coverage')):
+            value = facet_state();change(value)
+            with self.assertRaises(ValueError): audit.audit_state(value)
+        for change in (lambda v: v.update(attachment_fsr_feature_enabled=False),
+                       lambda v: v.update(rate_attachment_present=True),
+                       lambda v: v.update(pipeline_flags=audit.FSR_ATTACHMENT | 1),
+                       lambda v: v.update(dynamic_rate_declared=True)):
+            original = fsr_owned();change(original)
+            with self.assertRaises(ValueError): audit.golden(original)
+
+    def test_schema2_structure_absence_is_not_inferred_from_empty_diagnostic_arrays(self):
+        value = facet_state()
+        for change in (lambda r: r.update(dynamic_info_observed=True),
+                       lambda r: r.update(raster_info_absent=True),
+                       lambda r: r.update(viewport_info_absent=True),
+                       lambda r: r.update(raster_info_observed=False),
+                       lambda r: r.update(viewport_info_observed=False),
+                       lambda r: r.update(owner_generation=99),
+                       lambda r: r.update(scope='link_only_ignored_pointer')):
+            changed = deepcopy(value);change(changed['raster_declarations'])
+            with self.assertRaises(ValueError): self.check(changed, fsr_owned())
+        original = fsr_owned(1, 1);value = facet_state(original)
+        self.check(value, original)
+        value['raster_declarations']['viewport_info_absent'] = True
+        with self.assertRaises(ValueError): self.check(value, original)
+
+    def test_schema2_selected_prefix_requires_new_state_without_retagging_old_receipts(self):
+        receipt, controls = delivered(1)
+        for index, draw in enumerate(receipt['captured_writer_prefix']['occurrences'][0]['commands'][0]['events'][1:]):
+            original = fsr_owned(1, index);controls[(1, index)] = original
+            draw['writer_state'] = facet_state(original, draw['ordinal'])
+        result = audit.audit_receipt(receipt, controls, require_facets=True)
+        self.assertEqual(result['draw_states_compared'], 2)
+        self.assertTrue(all(row['writer_state_schema_version'] == 2 for row in result['states']))
+        old, old_controls = delivered(1)
+        with self.assertRaises(ValueError): audit.audit_receipt(old, old_controls, require_facets=True)
+
+    def test_generic_known_push_needs_aligned_complete_write_and_declared_stage_coverage(self):
+        for offset, size, stages in ((7, 28, 17), (8, 1, 17), (8, 0, 17),
+                                     (8, audit.UINT32, 17), (8, 4, 49)):
+            value = facet_state();value['push']['words'][2].update(offset=offset, size=size, stage_flags=stages)
+            with self.subTest(offset=offset, size=size, stages=stages), self.assertRaises(ValueError):
+                audit.audit_state(value)
+        for ranges in ([], [{'stage_flags': 1, 'offset': 0, 'size': 32}],
+                       [{'stage_flags': 17, 'offset': 12, 'size': 20}]):
+            value = facet_state()
+            value['push']['bound_layout']['ranges'] = deepcopy(ranges)
+            for word in value['push']['words']: word['layout']['ranges'] = deepcopy(ranges)
+            with self.subTest(ranges=ranges), self.assertRaises(ValueError): audit.audit_state(value)
+        audit.audit_state(facet_state())
+
+    def test_generic_conventional_validity_is_recomputed_from_exact_operand_values(self):
+        changes = (lambda v: v['viewport'].update(bits=[0, 0, 0x7fc12345, 0x43800000, 0, 0x3f800000], finite=False),
+                   lambda v: v['viewport']['bits'].__setitem__(2, 0xc3800000),
+                   lambda v: v['viewport']['bits'].__setitem__(3, 0x80000000),
+                   lambda v: v['scissor'].update(offset=[-1, 0]),
+                   lambda v: v['scissor'].update(offset=[0x7fffffff, 0], extent=[1, 256]))
+        for change in changes:
+            value = facet_state();change(value)
+            with self.subTest(change=change), self.assertRaises(ValueError): audit.audit_state(value)
+            field = 'viewport' if not value['viewport']['finite'] or value['viewport']['bits'] != facet_state()['viewport']['bits'] else 'scissor'
+            value[field].update(conventional_valid=False, effective_known=False)
+            audit.audit_state(value)
+        value = facet_state();value['viewport']['bits'][3] = 0xc3800000
+        audit.audit_state(value)  # Negative viewport height remains conventional.
+        value = facet_state()
+        value['viewport'].update(value_known=False, effective_known=False, bits=[0]*6,
+                                 finite=False, conventional_valid=False)
+        audit.audit_state(value)  # Unknown placeholders are not decoded as known operands.
+
+    def test_unobserved_headers_cannot_retain_interpreted_arrays_or_unexplained_subchains(self):
+        for info in ('dynamic', 'raster', 'viewport'):
+            value = facet_state(fsr_owned(0, 1));raster = value['raster_declarations']
+            raster[info+'_chain_types'] = [123456]
+            for group in ('viewport_declaration', 'scissor_declaration'):
+                set_reason(value, group, 'unknown_'+info+'_chain')
+            unknown_rectangles(value);audit.audit_state(value)
+            raster[info+'_info_observed'] = False
+            with self.subTest(info=info), self.assertRaises(ValueError): audit.audit_state(value)
+        value = facet_state(fsr_owned(0, 1));raster = value['raster_declarations']
+        raster.update(dynamic_info_observed=False, dynamic_state_types=[123456], dynamic_state_count=1,
+                      rejected_dynamic_types=[123456], rejected_dynamic_count=1)
+        for group in ('viewport_declaration', 'scissor_declaration'):
+            set_reason(value, group, 'invalid_dynamic_info', 'unsupported_dynamic_state')
+        unknown_rectangles(value)
+        with self.assertRaises(ValueError): audit.audit_state(value)
+
+    def test_refused_raw_header_diagnostics_keep_explicit_invalid_reasons_and_no_interpretation(self):
+        for info, invalid in (('dynamic', 'invalid_dynamic_info'), ('raster', 'invalid_raster_state'),
+                              ('viewport', 'invalid_viewport_state')):
+            value = facet_state();raster = value['raster_declarations']
+            raster.update({info+'_info_observed': False, info+'_info_absent': False,
+                           info+'_chain_types': [123456]})
+            if info == 'dynamic': raster['dynamic_state_count'] = 4
+            for group in ('viewport_declaration', 'scissor_declaration'):
+                set_reason(value, group, invalid, 'unknown_'+info+'_chain')
+            unknown_rectangles(value);audit.audit_state(value)
+            raster[info+'_info_absent'] = True
+            with self.subTest(info=info), self.assertRaises(ValueError): audit.audit_state(value)
 
 
 if __name__ == '__main__':

@@ -154,7 +154,7 @@ compile; these results do not establish a native Windows D3D12/VR integration.
 
 ## Remaining work
 
-A [separate completed Diablo trial](proofs/diablo-sampled-writer-state-v1.json)
+A [first separate completed Diablo trial](proofs/diablo-sampled-writer-state-v1.json)
 retains twelve image receipts and eleven matched original three-vertex draws.
 Their 28 raw fragment push bytes survive delivery, but the pipeline's unmodeled
 fragment-shading-rate-attachment flag leaves its bound layout and conventional
@@ -163,6 +163,12 @@ The saved raw words are not certified resource indices. This trial neither
 identifies the sampled image nor attributes the persistent rectangle to raster
 state. Any finer handling must establish which declarations remain trustworthy
 without claiming effective fragment-shading-rate or complete pixel coverage.
+
+The subsequent [schema 2 facet admission](SAMPLED_PIPELINE_FACETS.md) treats that
+specific rate declaration independently. Its
+[new game trial](proofs/diablo-sampled-pipeline-facets-v1.json) establishes push
+compatibility while retaining a separately identified unknown raster subchain.
+The earlier schema 1 receipts remain unchanged and unknown.
 
 The earlier eighteen-readback sampled-image experiment uses privately verified
 unchanged stage modules with owned textures and an independent pixel oracle.

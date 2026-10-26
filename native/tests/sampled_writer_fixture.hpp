@@ -3,14 +3,14 @@
 // Fragment push words are deliberately unused by present_eye.frag. Observing
 // their values therefore establishes CPU state only, never a sampled image.
 struct SampledWriterFixture {
-    Fixture& f;std::ofstream out;VkPipelineLayout compatible{};VkPipeline regular{},counted{};
+    Fixture& f;std::ofstream out;VkPipelineLayout compatible{};VkPipeline regular{},counted{};VkPipelineCreateFlags originalFlags{};
     PFN_vkCmdSetViewportWithCount viewportCount{};PFN_vkCmdSetViewportWithCountEXT viewportCountExt{};
     PFN_vkCmdSetScissorWithCount scissorCount{};PFN_vkCmdSetScissorWithCountEXT scissorCountExt{};
 #ifdef VK_KHR_maintenance6
     PFN_vkCmdPushConstants2KHR push2{};
 #endif
     SampledWriterFixture(Fixture& fixture,const std::filesystem::path& directory,const VkPipelineLayoutCreateInfo& layoutInfo,const VkGraphicsPipelineCreateInfo& original)
-        :f(fixture),out(directory/"sampled-writer-fixture.jsonl"){
+        :f(fixture),out(directory/"sampled-writer-fixture.jsonl"),originalFlags(original.flags){
         if(!out)throw std::runtime_error("Owned writer argument file unavailable");
         check(vkCreatePipelineLayout(f.device,&layoutInfo,nullptr,&compatible));
         std::array<VkDynamicState,2> modes{VK_DYNAMIC_STATE_VIEWPORT,VK_DYNAMIC_STATE_SCISSOR};
@@ -67,7 +67,9 @@ struct SampledWriterFixture {
         for(size_t i=0;i<values.size();++i){if(i)out<<',';out<<bits(values[i]);}
         out<<"],\"scissor_offset\":["<<scissor.offset.x<<','<<scissor.offset.y<<"],\"scissor_extent\":["<<scissor.extent.width<<','<<scissor.extent.height
            <<"],\"viewport_count\":1,\"scissor_count\":1,\"draw_arguments\":{\"count\":3,\"instance_count\":1,\"first\":0,\"first_instance\":0},\"dynamic_count_enabled\":"<<(f.writerDynamicCountEnabled?"true":"false")
-           <<",\"maintenance6_enabled\":"<<(f.writerMaintenance6Enabled?"true":"false")<<",\"fragment_shader_reads_push_constants\":false,\"push_values_identify_sampled_resource\":false}\n";
+           <<",\"maintenance6_enabled\":"<<(f.writerMaintenance6Enabled?"true":"false");
+        if(f.writerFsrAttachmentEnabled)out<<",\"pipeline_flags\":"<<originalFlags<<",\"attachment_fsr_feature_enabled\":true,\"rate_attachment_present\":false,\"static_rate_pnext_present\":false,\"dynamic_rate_declared\":false";
+        out<<",\"fragment_shader_reads_push_constants\":false,\"push_values_identify_sampled_resource\":false}\n";
         out.flush();if(!out)throw std::runtime_error("Owned original writer argument write failed");
     }
     ~SampledWriterFixture(){if(counted)vkDestroyPipeline(f.device,counted,nullptr);if(regular)vkDestroyPipeline(f.device,regular,nullptr);if(compatible)vkDestroyPipelineLayout(f.device,compatible,nullptr);}

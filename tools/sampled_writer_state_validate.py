@@ -18,9 +18,33 @@ import captured_writer_validate as writer
 
 NO_INFERENCE = (*writer.NO_INFERENCE, 'effective_raster_state_known',
                 'descriptor_placement_known', 'sampled_resource_known', 'coverage_known',
+                'fragment_shading_rate_known', 'effective_write_coverage_known',
                 'push_values_identify_sampled_resource', 'fragment_shader_reads_push_constants')
 MODES = {'unknown', 'static', 'dynamic', 'with_count'}
 UINT32 = (1 << 32)-1
+FSR_ATTACHMENT = 0x00200000
+# Pinned Vulkan1.3.275 enum values. The auditor does not import the producer's
+# header or accept its supplied reason names as its own interpretation.
+LEGACY_ALLOWED_FLAGS = 0x20800fc7
+PIPELINE_CHAIN_TYPES = {1000320002, 1000290000, 1000470005, 1000226001, 1000044002, 1000192000}
+FSR_STATIC_TYPE = 1000226001
+FSR_DYNAMIC_TYPE = 1000226000
+REGULAR_DYNAMIC = (0, 1)
+COUNT_DYNAMIC = (1000267003, 1000267004)
+ALLOWED_DYNAMIC = set(range(9)) | set(range(1000267000, 1000267012)) | {1000377002, 1000377004, FSR_DYNAMIC_TYPE}
+FACETS = ('push_layout', 'viewport_declaration', 'scissor_declaration')
+REASON_GROUPS = ('structure', *FACETS, 'fragment_shading_rate')
+REASONS = (
+    'no_pipeline', 'invalid_pipeline_create', 'unknown_pipeline_flags', 'unknown_pipeline_chain',
+    'duplicate_pipeline_chain', 'pipeline_chain_limit', 'incomplete_library_list', 'missing_library',
+    'overlapping_library_parts', 'invalid_library_parts', 'missing_required_owner', 'library_not_executable',
+    'unknown_push_layout', 'incomplete_push_layout', 'incompatible_push_layouts', 'invalid_dynamic_info',
+    'unknown_dynamic_chain', 'dynamic_flags', 'dynamic_limit', 'missing_dynamic_values', 'duplicate_dynamic_state',
+    'unsupported_dynamic_state', 'conflicting_viewport_modes', 'conflicting_scissor_modes', 'missing_raster_state',
+    'invalid_raster_state', 'unknown_raster_chain', 'raster_flags', 'rasterizer_discard', 'missing_viewport_state',
+    'invalid_viewport_state', 'unknown_viewport_chain', 'viewport_flags', 'fragment_shading_rate_unobserved',
+    'rendering_fsr_attachment', 'fsr_static_declaration', 'fsr_dynamic_declaration')
+REASON_BITS = {name: 1 << index for index, name in enumerate(REASONS)}
 
 
 def claims(value):
@@ -78,10 +102,210 @@ def layout(value):
     return value
 
 
+def bounded_types(value, limit):
+    if not isinstance(value, list) or len(value) > limit:
+        raise ValueError('Declaration type list exceeded its fixed bound')
+    return [integer(item, -(1 << 31), (1 << 31)-1) for item in value]
+
+
+def audit_facets(value):
+    """Validate schema2 declarations without upgrading any schema1 receipt."""
+    if value.get('conventional_operand_scope') is not True:
+        raise ValueError('Schema2 must name its limited conventional-operand scope')
+    if value.get('pipeline_declarations_complete_scope') != 'legacy_header_admission_summary':
+        raise ValueError('Legacy admission summary was promoted to whole-pipeline knowledge')
+    for field in ('fragment_shading_rate_known', 'effective_write_coverage_known'):
+        if value.get(field) is not False:
+            raise ValueError('Independent declarations cannot establish a fragment rate or coverage')
+    facets, reasons, masks = (value[key] for key in ('pipeline_facet_known', 'pipeline_facet_reasons', 'pipeline_facet_reason_masks'))
+    if (not isinstance(facets, dict) or set(facets) != set(FACETS)
+            or not isinstance(reasons, dict) or set(reasons) != set(REASON_GROUPS)
+            or not isinstance(masks, dict) or set(masks) != set(REASON_GROUPS)):
+        raise ValueError('Schema2 facet names or reason groups changed')
+    for group in REASON_GROUPS:
+        mask = integer(masks[group], 0, (1 << len(REASONS))-1)
+        names = [name for index, name in enumerate(REASONS) if mask & (1 << index)]
+        if reasons[group] != names:
+            raise ValueError('Facet reason names disagree with their fixed bit assignments')
+    structure = masks['structure']
+    for facet in FACETS:
+        writer.boolean(facets[facet], facet)
+        if facets[facet] != (masks[facet] == 0) or masks[facet] & structure != structure:
+            raise ValueError('Known facet erased its own reason or a structural ambiguity')
+    creation = value['pipeline_creation']
+    for field in ('own_parts', 'parts', 'pre_raster_owners', 'fragment_owners', 'legacy_flags'):
+        integer(creation[field])
+    inherited = integer(creation['inherited_rendering_flags'], 0, (1 << 64)-1)
+    inherited_unknown = integer(creation['inherited_unknown_flags'], 0, (1 << 64)-1)
+    recognized = integer(value['pipeline_recognized_rendering_flags'], 0, (1 << 64)-1)
+    flags, unknown = value['pipeline_flags'], value['pipeline_unknown_flags']
+    if recognized != flags & FSR_ATTACHMENT or inherited & ~FSR_ATTACHMENT:
+        raise ValueError('An unreviewed rendering flag was silently recognized')
+    if unknown != flags & ~(LEGACY_ALLOWED_FLAGS | FSR_ATTACHMENT):
+        raise ValueError('Unknown pipeline flags were silently dropped or reclassified')
+    if (unknown or inherited_unknown) and not structure & REASON_BITS['unknown_pipeline_flags']:
+        raise ValueError('Unknown own/inherited pipeline flag lost its structural reason')
+    generation = value['pipeline_generation']
+    for field in ('structural_known', 'chain_truncated', 'chain_duplicate', 'fsr_static_declared'):
+        writer.boolean(creation[field], field)
+    if creation['structural_known'] != bool(generation and structure == 0):
+        raise ValueError('Structural declaration knowledge differs from its immutable reasons')
+    if not generation and not structure & REASON_BITS['no_pipeline']:
+        raise ValueError('Missing original pipeline was relabeled as a known declaration')
+    chain = bounded_types(creation['chain_types'], 32)
+    if creation['chain_duplicate'] != (len(set(chain)) != len(chain)):
+        raise ValueError('Duplicate creation-chain diagnostics changed')
+    if creation['chain_duplicate'] and not structure & REASON_BITS['duplicate_pipeline_chain']:
+        raise ValueError('Duplicate creation chain lost its conservative reason')
+    if creation['chain_truncated'] and (len(chain) != 32 or not structure & REASON_BITS['pipeline_chain_limit']):
+        raise ValueError('Truncated creation chain was admitted without its fixed-bound reason')
+    unrecognized = list(dict.fromkeys(item for item in chain if item not in PIPELINE_CHAIN_TYPES))
+    if (bounded_types(creation['unknown_chain_types'], 8) != unrecognized[:8]
+            or integer(creation['unknown_chain_count'], 0, 32) != len(unrecognized)):
+        raise ValueError('Unknown creation-chain types/count were lost or fabricated')
+    if unrecognized and not structure & REASON_BITS['unknown_pipeline_chain']:
+        raise ValueError('Unreviewed creation extension silently admitted the pipeline')
+    source = creation['flag_source']
+    if source not in ('legacy', 'flags2') or (source == 'flags2') != (1000470005 in chain):
+        raise ValueError('Effective flag source differs from the retained original chain')
+    if source == 'legacy' and creation['legacy_flags'] != flags:
+        raise ValueError('Legacy pipeline flags were replaced by another creation')
+    if creation['own_parts'] & ~15 and not structure & REASON_BITS['invalid_library_parts']:
+        raise ValueError('Invalid GPL ownership bits lost their reason')
+    for facet in FACETS:
+        missing_owner = creation['parts'] != 15 or creation['pre_raster_owners'] != 1
+        if facet == 'push_layout':
+            missing_owner = missing_owner or creation['fragment_owners'] != 1
+        if generation and missing_owner and not masks[facet] & REASON_BITS['missing_required_owner']:
+            raise ValueError('Missing or ambiguous GPL owner was promoted to a complete facet')
+        if flags & 0x800 and not masks[facet] & REASON_BITS['library_not_executable']:
+            raise ValueError('A library declaration was treated as an executable pipeline')
+    rate = masks['fragment_shading_rate']
+    if not rate & REASON_BITS['fragment_shading_rate_unobserved']:
+        raise ValueError('Unobserved rate sources were cleared by a narrow facet admission')
+    if bool(rate & REASON_BITS['rendering_fsr_attachment']) != bool(recognized or inherited):
+        raise ValueError('The recognized FSR attachment flag lost its separate rendering gap')
+    if creation['fsr_static_declared'] != bool(FSR_STATIC_TYPE in chain and creation['own_parts'] & 6):
+        raise ValueError('FSR static declaration was inferred from ignored link-only metadata')
+    if creation.get('fsr_static_declared_scope') != 'own_parts':
+        raise ValueError('FSR static metadata was promoted from an ignored or inherited creation pointer')
+    if creation['fsr_static_declared'] and not rate & REASON_BITS['fsr_static_declaration']:
+        raise ValueError('FSR static presence was promoted without its unknown-rate reason')
+    expected_summary = bool(generation and not structure and not rate & ~REASON_BITS['fragment_shading_rate_unobserved'])
+    if value['pipeline_declarations_complete'] != expected_summary:
+        raise ValueError('Legacy whole-header summary was retagged by facet admission')
+    if value['push']['layout_known'] != facets['push_layout']:
+        raise ValueError('Bound push layout was promoted beyond its declaration facet')
+    raster = value['raster_declarations']
+    if raster.get('scope') != 'pre_raster_owner':
+        raise ValueError('Raster metadata was detached from its actual declaration owner')
+    for info in ('dynamic', 'raster', 'viewport'):
+        observed = writer.boolean(raster[info+'_info_observed'], info+'_info_observed')
+        absent = writer.boolean(raster[info+'_info_absent'], info+'_info_absent')
+        if observed and absent:
+            raise ValueError('An inspected state structure was also asserted absent')
+        if absent and raster[info+'_chain_types']:
+            raise ValueError('Absent state structure contains an invented extension chain')
+    integer(raster['owner_generation'], 0, (1 << 64)-1)
+    dynamic = bounded_types(raster['dynamic_state_types'], 64)
+    count = integer(raster['dynamic_state_count'])
+    if raster['dynamic_info_absent'] and (dynamic or count):
+        raise ValueError('Absent dynamic-state pointer was promoted to a parsed array')
+    for info, missing in (('raster', 'missing_raster_state'), ('viewport', 'missing_viewport_state')):
+        if raster[info+'_info_absent'] and any(not masks[facet] & REASON_BITS[missing]
+                    for facet in ('viewport_declaration', 'scissor_declaration')):
+            raise ValueError('A missing required structure lost its original refusal reason')
+    writer.boolean(raster['dynamic_truncated'], 'dynamic_truncated')
+    if raster['dynamic_truncated'] != (count > 64):
+        raise ValueError('Dynamic declaration bound/truncation changed')
+    if len(dynamic) != count and not any(masks[facet] & sum(REASON_BITS[key] for key in
+            ('invalid_dynamic_info', 'unknown_dynamic_chain', 'dynamic_flags', 'dynamic_limit', 'missing_dynamic_values'))
+            for facet in ('viewport_declaration', 'scissor_declaration')):
+        raise ValueError('Dynamic declarations disappeared without an explicit unknown reason')
+    rejected = [item for item in dynamic if item not in ALLOWED_DYNAMIC]
+    if (bounded_types(raster['rejected_dynamic_types'], 8) != rejected[:8]
+            or integer(raster['rejected_dynamic_count'], 0, 64) != len(rejected)):
+        raise ValueError('Unsupported dynamic declarations/count were lost or fabricated')
+    if not raster['dynamic_info_observed'] and (dynamic or rejected or raster['fsr_dynamic_declared']):
+        raise ValueError('An unobserved dynamic header acquired interpreted array values')
+    invalid_headers = {'dynamic': 'invalid_dynamic_info', 'raster': 'invalid_raster_state',
+                       'viewport': 'invalid_viewport_state'}
+    for info, reason_name in invalid_headers.items():
+        invalid_header = all(masks[facet] & REASON_BITS[reason_name]
+                             for facet in ('viewport_declaration', 'scissor_declaration'))
+        # A refused header can retain bounded raw count/chain diagnostics. It
+        # cannot acquire interpreted array values or assert a missing pointer.
+        unobserved = not raster[info+'_info_observed']
+        if unobserved and (raster[info+'_info_absent'] or not invalid_header):
+            if (raster[info+'_chain_types'] or raster[info+'_chain_truncated']
+                    or (info == 'dynamic' and (count or raster['dynamic_truncated']))):
+                raise ValueError('Unobserved state metadata has no retained invalid-header explanation')
+    for facet in ('viewport_declaration', 'scissor_declaration'):
+        mask = masks[facet]
+        if rejected and not mask & REASON_BITS['unsupported_dynamic_state']:
+            raise ValueError('Unsupported dynamic state silently restored a conventional operand')
+        if count > 64 and not mask & REASON_BITS['dynamic_limit']:
+            raise ValueError('Unbounded dynamic array lost its refusal reason')
+        if len(set(dynamic)) != len(dynamic) and not mask & REASON_BITS['duplicate_dynamic_state']:
+            raise ValueError('Duplicate dynamic state lost its refusal reason')
+    for prefix, reason_name in (('dynamic', 'unknown_dynamic_chain'), ('raster', 'unknown_raster_chain'), ('viewport', 'unknown_viewport_chain')):
+        types = bounded_types(raster[prefix+'_chain_types'], 8)
+        truncated = writer.boolean(raster[prefix+'_chain_truncated'], prefix+'_chain_truncated')
+        if truncated and len(types) != 8:
+            raise ValueError('Raster subchain truncation lost its bounded prefix')
+        if (types or truncated) and any(not masks[facet] & REASON_BITS[reason_name]
+                                      for facet in ('viewport_declaration', 'scissor_declaration')):
+            raise ValueError('Unreviewed raster subchain was cleared by another facet')
+    writer.boolean(raster['fsr_dynamic_declared'], 'fsr_dynamic_declared')
+    if raster['fsr_dynamic_declared'] != (FSR_DYNAMIC_TYPE in dynamic):
+        raise ValueError('FSR dynamic presence differs from the retained original declarations')
+    if raster['fsr_dynamic_declared'] and not rate & REASON_BITS['fsr_dynamic_declaration']:
+        raise ValueError('FSR dynamic declaration lost the unknown rate-value gap')
+    for field in ('viewport_count', 'scissor_count'):
+        integer(raster[field])
+    for field, facet in (('viewport', 'viewport_declaration'), ('scissor', 'scissor_declaration')):
+        mode = raster[field+'_mode']
+        if mode not in MODES:
+            raise ValueError('Raster declaration has an unsupported mode')
+        observation = value[field]
+        if observation.get('effective_known_scope') != 'single_conventional_operand':
+            raise ValueError('Conventional operand knowledge was promoted to complete raster coverage')
+        if not facets[facet]:
+            if observation['mode'] != 'unknown' or observation['value_known'] or observation['count_known'] or observation['effective_known']:
+                raise ValueError('Unknown declaration facet retained a known conventional operand')
+        else:
+            if (not raster['owner_generation'] or not raster['raster_info_observed']
+                    or not (raster['dynamic_info_observed'] or raster['dynamic_info_absent'])):
+                raise ValueError('Known conventional declaration has no observed immutable owner structures')
+            if mode == 'unknown':
+                raise ValueError('Known creation facet has no captured conventional declaration mode')
+            if mode != 'with_count' and not raster['viewport_info_observed']:
+                raise ValueError('Known static-count declaration was inferred from an ignored viewport pointer')
+            expected_owner = raster['owner_generation'] if mode == 'static' else generation
+            if observation['pipeline_generation'] != expected_owner:
+                raise ValueError('Saved conventional operand was attributed to a different owner generation')
+            overflow_unknown = (value['overflow'] and observation['mode'] == 'unknown'
+                                and not any(observation[key] for key in ('value_known', 'count_known', 'effective_known')))
+            if observation['mode'] != mode and not overflow_unknown:
+                raise ValueError('Saved conventional mode differs from its immutable owner declaration')
+        if facets[facet] and mode == 'with_count' and COUNT_DYNAMIC[0 if field == 'viewport' else 1] not in dynamic:
+            raise ValueError('WithCount mode was inferred without its original dynamic declaration')
+        if facets[facet] and mode == 'dynamic' and REGULAR_DYNAMIC[0 if field == 'viewport' else 1] not in dynamic:
+            raise ValueError('Regular dynamic mode was inferred without its original declaration')
+    return facets
+
+
 def golden(value):
     if not isinstance(value, dict) or type(value.get('schema_version')) is not int or value['schema_version'] != 1:
         raise ValueError('Owned draw state control schema is unavailable')
     claims(value)
+    flags = integer(value.get('pipeline_flags', 0), 0, (1 << 64)-1)
+    if flags:
+        if flags != FSR_ATTACHMENT or value.get('attachment_fsr_feature_enabled') is not True:
+            raise ValueError('Owned flag-only control did not enable the exact FSR attachment feature')
+        for key in ('rate_attachment_present', 'static_rate_pnext_present', 'dynamic_rate_declared'):
+            if value.get(key) is not False:
+                raise ValueError('Owned FSR control changed its explicit flag-only rendering configuration')
     integer(value['frame'], 0, 63);integer(value['draw_index'], 0, 1)
     for field in ('command_handle', 'pipeline_handle', 'bound_layout_handle', 'push_layout_handle'):
         integer(value[field], 1, (1 << 64)-1)
@@ -137,8 +361,14 @@ def rectangle(value, *, viewport):
         finite = all(abs(number) != float('inf') and number == number for number in floats)
         if value['value_known'] and value['finite'] != finite:
             raise ValueError('Viewport bit-level finite classification changed')
+        conventional_valid = finite and floats[2] > 0 and floats[3] != 0 and 0 <= floats[4] <= 1 and 0 <= floats[5] <= 1
     else:
-        array(value['offset'], 2, -(1 << 31), (1 << 31)-1);array(value['extent'], 2)
+        offsets = array(value['offset'], 2, -(1 << 31), (1 << 31)-1)
+        extents = array(value['extent'], 2)
+        conventional_valid = all(offset >= 0 and offset+extent <= (1 << 31)-1
+                                 for offset, extent in zip(offsets, extents))
+    if value['value_known'] and value['conventional_valid'] != conventional_valid:
+        raise ValueError('Conventional operand validity disagrees with its exact saved values')
     for key in ('count', 'declared_first', 'declared_count'):
         integer(value[key])
     for key in ('setter_ordinal', 'count_ordinal', 'epoch', 'pipeline_generation', 'last_ordinal'):
@@ -153,8 +383,13 @@ def rectangle(value, *, viewport):
 
 
 def audit_state(value, *, original=None, ordinal=None):
-    if not isinstance(value, dict) or type(value.get('schema_version')) is not int or value['schema_version'] != 1:
+    if not isinstance(value, dict) or type(value.get('schema_version')) is not int or value['schema_version'] not in (1, 2):
         raise ValueError('Frozen per-draw writer state schema is missing')
+    version = value['schema_version']
+    if version == 1 and any(key in value for key in ('pipeline_facet_known', 'pipeline_recognized_rendering_flags',
+            'pipeline_facet_reasons', 'pipeline_facet_reason_masks', 'pipeline_creation', 'raster_declarations',
+            'fragment_shading_rate_known', 'effective_write_coverage_known', 'conventional_operand_scope')):
+        raise ValueError('Schema1 receipt was retroactively retagged with newer facet semantics')
     claims(value)
     for field in ('effective_raster_state_known', 'descriptor_placement_known', 'sampled_resource_known', 'coverage_known'):
         if value[field] is not False:
@@ -171,7 +406,7 @@ def audit_state(value, *, original=None, ordinal=None):
     writer.boolean(value['overflow'], 'overflow')
     if original is not None and value['overflow']:
         raise ValueError('Controlled draw state exhausted its ordinal epoch')
-    if original is not None and (value['pipeline_flags'] != 0 or value['pipeline_unknown_flags'] != 0
+    if version == 1 and original is not None and (value['pipeline_flags'] != 0 or value['pipeline_unknown_flags'] != 0
                                  or not value['pipeline_declarations_complete']):
         raise ValueError('Owned pipeline declarations are incomplete or carry unmodeled flags')
     push = value['push']
@@ -206,7 +441,12 @@ def audit_state(value, *, original=None, ordinal=None):
         if compatible != actual_compatible:
             raise ValueError('Push compatibility does not follow the two frozen layout signatures')
         if known:
-            if not 0 < written < observed_ordinal or not stages & 16 or not offset <= index*4 < offset+size:
+            end = offset+size
+            covered = source_layout['ranges_complete'] and any(
+                item['stage_flags'] & stages == stages and item['offset'] <= offset
+                and item['offset']+item['size'] >= end for item in source_layout['ranges'])
+            if (not 0 < written < observed_ordinal or not stages & 16 or offset % 4 or size % 4
+                    or not size or end > UINT32 or not offset <= index*4 or index*4+4 > end or not covered):
                 raise ValueError('Push provenance is late, wrong-stage or outside its original write')
         for byte in range(index*4, index*4+4):
             if not mask & (1 << byte) and raw[byte] != 0:
@@ -223,6 +463,10 @@ def audit_state(value, *, original=None, ordinal=None):
             raise ValueError('Unknown shader index was serialized as a current value')
     viewport = rectangle(value['viewport'], viewport=True)
     scissor = rectangle(value['scissor'], viewport=False)
+    facets = audit_facets(value) if version == 2 else None
+    if version == 1 and (value['pipeline_unknown_flags'] or not value['pipeline_declarations_complete']):
+        if push['layout_known'] or any(r['value_known'] or r['count_known'] or r['effective_known'] for r in (viewport, scissor)):
+            raise ValueError('Legacy unknown whole-pipeline gate was silently upgraded to independent facets')
     arguments = value['arguments']
     if arguments['kind'] not in ('unknown', 'direct', 'indexed'):
         raise ValueError('Unknown draw argument interpretation')
@@ -231,6 +475,29 @@ def audit_state(value, *, original=None, ordinal=None):
     integer(arguments['vertex_offset'], -(1 << 31), (1 << 31)-1)
     if original is not None:
         original = golden(original)
+        expected_flags = original.get('pipeline_flags', 0)
+        if version == 2:
+            creation = value['pipeline_creation']
+            if (value['pipeline_flags'] != expected_flags or value['pipeline_unknown_flags'] != 0
+                    or not all(facets.values()) or not creation['structural_known']
+                    or value['pipeline_declarations_complete'] != (expected_flags == 0)
+                    or creation['own_parts'] != 15 or creation['parts'] != 15
+                    or creation['pre_raster_owners'] != 1 or creation['fragment_owners'] != 1
+                    or creation['flag_source'] != 'legacy' or creation['legacy_flags'] != expected_flags
+                    or creation['inherited_rendering_flags'] or creation['inherited_unknown_flags']
+                    or creation['chain_types'] != [1000044002]
+                    or creation['fsr_static_declared'] or value['raster_declarations']['fsr_dynamic_declared']):
+                raise ValueError('Owned narrow facet control differs from its exact original pipeline declaration')
+            raster = value['raster_declarations']
+            expected_dynamic = [] if original['mode'] == 'static' else list(COUNT_DYNAMIC if original['mode'] == 'with_count' else REGULAR_DYNAMIC)
+            if (raster['dynamic_state_types'] != expected_dynamic or raster['dynamic_state_count'] != len(expected_dynamic)
+                    or any(raster[key] for key in ('dynamic_chain_types', 'raster_chain_types', 'viewport_chain_types'))
+                    or raster['dynamic_info_observed'] != (original['mode'] != 'static')
+                    or raster['dynamic_info_absent'] != (original['mode'] == 'static')
+                    or raster['raster_info_observed'] is not True or raster['raster_info_absent']
+                    or raster['viewport_info_observed'] != (original['mode'] != 'with_count')
+                    or raster['viewport_info_absent']):
+                raise ValueError('Owned raster declaration differs from its original controlled state')
         if (mask != UINT32 or compatible_mask != 255 or not push['layout_known']
                 or not push['host_little_endian'] or not bound_generation
                 or raw != raw_hex(original['fragment_push_hex'], 32)):
@@ -284,10 +551,14 @@ def audit_state(value, *, original=None, ordinal=None):
             'sampled_resource_known': False, 'coverage_known': False}
     if original is not None:
         result['owned_original_aliases_at_delivered_draw'] = [original[key] for key in ('push_command', 'viewport_command', 'scissor_command')]
+    if version == 2:
+        result.update(writer_state_schema_version=2, pipeline_facet_known=dict(facets),
+                      pipeline_recognized_rendering_flags=value['pipeline_recognized_rendering_flags'],
+                      fragment_shading_rate_known=False, coverage_known=False)
     return result
 
 
-def audit_receipt(receipt, controls, *, observer_enabled=True):
+def audit_receipt(receipt, controls, *, observer_enabled=True, require_facets=False):
     prefix = receipt['captured_writer_prefix']
     observed = receipt['source_blit']
     writer.audit_prefix(prefix, original=observed['original'],
@@ -310,6 +581,8 @@ def audit_receipt(receipt, controls, *, observer_enabled=True):
         if source not in event.get('draw_color_images', []):
             raise ValueError('Per-draw state is attached to an unrelated source lifetime')
         if observer_enabled:
+            if require_facets and event['writer_state'].get('schema_version') != 2:
+                raise ValueError('New FSR facet control requires a newly produced schema2 observation')
             if event['writer_state_original_pipeline_handle'] != controls[(present-1, index)]['pipeline_handle']:
                 raise ValueError('State pipeline was joined to a different raw original draw handle')
             results.append(audit_state(event['writer_state'], original=controls[(present-1, index)], ordinal=event['ordinal']))
@@ -320,13 +593,16 @@ def audit_receipt(receipt, controls, *, observer_enabled=True):
             'states': results}
 
 
-def audit_directory(directory, *, observer_enabled=True, shader_directory=None):
+def audit_directory(directory, *, observer_enabled=True, shader_directory=None, require_facets=False):
     directory = Path(directory)
     base = writer.audit_directory(directory, require_available=True, shader_directory=shader_directory)
     originals = [golden(row) for row in blit.json_lines(directory/'sampled-writer-fixture.jsonl')]
     controls = {(row['frame'], row['draw_index']): row for row in originals}
     if len(originals) != 128 or len(controls) != 128 or set(controls) != {(frame, draw) for frame in range(64) for draw in range(2)}:
         raise ValueError('Original fixture must retain exactly128 unique original draw controls')
+    flags = {row.get('pipeline_flags', 0) for row in originals}
+    if len(flags) != 1 or require_facets and flags != {FSR_ATTACHMENT}:
+        raise ValueError('Required FSR pipeline flag was not held identical throughout the original workload')
     features = {(row['dynamic_count_enabled'], row['maintenance6_enabled']) for row in originals}
     if len(features) != 1:
         raise ValueError('Fixture device features changed within one original device lifetime')
@@ -335,10 +611,10 @@ def audit_directory(directory, *, observer_enabled=True, shader_directory=None):
         receipts.extend(blit.decode(blit.read(path))['eyes'])
     for path in sorted(directory.glob('vulkan-*.jsonl')):
         receipts.extend(row for row in blit.json_lines(path) if row.get('event') == 'gpu_capture_lease')
-    rows = [audit_receipt(receipt, controls, observer_enabled=observer_enabled) for receipt in receipts]
+    rows = [audit_receipt(receipt, controls, observer_enabled=observer_enabled, require_facets=require_facets) for receipt in receipts]
     dynamic_count, maintenance6 = next(iter(features))
     compared = [state for row in rows for state in row['states']]
-    return {'schema_version': 1, 'observation_only': True, 'observer_enabled': observer_enabled,
+    result = {'schema_version': 1, 'observation_only': True, 'observer_enabled': observer_enabled,
             'original_draw_controls': 128, 'delivered_images': len(rows),
             'delivered_draw_states_compared': sum(row['draw_states_compared'] for row in rows),
             'delivered_viewport_mode_counts': {mode: sum(state['viewport_mode'] == mode for state in compared)
@@ -352,6 +628,11 @@ def audit_directory(directory, *, observer_enabled=True, shader_directory=None):
                                              | {row['push_command'] for row in originals}),
             'sampled_resource_known': False, 'coverage_known': False, 'xr_submission': False,
             'receipts': rows, 'input_sha256': base['input_sha256']}
+    if require_facets or any(row.get('writer_state_schema_version') == 2 for row in compared):
+        result.update(facet_schema_required=require_facets, application_pipeline_flags=next(iter(flags)),
+                      newly_produced_schema2_draws=sum(row.get('writer_state_schema_version') == 2 for row in compared),
+                      fragment_shading_rate_known=False)
+    return result
 
 
 def main():
@@ -359,10 +640,11 @@ def main():
     parser.add_argument('--validation', type=Path, required=True)
     parser.add_argument('--observer-disabled', action='store_true')
     parser.add_argument('--shader-directory', type=Path)
+    parser.add_argument('--require-facets', action='store_true', help='Require new schema2 states from the controlled FSR pipeline-flag configuration')
     args = parser.parse_args()
     print(json.dumps({'new_gpu_execution_performed': False,
                       'audit': audit_directory(args.validation, observer_enabled=not args.observer_disabled,
-                                               shader_directory=args.shader_directory)}, indent=2))
+                                               shader_directory=args.shader_directory, require_facets=args.require_facets)}, indent=2))
 
 
 if __name__ == '__main__':
