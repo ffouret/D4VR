@@ -16,6 +16,7 @@ struct Snapshot {
     std::vector<uint8_t> bytes;
     FrameCamera camera{};
     SourceBlitObservation sourceBlit{};
+    SourceBlitStages sourceBlitStages{};
 };
 enum class CaptureMode { cpuSnapshots, gpuStream };
 struct GpuFrame {
@@ -24,6 +25,7 @@ struct GpuFrame {
     VkFormat format{};VkExtent2D extent{};VkImage image{};VkQueue queue{};
     FrameCamera camera{};
     SourceBlitObservation sourceBlit{};
+    SourceBlitStages sourceBlitStages{};
     // Private owned image in TRANSFER_SRC_OPTIMAL. No XR pose/time or common
     // scene instant is inferred from the eye selection or present identifier.
 };
@@ -71,6 +73,7 @@ public:
     // Bounded CPU-only value snapshots (at most four), with no fence polling.
     // Recorded/submitted observations are not producer completion receipts.
     std::vector<std::pair<uint64_t,SourceBlitObservation>> sourceBlits() const;
+    std::vector<std::pair<uint64_t,SourceBlitStages>> sourceBlitStages() const;
     StreamStats stats() const;
     std::vector<Snapshot> presented(const VkPresentInfoKHR&,VkResult,uint64_t present,uint32_t selectedMask,uint64_t selectedDraws,const CameraInterval* camera=nullptr);
 };

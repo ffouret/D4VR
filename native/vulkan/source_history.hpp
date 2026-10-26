@@ -66,6 +66,10 @@ public:
     // event budgets. A known reference does not certify a retained event.
     HistoryBlitRef blit(VkCommandBuffer,VkImage,VkImageLayout,VkImage,VkImageLayout,uint32_t,const VkImageBlit*,VkFilter) noexcept;
     HistoryBlitRef blit(VkCommandBuffer,const VkBlitImageInfo2&) noexcept;
+    // Called only after the real Capture accepted this same original hook.
+    // Validates current command/lifetimes and admits only its source from now
+    // on; it cannot reconstruct excluded earlier writers or retain that BLIT.
+    bool admitCapturedBlit(VkCommandBuffer,VkImage source,VkImage destination,const HistoryBlitRef&) noexcept;
     void barrier(VkCommandBuffer,const VkDependencyInfo&) noexcept;
     void unknown(VkCommandBuffer,Gap) noexcept;
     // Mark ONLY a COPY that was actually selected by the readback producer.

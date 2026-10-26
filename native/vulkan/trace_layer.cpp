@@ -534,6 +534,10 @@ std::string sourceBlitJson(const d4vr::SourceBlitObservation& b){
         +",\"source_subresource\":"+layers(b.region.srcSubresource)+",\"destination_subresource\":"+layers(b.region.dstSubresource)
         +",\"source_offsets\":"+offsets(b.region.srcOffsets)+",\"destination_offsets\":"+offsets(b.region.dstOffsets)+"}";
 }
+std::string sourceBlitStagesJson(const d4vr::SourceBlitStages& stages){
+    return std::string("{\"recorded_known\":")+(stages.recordedKnown?"true":"false")+",\"submitted_known\":"+(stages.submittedKnown?"true":"false")
+        +",\"recorded\":"+sourceBlitJson(stages.recorded)+",\"submitted\":"+sourceBlitJson(stages.submitted)+"}";
+}
 void blitSubmissionReports(Device& d,uint64_t historySubmission) noexcept {
     try{if(!d.presentation || !d.sourceConsumerHistory || !historySubmission)return;
     for(const auto& value:d.presentation->sourceBlits())if(value.second.historySubmission==historySubmission && d.blitSubmitReports.fetch_add(1)<32)
@@ -548,7 +552,7 @@ void writePresentation(const Device& d,const d4vr::present::Snapshot& s){
         <<",\"format\":"<<s.format<<",\"bytes\":"<<s.bytes.size()<<",\"selected_draw_commands\":"<<s.selectedDraws<<",\"selected_eye_mask\":"<<s.selectedMask
         <<",\"single_eye_interval\":"<<((s.selectedDraws && s.selectedMask==(1u<<s.eye))?"true":"false")
         <<",\"pipeline_registry_at_export\":"<<pairsJson(d)
-        <<",\"camera_provenance\":"<<frameCameraJson(s.camera)<<",\"source_blit\":"<<sourceBlitJson(s.sourceBlit)
+        <<",\"camera_provenance\":"<<frameCameraJson(s.camera)<<",\"source_blit\":"<<sourceBlitJson(s.sourceBlit)<<",\"source_blit_stages\":"<<sourceBlitStagesJson(s.sourceBlitStages)
         <<",\"scope\":\"original_presentation_blit\",\"all_world_draws_verified\":false,\"same_instant_pair\":false,\"game_stereo_submitted\":false}\n";
     auto text=json.str();if(writePrivate(base+".json",text.data(),text.size()))logFile.write("\"event\":\"presentation_capture\",\"sequence\":"+std::to_string(s.sequence)+",\"eye\":"+std::to_string(s.eye));
 }
@@ -568,7 +572,7 @@ void writePosePair(Device& d,d4vr::present::DiagnosticPixels pixels){
     if(!writePrivate(base+".pixels",pixels.bytes.data(),pixels.bytes.size()))throw std::runtime_error("Diagnostic pair pixels export failed");
     std::string json="{\"schema_version\":1,\"mode\":\"successive_diagnostic\",\"input_origin\":\"external_diagnostic_sample\",\"actual_xr_pose_source\":false,\"xr_submission\":false,\"whole_scene_verified\":false,\"common_scene_time_known\":false,\"session\":"+std::to_string(sample.session)+",\"request\":"+std::to_string(sample.request)+",\"display_time\":"+std::to_string(sample.displayTime)
         +",\"diagnostic_sample\":"+quoted(d4vr::encode_diagnostic_pose(*pixels.request.pose).c_str())+",\"packet_sequence\":"+std::to_string(pixels.frame.successive->pose.packetSequence())+",\"width\":"+std::to_string(pixels.frame.extent.width)+",\"height\":"+std::to_string(pixels.frame.extent.height)+",\"format\":"+std::to_string(pixels.frame.format)+",\"bytes\":"+std::to_string(pixels.bytes.size())+",\"eyes\":[";
-    for(unsigned i=0;i<2;++i){const auto& e=pixels.frame.successive->eyes[i];if(i)json+=",";json+="{\"eye\":"+std::to_string(i)+",\"lease\":"+std::to_string(e.lease)+",\"capture_sequence\":"+std::to_string(e.captureSequence)+",\"present\":"+std::to_string(e.present)+",\"camera_provenance\":"+frameCameraJson(e.camera)+",\"source_blit\":"+sourceBlitJson(e.sourceBlit)+"}";}
+    for(unsigned i=0;i<2;++i){const auto& e=pixels.frame.successive->eyes[i];if(i)json+=",";json+="{\"eye\":"+std::to_string(i)+",\"lease\":"+std::to_string(e.lease)+",\"capture_sequence\":"+std::to_string(e.captureSequence)+",\"present\":"+std::to_string(e.present)+",\"camera_provenance\":"+frameCameraJson(e.camera)+",\"source_blit\":"+sourceBlitJson(e.sourceBlit)+",\"source_blit_stages\":"+sourceBlitStagesJson(e.sourceBlitStages)+"}";}
     json+="],\"preceding_fixed_view\":"+(pixels.precedingHold?fixedViewJson(*pixels.precedingHold):"null")+",\"observed_viewports\":"+viewportsJson(d)+"}\n";if(!writePrivate(base+".json",json.data(),json.size()))throw std::runtime_error("Diagnostic pair receipt export failed");
     logFile.write("\"event\":\"pose_capture_pair\",\"session\":"+std::to_string(sample.session)+",\"request\":"+std::to_string(sample.request)+",\"xr_submission\":false");
 }
@@ -604,7 +608,7 @@ void ensureCooperativeCapture(Device& d,VkQueue queue,const VkPresentInfoKHR& in
     d.cooperativeCapture=std::make_unique<d4vr::present::CooperativeCapture>(binding,*d.presentation,*d.cameraUpdates,chain->extent,chain->format,d.cameraMutex,d.poseEye,[&d](const auto& request,const auto& frame){
         auto directory=std::getenv("D4VR_SEQUENTIAL_CAPTURE_DIR");const auto& sample=request.pose->sample();
         std::string json="{\"mode\":\"successive_diagnostic\",\"pose_origin\":\"xrLocateViews\",\"whole_scene_verified\":false,\"common_scene_time_known\":false,\"session\":"+std::to_string(sample.session)+",\"request\":"+std::to_string(sample.request)+",\"display_time\":"+std::to_string(sample.displayTime)+",\"diagnostic_sample\":"+quoted(d4vr::encode_diagnostic_pose(*request.pose).c_str())+",\"packet_sequence\":"+std::to_string(frame.successive->pose.packetSequence())+",\"eyes\":[";
-        for(unsigned i=0;i<2;++i){const auto& e=frame.successive->eyes[i];if(i)json+=",";json+="{\"eye\":"+std::to_string(i)+",\"lease\":"+std::to_string(e.lease)+",\"capture_sequence\":"+std::to_string(e.captureSequence)+",\"present\":"+std::to_string(e.present)+",\"camera_provenance\":"+frameCameraJson(e.camera)+",\"source_blit\":"+sourceBlitJson(e.sourceBlit)+"}";}
+        for(unsigned i=0;i<2;++i){const auto& e=frame.successive->eyes[i];if(i)json+=",";json+="{\"eye\":"+std::to_string(i)+",\"lease\":"+std::to_string(e.lease)+",\"capture_sequence\":"+std::to_string(e.captureSequence)+",\"present\":"+std::to_string(e.present)+",\"camera_provenance\":"+frameCameraJson(e.camera)+",\"source_blit\":"+sourceBlitJson(e.sourceBlit)+",\"source_blit_stages\":"+sourceBlitStagesJson(e.sourceBlitStages)+"}";}
         json+="]}\n";auto path=std::string(directory)+"/xr-pair-"+std::to_string(sample.request)+".json";
         if(!writePrivate(path,json.data(),json.size()))throw std::runtime_error("Cooperative receipt export failed");
     },sourceScale);d.poseQueue=queue;
@@ -1353,6 +1357,7 @@ void captureBlit(const std::shared_ptr<Device>& d,VkCommandBuffer command,VkImag
             && c->second.flags==VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT && pool!=d->commandPools.end() && !(pool->second&VK_COMMAND_POOL_CREATE_PROTECTED_BIT);}}
     if(eye>1)return;
     try{if(d->presentation->record(sequence,uint32_t(eye),command,allowed,source,src,destination,dst,count,regions,filter,sourceHistory)){
+        D4_HISTORY(d,if(d->sourceConsumerHistory)d->sourceHistory->admitCapturedBlit(command,source,destination,sourceHistory));
         if(d->sourceConsumerHistory && d->blitRecordReports.fetch_add(1)<32)for(const auto& b:d->presentation->sourceBlits())if(b.first==sequence)
             logFile.write("\"event\":\"presentation_blit_recorded\",\"device\":"+std::to_string(d->id)+",\"sequence\":"+std::to_string(sequence)+",\"eye\":"+std::to_string(eye)+",\"command\":"+std::to_string(diagnosticHandle(command))+",\"source_blit\":"+sourceBlitJson(b.second));
         if(!d->gpuCaptureDryRun && !d->poseDiagnostic && !d->cooperativeDiagnostic)logFile.write("\"event\":\"presentation_recorded\",\"sequence\":"+std::to_string(sequence)+",\"eye\":"+std::to_string(eye));}
@@ -1614,6 +1619,7 @@ VKAPI_ATTR VkResult VKAPI_CALL d4QueuePresentKHR(VkQueue queue, const VkPresentI
                     +",\"selected_draws\":"+std::to_string(frame.selectedDraws)+",\"queue_family\":"+std::to_string(frame.queueFamily)
                     +",\"width\":"+std::to_string(frame.extent.width)+",\"height\":"+std::to_string(frame.extent.height)
                     +",\"camera_provenance\":"+frameCameraJson(frame.camera)
+                    +",\"source_blit\":"+sourceBlitJson(frame.sourceBlit)+",\"source_blit_stages\":"+sourceBlitStagesJson(frame.sourceBlitStages)
                     +",\"delivery_monotonic_for_eye\":"+(order==d4vr::FrameOrder::Result::accepted?"true":"false")
                     +",\"late_delivery_discarded\":"+(order==d4vr::FrameOrder::Result::stale?"true":"false")
                     +",\"retirement_submitted\":"+(retired?"true":"false")+",\"game_images_read_by_consumer\":false,\"xr_pose_known\":false,\"xr_submission\":false");

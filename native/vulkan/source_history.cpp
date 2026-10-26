@@ -36,6 +36,7 @@ struct Recording {
     bool known=false,truncated=false;std::optional<View> active;std::vector<View> colors;
     std::shared_ptr<const frame::Pipeline> original;uint64_t selected=0;bool substituted=false;
     std::vector<std::shared_ptr<const Event>> events;
+    HistoryBlitRef lastBlit{}; // One bounded same-hook marker; never an event/coverage claim.
 };
 struct CommandSnapshot {uint64_t recording=0,gaps=0,excluded=0;uint32_t batch=0,command=0,family=VK_QUEUE_FAMILY_IGNORED,eye=2;VkCommandBufferLevel level{};VkCommandBufferUsageFlags flags=0;bool known=false,truncated=false;std::vector<std::shared_ptr<const Event>> events;};
 struct Semaphore {uint64_t id=0;bool known=false,timeline=false;};
@@ -155,7 +156,7 @@ struct SourceHistory::Impl {
         auto e=std::make_shared<Event>(budget);e->ordinal=c.ordinal;e->kind=kind;e->image=image;e->eye=c.eye;c.events.push_back(e);return e;}
     HistoryBlitRef recordBlit(Recording& c,VkImage sourceHandle,VkImageLayout src,VkImage destinationHandle,VkImageLayout dst,uint32_t n,const VkImageBlit* regions,VkFilter filter){
         const auto source=image(sourceHandle),destination=image(destinationHandle);
-        HistoryBlitRef ref{session,source.id,destination.id,c.id,c.ordinal,false};
+        HistoryBlitRef ref{session,source.id,destination.id,c.id,c.ordinal,false};c.lastBlit=ref;
         if(!source.known || !destination.known)c.gaps|=flag(Gap::unknownResource);
         const bool eligible=admitted(source) || admitted(destination);
         if(!eligible){exclude(c,"blit_image");return ref;}
@@ -347,6 +348,18 @@ HistoryBlitRef SourceHistory::blit(VkCommandBuffer cb,const VkBlitImageInfo2& in
     for(uint32_t k=0;k<std::min(info.regionCount,16u);++k){const auto& r=info.pRegions[k];if(r.pNext)c->gaps|=flag(Gap::extension);regions[k].srcSubresource=r.srcSubresource;regions[k].dstSubresource=r.dstSubresource;std::copy(std::begin(r.srcOffsets),std::end(r.srcOffsets),std::begin(regions[k].srcOffsets));std::copy(std::begin(r.dstOffsets),std::end(r.dstOffsets),std::begin(regions[k].dstOffsets));}
     return p.recordBlit(*c,info.srcImage,info.srcImageLayout,info.dstImage,info.dstImageLayout,info.regionCount,regions.data(),info.filter);
 H_END return {};}
+bool SourceHistory::admitCapturedBlit(VkCommandBuffer cb,VkImage sourceHandle,VkImage destinationHandle,const HistoryBlitRef& ref) noexcept {H_BEGIN
+    if(!p.limits.consumerWindows || !ref || ref.observerSession!=p.session)return false;
+    // An admission receipt is not another original Vulkan command: do not
+    // advance its common ordinal or resolve it again when a lease is exported.
+    auto c=p.command(cb,false);if(!c || c->id!=ref.recording || c->ordinal!=ref.ordinal)return false;
+    const auto& original=c->lastBlit;
+    if(original.observerSession!=ref.observerSession || original.recording!=ref.recording || original.ordinal!=ref.ordinal
+        || original.sourceImage!=ref.sourceImage || original.destinationImage!=ref.destinationImage)return false;
+    const auto source=p.image(sourceHandle),destination=p.image(destinationHandle);
+    if(!source.known || !destination.known || source.id!=ref.sourceImage || destination.id!=ref.destinationImage)return false;
+    return p.admitEndpoint(*c,source);
+H_END return false;}
 void SourceHistory::barrier(VkCommandBuffer cb,const VkDependencyInfo& i) noexcept {H_BEGIN
     auto c=p.command(cb);if(!c)return;if(i.pNext)c->gaps|=flag(Gap::extension);if(i.imageMemoryBarrierCount && !i.pImageMemoryBarriers){c->gaps|=flag(Gap::missingRoute);return;}if(i.imageMemoryBarrierCount>64){c->truncated=true;++p.overflow;}
     for(uint32_t k=0;k<std::min(i.imageMemoryBarrierCount,64u);++k){const auto& b=i.pImageMemoryBarriers[k];auto source=p.image(b.image);if(p.limits.consumerWindows && !source.known)c->gaps|=flag(Gap::unknownResource);if(!source.candidate && !p.limits.consumerWindows)continue;if(p.limits.consumerWindows && !p.admitted(source)){p.exclude(*c,"barrier");continue;}auto e=p.event(*c,"barrier",source);if(!e)break;e->range=b.subresourceRange;e->layout=b.oldLayout;e->destinationLayout=b.newLayout;e->srcStage=b.srcStageMask;e->dstStage=b.dstStageMask;e->srcAccess=b.srcAccessMask;e->dstAccess=b.dstAccessMask;if(b.pNext)c->gaps|=flag(Gap::extension);}
@@ -431,7 +444,7 @@ std::string SourceHistory::report() const {try{auto& p=*impl;std::lock_guard<std
     j<<"],\"candidate_images_truncated\":"<<(totalCandidates>64?"true":"false")
         <<",\"limits\":{\"events_per_report\":"<<p.limits.eventsPerReport<<",\"occurrences_per_report\":"<<p.limits.occurrencesPerReport<<",\"events_per_recording\":"<<p.limits.eventsPerRecording<<",\"live_events\":"<<p.limits.liveEvents<<",\"snapshot_references\":"<<p.limits.snapshotReferences<<",\"occurrences\":"<<p.limits.occurrences<<",\"reports\":"<<p.limits.reports<<",\"serialized_bytes\":"<<p.limits.serializedBytes<<"}";
     if(p.limits.consumerWindows){
-        j<<",\"consumer_admission\":{\"scope\":\"configured_depth_candidates_and_declared_or_directed_live_endpoints\",\"outside_scope_complete\":false,\"event_absence_means_unused\":false,\"additional_live_endpoints\":"<<p.admittedEndpoints.size()<<",\"additional_endpoint_limit\":64,\"excluded_event_attempts\":"<<p.excludedEvents<<",\"excluded_by_kind\":{";
+        j<<",\"consumer_admission\":{\"scope\":\"configured_depth_candidates_declared_directed_or_accepted_capture_live_endpoints\",\"outside_scope_complete\":false,\"event_absence_means_unused\":false,\"additional_live_endpoints\":"<<p.admittedEndpoints.size()<<",\"additional_endpoint_limit\":64,\"excluded_event_attempts\":"<<p.excludedEvents<<",\"excluded_by_kind\":{";
         bool excludedComma=false;for(const auto& item:p.excludedKinds){if(excludedComma)j<<",";excludedComma=true;j.quoted(item.first);j<<":"<<item.second;}j<<"},\"overflow_causes\":{\"recording_event_limit\":"<<p.eventRecordingOverflow<<",\"live_event_limit\":"<<p.eventLiveOverflow<<",\"snapshot_reference_limit\":"<<p.referenceOverflow<<",\"additional_endpoint_limit\":"<<p.endpointOverflow<<"}}";
         j<<",\"consumer_observation_enabled\":true,\"descriptor_query_calls\":"<<p.queryCalls<<",\"descriptor_query_evicted\":"<<p.queryEvicted<<",\"descriptor_query_deduplicated\":"<<p.queryDeduplicated<<",\"descriptor_query_unknown\":"<<p.queryUnknown<<",\"late_descriptor_callbacks\":"<<p.queryLate<<",\"descriptor_query_catalog_scope\":\"live_bounded_cache_at_report\",\"descriptor_image_query_catalog\":[";
         bool comma=false;for(const auto& q:p.queries){if(comma)j<<",";comma=true;queryJson(j,*q.second);}j<<"]";

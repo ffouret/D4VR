@@ -36,4 +36,12 @@ struct SourceBlitObservation {
             && gpuComplete && status==SourceBlitStatus::producerComplete;
     }
 };
+struct SourceBlitStages {
+    // Values frozen at their actual CPU transitions. They do not advance when
+    // the producer completes, and a later ambiguity never rewrites them.
+    // In particular submitted is the FIRST successful original-submit callback;
+    // the final observation still determines occurrence ambiguity/completion.
+    SourceBlitObservation recorded{},submitted{};
+    bool recordedKnown=false,submittedKnown=false;
+};
 } // namespace d4vr

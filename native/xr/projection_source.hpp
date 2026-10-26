@@ -20,6 +20,7 @@ struct ProjectionEye {
     int64_t displayTime=0;
     uint64_t sceneSequence=0;
     SourceBlitObservation sourceBlit{};
+    SourceBlitStages sourceBlitStages{};
 };
 // Diagnostic receipts for two DIFFERENT game presentations. These retain the
 // requested pose and the observed packets, but make no whole-scene/time claim.
@@ -28,6 +29,7 @@ struct SuccessiveEye {
     uint64_t lease=0,captureSequence=0,present=0;
     FrameCamera camera{};
     SourceBlitObservation sourceBlit{};
+    SourceBlitStages sourceBlitStages{};
 };
 struct SuccessiveProjection {
     PoseRequest pose;

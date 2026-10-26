@@ -97,8 +97,13 @@ def validate(a):
             elif baseline != data['pixels']:
                 raise ValueError('CPU history observation changed original color or geometric depth bytes')
             history = [] # Independent source_consumer_validate checks exact COPY refs and expanded context afterwards.
+            blit = None
+            if a.require_blit_stages:
+                from blit_provenance_validate import audit_directory
+                blit = audit_directory(directory, require_bridge=enabled, require_stages=True)
             cases.append({'case': name, 'observer_enabled': enabled, 'actual_x11_wsi': True,
                           'original_controls': data['summary'], 'history_copy_matches': history,
+                          'delivered_blit_lifecycle_audit': blit,
                           'exact_original_reference_bytes': sum(map(len, data['pixels'].values())),
                           'all_original_bytes_unchanged': enabled, 'validation_errors': 0})
             print(name+': passed', flush=True)
@@ -110,7 +115,7 @@ def validate(a):
                'native/vulkan/depth_copy_readback.hpp', 'native/vulkan/depth_copy_readback.cpp',
                'tools/source_history_validate.py', 'tools/held_depth_validate.py',
                'native/tests/source_consumer_fixture.hpp',
-               'tools/source_consumer_run.py', 'native/tests/vulkan_trace_tests.cpp',
+               'tools/source_consumer_run.py', 'tools/blit_provenance_validate.py', 'native/tests/vulkan_trace_tests.cpp',
                'native/core/blit_provenance.hpp', 'native/vulkan/present_capture.hpp',
                'native/vulkan/present_capture.cpp', 'native/vulkan/capture_projection.cpp',
                'native/xr/projection_source.hpp', 'native/tests/present_stream_tests.cpp']
@@ -131,6 +136,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     for key in ('fixture', 'compiler', 'layer', 'validation-layer', 'unit', 'forwarding', 'output'):
         parser.add_argument('--'+key, type=Path, required=True)
+    parser.add_argument('--require-blit-stages', action='store_true', help='Audit saved lifecycle values against original app arguments/pixels')
     parser.add_argument('--runtime', type=Path)
     parser.add_argument('--validator', type=Path)
     try:

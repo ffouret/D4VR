@@ -130,3 +130,52 @@ The published layer also contains a CPU exception guard for secondary submit
 reporting. That final guard is checked on the owned WSI/CI path; the game
 experiment records the earlier layer hash explicitly and was not repeated for
 this reporting-only change.
+
+
+## Lifecycle values retained with delivered images
+
+`SourceBlitStages` now saves two full values inside each producer copy. The
+recorded value is frozen at acceptance, before any original submission succeeds.
+The submitted value is frozen by the first matching successful original-submit
+callback, before the producer fence completes. The final observation keeps its
+separate completion or ambiguity state. A later duplicate occurrence does not
+rewrite either earlier value or its counters.
+
+Snapshots, GPU leases and both projected-eye receipt types carry these values
+directly. Delivered JSON includes `source_blit_stages`, with explicit knowledge
+flags; unknown stages retain an absent default value. The capped secondary
+trace rows remain optional corroboration. Their exhaustion by discarded copies
+cannot erase the selected image's saved stages. These saved values are still
+producer observations, not independent application observations or GPU times.
+The existing producer fence and original success remain required for completion.
+
+A CPU dispatch mock holds a selected image across 80 other consumer-rejected
+and retired copies, delayed fences, command resets, source-handle regeneration
+and private-slot reuse. The selected and previously returned values stay exact.
+The stage payload adds 392 bytes per copy on the tested ABI, at most 1,568 bytes
+inside the existing four-copy pool; this is not a global CPU memory cap. The
+getters copy at most four values without Vulkan calls.
+
+The read-only auditor's `--require-stages` option verifies these delivered values
+against original application BLIT arguments and exported pixels even when
+secondary rows are absent. Available secondary rows must still match. The old
+mode remains available for earlier proofs. Falsifications cover edited phases,
+namespace/counter conflation, absent original success and invented completion.
+
+## Admission from the actual accepted source
+
+After Capture accepts an original BLIT, the layer can admit its exact live source
+into the existing SourceHistory endpoint budget. The observer checks its own
+session, the current command recording and ordinal, a last-original-BLIT marker,
+and both raw endpoints' live lifetimes. It never admits a similar-sized twin,
+a reused lifetime or a resource number from another process. The mode remains
+opt-in and shares the unchanged 64-additional-endpoint limit.
+
+This admission affects subsequent observed commands only. It cannot reconstruct
+writers excluded before that hook or change the old `eventRetained` flag.
+A per-delivered-image writer prefix frozen against the original submission is
+still required before the next targeted game observation. No new game or headset
+session is claimed by this change. The last Diablo result and its unresolved
+wide-field cutouts remain the preceding section's experiment.
+
+See the [lifecycle proof](proofs/blit-lifecycle-v1.json) for the new owned controls.

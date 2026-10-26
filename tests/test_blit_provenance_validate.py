@@ -5,6 +5,7 @@ from pathlib import Path
 import sys
 from tempfile import TemporaryDirectory
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]/'tools'))
 import blit_provenance_validate as audit
@@ -38,6 +39,27 @@ def fixture():
                'camera_provenance': {'copy_submit': {'first_submission': 40, 'last_submission': 40}},
                'whole_scene_verified': False, 'xr_pose_known': False}
     return [receipt], [original], [hook], [submit]
+
+
+def staged_fixture():
+    data = fixture()
+    data[0][0]['source_blit_stages'] = {
+        'recorded_known': True, 'submitted_known': True,
+        'recorded': deepcopy(data[2][0]['source_blit']),
+        'submitted': deepcopy(data[3][0]['source_blit'])}
+    return data
+
+
+def absent_blit():
+    value = source_blit('recorded')
+    value.update(status='absent', identity_known=False, region_known=False,
+                 source_image_handle=0, destination_image_handle=0,
+                 source_layout=0, destination_layout=0, filter=0,
+                 source_subresource=[0]*4, destination_subresource=[0]*4,
+                 source_offsets=[[0]*3 for _ in range(2)],
+                 destination_offsets=[[0]*3 for _ in range(2)])
+    value['original'] = dict(dict.fromkeys(audit.REF_FIELDS, 0), event_retained=False)
+    return value
 
 
 def history(observed=None):
@@ -249,6 +271,173 @@ class BlitProvenanceAudit(unittest.TestCase):
             self.assertIn('blit-fixture.jsonl', result['input_sha256'])
             (directory/'source-frame-2.pixels').write_bytes(b'new-pixels')
             with self.assertRaises(ValueError): audit.audit_directory(directory)
+
+
+class SavedBlitLifecycleAudit(unittest.TestCase):
+    def check(self, data=None, *, require_bridge=True):
+        # The evidence reader must never turn a CPU falsification into a
+        # compiler, GPU process, game, or other executable invocation.
+        with patch('subprocess.Popen', side_effect=AssertionError('No process in read-only audit')):
+            return audit.audit_receipts(*(data or staged_fixture()),
+                                        require_bridge=require_bridge, require_stages=True)
+
+    def test_saved_values_match_separate_original_hooks_and_final_fence(self):
+        result = self.check()
+        self.assertEqual(result['delivered_lifecycle_snapshot_pairs'], 1)
+        self.assertTrue(result['receipts'][0]['record_and_submit_snapshots_independently_available'])
+        self.assertTrue(result['receipts'][0]['delivered_record_and_submit_snapshots_available'])
+        self.assertFalse(result['gpu_execution_order_known'])
+
+    def test_old_proof_mode_remains_explicit_and_staged_mode_requires_values(self):
+        self.assertEqual(audit.audit_receipts(*fixture())['exact_original_blit_receipts'], 1)
+        with self.assertRaises(ValueError): self.check(fixture())
+        data = staged_fixture()
+        data[0][0]['source_blit_stages']['submitted']['gpu_complete'] = True
+        # Optional does not mean a present forged stage can be ignored.
+        with self.assertRaises(ValueError): audit.audit_receipts(*data)
+
+    def test_default_unknown_values_are_absent_and_cannot_be_later_reconstruction(self):
+        final = absent_blit()
+        empty = {'recorded_known': False, 'submitted_known': False,
+                 'recorded': absent_blit(), 'submitted': absent_blit()}
+        audit.source_blit_stages(empty, final)
+        with self.assertRaises(ValueError): audit.source_blit_stages(empty, final, require_known=True)
+        changes = [lambda s: s['recorded'].update(status='recorded'),
+                   lambda s: s['recorded'].update(source_image_handle=1001),
+                   lambda s: s['submitted']['original'].update(recording=21),
+                   lambda s: s['submitted']['source_offsets'][1].__setitem__(0, 8),
+                   lambda s: s['submitted']['source_subresource'].__setitem__(0, 1),
+                   lambda s: s['recorded'].update(filter=1)]
+        for mutate in changes:
+            value = deepcopy(empty); mutate(value)
+            with self.subTest(mutate=mutate), self.assertRaises(ValueError):
+                audit.source_blit_stages(value, final)
+
+    def test_saved_phase_flags_and_missing_fields_cannot_invent_success(self):
+        changes = [lambda s: s.pop('recorded'),
+                   lambda s: s.update(recorded_known=1),
+                   lambda s: s.update(submitted_known=False),
+                   lambda s: s.update(recorded_known=False, recorded=absent_blit()),
+                   lambda s: s['submitted'].update(original_submit_succeeded=False),
+                   lambda s: s['recorded'].update(status='submitted'),
+                   lambda s: s['submitted'].update(status='producer_complete'),
+                   lambda s: s['recorded'].update(history_submission=70),
+                   lambda s: s['submitted'].update(gpu_complete=True),
+                   lambda s: s['submitted'].update(bridge_known=True)]
+        for mutate in changes:
+            data = staged_fixture(); mutate(data[0][0]['source_blit_stages'])
+            with self.subTest(mutate=mutate), self.assertRaises((ValueError, KeyError)):
+                self.check(data)
+
+    def test_each_saved_lifetime_endpoint_direction_and_geometry_is_frozen(self):
+        changes = [lambda o: o['original'].update(observer_session=100),
+                   lambda o: o['original'].update(source_image=13),
+                   lambda o: o['original'].update(destination_image=14),
+                   lambda o: o['original'].update(recording=22),
+                   lambda o: o['original'].update(ordinal=8),
+                   lambda o: o['original'].update(event_retained=False),
+                   lambda o: o.update(source_image_handle=2001, destination_image_handle=1001),
+                   lambda o: o.update(source_layout=1),
+                   lambda o: o.update(destination_layout=1),
+                   lambda o: o.update(filter=0),
+                   lambda o: o['source_offsets'][1].__setitem__(0, 7),
+                   lambda o: o['destination_offsets'][1].__setitem__(1, 7),
+                   lambda o: o['source_subresource'].__setitem__(1, 1),
+                   lambda o: o['destination_subresource'].__setitem__(2, 1)]
+        for phase in ('recorded', 'submitted'):
+            for mutate in changes:
+                data = staged_fixture(); mutate(data[0][0]['source_blit_stages'][phase])
+                with self.subTest(phase=phase, mutate=mutate), self.assertRaises(ValueError):
+                    self.check(data)
+
+    def test_saved_submission_namespaces_and_camera_counter_remain_distinct(self):
+        for mutate in (lambda s: s.update(history_submission=40),
+                       lambda s: s.update(capture_submission=70),
+                       lambda s: s.update(history_submission_known=False, history_submission=0),
+                       lambda s: s.update(capture_submission_known=False, capture_submission=0)):
+            data = staged_fixture(); mutate(data[0][0]['source_blit_stages']['submitted'])
+            with self.assertRaises(ValueError): self.check(data)
+        data = staged_fixture()
+        for value in (data[0][0]['source_blit'], data[3][0]['source_blit'],
+                      data[0][0]['source_blit_stages']['submitted']):
+            value['history_submission'] = 40
+        self.assertEqual(self.check(data)['exact_original_blit_receipts'], 1)
+
+    def test_more_than_32_unselected_hook_rows_do_not_replace_delivered_saved_values(self):
+        # This models a capped-log evidence gap only. Native ownership tests
+        # separately exercise real private-slot churn and fence lifetimes.
+        data = staged_fixture()
+        old_hook, old_submit = deepcopy(data[2][0]), deepcopy(data[3][0])
+        data[2].clear(); data[3].clear()
+        for sequence in range(100, 132):
+            hook, submit = deepcopy(old_hook), deepcopy(old_submit)
+            hook['sequence'] = submit['sequence'] = sequence
+            data[2].append(hook); data[3].append(submit)
+        # A subsequent selected capture has no spare global hook row.
+        data[0][0]['delivery_present'] = 99
+        result = self.check(data)
+        row = result['receipts'][0]
+        self.assertEqual(row['capture_sequence'], 8)
+        self.assertEqual(row['source_present'], 3)
+        self.assertTrue(row['delivered_record_and_submit_snapshots_available'])
+        self.assertFalse(row['record_and_submit_snapshots_independently_available'])
+        self.assertEqual(result['original_application_blit_calls'], 1)
+        data[0][0]['source_blit_stages']['recorded']['original']['recording'] = 9999
+        with self.assertRaises(ValueError): self.check(data)
+
+    def test_missing_secondary_hooks_still_require_original_app_arguments(self):
+        data = staged_fixture(); data[2].clear(); data[3].clear()
+        self.assertEqual(self.check(data)['exact_original_blit_receipts'], 1)
+        for mutate in (lambda d: d[1].clear(),
+                       lambda d: d[1][0].update(original_submit_result=-4),
+                       lambda d: d[1][0].update(source_image_handle=1002),
+                       lambda d: d[0][0]['camera_provenance']['copy_submit'].update(last_submission=70)):
+            changed = deepcopy(data); mutate(changed)
+            with self.assertRaises(ValueError): self.check(changed)
+
+    def test_available_secondary_hooks_are_compared_even_with_saved_values(self):
+        for phase, index in (('recorded', 2), ('submitted', 3)):
+            data = staged_fixture()
+            data[index][0]['source_blit']['original']['recording'] = 9999
+            with self.subTest(phase=phase), self.assertRaises(ValueError): self.check(data)
+
+    def test_generic_history_unknown_keeps_real_lifecycle_without_promoting_identity(self):
+        data = staged_fixture()
+        values = (data[0][0]['source_blit'], data[0][0]['source_blit_stages']['recorded'],
+                  data[0][0]['source_blit_stages']['submitted'])
+        for value in values:
+            value.update(identity_known=False, bridge_known=False,
+                         history_submission=0, history_submission_known=False)
+            value['original'] = dict(dict.fromkeys(audit.REF_FIELDS, 0), event_retained=False)
+        data[2].clear(); data[3].clear()
+        result = self.check(data, require_bridge=False)
+        self.assertEqual(result['exact_original_blit_receipts'], 0)
+        self.assertEqual(result['generic_completed_capture_receipts'], 1)
+        self.assertEqual(result['delivered_lifecycle_snapshot_pairs'], 1)
+        with self.assertRaises(ValueError): self.check(data)
+
+    def test_saved_stage_scene_query_or_xr_claims_remain_refused(self):
+        for phase in ('recorded', 'submitted'):
+            for key in audit.NO_INFERENCE:
+                data = staged_fixture(); data[0][0]['source_blit_stages'][phase][key] = True
+                with self.subTest(phase=phase, key=key), self.assertRaises(ValueError): self.check(data)
+
+    def test_directory_requires_saved_values_without_global_rows_and_keeps_pixel_check(self):
+        with TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            receipts, originals, _, _ = staged_fixture()
+            receipt = receipts[0]; receipt['sequence'] = receipt.pop('capture_sequence')
+            (directory/'vulkan-123.jsonl').write_text('')
+            (directory/'blit-fixture.jsonl').write_text('\n'.join(json.dumps(row) for row in originals)+'\n')
+            (directory/'run.log').write_text('Owned fixture completed\n')
+            (directory/'image-123-1-8.json').write_text(json.dumps(receipt))
+            (directory/'image-123-1-8.pixels').write_bytes(b'old-pixels')
+            (directory/'source-frame-2.pixels').write_bytes(b'old-pixels')
+            result = audit.audit_directory(directory, require_stages=True)
+            self.assertEqual(result['delivered_lifecycle_snapshot_pairs'], 1)
+            self.assertEqual(result['original_pixel_bytes_compared'], 10)
+            (directory/'source-frame-2.pixels').write_bytes(b'new-pixels')
+            with self.assertRaises(ValueError): audit.audit_directory(directory, require_stages=True)
 
 
 if __name__ == '__main__':

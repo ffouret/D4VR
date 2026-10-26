@@ -25,6 +25,7 @@ REGION_FIELDS = ('source_subresource', 'destination_subresource', 'source_offset
 ARGUMENT_FIELDS = ('source_image_handle', 'destination_image_handle', 'source_layout',
                    'destination_layout', 'filter', *REGION_FIELDS)
 FROZEN_FIELDS = ('original', *ARGUMENT_FIELDS, 'identity_known', 'region_known')
+OBSERVATION_FIELDS = (*FROZEN_FIELDS, 'status', *FLAGS, 'history_submission', 'capture_submission')
 NO_INFERENCE = ('whole_scene_verified', 'common_scene_time_known', 'xr_pose_known',
                 'gpu_execution_order_known', 'descriptor_selected', 'gpu_read_proven',
                 'placement_known', 'initialized_pixels_verified')
@@ -144,6 +145,53 @@ def source_blit(value, *, require_bridge=False):
     return ref
 
 
+def source_blit_stages(value, final, *, require_known=False):
+    """Check saved lifecycle values, never manufacture them from final state.
+
+    These are producer-owned snapshots carried by the selected capture, not
+    independent original-application observations. The latter remain mandatory
+    in ``audit_receipts``. A missing global trace row does not erase a saved
+    value, and a saved value does not invent such a row.
+    """
+    if not isinstance(value, dict) or set(value) != {
+            'recorded_known', 'submitted_known', 'recorded', 'submitted'}:
+        raise ValueError('Saved BLIT lifecycle fields changed')
+    source_blit(final)
+    for phase in ('recorded', 'submitted'):
+        known = value[phase+'_known']
+        if type(known) is not bool:
+            raise ValueError('Saved BLIT lifecycle knowledge is not boolean')
+        snapshot = value[phase]
+        source_blit(snapshot)
+        if not known:
+            if (snapshot['status'] != 'absent' or any(snapshot[key] for key in FLAGS)
+                    or any(snapshot[key] for key in ('history_submission', 'capture_submission',
+                                                      'source_image_handle', 'destination_image_handle',
+                                                      'source_layout', 'destination_layout', 'filter'))
+                    or any(snapshot['original'][key] for key in REF_FIELDS)
+                    or snapshot['original']['event_retained']
+                    or any(any(coordinate for coordinate in offset)
+                           for key in ('source_offsets', 'destination_offsets') for offset in snapshot[key])
+                    or any(any(snapshot[key]) for key in ('source_subresource', 'destination_subresource'))):
+                raise ValueError('Unknown saved BLIT lifecycle was filled from later state')
+            continue
+        if snapshot['status'] != phase:
+            raise ValueError('Saved BLIT lifecycle phase was replaced with later state')
+        if snapshot['gpu_complete'] or snapshot['bridge_known']:
+            raise ValueError('Saved BLIT lifecycle phase contains future fence completion')
+        if any(snapshot[key] != final[key] for key in FROZEN_FIELDS):
+            raise ValueError('Saved BLIT lifetime/arguments differ from delivered capture')
+        if phase == 'submitted' and any(snapshot[key] != final[key]
+                for key in ('history_submission', 'capture_submission',
+                            'history_submission_known', 'capture_submission_known')):
+            raise ValueError('Saved original submission counters were retagged')
+    if value['submitted_known'] and not value['recorded_known']:
+        raise ValueError('Saved submission lacks its original saved record value')
+    if require_known and not (value['recorded_known'] and value['submitted_known']):
+        raise ValueError('Delivered capture lacks its saved record/submission snapshots')
+    return value
+
+
 def event_region(event):
     if event['mip_count'] != 1 or event['destination_mip_count'] != 1:
         raise ValueError('Original BLIT event does not preserve its single mip subresources')
@@ -213,7 +261,8 @@ def original_rows(rows):
     return result
 
 
-def audit_receipts(receipts, originals, hooks, submissions, wrappers=(), *, require_bridge=True):
+def audit_receipts(receipts, originals, hooks, submissions, wrappers=(), *, require_bridge=True,
+                   require_stages=False):
     """Join distinct evidence sources; never re-resolve a live handle/pose."""
     originals = original_rows(originals)
     journal, namespace = history_events(wrappers)
@@ -257,6 +306,11 @@ def audit_receipts(receipts, originals, hooks, submissions, wrappers=(), *, requ
             seen_leases.add(lease)
         observed = receipt['source_blit']
         ref = source_blit(observed, require_bridge=require_bridge)
+        stages = None
+        if 'source_blit_stages' in receipt:
+            stages = source_blit_stages(receipt['source_blit_stages'], observed, require_known=True)
+        elif require_stages:
+            raise ValueError('Delivered capture lacks saved BLIT lifecycle evidence')
         if namespace and ref[0] and ref[0] != namespace[2]:
             raise ValueError('Capture original ref crosses the audited observer namespace')
         hook = by_sequence.get(sequence)
@@ -265,7 +319,7 @@ def audit_receipts(receipts, originals, hooks, submissions, wrappers=(), *, requ
         generic_without_hook = (not require_bridge and hook is None and submit is None
                                 and not observed['identity_known'] and not any(ref)
                                 and not observed['original']['event_retained'] and not observed['bridge_known'])
-        if original is None or hook is None and not generic_without_hook:
+        if original is None or hook is None and not generic_without_hook and stages is None:
             raise ValueError('Delivered capture lacks exact original frame/record evidence')
         for key in ARGUMENT_FIELDS:
             if observed[key] != original[key]:
@@ -273,17 +327,24 @@ def audit_receipts(receipts, originals, hooks, submissions, wrappers=(), *, requ
         if (original['original_submit_result'] != 0 or not observed['original_submit_succeeded']
                 or not observed['gpu_complete'] or observed['status'] != 'producer_complete'):
             raise ValueError('Original record ref lacks its exact successful original submission')
-        if not generic_without_hook:
+        if hook is not None:
             frozen = hook['source_blit']
             if any(frozen[key] != observed[key] for key in FROZEN_FIELDS):
                 raise ValueError('Delivered BLIT lifetime/recording/ordinal/geometry was retagged')
             if hook['command'] != original['command']:
                 raise ValueError('Delivered BLIT was joined to a reset/reused foreign command')
-            if submit is None:
-                raise ValueError('Original record ref lacks its exact successful original submission')
+            if stages is not None and any(frozen[key] != stages['recorded'][key]
+                                          for key in OBSERVATION_FIELDS):
+                raise ValueError('Saved record snapshot differs from its independent trace row')
+        if submit is not None:
             submitted = submit['source_blit']
             if any(submitted[key] != observed[key] for key in (*FROZEN_FIELDS, 'history_submission', 'capture_submission')):
                 raise ValueError('Delivered BLIT differs from its original successful submission snapshot')
+            if stages is not None and any(submitted[key] != stages['submitted'][key]
+                                          for key in OBSERVATION_FIELDS):
+                raise ValueError('Saved submission snapshot differs from its independent trace row')
+        elif not generic_without_hook and stages is None:
+            raise ValueError('Original record ref lacks its exact successful original submission')
         retained = journal.get((ref, observed['history_submission']))
         if not observed['original']['event_retained'] and any(key[0] == ref for key in journal):
             raise ValueError('An unretained hook ref was asserted as a journal node')
@@ -303,7 +364,8 @@ def audit_receipts(receipts, originals, hooks, submissions, wrappers=(), *, requ
                         'capture_submission': observed['capture_submission'],
                         'event_retained_at_record': observed['original']['event_retained'],
                         'bridge_known': observed['bridge_known'],
-                        'record_and_submit_snapshots_independently_available': not generic_without_hook,
+                        'record_and_submit_snapshots_independently_available': hook is not None and submit is not None,
+                        'delivered_record_and_submit_snapshots_available': stages is not None,
                         'journal_event_independently_available': retained is not None,
                         'lease': receipt.get('lease'), 'producer_completion_receipt': True})
     if not audited:
@@ -313,6 +375,7 @@ def audit_receipts(receipts, originals, hooks, submissions, wrappers=(), *, requ
             'generic_completed_capture_receipts': sum(not row['bridge_known'] for row in audited), 'receipts': audited,
             'retained_journal_events_matched': sum(row['journal_event_independently_available'] for row in audited),
             'hook_only_original_refs_matched': sum(row['bridge_known'] and not row['event_retained_at_record'] for row in audited),
+            'delivered_lifecycle_snapshot_pairs': sum(row['delivered_record_and_submit_snapshots_available'] for row in audited),
             'generic_capture_ids_used_as_history_ids': False,
             'gpu_execution_order_known': False, 'descriptor_query_implies_read': False,
             'whole_scene_verified': False, 'common_scene_time_known': False, 'xr_submission': False}
@@ -322,7 +385,7 @@ def json_lines(path):
     return [decode(line) for line in read(path).splitlines() if line.strip()]
 
 
-def audit_directory(directory, *, require_bridge=True):
+def audit_directory(directory, *, require_bridge=True, require_stages=False):
     """Read a parent-run WSI directory. Filenames are evidence, never commands."""
     directory = Path(directory)
     traces = sorted(directory.glob('vulkan-*.jsonl'))
@@ -384,7 +447,8 @@ def audit_directory(directory, *, require_bridge=True):
             if row.get('xr_submission') is not False or row.get('game_images_read_by_consumer') is not False:
                 raise ValueError('Dry-run lease was promoted to actual XR or a pixel read')
             receipts.append(row)
-    result = audit_receipts(receipts, originals, hooks, submissions, wrappers, require_bridge=require_bridge)
+    result = audit_receipts(receipts, originals, hooks, submissions, wrappers,
+                            require_bridge=require_bridge, require_stages=require_stages)
     result['original_pixel_bytes_compared'] = exact_bytes
     paths = [path for path in sorted(directory.iterdir()) if path.is_file() and path.suffix in ('.json', '.jsonl', '.log', '.pixels')]
     result['input_sha256'] = {path.name: hashlib.sha256(read(path)).hexdigest() for path in paths}
@@ -395,10 +459,12 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--validation', type=Path, required=True, help='Already completed parent-run WSI case directory')
     parser.add_argument('--allow-generic', action='store_true', help='Accept completed generic captures while keeping exact History bridge count separate')
+    parser.add_argument('--require-stages', action='store_true', help='Require saved record/submission values carried by every delivered capture; missing global trace rows are kept explicit')
     args = parser.parse_args()
     print(json.dumps({'schema_version': 1, 'scope': 'independent_read_only_blit_audit',
                       'new_gpu_execution_performed_by_validator': False,
-                      'audit': audit_directory(args.validation, require_bridge=not args.allow_generic)}, indent=2))
+                      'audit': audit_directory(args.validation, require_bridge=not args.allow_generic,
+                                               require_stages=args.require_stages)}, indent=2))
 
 
 if __name__ == '__main__':

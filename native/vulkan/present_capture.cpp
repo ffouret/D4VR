@@ -147,6 +147,7 @@ bool Capture::record(uint64_t sequence,uint32_t eye,VkCommandBuffer command,bool
     auto& observation=c.snapshot.sourceBlit;observation.original=sourceBlit;observation.sourceImage=source;observation.destinationImage=destination;
     observation.region=region;observation.sourceLayout=srcLayout;observation.destinationLayout=dstLayout;observation.filter=filter;
     observation.identityKnown=bool(sourceBlit);observation.regionKnown=true;observation.status=SourceBlitStatus::recorded;
+    c.snapshot.sourceBlitStages.recorded=observation;c.snapshot.sourceBlitStages.recordedKnown=true;
     c.markerResult=c.retireResult=VK_NOT_READY;c.queue=VK_NULL_HANDLE;c.family=VK_QUEUE_FAMILY_IGNORED;
     if(p.mode==CaptureMode::gpuStream){c.lease=++p.leaseHigh;p.sequenceHigh=sequence;}
     VkImageMemoryBarrier barrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};barrier.dstAccessMask=VK_ACCESS_TRANSFER_WRITE_BIT;barrier.oldLayout=VK_IMAGE_LAYOUT_UNDEFINED;barrier.newLayout=VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
@@ -177,7 +178,8 @@ void Capture::submitted(VkQueue queue,const std::vector<VkCommandBuffer>& comman
         if(c->queued){observation.status=SourceBlitStatus::ambiguous;observation.gpuComplete=false;continue;}
         observation.originalSubmitSucceeded=true;observation.captureSubmission=submission;observation.captureSubmissionKnown=submission!=0;
         observation.historySubmission=historySubmission;observation.historySubmissionKnown=historySubmission!=0;
-        observation.status=occurrences==1?SourceBlitStatus::submitted:SourceBlitStatus::ambiguous;
+        observation.status=SourceBlitStatus::submitted;c->snapshot.sourceBlitStages.submitted=observation;c->snapshot.sourceBlitStages.submittedKnown=true;
+        if(occurrences!=1)observation.status=SourceBlitStatus::ambiguous;
         c->queued=true;c->queue=queue;c->family=queueFamily;c->snapshot.camera.copySubmit=camera_observation(camera,c->snapshot.eye,submission);c->markerResult=p.QueueSubmit(queue,0,nullptr,c->fence);
     }
 }
@@ -202,7 +204,7 @@ std::vector<GpuFrame> Capture::presentedGpu(const VkPresentInfoKHR& info,VkResul
         if(c->issued || !p.eligible(*c) || c->markerResult!=VK_SUCCESS || p.GetFenceStatus(p.device,c->fence)!=VK_SUCCESS)continue;
         if(c->snapshot.sourceBlit.status==SourceBlitStatus::submitted){c->snapshot.sourceBlit.gpuComplete=true;c->snapshot.sourceBlit.status=SourceBlitStatus::producerComplete;}
         const auto& s=c->snapshot;c->issued=true;++p.counters.leasesIssued;
-        out.push_back({c->lease,s.sequence,s.present,s.selectedDraws,s.eye,s.selectedMask,c->family,s.format,s.extent,c->image,c->queue,s.camera,s.sourceBlit});
+        out.push_back({c->lease,s.sequence,s.present,s.selectedDraws,s.eye,s.selectedMask,c->family,s.format,s.extent,c->image,c->queue,s.camera,s.sourceBlit,s.sourceBlitStages});
     }
     return out;
 }
@@ -218,6 +220,11 @@ bool Capture::retire(uint64_t lease,VkQueue queue) {
 std::vector<std::pair<uint64_t,SourceBlitObservation>> Capture::sourceBlits() const {
     auto& p=*impl;std::lock_guard<std::mutex> lock(p.mutex);std::vector<std::pair<uint64_t,SourceBlitObservation>> out;out.reserve(p.copies.size());
     for(const auto& c:p.copies)out.emplace_back(c->snapshot.sequence,c->snapshot.sourceBlit);
+    return out;
+}
+std::vector<std::pair<uint64_t,SourceBlitStages>> Capture::sourceBlitStages() const {
+    auto& p=*impl;std::lock_guard<std::mutex> lock(p.mutex);std::vector<std::pair<uint64_t,SourceBlitStages>> out;out.reserve(p.copies.size());
+    for(const auto& c:p.copies)out.emplace_back(c->snapshot.sequence,c->snapshot.sourceBlitStages);
     return out;
 }
 StreamStats Capture::stats() const {

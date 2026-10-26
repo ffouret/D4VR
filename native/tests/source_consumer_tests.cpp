@@ -418,6 +418,61 @@ int main(int argc,char** argv)try{
         const auto admitted=in.blit(history,handle<VkImage>(269),in.screen);check(admitted && admitted.eventRetained);history.image(handle<VkImage>(200),info);check(!in.blit(history,handle<VkImage>(200),in.color).eventRetained);
         const auto report=save(saved,"narrow_admission_endpoint_bound_and_removal",history);check(report.at("consumer_admission").at("additional_live_endpoints").u()==64);
     }
+    // Only the actual accepted hook's current live source can seed this scope.
+    // Earlier excluded writes are unavailable; admission creates no retroactive
+    // events and leaves the common original-call ordinal unchanged.
+    {Limits limits;limits.consumerWindows=true;SourceHistory history({4,4},VK_FORMAT_D32_SFLOAT,8117,limits);Inputs in;in.setup(history);
+        auto colorInfo=in.image;colorInfo.format=VK_FORMAT_R8G8B8A8_UNORM;const auto twin=handle<VkImage>(501),unlinked=handle<VkImage>(502);history.image(twin,colorInfo);history.image(unlinked,colorInfo);
+        auto colorOnly=in.rendering;colorOnly.pDepthAttachment=nullptr;history.beginRendering(in.command,colorOnly);history.draw(in.command,0);history.endRendering(in.command);
+        const auto original=in.blit(history,in.color,in.screen);check(original && !original.eventRetained && original.ordinal==4);
+        auto edited=original;++edited.observerSession;check(!history.admitCapturedBlit(in.command,in.color,in.screen,edited));
+        edited=original;++edited.recording;check(!history.admitCapturedBlit(in.command,in.color,in.screen,edited));
+        edited=original;++edited.ordinal;check(!history.admitCapturedBlit(in.command,in.color,in.screen,edited));
+        edited=original;edited.sourceImage=history.imageRef(twin).image;check(!history.admitCapturedBlit(in.command,twin,in.screen,edited));
+        edited=original;edited.destinationImage=history.imageRef(unlinked).image;check(!history.admitCapturedBlit(in.command,in.color,unlinked,edited));
+        check(!history.admitCapturedBlit(in.command,twin,in.screen,original) && !history.admitCapturedBlit(in.command,in.color,unlinked,original));
+        check(!history.admitCapturedBlit(handle<VkCommandBuffer>(999),in.color,in.screen,original));
+        check(JsonParser(history.report()).parse().at("live_event_nodes").u()==0);
+        check(history.admitCapturedBlit(in.command,in.color,in.screen,original));check(history.admitCapturedBlit(in.command,in.color,in.screen,original));
+        const auto admitted=JsonParser(history.report()).parse();check(admitted.at("live_event_nodes").u()==0 && admitted.at("consumer_admission").at("additional_live_endpoints").u()==1);
+        const auto excluded=in.blit(history,in.screen,twin);check(excluded && !excluded.eventRetained && excluded.ordinal==original.ordinal+1);
+        check(!history.admitCapturedBlit(in.command,in.color,in.screen,original)); // An intervening original hook makes it stale.
+        in.begin(history);history.beginRendering(in.command,colorOnly);history.draw(in.command,0);history.endRendering(in.command);
+        const auto written=JsonParser(history.report()).parse();check(written.at("live_event_nodes").u()==3);
+        const auto transfer=in.blit(history,in.color,in.screen);check(transfer && transfer.eventRetained);
+        const auto twinTransfer=in.blit(history,twin,unlinked);check(twinTransfer && !twinTransfer.eventRetained);
+        const auto report=save(saved,"accepted_capture_source_admission_is_live_exact_and_forward_only",history);
+        check(report.at("live_event_nodes").u()==4 && report.at("consumer_admission").at("additional_live_endpoints").u()==2 && !report.at("consumer_admission").at("outside_scope_complete").b());
+    }
+    // COPY labels, reset generations, handle reuse and labels from another
+    // observer cannot masquerade as the latest original BLIT hook.
+    {Limits limits;limits.consumerWindows=true;SourceHistory history({4,4},VK_FORMAT_D32_SFLOAT,8118,limits);Inputs in;in.setup(history);
+        const auto copy=history.sourceCopy(in.command,in.copy);check(copy);const d4vr::HistoryBlitRef forged{copy.observerSession,copy.sourceImage,copy.destinationImage,copy.recording,copy.ordinal,false};
+        check(!history.admitCapturedBlit(in.command,in.source,in.destination,forged));
+        const auto original=in.blit(history,in.color,in.screen);check(original && !original.eventRetained);history.reset(in.command);in.begin(history);
+        check(!history.admitCapturedBlit(in.command,in.color,in.screen,original));
+        const auto reused=in.blit(history,in.color,in.screen);check(reused && reused.recording!=original.recording && !reused.eventRetained);
+        history.removeImage(in.color);auto info=in.image;info.format=VK_FORMAT_R8G8B8A8_UNORM;history.image(in.color,info);check(!history.admitCapturedBlit(in.command,in.color,in.screen,reused));
+        const auto current=in.blit(history,in.color,in.screen);check(current.sourceImage!=reused.sourceImage && !current.eventRetained);check(history.admitCapturedBlit(in.command,in.color,in.screen,current));
+        SourceHistory other({4,4},VK_FORMAT_D32_SFLOAT,8119,limits);Inputs twin;twin.setup(other);const auto foreign=in.blit(other,twin.color,twin.screen);
+        check(!other.admitCapturedBlit(twin.command,twin.color,twin.screen,current) && !history.admitCapturedBlit(in.command,in.color,in.screen,foreign));
+        history.removeImage(in.screen);check(!history.admitCapturedBlit(in.command,in.color,in.screen,current));
+        const auto report=save(saved,"accepted_capture_source_rejects_forged_reset_reused_and_foreign_refs",history);check(report.at("consumer_admission").at("additional_live_endpoints").u()==1);
+    }
+    {Limits limits;limits.consumerWindows=true;limits.liveEvents=0;SourceHistory history({4,4},VK_FORMAT_D32_SFLOAT,8120,limits);Inputs in;in.setup(history);
+        const auto original=in.blit(history,in.color,in.screen);check(original && !original.eventRetained);check(history.admitCapturedBlit(in.command,in.color,in.screen,original));
+        const auto budgeted=in.blit(history,in.color,in.screen);check(budgeted && !budgeted.eventRetained && budgeted.ordinal==original.ordinal+1);
+        const auto report=save(saved,"accepted_capture_source_admission_independent_from_event_budget",history);check(report.at("live_event_nodes").u()==0 && report.at("consumer_admission").at("overflow_causes").at("live_event_limit").u()==1);
+        SourceHistory disabled({4,4},VK_FORMAT_D32_SFLOAT,8121);Inputs off;off.setup(disabled);const auto copy=disabled.sourceCopy(off.command,off.copy);check(copy);
+        const d4vr::HistoryBlitRef forged{copy.observerSession,copy.sourceImage,copy.destinationImage,copy.recording,copy.ordinal,false};check(!disabled.admitCapturedBlit(off.command,off.source,off.destination,forged));
+        check(!JsonParser(disabled.report()).parse().has("consumer_admission"));
+    }
+    {Limits limits;limits.consumerWindows=true;SourceHistory history({4,4},VK_FORMAT_D32_SFLOAT,8122,limits);Inputs in;in.setup(history);auto info=in.image;info.format=VK_FORMAT_R8G8B8A8_UNORM;
+        d4vr::HistoryBlitRef last;for(unsigned k=0;k<65;++k){const auto source=handle<VkImage>(600+k);history.image(source,info);last=in.blit(history,source,in.screen);check(last && !last.eventRetained);check(history.admitCapturedBlit(in.command,source,in.screen,last)==(k<64));}
+        const auto bounded=JsonParser(history.report()).parse();check(bounded.at("live_event_nodes").u()==0 && bounded.at("consumer_admission").at("additional_live_endpoints").u()==64 && bounded.at("consumer_admission").at("overflow_causes").at("additional_endpoint_limit").u()==1);
+        history.removeImage(handle<VkImage>(600));check(history.admitCapturedBlit(in.command,handle<VkImage>(664),in.screen,last));
+        const auto report=save(saved,"accepted_capture_source_admission_obeys_live_endpoint_cap",history);check(report.at("consumer_admission").at("additional_live_endpoints").u()==64 && report.at("live_event_nodes").u()==0);
+    }
     if(argc>1){std::ofstream out(argv[1]);out<<"{\"cases\":[";for(size_t n=0;n<saved.size();++n){if(n)out<<',';out<<"{\"name\":\""<<saved[n].first<<"\",\"report\":"<<saved[n].second<<'}';}out<<"]}\n";check(bool(out));}
     std::cout<<"{\"source_consumer_observation_passed\":true,\"cases\":"<<saved.size()<<",\"assertions\":"<<assertions<<",\"gpu_dispatch_waits_or_rejections\":0}\n";return 0;
 }catch(const std::exception& error){std::cerr<<error.what()<<'\n';return 1;}
