@@ -46,7 +46,7 @@ def validate(a):
             for eye,side in enumerate(('left','right')):
                 file=directory/(side+'.bin');file.write_bytes(eye_control.encode(eye,separation=.128));file.chmod(0o600);variables['D4VR_PAIR_'+side.upper()+'_FILE']=str(file)
             command=paired_capture.host_command()+['/usr/bin/env']
-            for key in ('VK_LAYER_PATH','VK_INSTANCE_LAYERS','VK_ADD_LAYER_PATH','D4VR_TRACE_XR_BINDING','D4VR_LAYER_REPLAY_POC','D4VR_FRAME_TRACE','D4VR_EYE_STATE_FILE','D4VR_PAIR_LEFT_FILE','D4VR_PAIR_RIGHT_FILE','D4VR_SEQUENTIAL_CAPTURE_DIR','D4VR_GPU_CAPTURE_DRY_RUN','D4VR_GPU_CAMERA_UPDATES','D4VR_XR_LOADER','D4VR_TRACE_DIR','D4VR_POSE_CAPTURE_DIAGNOSTIC','D4VR_POSE_FIXTURE_SHORT','D4VR_POSE_FIXTURE_FOREIGN','D4VR_POSE_FIXTURE_CANCEL','D4VR_POSE_FIXTURE_CALIBRATED','D4VR_METRIC_SOURCE_DEPTH_SCALE','D4VR_DIAGNOSTIC_VIEW_HOLD','D4VR_POSE_FIXTURE_MONOSCOPIC'):command+=['-u',key]
+            for key in ('VK_LAYER_PATH','VK_INSTANCE_LAYERS','VK_ADD_LAYER_PATH','D4VR_TRACE_XR_BINDING','D4VR_LAYER_REPLAY_POC','D4VR_FRAME_TRACE','D4VR_EYE_STATE_FILE','D4VR_PAIR_LEFT_FILE','D4VR_PAIR_RIGHT_FILE','D4VR_SEQUENTIAL_CAPTURE_DIR','D4VR_GPU_CAPTURE_DRY_RUN','D4VR_GPU_CAMERA_UPDATES','D4VR_XR_LOADER','D4VR_TRACE_DIR','D4VR_HELD_DEPTH_COLOR_DIAGNOSTIC','D4VR_POSE_CAPTURE_DIAGNOSTIC','D4VR_POSE_FIXTURE_SHORT','D4VR_POSE_FIXTURE_FOREIGN','D4VR_POSE_FIXTURE_CANCEL','D4VR_POSE_FIXTURE_CALIBRATED','D4VR_METRIC_SOURCE_DEPTH_SCALE','D4VR_DIAGNOSTIC_VIEW_HOLD','D4VR_POSE_FIXTURE_MONOSCOPIC'):command+=['-u',key]
             command+=[k+'='+v for k,v in variables.items()]
             if runtime:command+=[str(a.runtime.resolve()),'--batch','--']
             command+=[str(a.fixture.resolve()),*map(str,shaders),str(directory)]

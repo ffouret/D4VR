@@ -10,6 +10,27 @@ répond pas à cet objectif.
 
 ## État du projet
 
+Le [diagnostic combiné profondeur/couleur sous une vue maintenue](docs/HELD_DEPTH_COLOR.md)
+est maintenant implémenté. Quatre contrôles réels en fenêtre, natifs et dans le
+runtime Steam, vérifient des triangles écrivant leur profondeur, les images couleur
+et les paquets caméra exacts. Les 67 108 864 octets de références originales restent
+identiques avec le diagnostic activé ; les demandes prématurées ou après arrêt sont
+refusées. Les régressions et 16 contrôles de preuves altérées passent. Cela prépare
+une comparaison des zones manquantes dans Diablo ; ce laboratoire ne prouve pas
+encore leur cause et aucune nouvelle image du jeu n’est envoyée au casque.
+
+Un [nouvel essai réel dans Diablo](docs/proofs/diablo-held-depth-color-v1.json)
+obtient trois profondeurs D24 et six paires couleur successives : référence, champ
+élargi et retour. Les vues sont maintenues plus de cinq secondes côté hôte, avec
+paquets et identités d’origine conservés. Le relevé dure 18 secondes ; sortie
+normale et originaux inchangés. La comparaison des régions manquantes reste
+partielle, sans preuve d’un même instant ni d’une réparation de la couverture.
+La comparaison retrouve 48 zones suivant l’optique en couleur et profondeur.
+Certaines découpes ont une profondeur saturée ; une autre zone sombre garde une
+profondeur variable qui diffère pourtant de la référence projetée. La cause ne
+peut donc pas encore être attribuée au seul culling ou au seul traitement couleur.
+
+
 Le [producteur borné de profondeur au point COPY](docs/DEPTH_COPY_READBACK.md)
 est maintenant implémenté dans la couche Vulkan. Il conserve ses buffers et fences,
 invalide les anciennes lectures avant une nouvelle soumission et préserve les

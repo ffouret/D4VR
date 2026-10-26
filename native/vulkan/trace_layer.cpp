@@ -32,6 +32,7 @@
 #define D4_COPY(d, ...) if((d)->copyReadback){try{__VA_ARGS__;}catch(...){(d)->copyReadback->halt();}}
 #include "../core/diagnostic_pose.hpp"
 #include "../core/frame_order.hpp"
+#include "../core/held_depth_mode.hpp"
 #ifdef D4VR_LAYER_REPLAY_POC
 #include "layer_poc.hpp"
 #define D4_POC(d, ...) if ((d)->poc) { try { __VA_ARGS__; } catch (...) { if((d)->poc)(d)->poc->disable(); } }
@@ -235,7 +236,9 @@ struct Device {
     std::unordered_map<VkCommandPool,VkCommandPoolCreateFlags> commandPools;
     std::unordered_map<VkCommandPool,uint32_t> depthPoolFamilies;
     std::unique_ptr<d4vr::depth::Readback> depthReadback;
-    std::unique_ptr<d4vr::depth::CopyReadback> copyReadback;bool copyRequested=false;
+    std::unique_ptr<d4vr::depth::CopyReadback> copyReadback;bool copyRequested=false,heldDepth=false;
+    std::atomic<uint64_t> heldDepthRequestHigh{0},heldDepthRejected{0};
+    std::atomic<bool> heldExportFault{false};
     uint64_t copyReports=0,copyStatusRequest=0;
     std::atomic<uint64_t> copyPollUs{0};
     std::unique_ptr<d4vr::depth::Audit> depthAudit;bool depthAuditRequested=false;
@@ -258,6 +261,8 @@ struct Device {
     bool gpuCaptureDryRun=false;std::atomic<uint64_t> gpuCaptureSequence{0};d4vr::FrameOrder gpuFrameOrder;
     bool poseDiagnostic=false,cooperativeDiagnostic=false,fixedViewHold=false;std::atomic<bool> poseCopyActive{false};std::atomic<uint32_t> poseEye{2};VkQueue poseQueue{};
     std::unique_ptr<d4vr::present::DiagnosticCapture> poseCapture;
+    std::optional<d4vr::present::DiagnosticPixels> deferredPosePixels;
+    std::mutex diagnosticExportMutex;
 #ifdef D4VR_COOPERATIVE_XR
     std::unique_ptr<d4vr::present::CooperativeCapture> cooperativeCapture;
 #endif
@@ -361,20 +366,20 @@ std::string frameCameraJson(const d4vr::FrameCamera& frame){
         +",\"same_diagnostic_packet\":"+(frame.sameDiagnosticPacket()?"true":"false")+",\"whole_scene_verified\":false,\"xr_pose_known\":false,\"common_scene_time_known\":false}";
 }
 bool cameraBefore(Device& d,VkQueue q){
-    if(d.cameraFault)return false;
+    if(d.cameraFault){if(d.heldDepth && d.copyReadback)d.copyReadback->halt();return false;}
     try{auto old=d.cameraUpdates->stats().updates;d.cameraUpdates->before(q);auto s=d.cameraUpdates->stats();
         if(d.poseCapture){d.poseCapture->after(q);d.poseEye.store(d.poseCapture->wantedEye(),std::memory_order_release);}
         D4_COOP((&d),d.cooperativeCapture->after());
         if(s.updates!=old && (s.updates<=16 || s.updates%64==0))logFile.write("\"event\":\"camera_update_queued\",\"diagnostic\":"+cameraJson(*d.cameraUpdates));
         return true;}
-    catch(const std::exception& e){d.cameraFault=true;logFile.write("\"event\":\"camera_update_fatal\",\"reason\":"+quoted(e.what()));return false;}
+    catch(const std::exception& e){d.cameraFault=true;if(d.heldDepth && d.copyReadback)d.copyReadback->halt();logFile.write("\"event\":\"camera_update_fatal\",\"reason\":"+quoted(e.what()));return false;}
 }
 void cameraAfter(Device& d,VkQueue q){
-    try{d.cameraUpdates->after(q);}catch(const std::exception& e){d.cameraFault=true;logFile.write("\"event\":\"camera_update_fatal\",\"reason\":"+quoted(e.what()));}
+    try{d.cameraUpdates->after(q);}catch(const std::exception& e){d.cameraFault=true;if(d.heldDepth && d.copyReadback)d.copyReadback->halt();logFile.write("\"event\":\"camera_update_fatal\",\"reason\":"+quoted(e.what()));}
 }
 bool poseBefore(Device& d,VkQueue q){
-    try{D4_COOP((&d),if(!d.cooperativeCapture->allowsQueue(q))return false;d.cooperativeCapture->before(q));if(d.poseCapture)d.poseCapture->before(q);return !d.cameraFault;}
-    catch(const std::exception& e){d.cameraFault=true;d.poseEye.store(2);logFile.write("\"event\":\"pose_capture_error\",\"reason\":"+quoted(e.what()));return false;}
+    try{D4_COOP((&d),if(!d.cooperativeCapture->allowsQueue(q))return false;d.cooperativeCapture->before(q));if(d.poseCapture)d.poseCapture->before(q);if(d.heldDepth && d.poseCapture && d.poseCapture->stats().fault){d.cameraFault=true;d.copyReadback->halt();}return !d.cameraFault;}
+    catch(const std::exception& e){d.cameraFault=true;if(d.heldDepth && d.copyReadback)d.copyReadback->halt();d.poseEye.store(2);logFile.write("\"event\":\"pose_capture_error\",\"reason\":"+quoted(e.what()));return false;}
 }
 uint64_t captureRequest(const char* name,uint64_t fallback=0){
     auto directory=std::getenv("D4VR_SEQUENTIAL_CAPTURE_DIR");if(!directory || !*directory)return fallback;
@@ -433,34 +438,48 @@ void writeDepth(Device& d){
     }
 }
 void copyRequest(Device& d){
-    if(!d.copyReadback || d.copyReadback->stats().halted || d.copyReadback->stats().recorded>=8)return;
+    if(!d.copyReadback)return;
+    if(!d.heldDepth && (d.copyReadback->stats().halted || d.copyReadback->stats().recorded>=8))return;
     const auto now=uint64_t(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now().time_since_epoch()).count());auto prior=d.copyPollUs.load();
     if(now<prior+20000 || !d.copyPollUs.compare_exchange_strong(prior,now))return;
-    if(frameRequest("depth-copy.stop")==1){d.copyReadback->halt();return;}
+    if(frameRequest("depth-copy.stop")==1 || (d.heldDepth && captureRequest("pose.stop")==1)){d.copyReadback->halt();if(!d.heldDepth)return;}
     const auto dir=std::getenv("D4VR_TRACE_DIR");if(!dir)return;const auto path=std::string(dir)+"/depth-copy.request";
     int fd=open(path.c_str(),O_RDONLY|O_CLOEXEC|O_NOFOLLOW|O_NONBLOCK);if(fd<0)return;struct stat st{};
     if(fstat(fd,&st)!=0 || !S_ISREG(st.st_mode) || st.st_size<=0 || st.st_size>128){close(fd);return;}char bytes[129]{};auto n=read(fd,bytes,sizeof(bytes));close(fd);if(n<=0 || n>128)return;
-    auto request=d4vr::depth::decode_request(std::string(bytes,size_t(n)));if(request && d.copyReadback->arm(*request))logFile.write("\"event\":\"depth_copy_armed\",\"request\":"+std::to_string(request->sequence));
+    auto request=d4vr::depth::decode_request(std::string(bytes,size_t(n)));if(!request)return;
+    std::optional<d4vr::EyeState> phase;
+    std::unique_lock<std::mutex> cameraLock(d.cameraMutex,std::defer_lock);
+    if(d.heldDepth){
+        cameraLock.lock();if(request->sequence<=d.heldDepthRequestHigh.load())return;d.heldDepthRequestHigh.store(request->sequence);
+        d4vr::present::DiagnosticStats state;if(d.poseCapture)state=d.poseCapture->stats();
+        auto reason=d4vr::held_depth_request({bool(d.poseCapture),state.active,state.consumerPending,state.fixedViewHeld,state.stopped || captureRequest("pose.stop")==1,state.fault,d.cameraFault || d.heldExportFault.load() || d.copyReadback->stats().halted});
+        if(!reason && (!d.cameraUpdates || !d4vr::monoscopic_pair(d4vr::CameraPair(d.cameraUpdates->packets()))))reason="held_depth_packet_unknown";
+        if(reason){if(state.stopped || state.fault || d.cameraFault || captureRequest("pose.stop")==1)d.copyReadback->halt();if(++d.heldDepthRejected<=16)logFile.write("\"event\":\"held_depth_request_rejected\",\"request\":"+std::to_string(request->sequence)+",\"reason\":"+quoted(reason));return;}
+        phase=d.cameraUpdates->packets()[0];
+    }
+    if(d.copyReadback->arm(*request,phase?&*phase:nullptr))logFile.write("\"event\":\"depth_copy_armed\",\"request\":"+std::to_string(request->sequence)+",\"held_depth_phase\":"+(phase?"true":"false"));
+    else if(d.heldDepth){++d.heldDepthRejected;logFile.write("\"event\":\"held_depth_request_rejected\",\"request\":"+std::to_string(request->sequence)+",\"reason\":\"held_depth_producer_refused\"");}
 }
 void writeCopy(Device& d,uint64_t present,bool final=false){
     if(!d.copyReadback)return;
-    if(frameRequest("depth-copy.stop")==1)d.copyReadback->halt();
+    if(frameRequest("depth-copy.stop")==1 || (d.heldDepth && captureRequest("pose.stop")==1))d.copyReadback->halt();
     auto dir=std::getenv("D4VR_TRACE_DIR");if(!dir)return;
     for(const auto& s:d.copyReadback->ready()){
         const auto base=std::string(dir)+"/depth-copy-"+std::to_string(getpid())+"-"+std::to_string(d.id)+"-"+std::to_string(s.copy);
         bool raw=writePrivate(base+".bin",s.words.data(),s.words.size()*4);
-        const auto data="{\"schema_version\":1,\"request\":"+std::to_string(s.request)+",\"copy\":"+std::to_string(s.copy)+",\"source_generation\":"+std::to_string(s.sourceGeneration)+",\"destination_generation\":"+std::to_string(s.destinationGeneration)+",\"recording\":"+std::to_string(s.recording)+",\"copy_ordinal\":"+std::to_string(s.ordinal)+",\"submission\":"+std::to_string(s.submission)+",\"epoch\":"+std::to_string(s.epoch)+",\"family\":"+std::to_string(s.family)+",\"format\":"+std::to_string(s.format)+",\"width\":"+std::to_string(s.extent.width)+",\"height\":"+std::to_string(s.extent.height)+",\"original_aspects\":"+std::to_string(s.originalAspects)+",\"private_read_aspects\":2,\"word_encoding\":"+quoted(s.format==VK_FORMAT_D24_UNORM_S8_UINT?"native_uint32_low24_unorm":"native_binary32")+",\"raw_complete\":"+(raw?"true":"false")+",\"whole_scene_verified\":false,\"initialized_pixels_verified\":false,\"common_scene_time_known\":false,\"xr_pose_known\":false}\n";
+        const auto data="{\"schema_version\":1,\"request\":"+std::to_string(s.request)+",\"copy\":"+std::to_string(s.copy)+",\"source_generation\":"+std::to_string(s.sourceGeneration)+",\"destination_generation\":"+std::to_string(s.destinationGeneration)+",\"recording\":"+std::to_string(s.recording)+",\"copy_ordinal\":"+std::to_string(s.ordinal)+",\"submission\":"+std::to_string(s.submission)+",\"epoch\":"+std::to_string(s.epoch)+",\"family\":"+std::to_string(s.family)+",\"format\":"+std::to_string(s.format)+",\"width\":"+std::to_string(s.extent.width)+",\"height\":"+std::to_string(s.extent.height)+",\"original_aspects\":"+std::to_string(s.originalAspects)+",\"private_read_aspects\":2,\"word_encoding\":"+quoted(s.format==VK_FORMAT_D24_UNORM_S8_UINT?"native_uint32_low24_unorm":"native_binary32")+",\"raw_complete\":"+(raw?"true":"false")+",\"recording_eye\":"+std::to_string(s.recordingEye)+",\"capture_submission\":"+std::to_string(s.captureSubmission)+",\"copy_submit_camera\":"+observationJson(s.copySubmit)+",\"expected_held_packet\":"+(s.expectedHeldPacket?observationJson(d4vr::CameraObservation{d4vr::CameraStatus::uniform,0,0,*s.expectedHeldPacket}):"null")+",\"whole_scene_verified\":false,\"initialized_pixels_verified\":false,\"common_scene_time_known\":false,\"xr_pose_known\":false}\n";
         bool meta=writePrivate(base+".json",data.data(),data.size());logFile.write("\"event\":\"depth_copy_export\",\"copy\":"+std::to_string(s.copy)+",\"request\":"+std::to_string(s.request)+",\"complete\":"+(raw && meta?"true":"false"));
     }
     std::lock_guard<std::mutex> lock(d.depthReportMutex);if(d.copyReports>=32)return;auto request=frameRequest("depth-copy-status.request");if(!final && !(present && !(present&(present-1))) && request<=d.copyStatusRequest)return;
     const auto s=d.copyReadback->stats();auto data="{\"schema_version\":1,\"process_id\":"+std::to_string(getpid())+",\"device\":"+std::to_string(d.id)+",\"report_sequence\":"+std::to_string(++d.copyReports)+",\"observed_present_boundary\":"+std::to_string(present)+",\"external_request\":"+std::to_string(request)+",\"final\":"+(final?"true":"false")+",\"recorded\":"+std::to_string(s.recorded)+",\"exported\":"+std::to_string(s.exported)+",\"submissions\":"+std::to_string(s.submissions)+",\"private_fences\":"+std::to_string(s.completions)+",\"invalidations\":"+std::to_string(s.invalidations)+",\"late_returns\":"+std::to_string(s.lateReturns)+",\"app_fence_bypass\":"+std::to_string(s.appFenceBypass)+",\"refused\":"+std::to_string(s.refused)+",\"allocation_failures\":"+std::to_string(s.allocationFailures)+",\"original_failures\":"+std::to_string(s.originalFailures)+",\"reserved_bytes\":"+std::to_string(s.reservedBytes)+",\"halted\":"+(s.halted?"true":"false")+",\"gpu_waits_or_extra_queue_submissions\":0}\n";
-    auto at=data.rfind('}');if(at!=std::string::npos){std::string rejected=",\"rejected\":[";for(size_t i=0;i<s.rejected.size();++i)rejected+=(i?",":"")+std::to_string(s.rejected[i]);rejected+="],\"last_depth_candidate\":[";for(size_t i=0;i<s.candidate.size();++i)rejected+=(i?",":"")+std::to_string(s.candidate[i]);data.insert(at,rejected+"]");}
+    auto at=data.rfind('}');if(at!=std::string::npos){data.insert(at,",\"held_depth_mode\":"+std::string(d.heldDepth?"true":"false")+",\"held_phase_requests_seen\":"+std::to_string(d.heldDepthRequestHigh.load())+",\"held_phase_rejected\":"+std::to_string(d.heldDepthRejected.load()));at=data.rfind('}');std::string rejected=",\"rejected\":[";for(size_t i=0;i<s.rejected.size();++i)rejected+=(i?",":"")+std::to_string(s.rejected[i]);rejected+="],\"last_depth_candidate\":[";for(size_t i=0;i<s.candidate.size();++i)rejected+=(i?",":"")+std::to_string(s.candidate[i]);data.insert(at,rejected+"]");}
     if(writePrivate(std::string(dir)+"/depth-copy-status-"+std::to_string(getpid())+"-"+std::to_string(d.id)+"-"+std::to_string(d.copyReports)+".json",data.data(),data.size()))d.copyStatusRequest=std::max(d.copyStatusRequest,request);
 }
-template<class T>d4vr::depth::CopyTicket copyBefore(Device& d,VkQueue q,uint32_t n,const T* submits,VkFence fence){
+template<class T>d4vr::depth::CopyTicket copyBefore(Device& d,VkQueue q,uint32_t n,const T* submits,VkFence fence,const d4vr::CameraPair* camera){
     d4vr::depth::CopyTicket ticket;ticket.forwardedFence=fence;if(!d.copyReadback)return ticket;
     uint32_t family=VK_QUEUE_FAMILY_IGNORED;{std::lock_guard<std::mutex> lock(stateMutex);auto i=d.queues.find(q);if(i!=d.queues.end())family=i->second.first;}
-    try{return d.copyReadback->before(q,family,n,submits,fence);}catch(...){d.copyReadback->halt();return ticket;}
+    uint64_t captureSerial=0;if(d.heldDepth){std::lock_guard<std::mutex> lock(stateMutex);captureSerial=d.captureSubmission+1;}
+    try{return d.copyReadback->before(q,family,n,submits,fence,camera,captureSerial);}catch(...){d.copyReadback->halt();return ticket;}
 }
 template<class T>bool depthPreflight(Device& d,VkQueue queue,uint32_t n,const T* submits,const std::vector<VkCommandBuffer>& commands){
     if(!d.depthReadback)return true;
@@ -508,13 +527,23 @@ void writePosePair(Device& d,d4vr::present::DiagnosticPixels pixels){
     json+="],\"preceding_fixed_view\":"+(pixels.precedingHold?fixedViewJson(*pixels.precedingHold):"null")+",\"observed_viewports\":"+viewportsJson(d)+"}\n";if(!writePrivate(base+".json",json.data(),json.size()))throw std::runtime_error("Diagnostic pair receipt export failed");
     logFile.write("\"event\":\"pose_capture_pair\",\"session\":"+std::to_string(sample.session)+",\"request\":"+std::to_string(sample.request)+",\"xr_submission\":false");
 }
+// Callback storage shares cameraMutex; move it out before waiting for any
+// disk-export mutex. No lock taken by submit/camera update crosses file I/O.
+void drainHeldPixels(Device& d){
+    if(!d.heldDepth)return;
+    std::optional<d4vr::present::DiagnosticPixels> pixels;
+    {std::lock_guard<std::mutex> lock(d.cameraMutex);pixels=std::move(d.deferredPosePixels);d.deferredPosePixels.reset();}
+    if(!pixels)return;
+    try{std::lock_guard<std::mutex> lock(d.diagnosticExportMutex);writePosePair(d,std::move(*pixels));}
+    catch(const std::exception& e){d.heldExportFault.store(true);if(d.copyReadback)d.copyReadback->halt();logFile.write("\"event\":\"held_depth_export_error\",\"reason\":"+quoted(e.what()));}
+}
 void ensurePoseCapture(Device& d,VkQueue queue,const VkPresentInfoKHR& info){
     if(d.poseCapture || !d.poseDiagnostic || !d.cameraUpdates || info.swapchainCount!=1 || !info.pSwapchains)return;
     std::optional<Device::PoseChain> chain;
     {std::lock_guard<std::mutex> lock(stateMutex);auto q=d.queues.find(queue);auto c=d.poseChains.find(info.pSwapchains[0]);if(q!=d.queues.end() && q->second.first==d.cameraFamily && c!=d.poseChains.end())chain=c->second;}
     if(!chain)return;
     VkPhysicalDeviceMemoryProperties memory{};reinterpret_cast<PFN_vkGetPhysicalDeviceMemoryProperties>(d.instance->get(d.instance->handle,"vkGetPhysicalDeviceMemoryProperties"))(d.physical,&memory);
-    d.poseCapture=std::make_unique<d4vr::present::DiagnosticCapture>(d.handle,d.get,d.setLoaderData,memory,*d.presentation,*d.cameraUpdates,queue,d.cameraFamily,chain->extent,chain->format,[&d](auto pixels){writePosePair(d,std::move(pixels));},d.fixedViewHold);d.poseQueue=queue;
+    d.poseCapture=std::make_unique<d4vr::present::DiagnosticCapture>(d.handle,d.get,d.setLoaderData,memory,*d.presentation,*d.cameraUpdates,queue,d.cameraFamily,chain->extent,chain->format,[&d](auto pixels){if(d.heldDepth){if(d.deferredPosePixels)throw std::runtime_error("Held color export pending");d.deferredPosePixels=std::move(pixels);}else writePosePair(d,std::move(pixels));},d.fixedViewHold);d.poseQueue=queue;
     logFile.write("\"event\":\"pose_capture_enabled\",\"mode\":\"successive_diagnostic\",\"actual_xr_pose_source\":false,\"xr_submission\":false");
 }
 #ifdef D4VR_COOPERATIVE_XR
@@ -676,6 +705,14 @@ VKAPI_ATTR VkResult VKAPI_CALL d4CreateDevice(VkPhysicalDevice physical, const V
     auto poseOption=std::getenv("D4VR_POSE_CAPTURE_DIAGNOSTIC");d->poseDiagnostic=poseOption && !std::strcmp(poseOption,"1");
     auto holdOption=std::getenv("D4VR_DIAGNOSTIC_VIEW_HOLD");d->fixedViewHold=holdOption && !std::strcmp(holdOption,"1");
     auto cooperativeOption=std::getenv("D4VR_COOPERATIVE_XR_DIAGNOSTIC");d->cooperativeDiagnostic=cooperativeOption && !std::strcmp(cooperativeOption,"1");
+    auto enabled=[](const char* name){auto value=std::getenv(name);return value && !std::strcmp(value,"1");};
+    auto pathOption=[](const char* name){auto value=std::getenv(name);return value && *value;};
+    d->heldDepth=enabled("D4VR_HELD_DEPTH_COLOR_DIAGNOSTIC");
+    d4vr::HeldDepthOptions heldOptions;
+    heldOptions.enabled=d->heldDepth;heldOptions.copy=enabled("D4VR_DEPTH_COPY_READBACK_DIAGNOSTIC");heldOptions.pose=d->poseDiagnostic;heldOptions.hold=d->fixedViewHold;heldOptions.updates=enabled("D4VR_GPU_CAMERA_UPDATES");
+    heldOptions.paired=pathOption("D4VR_PAIR_LEFT_FILE") && pathOption("D4VR_PAIR_RIGHT_FILE");heldOptions.traceDirectory=pathOption("D4VR_TRACE_DIR");heldOptions.sequentialDirectory=pathOption("D4VR_SEQUENTIAL_CAPTURE_DIR");
+    heldOptions.audit=d->depthAuditRequested;heldOptions.reader=enabled("D4VR_DEPTH_READBACK_DIAGNOSTIC");heldOptions.cooperative=d->cooperativeDiagnostic;heldOptions.xrBinding=bool(std::getenv("D4VR_TRACE_XR_BINDING"));heldOptions.replay=bool(std::getenv("D4VR_LAYER_REPLAY_POC"));heldOptions.dryRun=enabled("D4VR_GPU_CAPTURE_DRY_RUN");heldOptions.singleEye=bool(std::getenv("D4VR_EYE_STATE_FILE"));
+    if(auto reason=d4vr::held_depth_options(heldOptions)){logFile.write("\"event\":\"held_depth_initialization_refused\",\"reason\":"+quoted(reason));*result=VK_NULL_HANDLE;return VK_ERROR_INITIALIZATION_FAILED;}
     link->u.pLayerInfo = next->pNext;
     auto status = create(physical, info, allocator, result);
     if (status != VK_SUCCESS) return status;
@@ -712,7 +749,7 @@ VKAPI_ATTR VkResult VKAPI_CALL d4CreateDevice(VkPhysicalDevice physical, const V
         d->depthReadback=std::make_unique<d4vr::depth::Readback>(*result,get,memory);
     }catch(const std::exception& e){logFile.write("\"event\":\"depth_init_refused\",\"reason\":"+quoted(e.what()));d->DestroyDevice(*result,allocator);*result=VK_NULL_HANDLE;return VK_ERROR_INITIALIZATION_FAILED;}
     if(d->copyRequested)try{
-        if(!std::getenv("D4VR_TRACE_DIR") || instance->api<VK_API_VERSION_1_3 || d->poseDiagnostic || d->cooperativeDiagnostic || std::getenv("D4VR_TRACE_XR_BINDING") || std::getenv("D4VR_LAYER_REPLAY_POC") || std::getenv("D4VR_PAIR_LEFT_FILE") || std::getenv("D4VR_PAIR_RIGHT_FILE") || std::getenv("D4VR_EYE_STATE_FILE") || std::getenv("D4VR_SEQUENTIAL_CAPTURE_DIR") || std::getenv("D4VR_GPU_CAMERA_UPDATES"))throw std::invalid_argument("COPY readback requires isolated Vulkan1.3 original-camera mode");
+        if(!std::getenv("D4VR_TRACE_DIR") || instance->api<VK_API_VERSION_1_3 || (!d->heldDepth && (d->poseDiagnostic || d->cooperativeDiagnostic || std::getenv("D4VR_TRACE_XR_BINDING") || std::getenv("D4VR_LAYER_REPLAY_POC") || std::getenv("D4VR_PAIR_LEFT_FILE") || std::getenv("D4VR_PAIR_RIGHT_FILE") || std::getenv("D4VR_EYE_STATE_FILE") || std::getenv("D4VR_SEQUENTIAL_CAPTURE_DIR") || std::getenv("D4VR_GPU_CAMERA_UPDATES"))))throw std::invalid_argument("COPY readback requires isolated Vulkan1.3 original-camera mode");
         const auto features=d4vr::depth::copy_device_features(*info,physical);
         if(!features.known || !features.synchronization2 || !features.singleDevice)throw std::invalid_argument("COPY needs known feature chain, enabled sync2 and one physical device");
         VkPhysicalDeviceMemoryProperties memory{};auto getMemory=reinterpret_cast<PFN_vkGetPhysicalDeviceMemoryProperties>(instance->get(instance->handle,"vkGetPhysicalDeviceMemoryProperties"));if(!getMemory)throw std::runtime_error("COPY memory query unavailable");getMemory(physical,&memory);
@@ -826,6 +863,15 @@ VKAPI_ATTR VkResult VKAPI_CALL d4CreateDevice(VkPhysicalDevice physical, const V
         d->presentation=std::make_unique<d4vr::present::Capture>(*result,get,memory,[physical,formats](VkFormat f){VkFormatProperties p{};formats(physical,f,&p);
             constexpr VkFormatFeatureFlags flags=VK_FORMAT_FEATURE_BLIT_DST_BIT|VK_FORMAT_FEATURE_TRANSFER_SRC_BIT|VK_FORMAT_FEATURE_TRANSFER_DST_BIT;return (p.optimalTilingFeatures&flags)==flags;},d->gpuCaptureDryRun || d->poseDiagnostic || d->cooperativeDiagnostic?d4vr::present::CaptureMode::gpuStream:d4vr::present::CaptureMode::cpuSnapshots);
     }catch(const std::exception& e){logFile.write("\"event\":\"presentation_error\",\"reason\":"+quoted(e.what()));}
+    if(d->heldDepth){
+        if(auto reason=d4vr::held_depth_components({bool(d->copyReadback),bool(d->pairs),bool(d->cameraUpdates),bool(d->presentation),bool(d->pairPackets)})){
+            logFile.write("\"event\":\"held_depth_initialization_refused\",\"reason\":"+quoted(reason));
+            d->copyReadback.reset();d->presentation.reset();d->pairs.reset();d->cameraUpdates.reset();d->pairPackets.reset();for(auto& packet:d->pairEyes)packet.reset();
+            {std::lock_guard<std::mutex> lock(stateMutex);devices.erase(key(*result));}
+            d->DestroyDevice(*result,allocator);*result=VK_NULL_HANDLE;return VK_ERROR_INITIALIZATION_FAILED;
+        }
+        logFile.write("\"event\":\"held_depth_components_ready\",\"pose_consumer_ready\":false,\"xr_submission\":false");
+    }
     if(d->viewDiagnostic){bool synchronization2=false,dynamicRendering=false,timeline=false,bda=false;
         for(auto p=static_cast<const VkBaseInStructure*>(info->pNext);p;p=p->pNext){
             if(p->sType==VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES){const auto& f=*reinterpret_cast<const VkPhysicalDeviceVulkan12Features*>(p);timeline|=f.timelineSemaphore;bda|=f.bufferDeviceAddress;}
@@ -885,6 +931,7 @@ VKAPI_ATTR void VKAPI_CALL d4DestroyDevice(VkDevice handle, const VkAllocationCa
     if(d->depthReadback){d->DeviceWaitIdle(handle);try{writeDepth(*d);}catch(const std::exception& e){logFile.write("\"event\":\"depth_error\",\"reason\":"+quoted(e.what()));}d->depthReadback.reset();}
     D4_COOP(d,d->DeviceWaitIdle(handle);try{d->cooperativeCapture->shutdown();}catch(const std::exception& e){logFile.write("\"event\":\"cooperative_xr_error\",\"reason\":"+quoted(e.what()));}d->DeviceWaitIdle(handle));
     if(d->poseCapture){d->DeviceWaitIdle(handle);try{d->poseCapture->shutdown();}catch(const std::exception& e){logFile.write("\"event\":\"pose_capture_error\",\"reason\":"+quoted(e.what()));}d->DeviceWaitIdle(handle);}
+    drainHeldPixels(*d);
     std::string record;
     {
         std::lock_guard<std::mutex> lock(stateMutex);
@@ -946,7 +993,7 @@ VKAPI_ATTR VkResult VKAPI_CALL d4BeginCommandBuffer(VkCommandBuffer command, con
         uint32_t family=VK_QUEUE_FAMILY_IGNORED;bool known=false,next=false;VkCommandPoolCreateFlags poolFlags=0;VkCommandBufferLevel level=VK_COMMAND_BUFFER_LEVEL_SECONDARY;
         {std::lock_guard<std::mutex> lock(stateMutex);auto c=d->commands.find(command);if(c!=d->commands.end()){level=c->second.level;auto pool=d->commandPools.find(c->second.pool);auto f=d->depthPoolFamilies.find(c->second.pool);if(pool!=d->commandPools.end() && f!=d->depthPoolFamilies.end()){family=f->second;poolFlags=pool->second;known=true;next=d->depthPoolHasNext[c->second.pool];}}}
         D4_AUDIT(d,d->depthAudit->begin(command,level,info->flags,bool(info->pNext),known,poolFlags,next,family));
-        copyRequest(*d);D4_COPY(d,d->copyReadback->begin(command,level,info->flags,!known || next || info->pNext || bool(poolFlags&VK_COMMAND_POOL_CREATE_PROTECTED_BIT),family));
+        copyRequest(*d);D4_COPY(d,d->copyReadback->begin(command,level,info->flags,!known || next || info->pNext || bool(poolFlags&VK_COMMAND_POOL_CREATE_PROTECTED_BIT),family,uint32_t(eye)));
     }
     if(result==VK_SUCCESS) { D4_POC(d,try { d->poc->begin(command,*info); } catch(const std::exception& e) { d->poc->reset(command);logFile.write("\"event\":\"poc_error\",\"reason\":"+quoted(e.what())); }); }
     return result;
@@ -1349,7 +1396,7 @@ VKAPI_ATTR VkResult VKAPI_CALL d4QueueSubmit(VkQueue queue, uint32_t n, const Vk
     if(!depthPreflight(*d,queue,n,submits,frames))return VK_ERROR_VALIDATION_FAILED_EXT;
     auto ticket = frameSubmission(d, queue, frames, buffers);
     const auto camera=submissionCamera(d,queue,tracked);
-    auto copyTicket=copyBefore(*d,queue,n,submits,fence);
+    auto copyTicket=copyBefore(*d,queue,n,submits,fence,camera?&*camera:nullptr);
     auto result = d->QueueSubmit(queue, n, submits, copyTicket.forwardedFence);
     D4_COPY(d,d->copyReadback->after(copyTicket,result));
     D4_AUDIT(d,if(audit.sequence)d->depthAudit->after(audit,result));
@@ -1378,7 +1425,7 @@ VKAPI_ATTR VkResult VKAPI_CALL d4QueueSubmit2(VkQueue queue, uint32_t n, const V
     if(!depthPreflight(*d,queue,n,submits,frames))return VK_ERROR_VALIDATION_FAILED_EXT;
     auto ticket = frameSubmission(d, queue, frames, buffers);
     const auto camera=submissionCamera(d,queue,tracked);
-    auto copyTicket=copyBefore(*d,queue,n,submits,fence);
+    auto copyTicket=copyBefore(*d,queue,n,submits,fence,camera?&*camera:nullptr);
     auto result = d->QueueSubmit2(queue, n, submits, copyTicket.forwardedFence);
     D4_COPY(d,d->copyReadback->after(copyTicket,result));
     D4_AUDIT(d,if(audit.sequence)d->depthAudit->after(audit,result));
@@ -1433,7 +1480,7 @@ VKAPI_ATTR VkResult VKAPI_CALL d4QueuePresentKHR(VkQueue queue, const VkPresentI
     if (!record.empty()) logFile.write(record);
     writeFrames(ready);
     if(d->depthReadback)try{writeDepth(*d);}catch(const std::exception& e){logFile.write("\"event\":\"depth_error\",\"reason\":"+quoted(e.what()));}
-    if(d->copyReadback){if(result<0)d->copyReadback->halt();D4_COPY(d,writeCopy(*d,present));}
+    if(d->copyReadback && result<0)d->copyReadback->halt();
     writeDepthAudit(*d,present);
     if(d->presentation)try{
 #ifdef D4VR_COOPERATIVE_XR
@@ -1449,7 +1496,7 @@ VKAPI_ATTR VkResult VKAPI_CALL d4QueuePresentKHR(VkQueue queue, const VkPresentI
 #endif
         if(d->poseDiagnostic){
             ensurePoseCapture(*d,queue,*info);
-            if(d->poseCapture && queue==d->poseQueue && captureRequest("pose.stop")==1)d->poseCapture->stop();
+            if(d->poseCapture && queue==d->poseQueue && (captureRequest("pose.stop")==1 || (d->heldDepth && (frameRequest("depth-copy.stop")==1 || d->heldExportFault.load() || d->cameraFault || d->copyReadback->stats().halted)))){d->poseCapture->stop();if(d->heldDepth)d->copyReadback->halt();}
             for(const auto& frame:d->presentation->presentedGpu(*info,result,present,selectedMask,selectedDraws,&cameraInterval)){
                 if(d->poseCapture)d->poseCapture->offer(frame,queue);
                 else if(frame.queue==queue)d->presentation->retire(frame.lease,queue);
@@ -1475,11 +1522,13 @@ VKAPI_ATTR VkResult VKAPI_CALL d4QueuePresentKHR(VkQueue queue, const VkPresentI
             }
         } else for(const auto& s:d->presentation->presented(*info,result,present,selectedMask,selectedDraws,&cameraInterval))writePresentation(*d,s);
     }
-    catch(const std::exception& e){logFile.write("\"event\":\"presentation_error\",\"reason\":"+quoted(e.what()));}
+    catch(const std::exception& e){if(d->heldDepth){d->copyReadback->halt();d->heldExportFault.store(true);}logFile.write("\"event\":\"presentation_error\",\"reason\":"+quoted(e.what()));}
     if(d->cameraUpdates && !d->cameraFault && (result==VK_SUCCESS || result==VK_SUBOPTIMAL_KHR)){if(!d->poseDiagnostic && !d->cooperativeDiagnostic)cameraRequest(*d);d->cameraUpdates->boundary();}
     // The original present caller still owns this queue's external sync. No
     // state/camera lock crosses runtime calls, including construction/cleanup.
     if(cameraLock.owns_lock())cameraLock.unlock();
+    drainHeldPixels(*d);
+    D4_COPY(d,writeCopy(*d,present));
     D4_COOP(d,if(queue==d->poseQueue)try{d->cooperativeCapture->advance();}catch(const std::exception& e){std::lock_guard<std::mutex> lock(d->cameraMutex);d->cooperativeCapture->stop();logFile.write("\"event\":\"cooperative_xr_error\",\"reason\":"+quoted(e.what()));});
     return result;
 }

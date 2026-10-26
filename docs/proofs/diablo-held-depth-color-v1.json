@@ -1,0 +1,621 @@
+{
+  "schema_version": 1,
+  "actual_diablo": true,
+  "synthetic_scene": false,
+  "mode": "held_monoscopic_depth_color_diagnostic",
+  "layer_sha256": "45a6142385df8afa097acb3d58060f03b55b5b2956e1c6ebca8e6152850c1009",
+  "source_sha256": {
+    "native/core/held_depth_mode.hpp": "47ad6dcf6c45212a6a768235a4af983ff50fd9a6398f6a6c82f428d6092b88bd",
+    "native/vulkan/trace_layer.cpp": "e768c21c4182f5ba216357c67213e5495ad63bd7a3463abdf5cf3453bfa6f35c",
+    "native/vulkan/depth_copy_readback.hpp": "b080f48cd8451d43330d116c717449413cde5ca26bc73b32671f893ad15ee9c3",
+    "native/vulkan/depth_copy_readback.cpp": "b3e30e026a2f832213b675e80a136c91696565e9189f0feb317b6a9f6c2411d1"
+  },
+  "shader_bundle_overrides": 5377,
+  "shader_bundle_sha256": "1328fa3f7f077503b8c65423ff39f3b3e47439cb52b107ff48ff71fc72e357eb",
+  "fixed_camera_only": true,
+  "temporal_vr_history_supported": false,
+  "autonomous_normal_ui_authorized_by_user": true,
+  "normal_ui_actions_only": true,
+  "alt_f4_used": false,
+  "character_changed_or_movement_combat_purchase_input": false,
+  "terminal_stop_files_written": true,
+  "launcher_exit_code": 0,
+  "all_owned_processes_exited": true,
+  "originals_and_262_exports_equal": true,
+  "host_request_script_seconds": 18.16408277100072,
+  "host_duration_is_not_gpu_latency": true,
+  "depths": [
+    {
+      "name": "reference",
+      "request": 1,
+      "copy": 1,
+      "source_generation": 92,
+      "destination_generation": 93,
+      "recording": 706446,
+      "original_copy_ordinal": 1,
+      "copy_submission": 431363,
+      "capture_submission": 431363,
+      "epoch": 1,
+      "family": 0,
+      "recording_eye": 0,
+      "format": 129,
+      "extent": [
+        1707,
+        960
+      ],
+      "raw_bytes": 6554880,
+      "raw_sha256": "624ec72ad6451e327a38c819adb305fac1a6b7cf4fbe1f145d8ed9480a227df9",
+      "held_packet_sha256": "1653862c6d787e6c5560969ba67530dc8208861ef5fcc5b159bf7adb3b59d9f2",
+      "depth_packet_sequence": 2,
+      "warm_color_packet_sequence": 2,
+      "measurement_color_packet_sequence": 3,
+      "expected_equals_submit_equals_warm_eye_zero": true,
+      "measurement_has_same_mapping_but_new_revision": true,
+      "copy_and_capture_submission_counters_numerically_equal_in_this_trial": true,
+      "shared_common_scene_time_claimed": false
+    },
+    {
+      "name": "wide",
+      "request": 2,
+      "copy": 2,
+      "source_generation": 92,
+      "destination_generation": 93,
+      "recording": 730498,
+      "original_copy_ordinal": 1,
+      "copy_submission": 445966,
+      "capture_submission": 445966,
+      "epoch": 1,
+      "family": 0,
+      "recording_eye": 0,
+      "format": 129,
+      "extent": [
+        1707,
+        960
+      ],
+      "raw_bytes": 6554880,
+      "raw_sha256": "3258f47e0bb3c3a6ce2cf3add0f942680667f577264003a04f116a8da8171b0d",
+      "held_packet_sha256": "e93eb949b89e77294b16cfc69557800ff09b385ef66d58112b952623b4df7413",
+      "depth_packet_sequence": 4,
+      "warm_color_packet_sequence": 4,
+      "measurement_color_packet_sequence": 5,
+      "expected_equals_submit_equals_warm_eye_zero": true,
+      "measurement_has_same_mapping_but_new_revision": true,
+      "copy_and_capture_submission_counters_numerically_equal_in_this_trial": true,
+      "shared_common_scene_time_claimed": false
+    },
+    {
+      "name": "return",
+      "request": 3,
+      "copy": 3,
+      "source_generation": 92,
+      "destination_generation": 93,
+      "recording": 754438,
+      "original_copy_ordinal": 1,
+      "copy_submission": 460501,
+      "capture_submission": 460501,
+      "epoch": 1,
+      "family": 0,
+      "recording_eye": 0,
+      "format": 129,
+      "extent": [
+        1707,
+        960
+      ],
+      "raw_bytes": 6554880,
+      "raw_sha256": "900d9f11a3d6a2a45996038c65e56687e2bc36d6295e36f46d5ed59445b8ea79",
+      "held_packet_sha256": "a2428697d24233fc260e227a30dc9eb813c915f24a3be75a4d5960b4a32859ff",
+      "depth_packet_sequence": 6,
+      "warm_color_packet_sequence": 6,
+      "measurement_color_packet_sequence": 7,
+      "expected_equals_submit_equals_warm_eye_zero": true,
+      "measurement_has_same_mapping_but_new_revision": true,
+      "copy_and_capture_submission_counters_numerically_equal_in_this_trial": true,
+      "shared_common_scene_time_claimed": false
+    }
+  ],
+  "successive_color_pairs": [
+    {
+      "name": "reference-held",
+      "request": 1,
+      "packet_sequence": 2,
+      "extent": [
+        2560,
+        1440
+      ],
+      "original_presents": [
+        24691,
+        24693
+      ],
+      "capture_sequences": [
+        2,
+        4
+      ],
+      "raw_bytes": 29491200,
+      "whole_scene_verified": false,
+      "common_scene_time_known": false
+    },
+    {
+      "name": "reference-color",
+      "request": 2,
+      "packet_sequence": 3,
+      "extent": [
+        2560,
+        1440
+      ],
+      "original_presents": [
+        25503,
+        25504
+      ],
+      "capture_sequences": [
+        34,
+        35
+      ],
+      "raw_bytes": 29491200,
+      "whole_scene_verified": false,
+      "common_scene_time_known": false
+    },
+    {
+      "name": "wide-held",
+      "request": 3,
+      "packet_sequence": 4,
+      "extent": [
+        2560,
+        1440
+      ],
+      "original_presents": [
+        25552,
+        25553
+      ],
+      "capture_sequences": [
+        78,
+        79
+      ],
+      "raw_bytes": 29491200,
+      "whole_scene_verified": false,
+      "common_scene_time_known": false
+    },
+    {
+      "name": "wide-color",
+      "request": 4,
+      "packet_sequence": 5,
+      "extent": [
+        2560,
+        1440
+      ],
+      "original_presents": [
+        26351,
+        26353
+      ],
+      "capture_sequences": [
+        98,
+        100
+      ],
+      "raw_bytes": 29491200,
+      "whole_scene_verified": false,
+      "common_scene_time_known": false
+    },
+    {
+      "name": "return-held",
+      "request": 5,
+      "packet_sequence": 6,
+      "extent": [
+        2560,
+        1440
+      ],
+      "original_presents": [
+        26402,
+        26403
+      ],
+      "capture_sequences": [
+        147,
+        148
+      ],
+      "raw_bytes": 29491200,
+      "whole_scene_verified": false,
+      "common_scene_time_known": false
+    },
+    {
+      "name": "return-color",
+      "request": 6,
+      "packet_sequence": 7,
+      "extent": [
+        2560,
+        1440
+      ],
+      "original_presents": [
+        27200,
+        27201
+      ],
+      "capture_sequences": [
+        163,
+        164
+      ],
+      "raw_bytes": 29491200,
+      "whole_scene_verified": false,
+      "common_scene_time_known": false
+    }
+  ],
+  "measured_preceding_holds": [
+    {
+      "name": "reference",
+      "measurement_request": 2,
+      "preceding_packet_sequence": 2,
+      "observed_intervals": 780,
+      "rejected_intervals": 0,
+      "first_present": 24695,
+      "last_present": 25474,
+      "host_span_ms": 5413,
+      "same_requested_mapping": true,
+      "gpu_elapsed_time_proven": false
+    },
+    {
+      "name": "wide",
+      "measurement_request": 4,
+      "preceding_packet_sequence": 4,
+      "observed_intervals": 779,
+      "rejected_intervals": 0,
+      "first_present": 25555,
+      "last_present": 26333,
+      "host_span_ms": 5398,
+      "same_requested_mapping": true,
+      "gpu_elapsed_time_proven": false
+    },
+    {
+      "name": "return",
+      "measurement_request": 6,
+      "preceding_packet_sequence": 6,
+      "observed_intervals": 782,
+      "rejected_intervals": 0,
+      "first_present": 26406,
+      "last_present": 27187,
+      "host_span_ms": 5418,
+      "same_requested_mapping": true,
+      "gpu_elapsed_time_proven": false
+    }
+  ],
+  "depth_status_before_teardown": {
+    "schema_version": 1,
+    "report_sequence": 16,
+    "observed_present_boundary": 32768,
+    "external_request": 0,
+    "final": false,
+    "recorded": 3,
+    "exported": 3,
+    "submissions": 555693,
+    "private_fences": 3,
+    "invalidations": 3,
+    "late_returns": 0,
+    "app_fence_bypass": 0,
+    "refused": 0,
+    "allocation_failures": 0,
+    "original_failures": 0,
+    "reserved_bytes": 19664640,
+    "halted": true,
+    "gpu_waits_or_extra_queue_submissions": 0,
+    "held_depth_mode": true,
+    "held_phase_requests_seen": 3,
+    "held_phase_rejected": 0,
+    "rejected": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "last_depth_candidate": [
+      129,
+      1707,
+      960,
+      1,
+      4194304,
+      0,
+      4194312,
+      0,
+      1,
+      0
+    ]
+  },
+  "depth_status_halted_after_intentional_stop": true,
+  "ingame_khronos_claimed": false,
+  "exact_original_game_pixel_equality_claimed": false,
+  "initialized_pixels_verified": false,
+  "whole_scene_verified": false,
+  "common_scene_time_known": false,
+  "xr_pose_known": false,
+  "xr_submission": false,
+  "quest_received_diablo": false,
+  "coverage_fix": false,
+  "device_destroy_or_final_color_lease_counts_required_for_claim": false,
+  "analysis": {
+    "claims": {
+      "initialized_pixels_verified": false,
+      "whole_scene_verified": false,
+      "common_depth_color_time_known": false,
+      "source_depth_producing_pass_camera_verified": false,
+      "culling_cause_proven": false,
+      "depth_linearized_to_meters": false
+    },
+    "depth_statistics": [
+      {
+        "phase": "reference",
+        "width": 1707,
+        "height": 960,
+        "bytes": 6554880,
+        "pixels": 1638720,
+        "distinct_words": 224983,
+        "zero_words": 33888,
+        "max_word": 16735878,
+        "min_word": 0,
+        "quantiles_nonzero": [
+          16457688.0,
+          16468234.31,
+          16484423.0,
+          16571173.5,
+          16703186.0,
+          16720815.0,
+          16735878.0
+        ],
+        "raw_sha256": "624ec72ad6451e327a38c819adb305fac1a6b7cf4fbe1f145d8ed9480a227df9"
+      },
+      {
+        "phase": "wide",
+        "width": 1707,
+        "height": 960,
+        "bytes": 6554880,
+        "pixels": 1638720,
+        "distinct_words": 404653,
+        "zero_words": 33888,
+        "max_word": 16777215,
+        "min_word": 0,
+        "quantiles_nonzero": [
+          16265766.0,
+          16294485.62,
+          16339248.55,
+          16577395.0,
+          16777215.0,
+          16777215.0,
+          16777215.0
+        ],
+        "raw_sha256": "3258f47e0bb3c3a6ce2cf3add0f942680667f577264003a04f116a8da8171b0d"
+      },
+      {
+        "phase": "return",
+        "width": 1707,
+        "height": 960,
+        "bytes": 6554880,
+        "pixels": 1638720,
+        "distinct_words": 224985,
+        "zero_words": 33888,
+        "max_word": 16735878,
+        "min_word": 0,
+        "quantiles_nonzero": [
+          16457688.0,
+          16468234.31,
+          16484423.0,
+          16571163.0,
+          16703184.0,
+          16720815.0,
+          16735878.0
+        ],
+        "raw_sha256": "900d9f11a3d6a2a45996038c65e56687e2bc36d6295e36f46d5ed59445b8ea79"
+      }
+    ],
+    "optics": {
+      "scale_x": 0.5443961265209271,
+      "scale_y": 0.30622277512859486,
+      "target_color_footprint_of_reference": [
+        583.1729580532134,
+        499.5196019074117,
+        1976.8270419467865,
+        940.4803980925883
+      ],
+      "same_reference_return_mapping": true,
+      "source_ZW_preserved_by_packet_contract": true,
+      "depth_camera_of_producing_passes_proven": false
+    },
+    "return_depth": {
+      "compared_nonzero_pixels": 1604832,
+      "equal_words": 1596682,
+      "median_absolute_word_difference": 0.0,
+      "p95_absolute_word_difference": 0.0,
+      "fraction_abs_word_difference_le_2": 0.9950437179717254,
+      "zero_mask_identical": true,
+      "fraction_exact_words": 0.9949215868078404
+    },
+    "wide_depth_saturation": {
+      "max_D24_words": 196073,
+      "fraction_of_footprint": 0.11965009275532122,
+      "reference_max_D24_words": 0,
+      "return_max_D24_words": 0,
+      "saturation_is_not_initialized_scene_or_absent_geometry_proof": true
+    },
+    "patch_method": {
+      "patch_depth_resolution_pixels": 21,
+      "search_radius_depth_pixels": 5,
+      "coordinate_resolution": [
+        1707,
+        960
+      ],
+      "color_score": "mean-subtracted luma MAE / bandwidth-matched reference standard deviation; reference/return LANCZOS-minified then bilinear-expanded to the wide footprint",
+      "depth_score": "absolute raw low24-word MAE, no mean subtraction",
+      "color_acceptance": {
+        "reference_std_min": 3,
+        "normalised_mae_max": 0.55,
+        "return_normalised_mae_max": 0.45,
+        "uniqueness_min": 1.08,
+        "unmodified_score_must_exceed_factor": 1.35
+      },
+      "depth_acceptance": {
+        "raw_word_mae_max": 300,
+        "normalised_mae_max": 0.12,
+        "return_raw_word_mae_max": 100,
+        "unmodified_score_must_exceed_factor": 3
+      },
+      "thresholds_are_diagnostic_not_ground_truth": true
+    },
+    "patch_summary": {
+      "candidates": 140,
+      "color_and_return_accepted": 50,
+      "depth_and_return_accepted": 108,
+      "both_accepted": 48,
+      "depth_accepted_color_not_accepted": 60,
+      "color_unmodified_hypothesis_accepted": 0,
+      "depth_unmodified_hypothesis_accepted": 0,
+      "both_accepted_zero_depth_residual": 48,
+      "a_failed_patch_is_not_absent_geometry_or_missing_color_proof": true
+    },
+    "local_regions": [
+      {
+        "name": "A_upper_cutout",
+        "wide_color_box": [
+          1220,
+          20,
+          1980,
+          140
+        ],
+        "sampled_depth_box": [
+          813,
+          13,
+          1320,
+          93
+        ],
+        "depth_pixels": 40560,
+        "zero_depth_words": 0,
+        "max_D24_words": 40560,
+        "distinct_depth_words": 1,
+        "raw_depth_word_quantiles": [
+          16777215.0,
+          16777215.0,
+          16777215.0,
+          16777215.0,
+          16777215.0
+        ],
+        "luma_mean": 80.79680633544922,
+        "luma_std": 1.801538348197937,
+        "pixel_to_pixel_luma_gradient_mean": 0.43389278650283813
+      },
+      {
+        "name": "B_central_dark_inside_reference_footprint",
+        "wide_color_box": [
+          1350,
+          515,
+          1660,
+          570
+        ],
+        "sampled_depth_box": [
+          900,
+          343,
+          1107,
+          380
+        ],
+        "depth_pixels": 7659,
+        "zero_depth_words": 0,
+        "max_D24_words": 0,
+        "distinct_depth_words": 4243,
+        "raw_depth_word_quantiles": [
+          16572791.0,
+          16573496.8,
+          16575874.0,
+          16578536.2,
+          16580539.0
+        ],
+        "luma_mean": 51.22654724121094,
+        "luma_std": 1.1242388486862183,
+        "pixel_to_pixel_luma_gradient_mean": 0.41857415437698364,
+        "reference_inverse_optical_depth_box": [
+          939,
+          34,
+          1319,
+          153
+        ],
+        "reference_luma_mean": 105.4388427734375,
+        "reference_luma_std": 11.188556671142578,
+        "inverse_optical_depth_median_abs_word_difference": 11924.644899396226,
+        "inverse_optical_depth_p95_abs_word_difference": 15003.07300586691,
+        "reference_return_depth_median_abs_word_difference": 0.0,
+        "inverse_optical_luma_mae": 54.22146371684664
+      },
+      {
+        "name": "C_left_cutout",
+        "wide_color_box": [
+          100,
+          402,
+          250,
+          438
+        ],
+        "sampled_depth_box": [
+          67,
+          268,
+          167,
+          292
+        ],
+        "depth_pixels": 2400,
+        "zero_depth_words": 0,
+        "max_D24_words": 1293,
+        "distinct_depth_words": 916,
+        "raw_depth_word_quantiles": [
+          16667443.0,
+          16668284.75,
+          16777215.0,
+          16777215.0,
+          16777215.0
+        ],
+        "luma_mean": 82.6259994506836,
+        "luma_std": 16.189340591430664,
+        "pixel_to_pixel_luma_gradient_mean": 0.9965255260467529
+      },
+      {
+        "name": "D_lower_valid_terrain",
+        "wide_color_box": [
+          1440,
+          780,
+          1770,
+          870
+        ],
+        "sampled_depth_box": [
+          960,
+          520,
+          1180,
+          580
+        ],
+        "depth_pixels": 13200,
+        "zero_depth_words": 0,
+        "max_D24_words": 0,
+        "distinct_depth_words": 11109,
+        "raw_depth_word_quantiles": [
+          16487501.0,
+          16492856.9,
+          16507977.0,
+          16522531.0,
+          16527668.0
+        ],
+        "luma_mean": 102.47416687011719,
+        "luma_std": 23.73594856262207,
+        "pixel_to_pixel_luma_gradient_mean": 11.536737442016602
+      }
+    ],
+    "conclusion": {
+      "cause_remains_indeterminate": true,
+      "observed": "Wide mapping changes both the observed depth field and final color; the normal reference depth almost exactly returns afterward.",
+      "region_A": "The selected upper cutout has 40560/40560 max-D24 words and nearly uniform color. It lies outside the original-view footprint, so no baseline terrain correspondence or absent-geometry claim is available there.",
+      "region_B": "The selected dark region lies inside the original-view optical footprint. It contains 4243 distinct depth words, no zero or max words, but differs from the optically mapped reference depth by median 11924.6 raw words. It does not establish a correct unchanged terrain-depth surface under blank final color.",
+      "discriminator_limit": "The evidence is not a clean proof of either upstream culling or exclusively downstream color corruption. Source passes, initialized regions, all-pass camera closure and common scene time remain unknown.",
+      "zero_depth": "The 33888 zero words form the same mask in all three phases and overlap the HUD-like rectangles. They are not classified as absent terrain.",
+      "next_useful_step": "Identify the original producing pass/history for the local depth discrepancy inside the old-view footprint, then compare additional admitted color/depth boundaries. Repeating this unchanged capture would not establish that closure."
+    },
+    "analysis_scripts": {
+      "analyze-held-depth.py": "a256fbf7fc6f28d527db3b326c4cdd6d9328300783f8fb0bc75f47d5da14ef92",
+      "compare-held-depth.py": "00e7ae115ad401e88fdc3c97c10da2efab48a496456190a0b0c2e5a1579b8e6f",
+      "finalize-held-depth-analysis.py": "bf82ce830060201088e67c626c30e9489c989166004a8e2fbfe53ece3314455e"
+    },
+    "private_summary_sha256": "ff5c068917a7efb294a7ed6f89561606b666e82a6667326dcd93c6da45879aaf"
+  },
+  "independent_cpu_provenance_audit": {
+    "passed": true,
+    "checks": 294,
+    "failed_checks": [],
+    "private_audit_sha256": "5bd44377689f83a7ff58fc1576cb04483a1a2d05bb54797afa74658338d1c07f",
+    "gpu_operations": 0
+  }
+}

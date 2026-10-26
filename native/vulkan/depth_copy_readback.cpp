@@ -12,13 +12,13 @@ bool format(VkFormat f){return f==VK_FORMAT_D24_UNORM_S8_UINT || f==VK_FORMAT_D3
 #define D4_COPY_FUNCTIONS(X) X(CreateBuffer) X(DestroyBuffer) X(GetBufferMemoryRequirements) X(AllocateMemory) X(FreeMemory) X(BindBufferMemory) X(MapMemory) X(UnmapMemory) X(CreateFence) X(DestroyFence) X(GetFenceStatus)
 struct CopyReadback::Impl {
     VkDevice device;VkPhysicalDeviceMemoryProperties memory;uint32_t copyLimit,fenceLimit;VkDeviceSize budget;
-    mutable std::mutex mutex;CopyStats counters;Request request;uint64_t requestHigh=0,generation=0,recording=0;
+    mutable std::mutex mutex;CopyStats counters;Request request;std::optional<EyeState> expectedHeldPacket;uint64_t requestHigh=0,generation=0,recording=0;
 #define FIELD(n) PFN_vk##n n{};
     D4_COPY_FUNCTIONS(FIELD)
 #undef FIELD
     PFN_vkCmdCopyImageToBuffer2 Copy{};PFN_vkCmdPipelineBarrier2 Barrier{};
     struct Image{uint64_t generation;VkExtent2D extent;VkFormat format;VkImageUsageFlags usage;std::vector<uint32_t> families;bool sourceEligible=false;VkImageCreateFlags flags=0;bool next=false;};
-    struct Command{uint64_t recording=0,ordinal=0;uint32_t family=VK_QUEUE_FAMILY_IGNORED;bool eligible=false;std::vector<uint32_t> slots;};
+    struct Command{uint64_t recording=0,ordinal=0;uint32_t family=VK_QUEUE_FAMILY_IGNORED;bool eligible=false;std::vector<uint32_t> slots;uint32_t eye=2;};
     struct Slot {
         Impl& owner;VkBuffer buffer{};VkDeviceMemory memory{};void* mapped{};CopySnapshot snapshot;
         VkCommandBuffer command{};uint64_t epoch=0;uint32_t completion=UINT32_MAX;
@@ -33,19 +33,21 @@ struct CopyReadback::Impl {
     void halt(){counters.halted=true;request.copies=0;for(auto& s:slots)if(!s->exported)s->disabled=true;}
     uint32_t type(uint32_t bits){for(uint32_t i=0;i<memory.memoryTypeCount;++i)if((bits&(1u<<i)) && (memory.memoryTypes[i].propertyFlags&(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT|VK_MEMORY_PROPERTY_HOST_COHERENT_BIT))==(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT|VK_MEMORY_PROPERTY_HOST_COHERENT_BIT))return i;throw std::runtime_error("Coherent COPY memory unavailable");}
     void reset(VkCommandBuffer c){commands.erase(c);for(auto& s:slots)if(s->command==c)s->command=VK_NULL_HANDLE;}
-    CopyTicket before(VkQueue,uint32_t family,const std::vector<VkCommandBuffer>& list,VkFence original,bool known){
-        CopyTicket t;t.sequence=++counters.submissions;t.forwardedFence=original;
+    CopyTicket before(VkQueue,uint32_t family,const std::vector<VkCommandBuffer>& list,VkFence original,bool known,const CameraPair* packets,uint64_t captureSubmission){
+        CopyTicket t;t.sequence=++counters.submissions;t.forwardedFence=original;t.captureSubmission=captureSubmission;
         if(!known){halt();return t;}
         for(auto cb:list){auto c=commands.find(cb);if(c==commands.end())continue;
             for(auto index:c->second.slots){auto& s=*slots[index];if(s.epoch==UINT64_MAX){halt();return t;}++s.epoch;++counters.invalidations;s.submitted=false;s.completion=UINT32_MAX;
                 if(s.exported || s.disabled)continue;
                 if(family!=s.snapshot.family){s.disabled=true;++counters.refused;continue;}
-                t.epochs.emplace_back(index,s.epoch);}}
+                const auto observation=camera_observation(packets,s.snapshot.recordingEye,captureSubmission);
+                if(s.snapshot.expectedHeldPacket && (s.snapshot.recordingEye!=0 || observation.status!=CameraStatus::uniform || !same_packet(observation.packet,*s.snapshot.expectedHeldPacket))){s.disabled=true;++counters.refused;continue;}
+                t.epochs.push_back({index,s.epoch,observation});}}
         if(t.epochs.empty() || counters.halted)return t;
-        if(original){++counters.appFenceBypass;for(auto v:t.epochs)slots[v.first]->disabled=true;return t;}
-        if(fences.size()>=fenceLimit){for(auto v:t.epochs)slots[v.first]->disabled=true;++counters.refused;return t;}
+        if(original){++counters.appFenceBypass;for(const auto& v:t.epochs)slots[v.slot]->disabled=true;return t;}
+        if(fences.size()>=fenceLimit){for(const auto& v:t.epochs)slots[v.slot]->disabled=true;++counters.refused;return t;}
         VkFence fence{};VkFenceCreateInfo info{VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};auto result=CreateFence(device,&info,nullptr,&fence);
-        if(result!=VK_SUCCESS){++counters.allocationFailures;for(auto v:t.epochs)slots[v.first]->disabled=true;return t;}
+        if(result!=VK_SUCCESS){++counters.allocationFailures;for(const auto& v:t.epochs)slots[v.slot]->disabled=true;return t;}
         t.completion=uint32_t(fences.size());fences.push_back(fence);++counters.completions;t.forwardedFence=fence;return t;
     }
 };
@@ -73,17 +75,19 @@ void CopyReadback::image(VkImage h,const VkImageCreateInfo& i){auto& p=*impl;std
     p.images[h]={gen,{i.extent.width,i.extent.height},i.format,i.usage,std::move(families),eligible,i.flags,bool(i.pNext)};
 }
 void CopyReadback::removeImage(VkImage h){std::lock_guard<std::mutex> lock(impl->mutex);impl->images.erase(h);}
-void CopyReadback::begin(VkCommandBuffer cb,VkCommandBufferLevel level,VkCommandBufferUsageFlags flags,bool unknown,uint32_t family){auto& p=*impl;std::lock_guard<std::mutex> lock(p.mutex);p.reset(cb);if(p.commands.size()>=32768 || p.recording==UINT64_MAX){p.halt();return;}
-    p.commands[cb]={++p.recording,0,family,level==VK_COMMAND_BUFFER_LEVEL_PRIMARY && !unknown && !(flags&~VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT) && family!=VK_QUEUE_FAMILY_IGNORED,{}};
+void CopyReadback::begin(VkCommandBuffer cb,VkCommandBufferLevel level,VkCommandBufferUsageFlags flags,bool unknown,uint32_t family,uint32_t eye){auto& p=*impl;std::lock_guard<std::mutex> lock(p.mutex);p.reset(cb);if(p.commands.size()>=32768 || p.recording==UINT64_MAX){p.halt();return;}
+    p.commands[cb]={++p.recording,0,family,level==VK_COMMAND_BUFFER_LEVEL_PRIMARY && !unknown && !(flags&~VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT) && family!=VK_QUEUE_FAMILY_IGNORED,{},eye<2?eye:2};
 }
 void CopyReadback::reset(VkCommandBuffer c){std::lock_guard<std::mutex> lock(impl->mutex);impl->reset(c);}
-bool CopyReadback::arm(const Request& r){auto& p=*impl;std::lock_guard<std::mutex> lock(p.mutex);if(p.counters.halted || !r.sequence || r.sequence<=p.requestHigh || p.request.copies || !r.copies || r.copies>4 || p.slots.size()+r.copies>p.copyLimit || !format(r.format) || !r.extent.width || !r.extent.height || r.extent.width>4096 || r.extent.height>4096)return false;p.request=r;p.requestHigh=r.sequence;return true;}
+bool CopyReadback::arm(const Request& r,const EyeState* expected){auto& p=*impl;std::lock_guard<std::mutex> lock(p.mutex);if(p.counters.halted || !r.sequence || r.sequence<=p.requestHigh || p.request.copies || !r.copies || r.copies>4 || p.slots.size()+r.copies>p.copyLimit || !format(r.format) || !r.extent.width || !r.extent.height || r.extent.width>4096 || r.extent.height>4096)return false;
+    if(expected){try{validate_eye_state(*expected);}catch(const std::invalid_argument&){return false;}if(expected->identity[0]!=0)return false;}
+    p.request=r;p.expectedHeldPacket=expected?std::optional<EyeState>(*expected):std::nullopt;p.requestHigh=r.sequence;return true;}
 void CopyReadback::halt(){std::lock_guard<std::mutex> lock(impl->mutex);impl->halt();}
 bool CopyReadback::record(VkCommandBuffer cb,const VkCopyImageInfo2& i){auto& p=*impl;std::lock_guard<std::mutex> lock(p.mutex);
     auto reject=[&](size_t index){++p.counters.rejected[index];return false;};
     auto command=p.commands.find(cb);if(command==p.commands.end())return p.request.copies?reject(0):false;auto& c=command->second;++c.ordinal;
     if(p.counters.halted || !p.request.copies)return false;
-    if(!c.eligible)return reject(0);
+    if(!c.eligible || (p.expectedHeldPacket && c.eye!=0))return reject(0);
     if(i.pNext || i.regionCount!=1 || !i.pRegions || i.pRegions[0].pNext || i.srcImageLayout!=VK_IMAGE_LAYOUT_GENERAL || i.dstImageLayout!=VK_IMAGE_LAYOUT_GENERAL)return reject(1);
     const auto& r=i.pRegions[0];auto src=p.images.find(i.srcImage),dst=p.images.find(i.dstImage);if(src==p.images.end() || dst==p.images.end())return reject(2);const auto& source=src->second;const auto& destination=dst->second;
     if((r.srcSubresource.aspectMask&VK_IMAGE_ASPECT_DEPTH_BIT) && ((source.extent.width==p.request.extent.width && source.extent.height==p.request.extent.height) || (p.counters.candidate[1]!=p.request.extent.width || p.counters.candidate[2]!=p.request.extent.height)))p.counters.candidate={uint64_t(source.format),source.extent.width,source.extent.height,source.sourceEligible,source.flags,source.next,destination.flags,destination.next,c.eligible,c.family};
@@ -98,6 +102,7 @@ bool CopyReadback::record(VkCommandBuffer cb,const VkCopyImageInfo2& i){auto& p=
     if(mr.size>p.budget-p.counters.reservedBytes){p.request.copies=0;++p.counters.refused;return false;}
     VkMemoryAllocateInfo ai{VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};ai.allocationSize=mr.size;ai.memoryTypeIndex=p.type(mr.memoryTypeBits);check(p.AllocateMemory(p.device,&ai,nullptr,&s.memory));check(p.BindBufferMemory(p.device,s.buffer,s.memory,0));check(p.MapMemory(p.device,s.memory,0,bytes,0,&s.mapped));
     s.command=cb;s.snapshot={p.request.sequence,p.slots.size()+1,source.generation,destination.generation,c.recording,c.ordinal,0,0,c.family,source.extent,source.format,VkImageAspectFlags(aspects),{}};
+    s.snapshot.recordingEye=c.eye;s.snapshot.expectedHeldPacket=p.expectedHeldPacket;
     const auto index=uint32_t(p.slots.size());p.slots.push_back(std::move(slot));p.counters.reservedBytes+=mr.size;++p.counters.recorded;--p.request.copies;c.slots.push_back(index);
     // This is a COPY-stage DEPTH read, a subset of the original COPY's source
     // aspects/footprint. No barrier, transition or write touches the source.
@@ -122,16 +127,17 @@ bool submitChain(const void* next,bool legacy){
 bool commands(uint32_t n,const VkSubmitInfo* infos,std::vector<VkCommandBuffer>& out){if(n>256 || (n && !infos))return false;for(uint32_t i=0;i<n;++i){const auto& v=infos[i];if(!submitChain(v.pNext,true) || v.commandBufferCount>256 || v.commandBufferCount>256-out.size() || (v.commandBufferCount && !v.pCommandBuffers))return false;if(v.commandBufferCount)out.insert(out.end(),v.pCommandBuffers,v.pCommandBuffers+v.commandBufferCount);}return true;}
 bool commands(uint32_t n,const VkSubmitInfo2* infos,std::vector<VkCommandBuffer>& out){if(n>256 || (n && !infos))return false;for(uint32_t i=0;i<n;++i){const auto& v=infos[i];if(!submitChain(v.pNext,false) || v.flags || v.commandBufferInfoCount>256 || v.commandBufferInfoCount>256-out.size() || (v.commandBufferInfoCount && !v.pCommandBufferInfos))return false;for(uint32_t j=0;j<v.commandBufferInfoCount;++j){const auto& c=v.pCommandBufferInfos[j];if(c.pNext || (c.deviceMask!=0 && c.deviceMask!=1))return false;out.push_back(c.commandBuffer);}}return true;}
 }
-CopyTicket CopyReadback::before(VkQueue q,uint32_t family,uint32_t n,const VkSubmitInfo* infos,VkFence f){std::vector<VkCommandBuffer> list;bool known=commands(n,infos,list);std::lock_guard<std::mutex> lock(impl->mutex);return impl->before(q,family,list,f,known);}
-CopyTicket CopyReadback::before(VkQueue q,uint32_t family,uint32_t n,const VkSubmitInfo2* infos,VkFence f){std::vector<VkCommandBuffer> list;bool known=commands(n,infos,list);std::lock_guard<std::mutex> lock(impl->mutex);return impl->before(q,family,list,f,known);}
+CopyTicket CopyReadback::before(VkQueue q,uint32_t family,uint32_t n,const VkSubmitInfo* infos,VkFence f,const CameraPair* packets,uint64_t captureSubmission){std::vector<VkCommandBuffer> list;bool known=commands(n,infos,list);std::lock_guard<std::mutex> lock(impl->mutex);return impl->before(q,family,list,f,known,packets,captureSubmission);}
+CopyTicket CopyReadback::before(VkQueue q,uint32_t family,uint32_t n,const VkSubmitInfo2* infos,VkFence f,const CameraPair* packets,uint64_t captureSubmission){std::vector<VkCommandBuffer> list;bool known=commands(n,infos,list);std::lock_guard<std::mutex> lock(impl->mutex);return impl->before(q,family,list,f,known,packets,captureSubmission);}
 void CopyReadback::after(const CopyTicket& t,VkResult result){auto& p=*impl;std::lock_guard<std::mutex> lock(p.mutex);if(result!=VK_SUCCESS){++p.counters.originalFailures;p.halt();return;}
-    for(auto v:t.epochs){auto& s=*p.slots[v.first];if(s.epoch!=v.second){++p.counters.lateReturns;continue;}if(s.disabled || p.counters.halted || t.completion==UINT32_MAX)continue;s.submitted=true;s.completion=t.completion;s.snapshot.submission=t.sequence;s.snapshot.epoch=v.second;}
+    for(const auto& v:t.epochs){auto& s=*p.slots[v.slot];if(s.epoch!=v.epoch){++p.counters.lateReturns;continue;}if(s.disabled || p.counters.halted || t.completion==UINT32_MAX)continue;s.submitted=true;s.completion=t.completion;s.snapshot.submission=t.sequence;s.snapshot.epoch=v.epoch;s.snapshot.copySubmit=v.copySubmit;s.snapshot.captureSubmission=t.captureSubmission;}
 }
 std::vector<CopySnapshot> CopyReadback::ready(){auto& p=*impl;std::lock_guard<std::mutex> lock(p.mutex);std::vector<CopySnapshot> out;if(p.counters.halted)return out;
     for(auto& s:p.slots)if(s->submitted && !s->exported && !s->disabled && s->completion<p.fences.size()){
         const auto status=p.GetFenceStatus(p.device,p.fences[s->completion]);if(status==VK_NOT_READY)continue;if(status!=VK_SUCCESS){p.halt();return {};}
         auto value=s->snapshot;value.words.resize(size_t(value.extent.width)*value.extent.height);std::memcpy(value.words.data(),s->mapped,value.words.size()*4);if(value.format==VK_FORMAT_D24_UNORM_S8_UINT)for(auto& v:value.words)v&=0xffffffu;out.push_back(std::move(value));s->exported=true;++p.counters.exported;
-    }return out;
+    }
+    return out;
 }
 CopyStats CopyReadback::stats() const{std::lock_guard<std::mutex> lock(impl->mutex);return impl->counters;}
 } // namespace d4vr::depth

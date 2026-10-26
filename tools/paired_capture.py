@@ -143,7 +143,7 @@ def command(capture: dict) -> list[str]:
                 'VKD3D_SHADER_OVERRIDE','VKD3D_SHADER_DEBUG','D4VR_POSE_CAPTURE_DIAGNOSTIC','D4VR_COOPERATIVE_XR_DIAGNOSTIC',
                 'D4VR_DIAGNOSTIC_VIEW_HOLD','D4VR_LAYER_REPLAY_POC','D4VR_DEPTH_READBACK_DIAGNOSTIC','D4VR_DEPTH_AUDIT',
                 'D4VR_DEPTH_AUDIT_FIXTURE','D4VR_DEPTH_LAYER_FIXTURE','D4VR_DEPTH_TRANSFER_FIXTURE',
-                'D4VR_DEPTH_COPY_READBACK_DIAGNOSTIC','D4VR_DEPTH_COPY_FIXTURE'):
+                'D4VR_HELD_DEPTH_COLOR_DIAGNOSTIC', 'D4VR_DEPTH_COPY_READBACK_DIAGNOSTIC','D4VR_DEPTH_COPY_FIXTURE'):
         result+=['-u',key]
     return result+[k+'='+v for k,v in capture['variables'].items()]+['/usr/bin/bash',capture['private_launcher']]
 

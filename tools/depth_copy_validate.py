@@ -56,7 +56,7 @@ def validate(a):
                             'D4VR_DEPTH_AUDIT', 'D4VR_DEPTH_READBACK_DIAGNOSTIC',
                             'D4VR_DEPTH_TRANSFER_FIXTURE', 'D4VR_DEPTH_COPY_FIXTURE',
                             'D4VR_DEPTH_LAYER_FIXTURE', 'D4VR_DEPTH_AUDIT_FIXTURE',
-                            'D4VR_DEPTH_COPY_READBACK_DIAGNOSTIC'):
+                            'D4VR_HELD_DEPTH_COLOR_DIAGNOSTIC', 'D4VR_DEPTH_COPY_READBACK_DIAGNOSTIC'):
                     command += ['-u', key]
                 command += ['VK_INSTANCE_LAYERS='+('VK_LAYER_D4VR_trace:' if layered else '')+'VK_LAYER_KHRONOS_validation',
                             'VK_ADD_LAYER_PATH='+str(a.validation_layer.resolve())+(':'+str(a.layer.resolve()) if layered else ''),

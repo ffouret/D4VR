@@ -38,9 +38,10 @@ VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL dispatch(VkDevice,const char* s){
 struct Inputs{
     VkImageCreateInfo image{VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};VkImageCopy2 region{VK_STRUCTURE_TYPE_IMAGE_COPY_2};VkCopyImageInfo2 info{VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2};VkCommandBuffer cb=h<VkCommandBuffer>(4);VkCommandBufferSubmitInfo command{VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO};VkSubmitInfo2 submit{VK_STRUCTURE_TYPE_SUBMIT_INFO_2};
     Inputs(){image.imageType=VK_IMAGE_TYPE_2D;image.format=VK_FORMAT_D24_UNORM_S8_UINT;image.extent={2,2,1};image.mipLevels=image.arrayLayers=1;image.samples=VK_SAMPLE_COUNT_1_BIT;image.usage=VK_IMAGE_USAGE_TRANSFER_SRC_BIT|VK_IMAGE_USAGE_TRANSFER_DST_BIT;region.srcSubresource=region.dstSubresource={VK_IMAGE_ASPECT_DEPTH_BIT|VK_IMAGE_ASPECT_STENCIL_BIT,0,0,1};region.extent=image.extent;info.srcImage=h<VkImage>(2);info.dstImage=h<VkImage>(3);info.srcImageLayout=info.dstImageLayout=VK_IMAGE_LAYOUT_GENERAL;info.regionCount=1;info.pRegions=&region;command.commandBuffer=cb;command.deviceMask=0;submit.commandBufferInfoCount=1;submit.pCommandBufferInfos=&command;}
-    void setup(CopyReadback& r){r.image(info.srcImage,image);r.image(info.dstImage,image);r.begin(cb,VK_COMMAND_BUFFER_LEVEL_PRIMARY,0,false,0);}
-    CopyTicket before(CopyReadback& r,VkFence f=VK_NULL_HANDLE){return r.before(h<VkQueue>(5),0,1,&submit,f);}
+    void setup(CopyReadback& r,uint32_t eye=2){r.image(info.srcImage,image);r.image(info.dstImage,image);r.begin(cb,VK_COMMAND_BUFFER_LEVEL_PRIMARY,0,false,0,eye);}
+    CopyTicket before(CopyReadback& r,VkFence f=VK_NULL_HANDLE,const d4vr::CameraPair* packets=nullptr,uint64_t captureSubmission=0){return r.before(h<VkQueue>(5),0,1,&submit,f,packets,captureSubmission);}
 };
+d4vr::CameraPair packets(uint32_t revision,double translation=0){auto view=d4vr::identity();view[3]=translation;return d4vr::CameraPair({d4vr::make_eye_state(0,revision,view,d4vr::identity()),d4vr::make_eye_state(1,revision,view,d4vr::identity())});}
 }
 int main()try{
     // Parser-only linked records, never submitted as Vulkan feature structures.
@@ -56,6 +57,7 @@ int main()try{
     {CopyReadback r(h<VkDevice>(1),dispatch,memory);Inputs i;i.setup(r);require(r.arm({1,{2,2},i.image.format,1}));
         i.region.extent.width=1;require(!r.record(i.cb,i.info));i.region.extent.width=2;r.begin(i.cb,VK_COMMAND_BUFFER_LEVEL_PRIMARY,VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT,false,0);require(!r.record(i.cb,i.info));r.begin(i.cb,VK_COMMAND_BUFFER_LEVEL_SECONDARY,0,false,0);require(!r.record(i.cb,i.info));r.begin(i.cb,VK_COMMAND_BUFFER_LEVEL_PRIMARY,0,true,0);require(!r.record(i.cb,i.info));r.begin(i.cb,VK_COMMAND_BUFFER_LEVEL_PRIMARY,0,false,0);require(r.record(i.cb,i.info));
         auto old=i.before(r),latest=i.before(r);require(old.forwardedFence && latest.forwardedFence && old.forwardedFence!=latest.forwardedFence);r.after(old,VK_SUCCESS);fences[old.forwardedFence]=true;require(r.ready().empty());r.after(latest,VK_SUCCESS);require(r.ready().empty());for(auto& m:memories)m.second.assign(4,0xff400001);fences[latest.forwardedFence]=true;auto values=r.ready();require(values.size()==1 && values[0].submission==latest.sequence && values[0].epoch==2 && values[0].words==std::vector<uint32_t>(4,0x400001) && r.stats().lateReturns==1);require(r.ready().empty());
+        require(values[0].recordingEye==2 && !values[0].expectedHeldPacket && values[0].copySubmit.status==d4vr::CameraStatus::unknown && values[0].captureSubmission==0);
         // Already copied CPU bytes remain immutable under another GPU write.
         auto again=i.before(r);require(!again.forwardedFence);for(auto& m:memories)m.second.assign(4,0xff123456);r.after(again,VK_SUCCESS);require(r.ready().empty() && values[0].words[0]==0x400001);
     }
@@ -82,6 +84,79 @@ int main()try{
     {CopyReadback r(h<VkDevice>(1),dispatch,memory);Inputs i;i.setup(r);VkBaseInStructure unknown{};unknown.sType=VK_STRUCTURE_TYPE_PERFORMANCE_QUERY_SUBMIT_INFO_KHR;i.submit.pNext=&unknown;auto t=i.before(r);require(!t.forwardedFence && r.stats().halted);}
     {CopyReadback r(h<VkDevice>(1),dispatch,memory);Inputs i;i.setup(r);VkImageFormatListCreateInfo list{VK_STRUCTURE_TYPE_IMAGE_FORMAT_LIST_CREATE_INFO};list.viewFormatCount=1;list.pViewFormats=&i.image.format;i.image.flags=VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;i.image.pNext=&list;r.image(i.info.dstImage,i.image);require(r.arm({1,{2,2},i.image.format,1}) && r.record(i.cb,i.info));auto t=i.before(r);r.after(t,VK_SUCCESS);fences[t.forwardedFence]=true;require(r.ready().size()==1);}
     {CopyReadback r(h<VkDevice>(1),dispatch,memory);Inputs i;i.setup(r);i.image.flags=VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;r.image(i.info.srcImage,i.image);require(r.arm({1,{2,2},i.image.format,1}) && !r.record(i.cb,i.info));require(r.stats().rejected[3]==1 && r.stats().recorded==0);}
+    // The phase packet and recording eye are value snapshots. A wrong/unknown
+    // recording eye cannot consume the pending request, even if it predates it.
+    {CopyReadback r(h<VkDevice>(1),dispatch,memory);Inputs i;i.setup(r,1);auto actual=packets(17,.25);const auto original=actual.eye(0);auto expected=original;
+        require(r.arm({1,{2,2},i.image.format,1},&expected));expected=packets(18).eye(0);
+        require(!r.record(i.cb,i.info) && r.stats().recorded==0);
+        r.begin(i.cb,VK_COMMAND_BUFFER_LEVEL_PRIMARY,0,false,0);require(!r.record(i.cb,i.info));
+        r.begin(i.cb,VK_COMMAND_BUFFER_LEVEL_PRIMARY,0,false,0,0);require(r.record(i.cb,i.info));
+        auto t=i.before(r,VK_NULL_HANDLE,&actual,101);require(t.forwardedFence && t.epochs.size()==1 && t.epochs[0].copySubmit.status==d4vr::CameraStatus::uniform);
+        actual=packets(19,.5);fences[t.forwardedFence]=true;require(r.ready().empty());r.after(t,VK_SUCCESS);auto values=r.ready();
+        require(values.size()==1 && values[0].recordingEye==0 && values[0].recording==3 && values[0].expectedHeldPacket && d4vr::same_packet(*values[0].expectedHeldPacket,original));
+        require(values[0].copySubmit.status==d4vr::CameraStatus::uniform && d4vr::same_packet(values[0].copySubmit.packet,original) && values[0].copySubmit.firstSubmission==101 && values[0].copySubmit.lastSubmission==101 && values[0].captureSubmission==101 && values[0].submission==t.sequence && values[0].submission!=values[0].captureSubmission);
+    }
+    // Supplying ordinary metadata does not impose a held phase or eye zero.
+    // The legacy overload freezes the same provenance as SubmitInfo2.
+    {CopyReadback r(h<VkDevice>(1),dispatch,memory);Inputs i;i.setup(r,1);const auto actual=packets(20,.5);require(r.arm({1,{2,2},i.image.format,1}) && r.record(i.cb,i.info));
+        VkSubmitInfo legacy{VK_STRUCTURE_TYPE_SUBMIT_INFO};legacy.commandBufferCount=1;legacy.pCommandBuffers=&i.cb;
+        auto t=r.before(h<VkQueue>(5),0,1,&legacy,VK_NULL_HANDLE,&actual,315);r.after(t,VK_SUCCESS);fences[t.forwardedFence]=true;auto values=r.ready();
+        require(values.size()==1 && values[0].recordingEye==1 && !values[0].expectedHeldPacket && values[0].copySubmit.status==d4vr::CameraStatus::uniform && d4vr::same_packet(values[0].copySubmit.packet,actual.eye(1)) && values[0].captureSubmission==315);
+    }
+    // A newly armed request never replaces an already inserted slot's phase.
+    {CopyReadback r(h<VkDevice>(1),dispatch,memory);Inputs i;i.setup(r,0);const auto first=packets(21),nextPhase=packets(22);
+        require(r.arm({1,{2,2},i.image.format,1},&first.eye(0)) && r.record(i.cb,i.info));
+        require(r.arm({2,{2,2},i.image.format,1},&nextPhase.eye(0)));auto t=i.before(r,VK_NULL_HANDLE,&first,401);r.after(t,VK_SUCCESS);fences[t.forwardedFence]=true;auto values=r.ready();
+        require(values.size()==1 && values[0].request==1 && values[0].expectedHeldPacket && d4vr::same_packet(*values[0].expectedHeldPacket,first.eye(0)) && values[0].captureSubmission==401);
+        r.begin(i.cb,VK_COMMAND_BUFFER_LEVEL_PRIMARY,0,false,0,0);require(r.record(i.cb,i.info));auto next=i.before(r,VK_NULL_HANDLE,&nextPhase,402);r.after(next,VK_SUCCESS);fences[next.forwardedFence]=true;auto newer=r.ready();
+        require(newer.size()==1 && newer[0].request==2 && newer[0].recording==2 && newer[0].expectedHeldPacket && d4vr::same_packet(*newer[0].expectedHeldPacket,nextPhase.eye(0)));
+        require(d4vr::same_packet(*values[0].expectedHeldPacket,first.eye(0)) && d4vr::same_packet(values[0].copySubmit.packet,first.eye(0)));
+    }
+    // Same-phase resubmission needs the newest successful epoch and its own
+    // frozen shared submission identity; a late old return cannot authorize it.
+    {CopyReadback r(h<VkDevice>(1),dispatch,memory);Inputs i;i.setup(r,0);const auto actual=packets(23);
+        require(r.arm({1,{2,2},i.image.format,1},&actual.eye(0)) && r.record(i.cb,i.info));auto old=i.before(r,VK_NULL_HANDLE,&actual,501),latest=i.before(r,VK_NULL_HANDLE,&actual,502);
+        r.after(old,VK_SUCCESS);fences[old.forwardedFence]=fences[latest.forwardedFence]=true;require(r.ready().empty());r.after(latest,VK_SUCCESS);auto values=r.ready();
+        require(values.size()==1 && values[0].epoch==2 && values[0].captureSubmission==502 && values[0].copySubmit.firstSubmission==502 && values[0].submission==latest.sequence && r.stats().lateReturns==1);
+    }
+    // A changed revision invalidates an older completed-but-unread epoch before
+    // forwarding. Later matching data cannot repair the disabled export.
+    {CopyReadback r(h<VkDevice>(1),dispatch,memory);Inputs i;i.setup(r,0);const auto original=packets(24),changed=packets(25);
+        require(r.arm({1,{2,2},i.image.format,1},&original.eye(0)) && r.record(i.cb,i.info));auto old=i.before(r,VK_NULL_HANDLE,&original,601);r.after(old,VK_SUCCESS);fences[old.forwardedFence]=true;
+        auto mismatch=i.before(r,VK_NULL_HANDLE,&changed,602);require(!mismatch.forwardedFence && r.ready().empty() && r.stats().refused==1);r.after(mismatch,VK_SUCCESS);r.after(old,VK_SUCCESS);
+        auto repaired=i.before(r,VK_NULL_HANDLE,&original,603);r.after(repaired,VK_SUCCESS);require(!repaired.forwardedFence && r.ready().empty() && r.stats().lateReturns==1);
+    }
+    // Equality includes every packet byte, not just revision, mapping class or
+    // current request. Matrix changes with an unchanged revision are refused.
+    {CopyReadback r(h<VkDevice>(1),dispatch,memory);Inputs i;i.setup(r,0);const auto original=packets(26,.25),changed=packets(26,.5);
+        require(r.arm({1,{2,2},i.image.format,1},&original.eye(0)) && r.record(i.cb,i.info));auto t=i.before(r,VK_NULL_HANDLE,&changed,701);r.after(t,VK_SUCCESS);require(!t.forwardedFence && r.ready().empty() && r.stats().refused==1);
+    }
+    // A single CameraPair can represent only uniform known packets. The caller
+    // must collapse unknown/mixed history to nullptr rather than choose a later
+    // packet. Neither that nor a missing shared submission ID passes a phase.
+    for(unsigned which=0;which<3;++which){CopyReadback r(h<VkDevice>(1),dispatch,memory);Inputs i;i.setup(r,0);const auto original=packets(27),changed=packets(28);
+        require(r.arm({1,{2,2},i.image.format,1},&original.eye(0)) && r.record(i.cb,i.info));const d4vr::CameraPair* observed=which==1?&original:nullptr;
+        if(which==2){d4vr::CameraInterval mixed;mixed.submitted(1,1,800,&original);mixed.submitted(1,1,801,&changed);require(mixed.eye(0).status==d4vr::CameraStatus::mixed);observed=mixed.eye(0).status==d4vr::CameraStatus::uniform?&original:nullptr;}
+        auto t=i.before(r,VK_NULL_HANDLE,observed,which==1?0:802);r.after(t,VK_SUCCESS);require(!t.forwardedFence && r.ready().empty() && r.stats().refused==1);
+        auto later=i.before(r,VK_NULL_HANDLE,&original,803);r.after(later,VK_SUCCESS);require(!later.forwardedFence && r.ready().empty());
+    }
+    // Without a required phase, a new epoch may truthfully carry a new packet;
+    // immutable older ticket metadata never overwrites the latest observation.
+    {CopyReadback r(h<VkDevice>(1),dispatch,memory);Inputs i;i.setup(r,0);const auto original=packets(29),changed=packets(30);
+        require(r.arm({1,{2,2},i.image.format,1}) && r.record(i.cb,i.info));auto old=i.before(r,VK_NULL_HANDLE,&original,901),latest=i.before(r,VK_NULL_HANDLE,&changed,902);r.after(latest,VK_SUCCESS);r.after(old,VK_SUCCESS);fences[old.forwardedFence]=true;require(r.ready().empty());fences[latest.forwardedFence]=true;auto values=r.ready();
+        require(values.size()==1 && values[0].captureSubmission==902 && d4vr::same_packet(values[0].copySubmit.packet,changed.eye(0)) && r.stats().lateReturns==1);
+    }
+    // Reset/re-record cannot relabel retained submitted resources. Their original
+    // recording, required phase and successful BEFORE observation survive.
+    {CopyReadback r(h<VkDevice>(1),dispatch,memory);Inputs i;i.setup(r,0);const auto original=packets(31),changed=packets(32);
+        require(r.arm({1,{2,2},i.image.format,1},&original.eye(0)) && r.record(i.cb,i.info));auto old=i.before(r,VK_NULL_HANDLE,&original,1001);r.after(old,VK_SUCCESS);r.reset(i.cb);
+        require(r.arm({2,{2,2},i.image.format,1},&changed.eye(0)));r.begin(i.cb,VK_COMMAND_BUFFER_LEVEL_PRIMARY,0,false,0,1);require(!r.record(i.cb,i.info));fences[old.forwardedFence]=true;auto values=r.ready();
+        require(values.size()==1 && values[0].recording==1 && values[0].recordingEye==0 && values[0].captureSubmission==1001 && values[0].expectedHeldPacket && d4vr::same_packet(*values[0].expectedHeldPacket,original.eye(0)) && d4vr::same_packet(values[0].copySubmit.packet,original.eye(0)));
+        r.begin(i.cb,VK_COMMAND_BUFFER_LEVEL_PRIMARY,0,false,0,0);require(r.record(i.cb,i.info));auto next=i.before(r,VK_NULL_HANDLE,&changed,1002);r.after(next,VK_SUCCESS);fences[next.forwardedFence]=true;auto newer=r.ready();require(newer.size()==1 && newer[0].recording==3 && newer[0].captureSubmission==1002);
+    }
+    {CopyReadback r(h<VkDevice>(1),dispatch,memory);Inputs i;i.setup(r,0);auto invalid=packets(33).eye(0);invalid.header[0]=0;require(!r.arm({1,{2,2},i.image.format,1},&invalid));const auto actual=packets(33);require(!r.arm({1,{2,2},i.image.format,1},&actual.eye(1)) && r.arm({1,{2,2},i.image.format,1},&actual.eye(0)) && r.record(i.cb,i.info));
+        auto t=i.before(r,VK_NULL_HANDLE,&actual,1101);r.after(t,VK_ERROR_DEVICE_LOST);fences[t.forwardedFence]=true;require(r.ready().empty() && r.stats().halted);
+    }
     require(memories.empty() && fences.empty() && allocations==frees && barriers==reads*2);
-    std::cout<<"{\"depth_copy_ownership_passed\":true,\"late_epochs\":true,\"app_fence_preserved\":true,\"cpu_read_excludes_resubmit\":true,\"budgets_failures_reset\":true,\"gpu_waits_or_queue_submits\":0}\n";return 0;
+    std::cout<<"{\"depth_copy_ownership_passed\":true,\"late_epochs\":true,\"app_fence_preserved\":true,\"cpu_read_excludes_resubmit\":true,\"budgets_failures_reset\":true,\"held_phase_exact_before_packet\":true,\"recording_eye_frozen\":true,\"capture_submission_distinct\":true,\"unknown_mixed_revision_refused\":true,\"gpu_waits_or_queue_submits\":0}\n";return 0;
 }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}

@@ -4,7 +4,7 @@
 
 ## Admission and commands
 
-Set `D4VR_DEPTH_COPY_READBACK_DIAGNOSTIC=1` with a private `D4VR_TRACE_DIR`. Vulkan 1.3, enabled synchronization2 and one physical device are required. A bounded CPU walk inspects at most 256 feature-chain nodes; unrelated enabled features are neither rewritten nor removed. Initialization failure disables this diagnostic and preserves the original device result. Depth audit takes precedence over readback. Camera, replay and XR injection modes must be absent.
+Set `D4VR_DEPTH_COPY_READBACK_DIAGNOSTIC=1` with a private `D4VR_TRACE_DIR`. Vulkan 1.3, enabled synchronization2 and one physical device are required. A bounded CPU walk inspects at most 256 feature-chain nodes; unrelated enabled features are neither rewritten nor removed. In isolated original-camera mode, initialization failure disables this diagnostic and preserves the original device result; depth audit takes precedence and camera, replay and XR injection modes must be absent. The separately admitted [held depth/color diagnostic](HELD_DEPTH_COLOR.md) requires its own explicit flag and complete component initialization. It permits only that specified camera/color composition, retains source/COPY restrictions and excludes XR, replay, audit and the older reader.
 
 Atomically write a regular file `depth-copy.request`:
 
