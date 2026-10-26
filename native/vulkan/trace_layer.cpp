@@ -212,7 +212,8 @@ struct Commands {
     X(AllocateMemory) X(FreeMemory) X(BindBufferMemory) X(BindBufferMemory2) X(MapMemory) X(UnmapMemory) X(FlushMappedMemoryRanges) X(InvalidateMappedMemoryRanges) D4_MEMORY2_FUNCTIONS(X) \
     X(CreateDescriptorSetLayout) X(DestroyDescriptorSetLayout) X(GetDescriptorSetLayoutSizeEXT) X(GetDescriptorSetLayoutBindingOffsetEXT) X(GetDescriptorEXT) \
     X(CmdBindDescriptorBuffersEXT) X(CmdSetDescriptorBufferOffsetsEXT) X(CmdBindDescriptorSets) \
-    X(CreateSwapchainKHR) X(DestroySwapchainKHR) X(GetSwapchainImagesKHR) X(CmdBlitImage) X(CmdBlitImage2) X(CreateCommandPool)
+    X(CreateSwapchainKHR) X(DestroySwapchainKHR) X(GetSwapchainImagesKHR) X(CmdBlitImage) X(CmdBlitImage2) X(CreateCommandPool) \
+    X(CmdCopyImage) X(CmdCopyImage2) X(CmdCopyImageToBuffer) X(CmdCopyImageToBuffer2)
 struct Device {
     VkDevice handle{};
     PFN_vkGetDeviceProcAddr get{};
@@ -655,7 +656,7 @@ VKAPI_ATTR VkResult VKAPI_CALL d4CreateDevice(VkPhysicalDevice physical, const V
     D4_ALIAS(CmdBeginRenderPass2) D4_ALIAS(CmdBeginRendering) D4_ALIAS(QueueSubmit2)
     D4_ALIAS(CmdEndRenderPass2) D4_ALIAS(CmdEndRendering)
     D4_ALIAS(GetBufferDeviceAddress) D4_ALIAS(BindBufferMemory2)
-    D4_ALIAS(CmdBlitImage2)
+    D4_ALIAS(CmdBlitImage2) D4_ALIAS(CmdCopyImage2) D4_ALIAS(CmdCopyImageToBuffer2)
 #undef D4_ALIAS
     if(!d->CmdSetViewportWithCount)d->CmdSetViewportWithCount=reinterpret_cast<PFN_vkCmdSetViewportWithCount>(get(*result,"vkCmdSetViewportWithCountEXT"));
 #ifdef VK_KHR_map_memory2
@@ -1184,14 +1185,34 @@ void captureBlit(const std::shared_ptr<Device>& d,VkCommandBuffer command,VkImag
 }
 VKAPI_ATTR void VKAPI_CALL d4CmdBlitImage(VkCommandBuffer command,VkImage source,VkImageLayout src,VkImage destination,VkImageLayout dst,uint32_t count,const VkImageBlit* regions,VkFilter filter){
     auto d=deviceFor(command);D4_POC(d,d->poc->unsupported(command));captureBlit(d,command,source,src,destination,dst,count,regions,filter);
+    D4_AUDIT(d,d->depthAudit->transfers().blit(command,source,src,destination,dst,count,regions,filter));
     d->CmdBlitImage(command,source,src,destination,dst,count,regions,filter);
 }
 VKAPI_ATTR void VKAPI_CALL d4CmdBlitImage2(VkCommandBuffer command,const VkBlitImageInfo2* info){
     auto d=deviceFor(command);D4_POC(d,d->poc->unsupported(command));
+    D4_AUDIT(d,d->depthAudit->transfers().blit2(command,info));
     if(!info->pNext && info->regionCount==1 && info->pRegions && !info->pRegions[0].pNext){const auto& r=info->pRegions[0];VkImageBlit region{};
         region.srcSubresource=r.srcSubresource;region.dstSubresource=r.dstSubresource;std::copy(r.srcOffsets,r.srcOffsets+2,region.srcOffsets);std::copy(r.dstOffsets,r.dstOffsets+2,region.dstOffsets);
         captureBlit(d,command,info->srcImage,info->srcImageLayout,info->dstImage,info->dstImageLayout,1,&region,info->filter);}
     d->CmdBlitImage2(command,info);
+}
+VKAPI_ATTR void VKAPI_CALL d4CmdCopyImage(VkCommandBuffer command,VkImage source,VkImageLayout src,VkImage destination,VkImageLayout dst,uint32_t count,const VkImageCopy* regions){
+    auto d=deviceFor(command);D4_POC(d,d->poc->unsupported(command));
+    D4_AUDIT(d,d->depthAudit->transfers().copy(command,source,src,destination,dst,count,regions));
+    d->CmdCopyImage(command,source,src,destination,dst,count,regions);
+}
+VKAPI_ATTR void VKAPI_CALL d4CmdCopyImage2(VkCommandBuffer command,const VkCopyImageInfo2* info){
+    auto d=deviceFor(command);D4_POC(d,d->poc->unsupported(command));
+    D4_AUDIT(d,d->depthAudit->transfers().copy2(command,info));d->CmdCopyImage2(command,info);
+}
+VKAPI_ATTR void VKAPI_CALL d4CmdCopyImageToBuffer(VkCommandBuffer command,VkImage source,VkImageLayout layout,VkBuffer destination,uint32_t count,const VkBufferImageCopy* regions){
+    auto d=deviceFor(command);D4_POC(d,d->poc->unsupported(command,true));
+    D4_AUDIT(d,d->depthAudit->transfers().buffer(command,source,layout,count,regions));
+    d->CmdCopyImageToBuffer(command,source,layout,destination,count,regions);
+}
+VKAPI_ATTR void VKAPI_CALL d4CmdCopyImageToBuffer2(VkCommandBuffer command,const VkCopyImageToBufferInfo2* info){
+    auto d=deviceFor(command);D4_POC(d,d->poc->unsupported(command,true));
+    D4_AUDIT(d,d->depthAudit->transfers().buffer2(command,info));d->CmdCopyImageToBuffer2(command,info);
 }
 VKAPI_ATTR VkResult VKAPI_CALL d4CreateImageView(VkDevice device, const VkImageViewCreateInfo* info, const VkAllocationCallbacks* allocator, VkImageView* view) {
     auto d = deviceFor(device); auto result = d->CreateImageView(device, info, allocator, view);
@@ -1423,7 +1444,7 @@ PFN_vkVoidFunction intercepted(const char* name) {
     D4_MATCH_ALIAS(CmdBeginRenderPass2) D4_MATCH_ALIAS(CmdBeginRendering) D4_MATCH_ALIAS(QueueSubmit2)
     D4_MATCH_ALIAS(CmdEndRenderPass2) D4_MATCH_ALIAS(CmdEndRendering)
     D4_MATCH_ALIAS(GetBufferDeviceAddress) D4_MATCH_ALIAS(BindBufferMemory2)
-    D4_MATCH_ALIAS(CmdBlitImage2)
+    D4_MATCH_ALIAS(CmdBlitImage2) D4_MATCH_ALIAS(CmdCopyImage2) D4_MATCH_ALIAS(CmdCopyImageToBuffer2)
     if(std::strcmp(name,"vkCmdSetViewportWithCountEXT")==0)return reinterpret_cast<PFN_vkVoidFunction>(d4CmdSetViewportWithCount);
 #undef D4_MATCH_ALIAS
 #ifdef VK_KHR_map_memory2

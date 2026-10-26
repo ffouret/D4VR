@@ -10,14 +10,21 @@ répond pas à cet objectif.
 
 ## État du projet
 
+L’[observation des transferts originaux](docs/ORIGINAL_DEPTH_TRANSFERS.md) trouve
+dans Diablo une copie de profondeur D24 en 1707 × 960, dont le compteur augmente
+pendant l’affichage du monde. C’est un point concret pour préparer la capture au
+même type d’accès GPU. Aucun pixel de profondeur du jeu n’a encore été lu par
+notre sonde : la copie privée, sa fin d’écriture et la réutilisation des commandes
+restent à implémenter et tester. Les trous au champ élargi persistent.
+
 Un [audit sans lecture GPU, essayé dans Diablo](docs/DEPTH_AUDIT.md), établit
 que la [sonde de profondeur préparée](docs/DEPTH_READBACK.md) ne peut pas encore
 y être activée : les scopes de synchronisation, commandes et descriptions de
 ressources sortent de ses conditions admises. Sur 400 573 soumissions observées,
 377 890 sortent de cette politique ; les 35 configurations de rendu avec profondeur
 sont également exclues. Les appels du jeu sont transmis sans modification ni refus.
-Le jeu est sorti normalement et les originaux sont préservés. La suite est de
-chercher une lecture de profondeur déjà effectuée par le jeu, pour préparer une
+Le jeu est sorti normalement et les originaux sont préservés. L’observation
+ci-dessus identifie une lecture originale à examiner pour préparer une
 capture qui respecte sa synchronisation. Aucun pixel de profondeur de Diablo
 n’a encore été lu et les trous au champ élargi restent présents.
 

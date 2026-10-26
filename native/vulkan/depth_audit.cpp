@@ -30,6 +30,7 @@ template<class K>void bin(std::map<K,uint64_t>& m,K key,uint64_t& overflow){auto
 template<class K>std::string bins(const std::map<K,uint64_t>& m){std::ostringstream o;o<<'[';bool comma=false;for(const auto& v:m){if(comma)o<<',';comma=true;o<<"{\"value\":"<<v.first<<",\"count\":"<<v.second<<'}';}return o.str()+"]";}
 }
 struct Audit::Impl {
+    TransferAudit transfers;
     mutable std::mutex mutex;uint64_t generation=0,recording=0,submissions=0,legacy=0,modern=0,sparseCalls=0,success=0,failed=0,unsupported=0,successfulUnsupported=0;
     uint64_t registryOverflow=0,scopeOverflow=0,binOverflow=0,inputTruncated=0,unknownQueues=0,unknownCommands=0,secondaryExecutions=0;
     uint64_t renderingBegins=0,depthBegins=0,renderingEnds=0,unknownDepthViews=0;
@@ -59,17 +60,18 @@ struct Audit::Impl {
             for(const auto& item:command->second.uses){auto i=selected.find(item.first);if(i==selected.end())selected[item.first]=item.second;else{auto count=i->second.count+item.second.count;i->second=item.second;i->second.count=count;}}
         }
         for(const auto& item:selected)out.uses.push_back(item.second);
+        out.transfers=transfers.before(list);
     }
 };
 Audit::Audit():impl(std::make_unique<Impl>()){}Audit::~Audit()=default;
 void Audit::queue(VkQueue q,uint32_t family,uint32_t index){auto& p=*impl;std::lock_guard<std::mutex> lock(p.mutex);auto old=p.queues.find(q);if(old!=p.queues.end()){old->second.family=family;old->second.index=index;}else if(p.queues.size()<64)p.queues[q]={++p.queueGeneration,family,index};else ++p.registryOverflow;}
 void Audit::image(VkImage h,const VkImageCreateInfo& i){
-    auto& p=*impl;std::lock_guard<std::mutex> lock(p.mutex);p.eraseImage(h);
+    auto& p=*impl;std::lock_guard<std::mutex> lock(p.mutex);p.eraseImage(h);p.transfers.removeImage(h);
     if(p.images.size()>=65536 || p.generation==UINT64_MAX){++p.registryOverflow;return;}
     Description d{};d[IKnown]=1;d[IFlags]=i.flags;d[INext]=nextType(i.pNext);d[IHasNext]=bool(i.pNext);d[IFormat]=i.format;d[IWidth]=i.extent.width;d[IHeight]=i.extent.height;d[IDepth]=i.extent.depth;d[IMips]=i.mipLevels;d[ILayers]=i.arrayLayers;d[ISamples]=i.samples;d[IType]=i.imageType;d[ITiling]=i.tiling;d[IUsage]=i.usage;d[ISharing]=i.sharingMode;d[IEligible]=image_candidate(i);
-    p.images[h]={++p.generation,d};
+    p.images[h]={++p.generation,d};p.transfers.image(h,i,p.generation);
 }
-void Audit::removeImage(VkImage h){std::lock_guard<std::mutex> lock(impl->mutex);impl->eraseImage(h);}
+void Audit::removeImage(VkImage h){std::lock_guard<std::mutex> lock(impl->mutex);impl->eraseImage(h);impl->transfers.removeImage(h);}
 void Audit::view(VkImageView h,const VkImageViewCreateInfo& i){
     auto& p=*impl;std::lock_guard<std::mutex> lock(p.mutex);p.views.erase(h);if(p.views.size()>=65536 || p.generation==UINT64_MAX){++p.registryOverflow;return;}
     Description d{};uint64_t imageGeneration=0;auto image=p.images.find(i.image);if(image!=p.images.end()){d=image->second.desc;imageGeneration=image->second.generation;}
@@ -78,12 +80,14 @@ void Audit::view(VkImageView h,const VkImageViewCreateInfo& i){
 }
 void Audit::removeView(VkImageView h){std::lock_guard<std::mutex> lock(impl->mutex);impl->views.erase(h);}
 void Audit::begin(VkCommandBuffer c,VkCommandBufferLevel level,VkCommandBufferUsageFlags flags,bool beginNext,bool poolKnown,VkCommandPoolCreateFlags poolFlags,bool poolNext,uint32_t family){
-    auto& p=*impl;std::lock_guard<std::mutex> lock(p.mutex);p.commands.erase(c);if(p.commands.size()>=32768 || p.recording==UINT64_MAX){++p.registryOverflow;return;}
+    auto& p=*impl;std::lock_guard<std::mutex> lock(p.mutex);p.commands.erase(c);p.transfers.reset(c);if(p.commands.size()>=32768 || p.recording==UINT64_MAX){++p.registryOverflow;return;}
     Description d{};d[CKnown]=1;d[CLevel]=level;d[CFlags]=flags;d[PoolKnown]=poolKnown;d[PoolFlags]=poolFlags;d[PoolHasNext]=poolNext;d[Family]=family;d[CBeginHasNext]=beginNext;
     d[CEligible]=level==VK_COMMAND_BUFFER_LEVEL_PRIMARY && flags==VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT && !beginNext && poolKnown && !poolNext && !(poolFlags&VK_COMMAND_POOL_CREATE_PROTECTED_BIT) && family!=VK_QUEUE_FAMILY_IGNORED;
     p.commands[c]={d,++p.recording,0,{}, {}};
+    p.transfers.begin(c,p.recording,level,flags,beginNext,poolKnown,poolFlags,poolNext,family);
 }
-void Audit::reset(VkCommandBuffer c){std::lock_guard<std::mutex> lock(impl->mutex);impl->commands.erase(c);}
+void Audit::reset(VkCommandBuffer c){std::lock_guard<std::mutex> lock(impl->mutex);impl->commands.erase(c);impl->transfers.reset(c);}
+TransferAudit& Audit::transfers(){return impl->transfers;}
 void Audit::secondary(uint32_t count){std::lock_guard<std::mutex> lock(impl->mutex);impl->secondaryExecutions+=count;}
 void Audit::beginRendering(VkCommandBuffer c,const VkRenderingInfo& i){
     auto& p=*impl;std::lock_guard<std::mutex> lock(p.mutex);++p.renderingBegins;auto command=p.commands.find(c);if(command!=p.commands.end()){++command->second.ordinal;command->second.pending.reset();}
@@ -140,6 +144,7 @@ AuditSubmission Audit::before(VkQueue q,uint32_t n,const VkSubmitInfo2* infos){
 }
 AuditSubmission Audit::sparse(VkQueue q,uint32_t){auto& p=*impl;std::lock_guard<std::mutex> lock(p.mutex);++p.sparseCalls;return p.token(q,false);}
 void Audit::after(const AuditSubmission& token,VkResult result){
+    impl->transfers.after(token.transfers,token.sequence,result);
     auto& p=*impl;std::lock_guard<std::mutex> lock(p.mutex);if(result!=VK_SUCCESS){++p.failed;return;}++p.success;if(!token.compatible)++p.successfulUnsupported;
     for(const auto& use:token.uses)if(use.scope<p.scopes.size()){auto& s=p.scopes[use.scope];s.successfulSubmits+=use.count;s.lastSubmitted=use;s.lastSubmission=token.sequence;}
 }
@@ -155,6 +160,6 @@ std::string Audit::report() const{
     o<<"],\"scopes\":[";comma=false;for(size_t index=0;index<p.scopes.size();++index){const auto& s=p.scopes[index];if(comma)o<<',';comma=true;o<<"{\"local_id\":"<<index<<",\"recorded_begins\":"<<s.begins<<",\"recorded_ends\":"<<s.ends<<",\"successful_submit_observations\":"<<s.successfulSubmits<<",\"last_recorded\":["<<s.lastRecorded.image<<','<<s.lastRecorded.view<<','<<s.lastRecorded.recording<<','<<s.lastRecorded.ordinal<<"],\"last_submitted\":["<<s.lastSubmitted.image<<','<<s.lastSubmitted.view<<','<<s.lastSubmitted.recording<<','<<s.lastSubmitted.ordinal<<"],\"last_submission\":"<<s.lastSubmission<<",\"description\":{";
         for(unsigned f=0;f<FieldCount;++f)o<<(f?",":"")<<'"'<<names[f]<<"\":"<<s.desc[f];
         o<<"}}";}
-    o<<"]}";return o.str();
+    o<<"],\"original_transfers\":"<<p.transfers.report()<<'}';return o.str();
 }
 } // namespace d4vr::depth

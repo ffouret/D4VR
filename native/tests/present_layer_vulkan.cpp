@@ -33,6 +33,7 @@ struct Window {
 };
 struct Item{std::array<float,4> position,color;};
 void text(const std::filesystem::path& p,const std::string& value){auto tmp=p;tmp+=".tmp";std::ofstream out(tmp);out<<value;out.close();std::filesystem::rename(tmp,p);}
+#include "depth_transfer_fixture.hpp"
 }
 int main(int argc,char** argv)try{
     if(argc!=4)throw std::invalid_argument("Usage: present_layer_fixture vertex.spv fragment.spv private-directory");
@@ -44,6 +45,7 @@ int main(int argc,char** argv)try{
     bool cooperative=std::getenv("D4VR_COOPERATIVE_XR_DIAGNOSTIC");
     bool depthFixture=std::getenv("D4VR_DEPTH_LAYER_FIXTURE");
     bool auditFixture=std::getenv("D4VR_DEPTH_AUDIT_FIXTURE");
+    bool transferFixture=std::getenv("D4VR_DEPTH_TRANSFER_FIXTURE");
     bool foreignProducer=(poseCapture || cooperative) && std::getenv("D4VR_POSE_FIXTURE_FOREIGN");
     if(poseCapture)text(directory/"pose.request","invalid diagnostic input\n");
     Window window;Fixture f(true,false,false,false,false,"D4VR presentation selection fixture",cameraUpdates || auditFixture,{"VK_KHR_surface","VK_KHR_xlib_surface"},{VK_KHR_SWAPCHAIN_EXTENSION_NAME},{},cameraUpdates?5:1,cooperative || auditFixture);
@@ -99,6 +101,7 @@ int main(int argc,char** argv)try{
         VkSemaphoreSubmitInfo value{VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO};value.semaphore=signal;value.value=1;value.stageMask=VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT;VkSubmitInfo2 submit{VK_STRUCTURE_TYPE_SUBMIT_INFO_2};submit.signalSemaphoreInfoCount=1;submit.pSignalSemaphoreInfos=&value;
         check(vkQueueSubmit2(f.queue,1,&submit,VK_NULL_HANDLE));check(vkQueueWaitIdle(f.queue));uint64_t counter=0;check(vkGetSemaphoreCounterValue(f.device,signal,&counter));if(counter!=1)throw std::runtime_error("Observation mode changed or rejected original signal");vkDestroySemaphore(f.device,signal,nullptr);
     }
+    if(transferFixture)depthTransferFixture(f,directory);
     text(directory/"eye.selection","2\n");
     bool cancelPose=(poseCapture || cooperative) && std::getenv("D4VR_POSE_FIXTURE_CANCEL");unsigned frameCount=64;if((poseCapture || cooperative) && (std::getenv("D4VR_POSE_FIXTURE_SHORT") || cancelPose))frameCount=8;
     for(unsigned frame=0;frame<frameCount;++frame){

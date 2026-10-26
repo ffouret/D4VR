@@ -1,6 +1,7 @@
 #pragma once
 // CPU observations only. No device/queue dispatch, fence, GPU read or wait.
 #include <vulkan/vulkan.h>
+#include "depth_transfer_audit.hpp"
 #include <atomic>
 #include <memory>
 #include <string>
@@ -12,6 +13,7 @@ struct AuditUse {
 struct AuditSubmission {
     uint64_t sequence=0;bool compatible=false;
     std::vector<AuditUse> uses; // At most 128 value snapshots, never app pointers.
+    TransferSubmission transfers;
 };
 class Audit {
     struct Impl;std::unique_ptr<Impl> impl;std::atomic<bool> faulted{false};
@@ -25,6 +27,8 @@ public:
                bool beginHasNext,bool poolKnown,VkCommandPoolCreateFlags,bool poolHasNext,uint32_t family);
     void reset(VkCommandBuffer);void secondary(uint32_t count);
     void beginRendering(VkCommandBuffer,const VkRenderingInfo&);void endRendering(VkCommandBuffer);
+    // Original transfer reads only. No GPU work or admission decision.
+    TransferAudit& transfers();
     AuditSubmission before(VkQueue,uint32_t,const VkSubmitInfo*);
     AuditSubmission before(VkQueue,uint32_t,const VkSubmitInfo2*);
     AuditSubmission sparse(VkQueue,uint32_t);

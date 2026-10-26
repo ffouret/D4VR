@@ -10,6 +10,9 @@ void require(bool condition, const char* message) { if (!condition) throw std::r
 struct Handle { void* dispatch; };
 unsigned viewportCalls=0;const VkViewport* expectedViewports=nullptr;
 uint32_t drawCalls = 0, dgcCalls = 0, submitCalls = 0, idleCalls = 0;
+unsigned transferForwards=0;VkImage transferSource{},transferDestination{};VkBuffer transferBuffer{};
+const VkImageCopy* transferCopies{};const VkBufferImageCopy* transferBufferCopies{};const VkImageBlit* transferBlits{};
+const VkCopyImageInfo2* transferCopy2{};const VkCopyImageToBufferInfo2* transferBuffer2{};const VkBlitImageInfo2* transferBlit2{};
 VkResult submitResult = VK_SUCCESS;
 VkCommandBuffer expectedCommand{};
 const VkGeneratedCommandsInfoEXT* expectedGenerated{};
@@ -37,6 +40,12 @@ unsigned memoryAllocations=0,memoryFrees=0,memoryBinds=0,memoryBatchBinds=0,memo
 const VkMemoryMapInfoKHR* expectedMapInfo{};const VkMemoryUnmapInfoKHR* expectedUnmapInfo{};unsigned maps2=0,unmaps2=0;
 #endif
 template<class T> T object(uintptr_t value) { return reinterpret_cast<T>(value); }
+VKAPI_ATTR void VKAPI_CALL copyImage(VkCommandBuffer c,VkImage s,VkImageLayout sl,VkImage d,VkImageLayout dl,uint32_t n,const VkImageCopy* r){require(c==expectedCommand && s==transferSource && d==transferDestination && sl==VK_IMAGE_LAYOUT_GENERAL && dl==VK_IMAGE_LAYOUT_GENERAL && n==1 && r==transferCopies && r->srcOffset.x==7,"CopyImage arguments changed");++transferForwards;}
+VKAPI_ATTR void VKAPI_CALL copyImage2(VkCommandBuffer c,const VkCopyImageInfo2* i){require(c==expectedCommand && i==transferCopy2 && i->pRegions->srcOffset.x==7,"CopyImage2 pointer/data changed");++transferForwards;}
+VKAPI_ATTR void VKAPI_CALL copyBuffer(VkCommandBuffer c,VkImage s,VkImageLayout l,VkBuffer d,uint32_t n,const VkBufferImageCopy* r){require(c==expectedCommand && s==transferSource && l==VK_IMAGE_LAYOUT_GENERAL && d==transferBuffer && n==1 && r==transferBufferCopies && r->bufferOffset==128,"ImageToBuffer arguments changed");++transferForwards;}
+VKAPI_ATTR void VKAPI_CALL copyBuffer2(VkCommandBuffer c,const VkCopyImageToBufferInfo2* i){require(c==expectedCommand && i==transferBuffer2 && i->pRegions->bufferOffset==128,"ImageToBuffer2 pointer/data changed");++transferForwards;}
+VKAPI_ATTR void VKAPI_CALL blitImage(VkCommandBuffer c,VkImage s,VkImageLayout sl,VkImage d,VkImageLayout dl,uint32_t n,const VkImageBlit* r,VkFilter f){require(c==expectedCommand && s==transferSource && d==transferDestination && sl==VK_IMAGE_LAYOUT_GENERAL && dl==VK_IMAGE_LAYOUT_GENERAL && n==1 && r==transferBlits && f==VK_FILTER_NEAREST,"Blit arguments changed");++transferForwards;}
+VKAPI_ATTR void VKAPI_CALL blitImage2(VkCommandBuffer c,const VkBlitImageInfo2* i){require(c==expectedCommand && i==transferBlit2,"Blit2 pointer changed");++transferForwards;}
 VKAPI_ATTR VkResult VKAPI_CALL originalCreate(VkDevice,VkPipelineCache cache,uint32_t n,const VkGraphicsPipelineCreateInfo* info,const VkAllocationCallbacks* allocator,VkPipeline* out) {
     require(n==3 && cache==expectedCache && info==expectedGraphics && allocator==expectedAllocator,"Original pipeline arguments changed");
     ++originalCreates;out[0]=object<VkPipeline>(101);out[1]=VK_NULL_HANDLE;out[2]=object<VkPipeline>(102);
@@ -119,6 +128,9 @@ VKAPI_ATTR VkResult VKAPI_CALL mapMemory2(VkDevice,const VkMemoryMapInfoKHR* inf
 VKAPI_ATTR VkResult VKAPI_CALL unmapMemory2(VkDevice,const VkMemoryUnmapInfoKHR* info) {require(info==expectedUnmapInfo,"Unmap2 arguments changed");++unmaps2;return memoryResult;}
 #endif
 VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL proc(VkDevice, const char* name) {
+    if(std::strcmp(name,"vkCmdCopyImage2")==0 || std::strcmp(name,"vkCmdCopyImage2KHR")==0)return reinterpret_cast<PFN_vkVoidFunction>(copyImage2);
+    if(std::strcmp(name,"vkCmdCopyImageToBuffer2")==0 || std::strcmp(name,"vkCmdCopyImageToBuffer2KHR")==0)return reinterpret_cast<PFN_vkVoidFunction>(copyBuffer2);
+    if(std::strcmp(name,"vkCmdBlitImage2")==0 || std::strcmp(name,"vkCmdBlitImage2KHR")==0)return reinterpret_cast<PFN_vkVoidFunction>(blitImage2);
     if (std::strcmp(name,"vkCreateGraphicsPipelines")==0) return reinterpret_cast<PFN_vkVoidFunction>(privateCreate);
     if (std::strcmp(name,"vkDestroyPipeline")==0) return reinterpret_cast<PFN_vkVoidFunction>(pipelineDestroy);
     if (std::strcmp(name, "vkCmdDraw") == 0) return reinterpret_cast<PFN_vkVoidFunction>(draw);
@@ -170,6 +182,29 @@ int main() try {
     devices[key(handle)] = d;
     expectedQueue = queue; VkQueue returned{}; d4GetDeviceQueue(handle, 3, 2, &returned);
     require(returned == queue && d->queues.at(queue) == std::make_pair(3u, 2u), "Queue association lost");
+    d->CmdCopyImage=copyImage;d->CmdCopyImage2=copyImage2;d->CmdCopyImageToBuffer=copyBuffer;d->CmdCopyImageToBuffer2=copyBuffer2;d->CmdBlitImage=blitImage;d->CmdBlitImage2=blitImage2;expectedCommand=primary;
+    transferSource=object<VkImage>(900);transferDestination=object<VkImage>(901);transferBuffer=object<VkBuffer>(902);
+    VkImageCopy tc{};tc.srcSubresource=tc.dstSubresource={VK_IMAGE_ASPECT_DEPTH_BIT,0,0,1};tc.srcOffset={7,0,0};tc.extent={1,1,1};transferCopies=&tc;
+    VkImageCopy2 tc2{VK_STRUCTURE_TYPE_IMAGE_COPY_2};tc2.srcSubresource=tc.srcSubresource;tc2.dstSubresource=tc.dstSubresource;tc2.srcOffset=tc.srcOffset;tc2.extent=tc.extent;
+    VkBaseInStructure transferNext{VK_STRUCTURE_TYPE_APPLICATION_INFO,nullptr};tc2.pNext=&transferNext;
+    VkCopyImageInfo2 tci{VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2};tci.pNext=&transferNext;tci.srcImage=transferSource;tci.dstImage=transferDestination;tci.srcImageLayout=tci.dstImageLayout=VK_IMAGE_LAYOUT_GENERAL;tci.regionCount=1;tci.pRegions=&tc2;transferCopy2=&tci;
+    VkBufferImageCopy tb{};tb.bufferOffset=128;tb.imageSubresource=tc.srcSubresource;tb.imageExtent=tc.extent;transferBufferCopies=&tb;
+    VkBufferImageCopy2 tb2{VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2};tb2.pNext=&transferNext;tb2.bufferOffset=128;tb2.imageSubresource=tb.imageSubresource;tb2.imageExtent=tb.imageExtent;
+    VkCopyImageToBufferInfo2 tbi{VK_STRUCTURE_TYPE_COPY_IMAGE_TO_BUFFER_INFO_2};tbi.pNext=&transferNext;tbi.srcImage=transferSource;tbi.srcImageLayout=VK_IMAGE_LAYOUT_GENERAL;tbi.dstBuffer=transferBuffer;tbi.regionCount=1;tbi.pRegions=&tb2;transferBuffer2=&tbi;
+    VkImageBlit tl{};tl.srcSubresource=tl.dstSubresource=tc.srcSubresource;tl.srcOffsets[1]=tl.dstOffsets[1]={1,1,1};transferBlits=&tl;
+    VkImageBlit2 tl2{VK_STRUCTURE_TYPE_IMAGE_BLIT_2};tl2.pNext=&transferNext;tl2.srcSubresource=tl.srcSubresource;tl2.dstSubresource=tl.dstSubresource;std::copy(tl.srcOffsets,tl.srcOffsets+2,tl2.srcOffsets);std::copy(tl.dstOffsets,tl.dstOffsets+2,tl2.dstOffsets);
+    VkBlitImageInfo2 tli{VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2};tli.pNext=&transferNext;tli.srcImage=transferSource;tli.dstImage=transferDestination;tli.srcImageLayout=tli.dstImageLayout=VK_IMAGE_LAYOUT_GENERAL;tli.regionCount=1;tli.pRegions=&tl2;tli.filter=VK_FILTER_NEAREST;transferBlit2=&tli;
+    for(unsigned enabled=0;enabled<2;++enabled){if(enabled)d->depthAudit=std::make_unique<d4vr::depth::Audit>();
+        d4CmdCopyImage(primary,transferSource,VK_IMAGE_LAYOUT_GENERAL,transferDestination,VK_IMAGE_LAYOUT_GENERAL,1,&tc);
+        d4CmdCopyImageToBuffer(primary,transferSource,VK_IMAGE_LAYOUT_GENERAL,transferBuffer,1,&tb);
+        d4CmdBlitImage(primary,transferSource,VK_IMAGE_LAYOUT_GENERAL,transferDestination,VK_IMAGE_LAYOUT_GENERAL,1,&tl,VK_FILTER_NEAREST);
+        for(const char* suffix:{"","KHR"}){
+            auto c=reinterpret_cast<PFN_vkCmdCopyImage2>(d4GetDeviceProcAddr(handle,(std::string("vkCmdCopyImage2")+suffix).c_str()));require(c==d4CmdCopyImage2,"CopyImage2 alias missing");c(primary,&tci);
+            auto b=reinterpret_cast<PFN_vkCmdCopyImageToBuffer2>(d4GetDeviceProcAddr(handle,(std::string("vkCmdCopyImageToBuffer2")+suffix).c_str()));require(b==d4CmdCopyImageToBuffer2,"ImageToBuffer2 alias missing");b(primary,&tbi);
+            auto l=reinterpret_cast<PFN_vkCmdBlitImage2>(d4GetDeviceProcAddr(handle,(std::string("vkCmdBlitImage2")+suffix).c_str()));require(l==d4CmdBlitImage2,"Blit2 alias missing");l(primary,&tli);
+        }}
+    require(transferForwards==18 && tci.pNext==&transferNext && tc2.pNext==&transferNext && tbi.pNext==&transferNext && tb2.pNext==&transferNext && tli.pNext==&transferNext && tl2.pNext==&transferNext,"Transfer forwarding count or chains changed");
+    require(d->depthAudit->report().find("\"api_calls\":[1,2,1,2,1,2]")!=std::string::npos,"Transfer observer route missing");d->depthAudit.reset();
     d->commands[primary].pool = pool; d->commands[secondary].pool = pool;
     require(d4GetDeviceProcAddr(handle, "vkCmdDraw") == reinterpret_cast<PFN_vkVoidFunction>(d4CmdDraw), "Draw hook missing");
     require(!d4GetDeviceProcAddr(handle, "vkCmdDrawIndirectCount"), "Unsupported function advertised");
