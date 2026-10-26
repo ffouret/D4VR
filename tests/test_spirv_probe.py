@@ -118,6 +118,20 @@ class ObserverInstrumentationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'cannot bound'):
             spirv_probe.instrument(module.binary(),3,0,72,stereo=True,projection_only_helper=True,projection_input=True)
 
+    def test_camera_block_mode_adds_no_original_buffer_or_output_stores(self):
+        data=spirv_probe.instrument(self.data,3,0,0,camera_block_rows=113);m=spirv_probe.Module(data)
+        old=[a for op,a in self.original.instructions if op==62];variables={a[1]:a[2] for op,a in m.instructions if op==59}
+        for a in old:self.assertIn((62,a),m.instructions)
+        for op,a in m.instructions:
+            if op==62 and a not in old:self.assertEqual(variables[a[0]],7)
+        imported=next(a[0] for op,a in m.instructions if op==71 and a[1]==41)
+        self.assertEqual(spirv_probe.literal(next(a[2:-1] for op,a in m.instructions if op==71 and a[0]==imported)),'D4VRBlockProbe_v1')
+        self.assertEqual(len(next(a[3:] for op,a in m.instructions if op==57 and a[2]==imported)),114)
+
+    def test_camera_block_extent_and_mode_budget_are_closed(self):
+        for rows,start,stereo in [(129,0,False),(113,1,False),(113,0,True)]:
+            with self.assertRaises(ValueError):spirv_probe.instrument(self.data,3,0,start,stereo=stereo,camera_block_rows=rows)
+
 
 if __name__ == '__main__':
     unittest.main()

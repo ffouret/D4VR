@@ -12,12 +12,13 @@
 #include "../vulkan/frame_trace.hpp" // FNV checksum of fixture pixels only
 #include "stereo_gpu_checks.hpp"
 #include "calibration_gpu_checks.hpp"
+#include "camera_block_gpu_checks.hpp"
 
 #include "vulkan_fixture.hpp"
 
 int main(int argc, char** argv) try {
     if (argc < 4) throw std::runtime_error("Usage: gpu_probe_vulkan original.spv probed.spv fragment.spv [--geometry|--stereo|--eye-bridge] [--dynamic] [--identifiers]");
-    bool geometry = false, dynamic = false, identifiers = false, stereo = false, bridge = false,telemetryEnabled=true,depthCalibration=false;
+    bool geometry = false, dynamic = false, identifiers = false, stereo = false, bridge = false,telemetryEnabled=true,depthCalibration=false,cameraBlock=false;
     for (int i = 4; i < argc; ++i) {
         auto arg = std::string(argv[i]);
         if (arg == "--geometry") geometry = true;
@@ -26,6 +27,7 @@ int main(int argc, char** argv) try {
         else if (arg == "--stereo") { stereo = true; geometry = true; dynamic = true; }
         else if (arg == "--stereo-no-telemetry") { stereo = true; geometry = true; dynamic = true;telemetryEnabled=false; }
         else if (arg == "--depth-calibration") {depthCalibration=true;stereo=true;geometry=true;dynamic=true;telemetryEnabled=false;}
+        else if (arg == "--camera-block") {cameraBlock=true;geometry=true;dynamic=true;}
         else if (arg == "--eye-bridge") { bridge = true; geometry = true; dynamic = true; }
         else throw std::runtime_error("Unknown option: " + arg);
     }
@@ -36,9 +38,12 @@ int main(int argc, char** argv) try {
         ? std::array<float, 16>{1.784022f, 0, .000439f, 0, 0, 3.171595f, -.000347f, 0, 0, 0, -1.001502f, -.300451f, 0, 0, -1, 0}
         : std::array<float, 16>{0.75f, 0, 0, 0.1f, 0, 0.8f, 0, -0.1f, 0, 0, 0.5f, 0, 0, 0, 0, 1};
     std::memcpy(static_cast<char*>(uniform.mapped) + 72 * 16, matrix.data(), 64);
+    if(cameraBlock){auto f=static_cast<float*>(uniform.mapped);for(unsigned i=0;i<113*4;++i)f[i]=1000.f+float(i)*.03125f;std::memcpy(f+72*4,matrix.data(),64);
+        uint32_t special[]={0x80000000u,1u,0x7f800000u,0x7fc12345u};std::memcpy(f,special,sizeof(special));}
     auto second_uniform = f.buffer(80 * 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
     const std::array<float, 16> second_matrix{1, 0, 0, 0.1f, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
     std::memcpy(static_cast<char*>(second_uniform.mapped) + 56 * 16, second_matrix.data(), 64);
+    if(cameraBlock)reinterpret_cast<float*>(static_cast<char*>(second_uniform.mapped)+56*16)[11]=-2.5f;
     auto control = f.buffer(8, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, true);
     auto ring = f.buffer(ring_words * 4, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, true);
     auto staging = f.buffer(pixels, VK_BUFFER_USAGE_TRANSFER_DST_BIT);
@@ -206,6 +211,7 @@ int main(int argc, char** argv) try {
         vkDestroyDevice(f.device,nullptr); f.device = VK_NULL_HANDLE;
         vkDestroyInstance(f.instance,nullptr); f.instance = VK_NULL_HANDLE;
     };
+    if(cameraBlock){int result=d4vr_test_camera_block_gpu(uniform.mapped,control.mapped,ring.mapped,values.shader,original_pipeline,observer_pipeline,render);cleanup();return result;}
     if(depthCalibration){auto depth=[&]{auto p=static_cast<const float*>(depthStaging.mapped);return std::vector<float>(p,p+width*height);};int result=d4vr_test_calibration_gpu(width,height,uniform.mapped,second_uniform.mapped,original_pipeline,observer_pipeline,render,depth);cleanup();return result;}
     if (bridge) {
         int result = d4vr_test_eye_bridge_gpu(uniform.mapped,second_uniform.mapped,control.mapped,ring.mapped,original_pipeline,observer_pipeline,render);

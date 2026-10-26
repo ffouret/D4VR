@@ -1,0 +1,168 @@
+{
+  "schema_version": 1,
+  "milestone": "Lossless camera block observer and real partner-matrix inventory",
+  "synthetic_gpu_controls": {
+    "schema_version": 1,
+    "synthetic_scene": true,
+    "game_camera_block_captured": false,
+    "actual_steamvr_submission": false,
+    "rows": 113,
+    "words_per_record": 1356,
+    "maximum_records": 64,
+    "maximum_payload_bytes": 115712,
+    "short_valid_ubo_refused": true,
+    "original_source_stores_preserved": true,
+    "original_resource_writes_added": 0,
+    "gpu_cases": [
+      {
+        "environment": "native",
+        "proof": {
+          "camera_block_gpu_passed": true,
+          "synthetic_scene": true,
+          "exact_source_ubo_bytes": 5424,
+          "unchanged_rendered_bytes": 1572864,
+          "rows_per_record": 113,
+          "raw_float_bits_preserved": true,
+          "sparse_skip_and_wrap_verified": true,
+          "nonmatching_projection_and_budget_stop_verified": true,
+          "game_camera_relation_proven": false
+        },
+        "synchronization_validation_loaded": true,
+        "validation_errors": 0
+      },
+      {
+        "environment": "steam-runtime",
+        "proof": {
+          "camera_block_gpu_passed": true,
+          "synthetic_scene": true,
+          "exact_source_ubo_bytes": 5424,
+          "unchanged_rendered_bytes": 1572864,
+          "rows_per_record": 113,
+          "raw_float_bits_preserved": true,
+          "sparse_skip_and_wrap_verified": true,
+          "nonmatching_projection_and_budget_stop_verified": true,
+          "game_camera_relation_proven": false
+        },
+        "synchronization_validation_loaded": true,
+        "validation_errors": 0
+      }
+    ],
+    "helper_sha256": "4a439b02d2797878dd3019d7a352d9ede11ea8d890d6ae24cafa264fef199508",
+    "original_sha256": "4077a707cdf38d7c61c7f21458e24805b5b88748df815c4b1e2c3e38cddbdc69",
+    "patched_sha256": "daeefa04fd0e56c216b69de37dae55113193f927a2c2ab4fc56e12143344dcf6",
+    "source_sha256": {
+      "tools/spirv_probe.py": "54d24a7545f920e08072125412a82afa397a457efc7494e1093eb9c83b7c4930",
+      "tools/camera_block.py": "341c8be75cc3c9da896bb927787ae902b94b295656a1b91fcd828a8b6052581b",
+      "native/tests/camera_block_gpu_checks.hpp": "3b02ed282c892972732d6376566c07f07f4fc267f1421db5f2f2d5ec0772764f",
+      "native/tests/gpu_probe_vulkan.cpp": "c20fd55155ffde87bca4f923c1bee1a80e822fced4c1ade75dd2c3492e1f7cfc"
+    }
+  },
+  "portable_python_tests": 190,
+  "actual_game_observation": {
+    "schema_version": 1,
+    "purpose": "read_only_camera_partner_observation",
+    "actual_diablo_trial": true,
+    "synthetic_scene": false,
+    "observation_only": true,
+    "camera_or_projection_modified": false,
+    "native_trace_layer_loaded": false,
+    "openxr_called": false,
+    "quest_image_submitted": false,
+    "game_rendered_in_vr": false,
+    "rows_per_record": 113,
+    "complete_records": 64,
+    "observed_shader_count": 8,
+    "override_shader_count": 18,
+    "source_ubo_payload_bytes": 115712,
+    "incomplete_or_duplicate_groups": 0,
+    "rejected_rows": 0,
+    "sample_index_range": [
+      0,
+      63
+    ],
+    "sample_stride_qualified_invocations": 4096,
+    "frame_or_pose_identity_known": false,
+    "whole_scene_verified": false,
+    "common_scene_time_known": false,
+    "maximum_records": 64,
+    "numerical_relations": {
+      "tolerance": 2e-05,
+      "affine_inverse_pairs": [
+        {
+          "first_rows": [
+            34,
+            42
+          ],
+          "matching_records": 64
+        },
+        {
+          "first_rows": [
+            34,
+            91
+          ],
+          "matching_records": 64
+        },
+        {
+          "first_rows": [
+            38,
+            42
+          ],
+          "matching_records": 64
+        },
+        {
+          "first_rows": [
+            38,
+            91
+          ],
+          "matching_records": 64
+        }
+      ],
+      "max_two_sided_identity_residual": 1.6465567787468394e-05,
+      "primary_projection_inverse_candidates": 0,
+      "projection_variant_rows": [
+        72,
+        76,
+        80
+      ],
+      "variant_windows_in_every_record": true,
+      "nonprimary_differences_only_flat_components": [
+        2,
+        6
+      ],
+      "all_nonprimary_variants_differ_only_in_those_components": true,
+      "semantic_or_temporal_roles_proven": false,
+      "coverage_cause_proven": false
+    },
+    "static_reads_of_observed_original_shaders": {
+      "shader_count": 8,
+      "all_direct_read_inventories_complete": true,
+      "shader_count_reading_rows_72_to_75": 8,
+      "shader_count_reading_rows_80_to_83": 6,
+      "shader_count_reading_rows_42_to_45": 2,
+      "output_dependency_or_branch_execution_proven": false
+    },
+    "image_visually_normal": true,
+    "game_pixel_equality_tested": false,
+    "game_validation_errors_measured": false,
+    "selected_character_entered": true,
+    "movement_combat_purchase": false,
+    "launcher_exit_code": 0,
+    "all_owned_processes_exited": true,
+    "original_game_vendor_audit_equal_before_after": true,
+    "verified_named_exports": 262,
+    "private_log_sha256": "c0bbce574ae5fc445361918722b3b42ddb4deadd236db3228a8659a044dab505",
+    "private_record_file_sha256": "d210acfb8070c7d28a59a60ef847d7a780026fe28917bf2365026e528393368c",
+    "private_bundle_sha256": "ad0b087d467cc49812ab366db5e26d96af301efd014466e45143cbf12bfaeba9",
+    "analysis_source_sha256": "1e2bd7829d8b873e0e57540c1a97732f65087a735ae69e8e98a7ea3305df7419",
+    "limitations": [
+      "Sampling has no present, scene or XR pose identity; records cannot be paired with a current frame.",
+      "Numerical affine inverses do not identify VIEW/world/gravity semantics; projection variants do not identify current/previous-frame roles.",
+      "Static original loads prove potential dependencies, not executed branches, output influence, or the cause of wide-FOV holes.",
+      "This read-only trial tests neither stereo coverage nor a rendering correction.",
+      "The earlier wide-FOV holes and physical SteamVR synchronization issues remain unresolved."
+    ]
+  },
+  "coverage_fixed": false,
+  "continuous_immersive_diablo": false,
+  "native_windows_d3d12_vr_integration": false
+}

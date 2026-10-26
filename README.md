@@ -10,6 +10,15 @@ répond pas à cet objectif.
 
 ## État du projet
 
+Un [relevé GPU sans modification de caméra](docs/CAMERA_BLOCK.md) identifie
+maintenant des matrices associées dans Diablo réel : 64 blocs complets retrouvent
+les mêmes couples de matrices inverses et trois variantes de projection. Six des
+huit shaders observés lisent aussi la projection voisine, et deux lisent une
+matrice inverse. Ces lectures restent inchangées par notre mode de projection
+actuel. Cela fournit des dépendances précises à étudier ; leur rôle temporel,
+leur effet sur les pixels et leur responsabilité dans les trous restent à établir.
+Cet essai ne corrige pas la couverture et n'envoie aucune image au Quest.
+
 Une [variante de projection en amont des calculs du vertex](docs/PROJECTION_INPUT.md)
 conserve maintenant la cohérence des sorties qui dépendent de cette projection,
 vérifiée par un contrôle GPU que la modification finale de Position échoue.
