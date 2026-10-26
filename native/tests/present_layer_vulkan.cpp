@@ -40,6 +40,7 @@ int main(int argc,char** argv)try{
     auto updateOption=std::getenv("D4VR_GPU_CAMERA_UPDATES");bool cameraUpdates=updateOption && !std::strcmp(updateOption,"1");
     auto poseOption=std::getenv("D4VR_POSE_CAPTURE_DIAGNOSTIC");bool poseCapture=poseOption && !std::strcmp(poseOption,"1");
     bool calibrated=poseCapture && std::getenv("D4VR_POSE_FIXTURE_CALIBRATED");
+    bool heldView=poseCapture && std::getenv("D4VR_POSE_FIXTURE_MONOSCOPIC");
     bool cooperative=std::getenv("D4VR_COOPERATIVE_XR_DIAGNOSTIC");
     bool foreignProducer=(poseCapture || cooperative) && std::getenv("D4VR_POSE_FIXTURE_FOREIGN");
     if(poseCapture)text(directory/"pose.request","invalid diagnostic input\n");
@@ -87,10 +88,17 @@ int main(int argc,char** argv)try{
     text(directory/"eye.selection","2\n");
     bool cancelPose=(poseCapture || cooperative) && std::getenv("D4VR_POSE_FIXTURE_CANCEL");unsigned frameCount=64;if((poseCapture || cooperative) && (std::getenv("D4VR_POSE_FIXTURE_SHORT") || cancelPose))frameCount=8;
     for(unsigned frame=0;frame<frameCount;++frame){
+        if(heldView && frame==60)text(directory/"pose.stop","1\n");
         if(cancelPose && frame==6)text(directory/"pose.stop","1\n");
+        if(heldView && frame==2 && std::getenv("D4VR_DIAGNOSTIC_VIEW_HOLD")){
+            d4vr::PoseSample stereo;stereo.session=801;stereo.request=1;stereo.displayTime=10000000;stereo.viewFlags=3;
+            for(unsigned eye=0;eye<2;++eye){stereo.views[eye].position={eye?.064f:-.064f,0,0};stereo.views[eye].fov={-.5f,.5f,-.3f,.3f};}
+            auto value=d4vr::encode_diagnostic_pose(d4vr::PoseRequest(stereo,1));text(directory/"pose-stereo-refused.txt",value);text(directory/"pose.request",value);
+        }
         if(poseCapture && (frame==4 || frame==36)){
             d4vr::PoseSample sample;sample.session=801;sample.request=frame==4?1:2;sample.displayTime=int64_t(sample.request)*10000000;sample.viewFlags=3;
             for(unsigned eye=0;eye<2;++eye){sample.views[eye].position={(frame==4?0.f:.125f)+(eye?.064f:-.064f),0,0};sample.views[eye].fov={-.5f,.5f,-.3f,.3f};}
+            if(heldView)for(auto& v:sample.views)v.position[0]=(frame==4?.125f:.25f);
             if(calibrated){sample.depthPolicy=d4vr::ProjectionDepthPolicy::sourceScaled;sample.gameViewInLocal[0]=sample.gameViewInLocal[5]=sample.gameViewInLocal[10]=.1;for(auto& v:sample.views){for(auto& p:v.position)p*=.1f;v.fov={float(std::atan(-1/1.784022)),float(std::atan(1/1.784022)),float(std::atan(-1/3.171595)),float(std::atan(1/3.171595))};}}
             auto sampleText=d4vr::encode_diagnostic_pose(d4vr::PoseRequest(sample,uint32_t(sample.request)));text(directory/("pose-input-"+std::to_string(sample.request)+".txt"),sampleText);text(directory/"pose.request",sampleText);
         }

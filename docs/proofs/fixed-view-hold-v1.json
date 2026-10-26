@@ -1,0 +1,2560 @@
+{
+  "schema_version": 1,
+  "source_base_commit": "36fc478667e5e81b269975665bb21015c01f8835",
+  "scope": "Opt-in monoscopic held view, exact original packet observation on consecutive presents and corrected interpretation of prior inter-request delay. No depth readback or VR result.",
+  "previous_interpretation_correction": {
+    "previous_trial": "diablo-fixed-fragment-20261026-1",
+    "five_second_gap_held_transformed_view": false,
+    "raw_pixels_and_packet_receipts_changed": false,
+    "reason": "CaptureProjection selected original pipelines between completed requests. Earlier claimed temporal settling was not proved."
+  },
+  "owned_validation": {
+    "schema_version": 1,
+    "synthetic_scene": true,
+    "real_wsi_loader": true,
+    "actual_xr_pose_source": false,
+    "actual_steamvr_submission": false,
+    "game_rendered": false,
+    "validation_errors": 0,
+    "unit": {
+      "fixed_view_hold_tests_passed": true,
+      "host_interval_not_gpu_time": true,
+      "old_receipt_immutable": true
+    },
+    "held_cases": {
+      "schema_version": 1,
+      "synthetic_scene": true,
+      "actual_wsi_loader": true,
+      "actual_capture_producer": true,
+      "actual_gpu_image_consumer": true,
+      "actual_xr_pose_source": false,
+      "diablo_rendered": false,
+      "actual_steamvr_submission": false,
+      "whole_scene_verified": false,
+      "common_scene_time_known": false,
+      "khronos_synchronization_validation_loaded": true,
+      "validation_errors": 0,
+      "portable": {
+        "diagnostic_pose_passed": true,
+        "exact_packet_bytes": 352,
+        "invalid_inputs_refused": 9,
+        "real_xr_source_claimed": false
+      },
+      "fragment_packet_check": true,
+      "layer_sha256": "2056bcb21a1a04af0d74407b2f67ad408b4223e5b1329b7d4c19dd4a86231cd1",
+      "fixture_sha256": "ec174a153ef009753ab20131d2b94e8d56b2ab97384ab18a32c0307c34f7d77a",
+      "cases": [
+        {
+          "case": "native",
+          "pairs": [
+            {
+              "request": 1,
+              "packet_sequence": 2,
+              "source_presents": [
+                6,
+                7
+              ],
+              "source_capture_sequences": [
+                1,
+                2
+              ],
+              "disparities_pixels": [
+                0.0,
+                0.0
+              ],
+              "exact_original_pixel_bytes": 524288,
+              "preceding_fixed_view": null
+            },
+            {
+              "request": 2,
+              "packet_sequence": 3,
+              "source_presents": [
+                38,
+                39
+              ],
+              "source_capture_sequences": [
+                4,
+                5
+              ],
+              "disparities_pixels": [
+                0.0,
+                0.0
+              ],
+              "exact_original_pixel_bytes": 524288,
+              "preceding_fixed_view": {
+                "camera": {
+                  "status": "uniform",
+                  "first_submission": 41,
+                  "last_submission": 181,
+                  "packet_sequence": 2,
+                  "packet_eye": 0,
+                  "packet_version": 2,
+                  "source_depth_scaled": true,
+                  "meters_per_view_unit": 0.1,
+                  "packet_abi_bytes_hex": "5256344402000000020000000500000000000000000000000000000000000000cdcccc3d0000000000000000cdcc4cbc00000000cdcccc3d00000000000000000000000000000000cdcccc3d000000000000000000000000000000000000803fd55ae43f000000000000000000000000000000006afb4a4000000000000000000000000000000000cd2080bf4801cdbd0000000000000000000080bf00000000d55ae43f6afb4a40acc52737cdcccc3d"
+                },
+                "observed_present_intervals": 29,
+                "rejected_present_intervals": 0,
+                "longest_first_present": 9,
+                "longest_last_present": 37,
+                "host_start_ms": 285122752,
+                "host_end_ms": 285122945,
+                "host_span_ms": 193,
+                "same_requested_mapping": false,
+                "whole_scene_verified": false,
+                "gpu_elapsed_time_proven": false
+              }
+            }
+          ],
+          "frames": 64,
+          "original_submissions": 320,
+          "original_draws": 128,
+          "exact_original_pixel_bytes": 1048576,
+          "view_translation_pixels_by_eye": [
+            [
+              -14.281454015514427,
+              -7.123102866779078
+            ],
+            [
+              -14.281454015514427,
+              -7.123102866779078
+            ]
+          ],
+          "registered_graphics_queues": 5,
+          "foreign_acquisition_fence_waited": false,
+          "driver": {
+            "requests": 2,
+            "pairs": 2,
+            "unavailable": 0,
+            "rejected_leases": 2,
+            "deferred_queue_leases": 0,
+            "active": false,
+            "consumer_pending": false,
+            "stopped": true,
+            "fixed_view_held": false,
+            "fault": false,
+            "actual_xr_pose_source": false,
+            "xr_submission": false
+          },
+          "producer": {
+            "slots": 3,
+            "reserved_bytes": 786432,
+            "leases_issued": 6,
+            "retire_submissions": 6,
+            "outstanding_leases": 0
+          },
+          "validation_errors": 0
+        },
+        {
+          "case": "short-native",
+          "pairs": [
+            {
+              "request": 1,
+              "packet_sequence": 2,
+              "source_presents": [
+                6,
+                7
+              ],
+              "source_capture_sequences": [
+                1,
+                2
+              ],
+              "disparities_pixels": [
+                0.0,
+                0.0
+              ],
+              "exact_original_pixel_bytes": 524288,
+              "preceding_fixed_view": null
+            }
+          ],
+          "frames": 8,
+          "original_submissions": 40,
+          "original_draws": 16,
+          "exact_original_pixel_bytes": 524288,
+          "view_translation_pixels_by_eye": [],
+          "registered_graphics_queues": 5,
+          "foreign_acquisition_fence_waited": false,
+          "driver": {
+            "requests": 1,
+            "pairs": 1,
+            "unavailable": 0,
+            "rejected_leases": 1,
+            "deferred_queue_leases": 0,
+            "active": false,
+            "consumer_pending": false,
+            "stopped": false,
+            "fixed_view_held": true,
+            "fault": false,
+            "actual_xr_pose_source": false,
+            "xr_submission": false
+          },
+          "producer": {
+            "slots": 3,
+            "reserved_bytes": 786432,
+            "leases_issued": 3,
+            "retire_submissions": 3,
+            "outstanding_leases": 0
+          },
+          "validation_errors": 0
+        },
+        {
+          "case": "foreign-native",
+          "pairs": [
+            {
+              "request": 1,
+              "packet_sequence": 2,
+              "source_presents": [
+                6,
+                9
+              ],
+              "source_capture_sequences": [
+                1,
+                4
+              ],
+              "disparities_pixels": [
+                0.0,
+                0.0
+              ],
+              "exact_original_pixel_bytes": 524288,
+              "preceding_fixed_view": null
+            },
+            {
+              "request": 2,
+              "packet_sequence": 3,
+              "source_presents": [
+                38,
+                39
+              ],
+              "source_capture_sequences": [
+                6,
+                7
+              ],
+              "disparities_pixels": [
+                0.0,
+                0.0
+              ],
+              "exact_original_pixel_bytes": 524288,
+              "preceding_fixed_view": {
+                "camera": {
+                  "status": "uniform",
+                  "first_submission": 61,
+                  "last_submission": 217,
+                  "packet_sequence": 2,
+                  "packet_eye": 0,
+                  "packet_version": 2,
+                  "source_depth_scaled": true,
+                  "meters_per_view_unit": 0.1,
+                  "packet_abi_bytes_hex": "5256344402000000020000000500000000000000000000000000000000000000cdcccc3d0000000000000000cdcc4cbc00000000cdcccc3d00000000000000000000000000000000cdcccc3d000000000000000000000000000000000000803fd55ae43f000000000000000000000000000000006afb4a4000000000000000000000000000000000cd2080bf4801cdbd0000000000000000000080bf00000000d55ae43f6afb4a40acc52737cdcccc3d"
+                },
+                "observed_present_intervals": 27,
+                "rejected_present_intervals": 0,
+                "longest_first_present": 11,
+                "longest_last_present": 37,
+                "host_start_ms": 285124355,
+                "host_end_ms": 285124547,
+                "host_span_ms": 192,
+                "same_requested_mapping": false,
+                "whole_scene_verified": false,
+                "gpu_elapsed_time_proven": false
+              }
+            }
+          ],
+          "frames": 64,
+          "original_submissions": 384,
+          "original_draws": 128,
+          "exact_original_pixel_bytes": 1048576,
+          "view_translation_pixels_by_eye": [
+            [
+              -14.281454015514427,
+              -7.123102866779078
+            ],
+            [
+              -14.281454015514427,
+              -7.123102866779078
+            ]
+          ],
+          "registered_graphics_queues": 5,
+          "foreign_acquisition_fence_waited": true,
+          "driver": {
+            "requests": 2,
+            "pairs": 2,
+            "unavailable": 0,
+            "rejected_leases": 2,
+            "deferred_queue_leases": 2,
+            "active": false,
+            "consumer_pending": false,
+            "stopped": true,
+            "fixed_view_held": false,
+            "fault": false,
+            "actual_xr_pose_source": false,
+            "xr_submission": false
+          },
+          "producer": {
+            "slots": 3,
+            "reserved_bytes": 786432,
+            "leases_issued": 8,
+            "retire_submissions": 8,
+            "outstanding_leases": 0
+          },
+          "validation_errors": 0
+        },
+        {
+          "case": "cancel-native",
+          "pairs": [],
+          "frames": 8,
+          "original_submissions": 40,
+          "original_draws": 16,
+          "exact_original_pixel_bytes": 0,
+          "view_translation_pixels_by_eye": [],
+          "registered_graphics_queues": 5,
+          "foreign_acquisition_fence_waited": false,
+          "driver": {
+            "requests": 1,
+            "pairs": 0,
+            "unavailable": 0,
+            "rejected_leases": 1,
+            "deferred_queue_leases": 0,
+            "active": false,
+            "consumer_pending": false,
+            "stopped": true,
+            "fixed_view_held": false,
+            "fault": false,
+            "actual_xr_pose_source": false,
+            "xr_submission": false
+          },
+          "producer": {
+            "slots": 2,
+            "reserved_bytes": 524288,
+            "leases_issued": 2,
+            "retire_submissions": 2,
+            "outstanding_leases": 0
+          },
+          "validation_errors": 0
+        },
+        {
+          "case": "steam-runtime",
+          "pairs": [
+            {
+              "request": 1,
+              "packet_sequence": 2,
+              "source_presents": [
+                6,
+                7
+              ],
+              "source_capture_sequences": [
+                1,
+                2
+              ],
+              "disparities_pixels": [
+                0.0,
+                0.0
+              ],
+              "exact_original_pixel_bytes": 524288,
+              "preceding_fixed_view": null
+            },
+            {
+              "request": 2,
+              "packet_sequence": 3,
+              "source_presents": [
+                38,
+                39
+              ],
+              "source_capture_sequences": [
+                4,
+                5
+              ],
+              "disparities_pixels": [
+                0.0,
+                0.0
+              ],
+              "exact_original_pixel_bytes": 524288,
+              "preceding_fixed_view": {
+                "camera": {
+                  "status": "uniform",
+                  "first_submission": 41,
+                  "last_submission": 181,
+                  "packet_sequence": 2,
+                  "packet_eye": 0,
+                  "packet_version": 2,
+                  "source_depth_scaled": true,
+                  "meters_per_view_unit": 0.1,
+                  "packet_abi_bytes_hex": "5256344402000000020000000500000000000000000000000000000000000000cdcccc3d0000000000000000cdcc4cbc00000000cdcccc3d00000000000000000000000000000000cdcccc3d000000000000000000000000000000000000803fd55ae43f000000000000000000000000000000006afb4a4000000000000000000000000000000000cd2080bf4801cdbd0000000000000000000080bf00000000d55ae43f6afb4a40acc52737cdcccc3d"
+                },
+                "observed_present_intervals": 29,
+                "rejected_present_intervals": 0,
+                "longest_first_present": 9,
+                "longest_last_present": 37,
+                "host_start_ms": 285126928,
+                "host_end_ms": 285127122,
+                "host_span_ms": 194,
+                "same_requested_mapping": false,
+                "whole_scene_verified": false,
+                "gpu_elapsed_time_proven": false
+              }
+            }
+          ],
+          "frames": 64,
+          "original_submissions": 320,
+          "original_draws": 128,
+          "exact_original_pixel_bytes": 1048576,
+          "view_translation_pixels_by_eye": [
+            [
+              -14.281454015514427,
+              -7.123102866779078
+            ],
+            [
+              -14.281454015514427,
+              -7.123102866779078
+            ]
+          ],
+          "registered_graphics_queues": 5,
+          "foreign_acquisition_fence_waited": false,
+          "driver": {
+            "requests": 2,
+            "pairs": 2,
+            "unavailable": 0,
+            "rejected_leases": 2,
+            "deferred_queue_leases": 0,
+            "active": false,
+            "consumer_pending": false,
+            "stopped": true,
+            "fixed_view_held": false,
+            "fault": false,
+            "actual_xr_pose_source": false,
+            "xr_submission": false
+          },
+          "producer": {
+            "slots": 3,
+            "reserved_bytes": 786432,
+            "leases_issued": 6,
+            "retire_submissions": 6,
+            "outstanding_leases": 0
+          },
+          "validation_errors": 0
+        },
+        {
+          "case": "short-steam-runtime",
+          "pairs": [
+            {
+              "request": 1,
+              "packet_sequence": 2,
+              "source_presents": [
+                6,
+                8
+              ],
+              "source_capture_sequences": [
+                1,
+                3
+              ],
+              "disparities_pixels": [
+                0.0,
+                0.0
+              ],
+              "exact_original_pixel_bytes": 524288,
+              "preceding_fixed_view": null
+            }
+          ],
+          "frames": 8,
+          "original_submissions": 40,
+          "original_draws": 16,
+          "exact_original_pixel_bytes": 524288,
+          "view_translation_pixels_by_eye": [],
+          "registered_graphics_queues": 5,
+          "foreign_acquisition_fence_waited": false,
+          "driver": {
+            "requests": 1,
+            "pairs": 1,
+            "unavailable": 0,
+            "rejected_leases": 1,
+            "deferred_queue_leases": 0,
+            "active": false,
+            "consumer_pending": false,
+            "stopped": false,
+            "fixed_view_held": true,
+            "fault": false,
+            "actual_xr_pose_source": false,
+            "xr_submission": false
+          },
+          "producer": {
+            "slots": 3,
+            "reserved_bytes": 786432,
+            "leases_issued": 3,
+            "retire_submissions": 3,
+            "outstanding_leases": 0
+          },
+          "validation_errors": 0
+        },
+        {
+          "case": "foreign-steam-runtime",
+          "pairs": [
+            {
+              "request": 1,
+              "packet_sequence": 2,
+              "source_presents": [
+                6,
+                9
+              ],
+              "source_capture_sequences": [
+                1,
+                4
+              ],
+              "disparities_pixels": [
+                0.0,
+                0.0
+              ],
+              "exact_original_pixel_bytes": 524288,
+              "preceding_fixed_view": null
+            },
+            {
+              "request": 2,
+              "packet_sequence": 3,
+              "source_presents": [
+                38,
+                39
+              ],
+              "source_capture_sequences": [
+                6,
+                7
+              ],
+              "disparities_pixels": [
+                0.0,
+                0.0
+              ],
+              "exact_original_pixel_bytes": 524288,
+              "preceding_fixed_view": {
+                "camera": {
+                  "status": "uniform",
+                  "first_submission": 61,
+                  "last_submission": 217,
+                  "packet_sequence": 2,
+                  "packet_eye": 0,
+                  "packet_version": 2,
+                  "source_depth_scaled": true,
+                  "meters_per_view_unit": 0.1,
+                  "packet_abi_bytes_hex": "5256344402000000020000000500000000000000000000000000000000000000cdcccc3d0000000000000000cdcc4cbc00000000cdcccc3d00000000000000000000000000000000cdcccc3d000000000000000000000000000000000000803fd55ae43f000000000000000000000000000000006afb4a4000000000000000000000000000000000cd2080bf4801cdbd0000000000000000000080bf00000000d55ae43f6afb4a40acc52737cdcccc3d"
+                },
+                "observed_present_intervals": 27,
+                "rejected_present_intervals": 0,
+                "longest_first_present": 11,
+                "longest_last_present": 37,
+                "host_start_ms": 285130627,
+                "host_end_ms": 285130806,
+                "host_span_ms": 179,
+                "same_requested_mapping": false,
+                "whole_scene_verified": false,
+                "gpu_elapsed_time_proven": false
+              }
+            }
+          ],
+          "frames": 64,
+          "original_submissions": 384,
+          "original_draws": 128,
+          "exact_original_pixel_bytes": 1048576,
+          "view_translation_pixels_by_eye": [
+            [
+              -14.281454015514427,
+              -7.123102866779078
+            ],
+            [
+              -14.281454015514427,
+              -7.123102866779078
+            ]
+          ],
+          "registered_graphics_queues": 5,
+          "foreign_acquisition_fence_waited": true,
+          "driver": {
+            "requests": 2,
+            "pairs": 2,
+            "unavailable": 0,
+            "rejected_leases": 3,
+            "deferred_queue_leases": 2,
+            "active": false,
+            "consumer_pending": false,
+            "stopped": true,
+            "fixed_view_held": false,
+            "fault": false,
+            "actual_xr_pose_source": false,
+            "xr_submission": false
+          },
+          "producer": {
+            "slots": 3,
+            "reserved_bytes": 786432,
+            "leases_issued": 9,
+            "retire_submissions": 9,
+            "outstanding_leases": 0
+          },
+          "validation_errors": 0
+        },
+        {
+          "case": "cancel-steam-runtime",
+          "pairs": [],
+          "frames": 8,
+          "original_submissions": 40,
+          "original_draws": 16,
+          "exact_original_pixel_bytes": 0,
+          "view_translation_pixels_by_eye": [],
+          "registered_graphics_queues": 5,
+          "foreign_acquisition_fence_waited": false,
+          "driver": {
+            "requests": 1,
+            "pairs": 0,
+            "unavailable": 0,
+            "rejected_leases": 1,
+            "deferred_queue_leases": 0,
+            "active": false,
+            "consumer_pending": false,
+            "stopped": true,
+            "fixed_view_held": false,
+            "fault": false,
+            "actual_xr_pose_source": false,
+            "xr_submission": false
+          },
+          "producer": {
+            "slots": 2,
+            "reserved_bytes": 524288,
+            "leases_issued": 2,
+            "retire_submissions": 2,
+            "outstanding_leases": 0
+          },
+          "validation_errors": 0
+        }
+      ],
+      "legacy_wsi": null
+    },
+    "negative_controls": [
+      {
+        "environment": "native",
+        "unheld_interval_detected": true
+      },
+      {
+        "environment": "steam-runtime",
+        "unheld_interval_detected": true
+      }
+    ],
+    "default_driver_regression": {
+      "schema_version": 1,
+      "synthetic_scene": true,
+      "actual_wsi_loader": true,
+      "actual_capture_producer": true,
+      "actual_gpu_image_consumer": true,
+      "actual_xr_pose_source": false,
+      "diablo_rendered": false,
+      "actual_steamvr_submission": false,
+      "whole_scene_verified": false,
+      "common_scene_time_known": false,
+      "khronos_synchronization_validation_loaded": true,
+      "validation_errors": 0,
+      "portable": {
+        "diagnostic_pose_passed": true,
+        "exact_packet_bytes": 352,
+        "invalid_inputs_refused": 9,
+        "real_xr_source_claimed": false
+      },
+      "fragment_packet_check": false,
+      "layer_sha256": "2056bcb21a1a04af0d74407b2f67ad408b4223e5b1329b7d4c19dd4a86231cd1",
+      "fixture_sha256": "ec174a153ef009753ab20131d2b94e8d56b2ab97384ab18a32c0307c34f7d77a",
+      "cases": [
+        {
+          "case": "native",
+          "pairs": [
+            {
+              "request": 1,
+              "packet_sequence": 2,
+              "source_presents": [
+                6,
+                7
+              ],
+              "source_capture_sequences": [
+                6,
+                7
+              ],
+              "disparities_pixels": [
+                14.607794894025403,
+                7.31257269928156
+              ],
+              "exact_original_pixel_bytes": 524288,
+              "preceding_fixed_view": null
+            },
+            {
+              "request": 2,
+              "packet_sequence": 3,
+              "source_presents": [
+                38,
+                39
+              ],
+              "source_capture_sequences": [
+                38,
+                39
+              ],
+              "disparities_pixels": [
+                14.621196616026268,
+                7.306103556969134
+              ],
+              "exact_original_pixel_bytes": 524288,
+              "preceding_fixed_view": null
+            }
+          ],
+          "frames": 64,
+          "original_submissions": 320,
+          "original_draws": 128,
+          "exact_original_pixel_bytes": 1048576,
+          "view_translation_pixels_by_eye": [
+            [
+              -14.268041486120978,
+              -7.131363657080357
+            ],
+            [
+              -14.281443208121843,
+              -7.124894514767931
+            ]
+          ],
+          "registered_graphics_queues": 5,
+          "foreign_acquisition_fence_waited": false,
+          "driver": {
+            "requests": 2,
+            "pairs": 2,
+            "unavailable": 0,
+            "rejected_leases": 0,
+            "deferred_queue_leases": 0,
+            "active": false,
+            "consumer_pending": false,
+            "stopped": false,
+            "fixed_view_held": false,
+            "fault": false,
+            "actual_xr_pose_source": false,
+            "xr_submission": false
+          },
+          "producer": {
+            "slots": 2,
+            "reserved_bytes": 524288,
+            "leases_issued": 4,
+            "retire_submissions": 4,
+            "outstanding_leases": 0
+          },
+          "validation_errors": 0
+        },
+        {
+          "case": "cancel-native",
+          "pairs": [],
+          "frames": 8,
+          "original_submissions": 40,
+          "original_draws": 16,
+          "exact_original_pixel_bytes": 0,
+          "view_translation_pixels_by_eye": [],
+          "registered_graphics_queues": 5,
+          "foreign_acquisition_fence_waited": false,
+          "driver": {
+            "requests": 1,
+            "pairs": 0,
+            "unavailable": 0,
+            "rejected_leases": 1,
+            "deferred_queue_leases": 0,
+            "active": false,
+            "consumer_pending": false,
+            "stopped": true,
+            "fixed_view_held": false,
+            "fault": false,
+            "actual_xr_pose_source": false,
+            "xr_submission": false
+          },
+          "producer": {
+            "slots": 2,
+            "reserved_bytes": 524288,
+            "leases_issued": 2,
+            "retire_submissions": 2,
+            "outstanding_leases": 0
+          },
+          "validation_errors": 0
+        },
+        {
+          "case": "steam-runtime",
+          "pairs": [
+            {
+              "request": 1,
+              "packet_sequence": 2,
+              "source_presents": [
+                6,
+                7
+              ],
+              "source_capture_sequences": [
+                6,
+                7
+              ],
+              "disparities_pixels": [
+                14.607794894025403,
+                7.31257269928156
+              ],
+              "exact_original_pixel_bytes": 524288,
+              "preceding_fixed_view": null
+            },
+            {
+              "request": 2,
+              "packet_sequence": 3,
+              "source_presents": [
+                38,
+                39
+              ],
+              "source_capture_sequences": [
+                38,
+                39
+              ],
+              "disparities_pixels": [
+                14.621196616026268,
+                7.306103556969134
+              ],
+              "exact_original_pixel_bytes": 524288,
+              "preceding_fixed_view": null
+            }
+          ],
+          "frames": 64,
+          "original_submissions": 320,
+          "original_draws": 128,
+          "exact_original_pixel_bytes": 1048576,
+          "view_translation_pixels_by_eye": [
+            [
+              -14.268041486120978,
+              -7.131363657080357
+            ],
+            [
+              -14.281443208121843,
+              -7.124894514767931
+            ]
+          ],
+          "registered_graphics_queues": 5,
+          "foreign_acquisition_fence_waited": false,
+          "driver": {
+            "requests": 2,
+            "pairs": 2,
+            "unavailable": 0,
+            "rejected_leases": 0,
+            "deferred_queue_leases": 0,
+            "active": false,
+            "consumer_pending": false,
+            "stopped": false,
+            "fixed_view_held": false,
+            "fault": false,
+            "actual_xr_pose_source": false,
+            "xr_submission": false
+          },
+          "producer": {
+            "slots": 2,
+            "reserved_bytes": 524288,
+            "leases_issued": 4,
+            "retire_submissions": 4,
+            "outstanding_leases": 0
+          },
+          "validation_errors": 0
+        },
+        {
+          "case": "cancel-steam-runtime",
+          "pairs": [],
+          "frames": 8,
+          "original_submissions": 40,
+          "original_draws": 16,
+          "exact_original_pixel_bytes": 0,
+          "view_translation_pixels_by_eye": [],
+          "registered_graphics_queues": 5,
+          "foreign_acquisition_fence_waited": false,
+          "driver": {
+            "requests": 1,
+            "pairs": 0,
+            "unavailable": 0,
+            "rejected_leases": 1,
+            "deferred_queue_leases": 0,
+            "active": false,
+            "consumer_pending": false,
+            "stopped": true,
+            "fixed_view_held": false,
+            "fault": false,
+            "actual_xr_pose_source": false,
+            "xr_submission": false
+          },
+          "producer": {
+            "slots": 2,
+            "reserved_bytes": 524288,
+            "leases_issued": 2,
+            "retire_submissions": 2,
+            "outstanding_leases": 0
+          },
+          "validation_errors": 0
+        }
+      ],
+      "legacy_wsi": null
+    },
+    "valid_stereo_request_not_admitted": true,
+    "host_present_span_is_not_gpu_time": true,
+    "fixture_sha256": "ec174a153ef009753ab20131d2b94e8d56b2ab97384ab18a32c0307c34f7d77a",
+    "forwarding_sha256": "e35eafdfa5a5bc23588cf6bb162b3a425c171d76abaa9def51bc92b930c5ec9c",
+    "hold_unit_sha256": "e6db798880c16f2d7f9641893029cde493195d41cb29269ae2aaf40eaac9973c",
+    "source_sha256": {
+      "native/core/fixed_view_hold.hpp": "bf01e4562a8ed11c96a1d1a449ebd509576d85ccc88a0350fec2fedeb3798018",
+      "native/vulkan/diagnostic_capture.cpp": "ae6a290d31e0727f76f332a5446f274611fa9809efa0ac3f38d4fb8b4a0c30a6",
+      "native/vulkan/diagnostic_capture.hpp": "a0a14952af79376e67ad0782fdb2c044dc17f6420cce6bbad54c22d12b41405a",
+      "native/vulkan/trace_layer.cpp": "e0edccc4c49e02774958d26a714c4f08240bd51e1226be1820ff9e37809567a7",
+      "native/tests/present_layer_vulkan.cpp": "853ae1fb6e905f2de910b24d8e4b2b1435d563a54d40ebaaba53685e7f73ab93",
+      "native/tests/fixed_view_hold_tests.cpp": "ab1722f97ae61db6fbbb44a8559d9b37331f7a4a4e17f448086f8f18f6f26089",
+      "tools/pose_layer_validate.py": "ba759b3010e36f0efee2bdd6c061263929d5aaf7f55557fe0b5c4060f3589785",
+      "tools/fixed_view_validate.py": "c2d3100ffceb4e929eac42fe4565fd7ae5db2aafeb1c2fce24523f3aa327bed9"
+    }
+  },
+  "python_tests_passed": 201,
+  "actual_game": {
+    "actual_diablo_trial": true,
+    "synthetic_scene": false,
+    "game_version": "3.2.3.73883",
+    "render_extent": [
+      2560,
+      1440
+    ],
+    "external_monoscopic_pose": true,
+    "actual_xr_pose_source": false,
+    "request_times_are_predicted_xr_times": false,
+    "actual_steamvr_submission": false,
+    "continuous_immersive_game": false,
+    "same_instant_pair": false,
+    "whole_scene_verified": false,
+    "common_scene_time_known": false,
+    "all_pass_temporal_settling_proven": false,
+    "gpu_elapsed_time_proven": false,
+    "meters_per_view_unit": 0.1,
+    "physical_scale_inferred": false,
+    "captures": [
+      {
+        "request": 1,
+        "role": "baseline_warm",
+        "identical_monoscopic_view_transforms": true,
+        "eyes": [
+          {
+            "eye": 0,
+            "capture_sequence": 2,
+            "present": 14463,
+            "lease": 2,
+            "packet_sequence": 2,
+            "copy_and_selected_draw_packets_identical": true,
+            "all_expected_packet_values_verified": true
+          },
+          {
+            "eye": 1,
+            "capture_sequence": 4,
+            "present": 14465,
+            "lease": 4,
+            "packet_sequence": 2,
+            "copy_and_selected_draw_packets_identical": true,
+            "all_expected_packet_values_verified": true
+          }
+        ],
+        "readback_bytes": 29491200
+      },
+      {
+        "request": 2,
+        "role": "baseline",
+        "identical_monoscopic_view_transforms": true,
+        "eyes": [
+          {
+            "eye": 0,
+            "capture_sequence": 6,
+            "present": 15338,
+            "lease": 6,
+            "packet_sequence": 3,
+            "copy_and_selected_draw_packets_identical": true,
+            "all_expected_packet_values_verified": true
+          },
+          {
+            "eye": 1,
+            "capture_sequence": 8,
+            "present": 15340,
+            "lease": 8,
+            "packet_sequence": 3,
+            "copy_and_selected_draw_packets_identical": true,
+            "all_expected_packet_values_verified": true
+          }
+        ],
+        "readback_bytes": 29491200
+      },
+      {
+        "request": 3,
+        "role": "wide_warm",
+        "identical_monoscopic_view_transforms": true,
+        "eyes": [
+          {
+            "eye": 0,
+            "capture_sequence": 10,
+            "present": 15493,
+            "lease": 10,
+            "packet_sequence": 4,
+            "copy_and_selected_draw_packets_identical": true,
+            "all_expected_packet_values_verified": true
+          },
+          {
+            "eye": 1,
+            "capture_sequence": 12,
+            "present": 15495,
+            "lease": 12,
+            "packet_sequence": 4,
+            "copy_and_selected_draw_packets_identical": true,
+            "all_expected_packet_values_verified": true
+          }
+        ],
+        "readback_bytes": 29491200
+      },
+      {
+        "request": 4,
+        "role": "wide",
+        "identical_monoscopic_view_transforms": true,
+        "eyes": [
+          {
+            "eye": 0,
+            "capture_sequence": 14,
+            "present": 16371,
+            "lease": 14,
+            "packet_sequence": 5,
+            "copy_and_selected_draw_packets_identical": true,
+            "all_expected_packet_values_verified": true
+          },
+          {
+            "eye": 1,
+            "capture_sequence": 16,
+            "present": 16373,
+            "lease": 16,
+            "packet_sequence": 5,
+            "copy_and_selected_draw_packets_identical": true,
+            "all_expected_packet_values_verified": true
+          }
+        ],
+        "readback_bytes": 29491200
+      },
+      {
+        "request": 5,
+        "role": "restore_warm",
+        "identical_monoscopic_view_transforms": true,
+        "eyes": [
+          {
+            "eye": 0,
+            "capture_sequence": 18,
+            "present": 16528,
+            "lease": 18,
+            "packet_sequence": 6,
+            "copy_and_selected_draw_packets_identical": true,
+            "all_expected_packet_values_verified": true
+          },
+          {
+            "eye": 1,
+            "capture_sequence": 20,
+            "present": 16530,
+            "lease": 20,
+            "packet_sequence": 6,
+            "copy_and_selected_draw_packets_identical": true,
+            "all_expected_packet_values_verified": true
+          }
+        ],
+        "readback_bytes": 29491200
+      },
+      {
+        "request": 6,
+        "role": "restored",
+        "identical_monoscopic_view_transforms": true,
+        "eyes": [
+          {
+            "eye": 0,
+            "capture_sequence": 22,
+            "present": 17405,
+            "lease": 22,
+            "packet_sequence": 7,
+            "copy_and_selected_draw_packets_identical": true,
+            "all_expected_packet_values_verified": true
+          },
+          {
+            "eye": 1,
+            "capture_sequence": 24,
+            "present": 17407,
+            "lease": 24,
+            "packet_sequence": 7,
+            "copy_and_selected_draw_packets_identical": true,
+            "all_expected_packet_values_verified": true
+          }
+        ],
+        "readback_bytes": 29491200
+      }
+    ],
+    "held_intervals": [
+      {
+        "measured_request": 2,
+        "preceding_packet_sequence": 2,
+        "first_present": 14467,
+        "last_present": 15337,
+        "consecutive_present_intervals": 871,
+        "rejected_present_intervals": 0,
+        "host_span_ms": 6029,
+        "original_packet_matches_prior_capture": true,
+        "same_requested_mapping": true,
+        "whole_scene_verified": false,
+        "gpu_elapsed_time_proven": false
+      },
+      {
+        "measured_request": 4,
+        "preceding_packet_sequence": 4,
+        "first_present": 15497,
+        "last_present": 16370,
+        "consecutive_present_intervals": 874,
+        "rejected_present_intervals": 0,
+        "host_span_ms": 6047,
+        "original_packet_matches_prior_capture": true,
+        "same_requested_mapping": true,
+        "whole_scene_verified": false,
+        "gpu_elapsed_time_proven": false
+      },
+      {
+        "measured_request": 6,
+        "preceding_packet_sequence": 6,
+        "first_present": 16532,
+        "last_present": 17404,
+        "consecutive_present_intervals": 873,
+        "rejected_present_intervals": 0,
+        "host_span_ms": 6044,
+        "original_packet_matches_prior_capture": true,
+        "same_requested_mapping": true,
+        "whole_scene_verified": false,
+        "gpu_elapsed_time_proven": false
+      }
+    ],
+    "readback_bytes": 176947200,
+    "unchanged_shader_bundle_sha256": "1328fa3f7f077503b8c65423ff39f3b3e47439cb52b107ff48ff71fc72e357eb",
+    "layer_sha256": "2056bcb21a1a04af0d74407b2f67ad408b4223e5b1329b7d4c19dd4a86231cd1",
+    "overlay_vertex_override_loads_observed": 3,
+    "overlay_fragment_override_loads_observed": 3,
+    "fourth_fragment_override_load_observed": false,
+    "override_load_is_not_branch_execution_proof": true,
+    "wide_fov_degrees": [
+      91.67324722093173,
+      91.67324722093173
+    ],
+    "wide_fov_coverage_passed": false,
+    "wide_coverage_observation": "Large missing/discontinuous regions remain in the measured wide-field image after 874 consecutive uniformly observed selected-draw intervals spanning 6047ms on the host. This is not all-pass temporal correctness or GPU elapsed time.",
+    "cross_session_pixel_improvement_claimed": false,
+    "patch_analysis": {
+      "summary": {
+        "optical_ndc_scale": [
+          0.5443961265209271,
+          0.30622277512859486
+        ],
+        "source_fov_footprint_in_target_pixels": [
+          583.1729580532134,
+          499.5196019074117,
+          1976.8270419467865,
+          940.4803980925883
+        ],
+        "contrasted_patches": 42,
+        "inverse_optics_and_restore_accepted": 25,
+        "optical_winner_count": 25,
+        "zero_residual_inverse_optics_count": 25,
+        "unmodified_hypothesis_accepted_count": 0,
+        "whole_scene_or_culling_verified": false
+      },
+      "patches": [
+        {
+          "source_xy": [
+            920,
+            320
+          ],
+          "matches": {
+            "inverse_optics": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 3.0754458161865568,
+              "contrast": 3.7945435147081237,
+              "uniqueness": 1.145405887600357,
+              "accepted": false
+            },
+            "unchanged": {
+              "dx_fullpixels": -12,
+              "dy_fullpixels": 8,
+              "mae": 3.670781893004116,
+              "contrast": 3.7945435147081237,
+              "uniqueness": 1.0478325859491777,
+              "accepted": false
+            },
+            "restored": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 0.23472031702484125,
+              "contrast": 3.7945435147081237,
+              "uniqueness": 18.414285714285914,
+              "accepted": true
+            }
+          }
+        },
+        {
+          "source_xy": [
+            1080,
+            320
+          ],
+          "matches": {
+            "inverse_optics": {
+              "dx_fullpixels": -4,
+              "dy_fullpixels": 8,
+              "mae": 2.0411522633744856,
+              "contrast": 2.0701112635269014,
+              "uniqueness": 1.0235961768219832,
+              "accepted": false
+            },
+            "unchanged": {
+              "dx_fullpixels": -8,
+              "dy_fullpixels": 12,
+              "mae": 6.131382411217802,
+              "contrast": 2.0701112635269014,
+              "uniqueness": 1.2549468032216369,
+              "accepted": false
+            },
+            "restored": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 0.3383630544124402,
+              "contrast": 2.0701112635269014,
+              "uniqueness": 5.294594594594543,
+              "accepted": true
+            }
+          }
+        },
+        {
+          "source_xy": [
+            1400,
+            320
+          ],
+          "matches": {
+            "inverse_optics": {
+              "dx_fullpixels": -4,
+              "dy_fullpixels": 0,
+              "mae": 1.5500685871056243,
+              "contrast": 1.699740893156531,
+              "uniqueness": 1.022418879056047,
+              "accepted": false
+            },
+            "unchanged": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 12,
+              "mae": 1.547934766041762,
+              "contrast": 1.699740893156531,
+              "uniqueness": 1.0157542339503742,
+              "accepted": false
+            },
+            "restored": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 0.35116598079561234,
+              "contrast": 1.699740893156531,
+              "uniqueness": 4.674479166666642,
+              "accepted": true
+            }
+          }
+        },
+        {
+          "source_xy": [
+            1560,
+            320
+          ],
+          "matches": {
+            "inverse_optics": {
+              "dx_fullpixels": 8,
+              "dy_fullpixels": 4,
+              "mae": 2.6264288980338364,
+              "contrast": 2.7026367931717723,
+              "uniqueness": 1.0056870937790157,
+              "accepted": false
+            },
+            "unchanged": {
+              "dx_fullpixels": -12,
+              "dy_fullpixels": 0,
+              "mae": 2.477061423563481,
+              "contrast": 2.7026367931717723,
+              "uniqueness": 1.0121831159241936,
+              "accepted": false
+            },
+            "restored": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 0.2615454961133981,
+              "contrast": 2.7026367931717723,
+              "uniqueness": 11.059440559440526,
+              "accepted": true
+            }
+          }
+        },
+        {
+          "source_xy": [
+            1880,
+            320
+          ],
+          "matches": {
+            "inverse_optics": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 1.5522024081694867,
+              "contrast": 2.7270233196159124,
+              "uniqueness": 1.8735271013354275,
+              "accepted": true
+            },
+            "unchanged": {
+              "dx_fullpixels": 12,
+              "dy_fullpixels": 12,
+              "mae": 3.095869532083524,
+              "contrast": 2.7270233196159124,
+              "uniqueness": 1.0064001575423394,
+              "accepted": false
+            },
+            "restored": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 0.21399176954732038,
+              "contrast": 2.7270233196159124,
+              "uniqueness": 13.80341880341911,
+              "accepted": true
+            }
+          }
+        },
+        {
+          "source_xy": [
+            1080,
+            480
+          ],
+          "matches": {
+            "inverse_optics": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": -8,
+              "mae": 3.9561042524005487,
+              "contrast": 3.9561042524005487,
+              "uniqueness": 1.0038526737555864,
+              "accepted": false
+            },
+            "unchanged": {
+              "dx_fullpixels": 8,
+              "dy_fullpixels": -4,
+              "mae": 3.9405578417924114,
+              "contrast": 3.9561042524005487,
+              "uniqueness": 1.018565792527268,
+              "accepted": false
+            },
+            "restored": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 0.4228014022252708,
+              "contrast": 3.9561042524005487,
+              "uniqueness": 6.938716654650322,
+              "accepted": true
+            }
+          }
+        },
+        {
+          "source_xy": [
+            1560,
+            480
+          ],
+          "matches": {
+            "inverse_optics": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 1.6954732510288064,
+              "contrast": 2.8523090992226794,
+              "uniqueness": 1.5952894642215034,
+              "accepted": true
+            },
+            "unchanged": {
+              "dx_fullpixels": 4,
+              "dy_fullpixels": -12,
+              "mae": 2.8175582990397805,
+              "contrast": 2.8523090992226794,
+              "uniqueness": 1.008763388510224,
+              "accepted": false
+            },
+            "restored": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 0.2222222222222222,
+              "contrast": 2.8523090992226794,
+              "uniqueness": 13.308641975308642,
+              "accepted": true
+            }
+          }
+        },
+        {
+          "source_xy": [
+            1720,
+            480
+          ],
+          "matches": {
+            "inverse_optics": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 1.7637555250723975,
+              "contrast": 3.24371284865112,
+              "uniqueness": 1.8933632907016933,
+              "accepted": true
+            },
+            "unchanged": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 12,
+              "mae": 3.0791037951531774,
+              "contrast": 3.24371284865112,
+              "uniqueness": 1.0240570240570241,
+              "accepted": false
+            },
+            "restored": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 0.33379058070416123,
+              "contrast": 3.24371284865112,
+              "uniqueness": 11.202739726027389,
+              "accepted": true
+            }
+          }
+        },
+        {
+          "source_xy": [
+            1880,
+            480
+          ],
+          "matches": {
+            "inverse_optics": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 1.583600060966316,
+              "contrast": 2.360310928212163,
+              "uniqueness": 1.5855630413859483,
+              "accepted": true
+            },
+            "unchanged": {
+              "dx_fullpixels": 4,
+              "dy_fullpixels": -12,
+              "mae": 2.3103185490016767,
+              "contrast": 2.360310928212163,
+              "uniqueness": 1.1035756696134056,
+              "accepted": false
+            },
+            "restored": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 0.24386526444139817,
+              "contrast": 2.360310928212163,
+              "uniqueness": 11.032499999999908,
+              "accepted": true
+            }
+          }
+        },
+        {
+          "source_xy": [
+            1080,
+            640
+          ],
+          "matches": {
+            "inverse_optics": {
+              "dx_fullpixels": -4,
+              "dy_fullpixels": 4,
+              "mae": 1.249809480262155,
+              "contrast": 2.0993750952598687,
+              "uniqueness": 1.1104878048780487,
+              "accepted": false
+            },
+            "unchanged": {
+              "dx_fullpixels": -12,
+              "dy_fullpixels": -12,
+              "mae": 2.1923487273281532,
+              "contrast": 2.0993750952598687,
+              "uniqueness": 2.326890989988873,
+              "accepted": false
+            },
+            "restored": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 0.2548392013412585,
+              "contrast": 2.0993750952598687,
+              "uniqueness": 6.794258373205753,
+              "accepted": true
+            }
+          }
+        },
+        {
+          "source_xy": [
+            1560,
+            640
+          ],
+          "matches": {
+            "inverse_optics": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": -4,
+              "mae": 2.055479347660418,
+              "contrast": 2.1493674744703553,
+              "uniqueness": 1.0446388847693904,
+              "accepted": false
+            },
+            "unchanged": {
+              "dx_fullpixels": -4,
+              "dy_fullpixels": -4,
+              "mae": 1.8869074836153035,
+              "contrast": 2.1493674744703553,
+              "uniqueness": 1.160581583198707,
+              "accepted": false
+            },
+            "restored": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 0.21673525377228953,
+              "contrast": 2.1493674744703553,
+              "uniqueness": 8.274261603375576,
+              "accepted": true
+            }
+          }
+        },
+        {
+          "source_xy": [
+            1720,
+            640
+          ],
+          "matches": {
+            "inverse_optics": {
+              "dx_fullpixels": -12,
+              "dy_fullpixels": -12,
+              "mae": 3.0416095107453134,
+              "contrast": 2.6087486663618353,
+              "uniqueness": 1.0057125676488274,
+              "accepted": false
+            },
+            "unchanged": {
+              "dx_fullpixels": 12,
+              "dy_fullpixels": 8,
+              "mae": 2.808413351623228,
+              "contrast": 2.6087486663618353,
+              "uniqueness": 1.1035493324649952,
+              "accepted": false
+            },
+            "restored": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 0.35756744398719953,
+              "contrast": 2.6087486663618353,
+              "uniqueness": 8.286445012787667,
+              "accepted": true
+            }
+          }
+        },
+        {
+          "source_xy": [
+            1880,
+            640
+          ],
+          "matches": {
+            "inverse_optics": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 2.4734034445968605,
+              "contrast": 3.6832799878067366,
+              "uniqueness": 1.6137540054227262,
+              "accepted": true
+            },
+            "unchanged": {
+              "dx_fullpixels": -12,
+              "dy_fullpixels": -12,
+              "mae": 3.5793324188385918,
+              "contrast": 3.6832799878067366,
+              "uniqueness": 1.0260602963719978,
+              "accepted": false
+            },
+            "restored": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 0.3627495808565776,
+              "contrast": 3.6832799878067366,
+              "uniqueness": 9.917647058823505,
+              "accepted": true
+            }
+          }
+        },
+        {
+          "source_xy": [
+            2040,
+            640
+          ],
+          "matches": {
+            "inverse_optics": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 2.319158664837677,
+              "contrast": 4.137174211248285,
+              "uniqueness": 2.0082807570977916,
+              "accepted": true
+            },
+            "unchanged": {
+              "dx_fullpixels": 8,
+              "dy_fullpixels": 0,
+              "mae": 4.417924096936442,
+              "contrast": 4.137174211248285,
+              "uniqueness": 1.0132477747878286,
+              "accepted": false
+            },
+            "restored": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 0.3072702331961612,
+              "contrast": 4.137174211248285,
+              "uniqueness": 15.275793650793549,
+              "accepted": true
+            }
+          }
+        },
+        {
+          "source_xy": [
+            2200,
+            640
+          ],
+          "matches": {
+            "inverse_optics": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 1.040695016003658,
+              "contrast": 2.2170400853528425,
+              "uniqueness": 1.3646748681898058,
+              "accepted": false
+            },
+            "unchanged": {
+              "dx_fullpixels": -12,
+              "dy_fullpixels": -12,
+              "mae": 1.8491083676268865,
+              "contrast": 2.2170400853528425,
+              "uniqueness": 1.0504451038575657,
+              "accepted": false
+            },
+            "restored": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 0.27800640146319117,
+              "contrast": 2.2170400853528425,
+              "uniqueness": 5.843201754385975,
+              "accepted": true
+            }
+          }
+        },
+        {
+          "source_xy": [
+            920,
+            800
+          ],
+          "matches": {
+            "inverse_optics": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 2.3865264441396126,
+              "contrast": 2.9757658893461367,
+              "uniqueness": 1.7195044066930645,
+              "accepted": false
+            },
+            "unchanged": {
+              "dx_fullpixels": -12,
+              "dy_fullpixels": 0,
+              "mae": 3.0187471422039325,
+              "contrast": 2.9757658893461367,
+              "uniqueness": 1.2473997778450976,
+              "accepted": false
+            },
+            "restored": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 0.3200731595793338,
+              "contrast": 2.9757658893461367,
+              "uniqueness": 10.825714285714241,
+              "accepted": true
+            }
+          }
+        },
+        {
+          "source_xy": [
+            1080,
+            800
+          ],
+          "matches": {
+            "inverse_optics": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 1.9835390946502056,
+              "contrast": 2.3694558756287147,
+              "uniqueness": 1.469955432611034,
+              "accepted": false
+            },
+            "unchanged": {
+              "dx_fullpixels": 4,
+              "dy_fullpixels": -4,
+              "mae": 2.7032464563328755,
+              "contrast": 2.3694558756287147,
+              "uniqueness": 1.0956247180875058,
+              "accepted": false
+            },
+            "restored": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 0.4417009602194784,
+              "contrast": 2.3694558756287147,
+              "uniqueness": 5.577639751552799,
+              "accepted": true
+            }
+          }
+        },
+        {
+          "source_xy": [
+            1240,
+            800
+          ],
+          "matches": {
+            "inverse_optics": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 1.6686480719402526,
+              "contrast": 2.3868312757201644,
+              "uniqueness": 1.585860431128974,
+              "accepted": true
+            },
+            "unchanged": {
+              "dx_fullpixels": 12,
+              "dy_fullpixels": 12,
+              "mae": 3.868922420362749,
+              "contrast": 2.3868312757201644,
+              "uniqueness": 1.1413488811849988,
+              "accepted": false
+            },
+            "restored": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 0.43590916018899273,
+              "contrast": 2.3868312757201644,
+              "uniqueness": 5.837762237762275,
+              "accepted": true
+            }
+          }
+        },
+        {
+          "source_xy": [
+            1400,
+            800
+          ],
+          "matches": {
+            "inverse_optics": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 2.032312147538485,
+              "contrast": 3.034293552812072,
+              "uniqueness": 1.3142342882855855,
+              "accepted": false
+            },
+            "unchanged": {
+              "dx_fullpixels": 8,
+              "dy_fullpixels": -12,
+              "mae": 3.903368388965097,
+              "contrast": 3.034293552812072,
+              "uniqueness": 1.136118703631394,
+              "accepted": false
+            },
+            "restored": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 0.36122542295382054,
+              "contrast": 3.034293552812072,
+              "uniqueness": 7.311392405063242,
+              "accepted": true
+            }
+          }
+        },
+        {
+          "source_xy": [
+            1560,
+            800
+          ],
+          "matches": {
+            "inverse_optics": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 1.6360310928212158,
+              "contrast": 1.8564243255601283,
+              "uniqueness": 1.3247624371157074,
+              "accepted": false
+            },
+            "unchanged": {
+              "dx_fullpixels": 12,
+              "dy_fullpixels": 0,
+              "mae": 4.30208809632678,
+              "contrast": 1.8564243255601283,
+              "uniqueness": 1.1158506341670797,
+              "accepted": false
+            },
+            "restored": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 0.39384240207285465,
+              "contrast": 1.8564243255601283,
+              "uniqueness": 4.4938080495356045,
+              "accepted": true
+            }
+          }
+        },
+        {
+          "source_xy": [
+            1720,
+            800
+          ],
+          "matches": {
+            "inverse_optics": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 2.0457247370827623,
+              "contrast": 3.3199207437890563,
+              "uniqueness": 2.017881090746536,
+              "accepted": true
+            },
+            "unchanged": {
+              "dx_fullpixels": -12,
+              "dy_fullpixels": -12,
+              "mae": 4.02103337905807,
+              "contrast": 3.3199207437890563,
+              "uniqueness": 1.1318323099082708,
+              "accepted": false
+            },
+            "restored": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 0.3575674439871954,
+              "contrast": 3.3199207437890563,
+              "uniqueness": 10.524296675191867,
+              "accepted": true
+            }
+          }
+        },
+        {
+          "source_xy": [
+            1880,
+            800
+          ],
+          "matches": {
+            "inverse_optics": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 1.9948178631306204,
+              "contrast": 3.1047096479195244,
+              "uniqueness": 1.2185207823960884,
+              "accepted": false
+            },
+            "unchanged": {
+              "dx_fullpixels": -12,
+              "dy_fullpixels": -4,
+              "mae": 2.9074836153025467,
+              "contrast": 3.1047096479195244,
+              "uniqueness": 1.3002725938351847,
+              "accepted": false
+            },
+            "restored": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 0.31153787532388383,
+              "contrast": 3.1047096479195244,
+              "uniqueness": 8.136986301369856,
+              "accepted": true
+            }
+          }
+        },
+        {
+          "source_xy": [
+            2040,
+            800
+          ],
+          "matches": {
+            "inverse_optics": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 2.0246913580246915,
+              "contrast": 2.292638317329675,
+              "uniqueness": 1.2750677506775066,
+              "accepted": false
+            },
+            "unchanged": {
+              "dx_fullpixels": 12,
+              "dy_fullpixels": 12,
+              "mae": 2.770919067215363,
+              "contrast": 2.292638317329675,
+              "uniqueness": 1.3375137513751376,
+              "accepted": false
+            },
+            "restored": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 0.38957475994512963,
+              "contrast": 2.292638317329675,
+              "uniqueness": 6.09154929577466,
+              "accepted": true
+            }
+          }
+        },
+        {
+          "source_xy": [
+            2200,
+            800
+          ],
+          "matches": {
+            "inverse_optics": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 2.618503276939491,
+              "contrast": 5.249199817101052,
+              "uniqueness": 1.9142025611175786,
+              "accepted": true
+            },
+            "unchanged": {
+              "dx_fullpixels": 8,
+              "dy_fullpixels": -12,
+              "mae": 5.342478280749886,
+              "contrast": 5.249199817101052,
+              "uniqueness": 1.0589410019399748,
+              "accepted": false
+            },
+            "restored": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 0.39384240207285465,
+              "contrast": 5.249199817101052,
+              "uniqueness": 13.081269349845204,
+              "accepted": true
+            }
+          }
+        },
+        {
+          "source_xy": [
+            920,
+            960
+          ],
+          "matches": {
+            "inverse_optics": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 2.1222374638012504,
+              "contrast": 2.91175125743027,
+              "uniqueness": 1.6555587474863542,
+              "accepted": true
+            },
+            "unchanged": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": -12,
+              "mae": 5.00960219478738,
+              "contrast": 2.91175125743027,
+              "uniqueness": 1.0257393209200438,
+              "accepted": false
+            },
+            "restored": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 0.3895747599451336,
+              "contrast": 2.91175125743027,
+              "uniqueness": 7.478873239436555,
+              "accepted": true
+            }
+          }
+        },
+        {
+          "source_xy": [
+            1080,
+            960
+          ],
+          "matches": {
+            "inverse_optics": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 2.162780064014632,
+              "contrast": 3.7960676726108824,
+              "uniqueness": 2.144186046511628,
+              "accepted": true
+            },
+            "unchanged": {
+              "dx_fullpixels": -8,
+              "dy_fullpixels": 12,
+              "mae": 3.9585429050449625,
+              "contrast": 3.7960676726108824,
+              "uniqueness": 1.1170491298321268,
+              "accepted": false
+            },
+            "restored": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 0.5008382868465169,
+              "contrast": 3.7960676726108824,
+              "uniqueness": 8.748021911138169,
+              "accepted": true
+            }
+          }
+        },
+        {
+          "source_xy": [
+            1240,
+            960
+          ],
+          "matches": {
+            "inverse_optics": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 2.610272824264594,
+              "contrast": 3.178478890413047,
+              "uniqueness": 1.263108723578185,
+              "accepted": false
+            },
+            "unchanged": {
+              "dx_fullpixels": 4,
+              "dy_fullpixels": -8,
+              "mae": 4.688614540466392,
+              "contrast": 3.178478890413047,
+              "uniqueness": 1.0648202327546974,
+              "accepted": false
+            },
+            "restored": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 0.5371132449321747,
+              "contrast": 3.178478890413047,
+              "uniqueness": 4.891600454029514,
+              "accepted": true
+            }
+          }
+        },
+        {
+          "source_xy": [
+            1400,
+            960
+          ],
+          "matches": {
+            "inverse_optics": {
+              "dx_fullpixels": -4,
+              "dy_fullpixels": 0,
+              "mae": 2.7434842249657065,
+              "contrast": 4.0109739368998625,
+              "uniqueness": 1.3195555555555554,
+              "accepted": false
+            },
+            "unchanged": {
+              "dx_fullpixels": 8,
+              "dy_fullpixels": -8,
+              "mae": 3.968907178783722,
+              "contrast": 4.0109739368998625,
+              "uniqueness": 1.0923195084485406,
+              "accepted": false
+            },
+            "restored": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 0.4666971498247213,
+              "contrast": 4.0109739368998625,
+              "uniqueness": 5.935336381450039,
+              "accepted": true
+            }
+          }
+        },
+        {
+          "source_xy": [
+            1560,
+            960
+          ],
+          "matches": {
+            "inverse_optics": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 3.1897576588934613,
+              "contrast": 5.4881877762536195,
+              "uniqueness": 1.916762232415902,
+              "accepted": true
+            },
+            "unchanged": {
+              "dx_fullpixels": -8,
+              "dy_fullpixels": -8,
+              "mae": 4.920896204846821,
+              "contrast": 5.4881877762536195,
+              "uniqueness": 1.0487517809576907,
+              "accepted": false
+            },
+            "restored": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 0.5258344764517593,
+              "contrast": 5.4881877762536195,
+              "uniqueness": 9.66086956521741,
+              "accepted": true
+            }
+          }
+        },
+        {
+          "source_xy": [
+            1720,
+            960
+          ],
+          "matches": {
+            "inverse_optics": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 3.8600823045267494,
+              "contrast": 7.582075903063558,
+              "uniqueness": 1.915659796256811,
+              "accepted": true
+            },
+            "unchanged": {
+              "dx_fullpixels": 4,
+              "dy_fullpixels": 12,
+              "mae": 6.7642127724432255,
+              "contrast": 7.582075903063558,
+              "uniqueness": 1.0971158179360074,
+              "accepted": false
+            },
+            "restored": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 0.38957475994512963,
+              "contrast": 7.582075903063558,
+              "uniqueness": 19.1666666666667,
+              "accepted": true
+            }
+          }
+        },
+        {
+          "source_xy": [
+            1880,
+            960
+          ],
+          "matches": {
+            "inverse_optics": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 4.352690138698369,
+              "contrast": 8.523700655387898,
+              "uniqueness": 1.7303032425239864,
+              "accepted": true
+            },
+            "unchanged": {
+              "dx_fullpixels": 12,
+              "dy_fullpixels": 12,
+              "mae": 9.44459686023472,
+              "contrast": 8.523700655387898,
+              "uniqueness": 1.0117483781428527,
+              "accepted": false
+            },
+            "restored": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 0.317024843773812,
+              "contrast": 8.523700655387898,
+              "uniqueness": 28.41538461538488,
+              "accepted": true
+            }
+          }
+        },
+        {
+          "source_xy": [
+            2040,
+            960
+          ],
+          "matches": {
+            "inverse_optics": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 2.595336076817559,
+              "contrast": 3.714372809023015,
+              "uniqueness": 1.8548273431994355,
+              "accepted": true
+            },
+            "unchanged": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 4,
+              "mae": 4.0600518213686945,
+              "contrast": 3.714372809023015,
+              "uniqueness": 1.0180944515354005,
+              "accepted": false
+            },
+            "restored": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 0.2892851699436065,
+              "contrast": 3.714372809023015,
+              "uniqueness": 16.207586933614312,
+              "accepted": true
+            }
+          }
+        },
+        {
+          "source_xy": [
+            2200,
+            960
+          ],
+          "matches": {
+            "inverse_optics": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 2.44718792866941,
+              "contrast": 4.002743484224966,
+              "uniqueness": 1.6955655206776286,
+              "accepted": true
+            },
+            "unchanged": {
+              "dx_fullpixels": -12,
+              "dy_fullpixels": 8,
+              "mae": 3.9058070416095116,
+              "contrast": 4.002743484224966,
+              "uniqueness": 1.0273160071802074,
+              "accepted": false
+            },
+            "restored": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 0.29324798049077727,
+              "contrast": 4.002743484224966,
+              "uniqueness": 12.305613305613372,
+              "accepted": true
+            }
+          }
+        },
+        {
+          "source_xy": [
+            920,
+            1120
+          ],
+          "matches": {
+            "inverse_optics": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 1.8875171467764063,
+              "contrast": 4.179240969364426,
+              "uniqueness": 2.328165374677002,
+              "accepted": true
+            },
+            "unchanged": {
+              "dx_fullpixels": 12,
+              "dy_fullpixels": 4,
+              "mae": 4.250876390794087,
+              "contrast": 4.179240969364426,
+              "uniqueness": 1.0982430978845463,
+              "accepted": false
+            },
+            "restored": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 0.32007315957932914,
+              "contrast": 4.179240969364426,
+              "uniqueness": 10.785714285714395,
+              "accepted": true
+            }
+          }
+        },
+        {
+          "source_xy": [
+            1080,
+            1120
+          ],
+          "matches": {
+            "inverse_optics": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 2.3237311385459534,
+              "contrast": 4.334705075445816,
+              "uniqueness": 2.0373868555686734,
+              "accepted": true
+            },
+            "unchanged": {
+              "dx_fullpixels": -8,
+              "dy_fullpixels": -12,
+              "mae": 4.6084438347812835,
+              "contrast": 4.334705075445816,
+              "uniqueness": 1.2132557216563036,
+              "accepted": false
+            },
+            "restored": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 0.5072397500381027,
+              "contrast": 4.334705075445816,
+              "uniqueness": 8.021033653846173,
+              "accepted": true
+            }
+          }
+        },
+        {
+          "source_xy": [
+            1240,
+            1120
+          ],
+          "matches": {
+            "inverse_optics": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 2.1896052431031854,
+              "contrast": 4.858100899253163,
+              "uniqueness": 2.215787275511625,
+              "accepted": true
+            },
+            "unchanged": {
+              "dx_fullpixels": 8,
+              "dy_fullpixels": 8,
+              "mae": 4.765432098765432,
+              "contrast": 4.858100899253163,
+              "uniqueness": 1.0052453143990276,
+              "accepted": false
+            },
+            "restored": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 0.3447645176040225,
+              "contrast": 4.858100899253163,
+              "uniqueness": 11.459770114942572,
+              "accepted": true
+            }
+          }
+        },
+        {
+          "source_xy": [
+            1400,
+            1120
+          ],
+          "matches": {
+            "inverse_optics": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 3.0617283950617282,
+              "contrast": 3.9548849260783414,
+              "uniqueness": 1.450019912385504,
+              "accepted": true
+            },
+            "unchanged": {
+              "dx_fullpixels": -4,
+              "dy_fullpixels": 12,
+              "mae": 3.5363511659807956,
+              "contrast": 3.9548849260783414,
+              "uniqueness": 1.1630893888457892,
+              "accepted": false
+            },
+            "restored": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 0.4197530864197529,
+              "contrast": 3.9548849260783414,
+              "uniqueness": 7.812636165577345,
+              "accepted": true
+            }
+          }
+        },
+        {
+          "source_xy": [
+            1560,
+            1120
+          ],
+          "matches": {
+            "inverse_optics": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 3.211400701112635,
+              "contrast": 7.68571864045115,
+              "uniqueness": 2.70640721404841,
+              "accepted": true
+            },
+            "unchanged": {
+              "dx_fullpixels": 8,
+              "dy_fullpixels": -8,
+              "mae": 7.394604481024234,
+              "contrast": 7.68571864045115,
+              "uniqueness": 1.0026383048891088,
+              "accepted": false
+            },
+            "restored": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 0.4697454656302395,
+              "contrast": 7.68571864045115,
+              "uniqueness": 17.822842310188182,
+              "accepted": true
+            }
+          }
+        },
+        {
+          "source_xy": [
+            1720,
+            1120
+          ],
+          "matches": {
+            "inverse_optics": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 3.308032312147538,
+              "contrast": 6.79835390946502,
+              "uniqueness": 2.1272576483597496,
+              "accepted": true
+            },
+            "unchanged": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": -12,
+              "mae": 6.406035665294925,
+              "contrast": 6.79835390946502,
+              "uniqueness": 1.0145134427789673,
+              "accepted": false
+            },
+            "restored": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 0.3090992226794703,
+              "contrast": 6.79835390946502,
+              "uniqueness": 22.243589743589695,
+              "accepted": true
+            }
+          }
+        },
+        {
+          "source_xy": [
+            1880,
+            1120
+          ],
+          "matches": {
+            "inverse_optics": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 3.588477366255144,
+              "contrast": 8.128943758573389,
+              "uniqueness": 2.3492184845395854,
+              "accepted": true
+            },
+            "unchanged": {
+              "dx_fullpixels": 4,
+              "dy_fullpixels": 4,
+              "mae": 7.851851851851852,
+              "contrast": 8.128943758573389,
+              "uniqueness": 1.0443745632424877,
+              "accepted": false
+            },
+            "restored": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 0.3475080018289891,
+              "contrast": 8.128943758573389,
+              "uniqueness": 23.423684210526343,
+              "accepted": true
+            }
+          }
+        },
+        {
+          "source_xy": [
+            2040,
+            1120
+          ],
+          "matches": {
+            "inverse_optics": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 1.8966620941929582,
+              "contrast": 3.0041152263374475,
+              "uniqueness": 1.7110253937640634,
+              "accepted": true
+            },
+            "unchanged": {
+              "dx_fullpixels": -8,
+              "dy_fullpixels": 12,
+              "mae": 3.3479652491998175,
+              "contrast": 3.0041152263374475,
+              "uniqueness": 1.4135482108713462,
+              "accepted": false
+            },
+            "restored": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 0.2286236854138051,
+              "contrast": 3.0041152263374475,
+              "uniqueness": 12.976000000000214,
+              "accepted": true
+            }
+          }
+        },
+        {
+          "source_xy": [
+            2200,
+            1120
+          ],
+          "matches": {
+            "inverse_optics": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 2.1030330742264898,
+              "contrast": 3.233958238073465,
+              "uniqueness": 1.8028699811566893,
+              "accepted": true
+            },
+            "unchanged": {
+              "dx_fullpixels": 4,
+              "dy_fullpixels": -8,
+              "mae": 3.095564700502972,
+              "contrast": 3.233958238073465,
+              "uniqueness": 1.0209748892171344,
+              "accepted": false
+            },
+            "restored": {
+              "dx_fullpixels": 0,
+              "dy_fullpixels": 0,
+              "mae": 0.24417009602195,
+              "contrast": 3.233958238073465,
+              "uniqueness": 16.378277153557914,
+              "accepted": true
+            }
+          }
+        }
+      ]
+    },
+    "accepted_restore_patches_nonzero": 0,
+    "camera_update_sequences": [
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "error_events_observed": 0,
+    "in_game_khronos_validation": false,
+    "game_depth_readback_performed": false,
+    "device_destroy_trace_observed": false,
+    "final_fence_accounting_proven": false,
+    "last_sampled_camera_counters": {
+      "updates": 6,
+      "packet_sequence": 7,
+      "registered_queues": 5,
+      "cross_queue_waits": 0,
+      "markers": 358656,
+      "busy_boundaries": 0,
+      "uncovered_boundaries": 0,
+      "marker_backpressure": 444841,
+      "write_holds": 0,
+      "inhibited_boundaries": 0,
+      "xr_pose_known": false
+    },
+    "last_pipeline_counters": {
+      "mode": "sequential_original_render",
+      "private_draws": true,
+      "duplicated_draws": false,
+      "original_arguments_unchanged": false,
+      "source_batches": 4096,
+      "source_outputs": 4096,
+      "library_pairs": 9,
+      "executable_pairs": 3353,
+      "rejected": 734,
+      "driver_failures": 0,
+      "compile_required": 0,
+      "budget_rejections": 0,
+      "live_nodes": 3362,
+      "creation_attempts": 3362,
+      "maximum_live_nodes": 8192,
+      "maximum_creation_attempts": 8192
+    },
+    "terminal_stop_written": true,
+    "all_owned_processes_exited": true,
+    "original_game_vendor_files_and_exports_unchanged": true,
+    "verified_named_exports": 262,
+    "launcher_exit_code": 0
+  },
+  "limits": [
+    "Held-view receipt covers exact selected-draw packets and host presentation intervals; no GPU elapsed-time or whole-scene temporal-history claim.",
+    "Source frame receipts remain successive, partial and tied to original requests and actual copy-submit revisions, never relabeled with a current XR pose.",
+    "The shader bundle is the preceding narrow three-vertex/four-fragment experiment; only three fragment override loads were observed and all other stages remain as previously admitted.",
+    "No attachment depth is read by this change; culling/visibility versus downstream shading is still not isolated.",
+    "No in-game D32/Khronos/final device-fence accounting; do not repeat a game launch for missing final counters.",
+    "Owned WSI fixtures have explicit application dependencies; physical SteamVR DRM/WAW and arbitrary asynchronous game/runtime queues remain unresolved.",
+    "No simultaneous stereo, calibrated diorama gravity/anchor, continuous VR cadence or native Windows D3D12/VR. No Diablo image has reached Quest."
+  ]
+}

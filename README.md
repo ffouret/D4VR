@@ -10,6 +10,15 @@ répond pas à cet objectif.
 
 ## État du projet
 
+Le [maintien explicite d’une vue diagnostique](docs/FIXED_VIEW_HOLD.md) corrige
+une erreur du protocole précédent : cinq secondes entre les demandes ne
+maintenaient pas la projection modifiée. Le nouveau pilote conserve la vue
+monoscopique et ses reçus observent maintenant 871 à 874 présentations
+consécutives sous le même paquet, sur environ six secondes côté hôte. Le nouvel
+essai réel garde 25 zones de terrain suivant l’optique puis revenues, avec des
+trous toujours visibles au champ élargi. Ces intervalles ne mesurent pas le temps
+GPU et ne certifient pas l’historique de toutes les passes.
+
 Le [nouveau diagnostic des fragments](docs/FRAGMENT_PROJECTION.md) suit les
 consommateurs réellement associés aux pipelines observés. Quatre fragments
 recalculent des coordonnées avec la projection source. La construction explicite
@@ -20,7 +29,8 @@ et les huit essais en fenêtre passent, avec contrôles négatifs.
 Un nouvel essai **dans Diablo réel**, à vue fixe et sans casque, applique cette
 correction à trois vertices et quatre fragments ciblés ; trois chargements de
 fragments sont observés. Six paires successives couvrent référence, champ élargi
-et retour, avec stabilisation avant les mesures. Les 21 zones de terrain admises
+et retour, avec cinq secondes entre les demandes. Cette attente ne maintenait pas
+la projection modifiée ; la qualification précédente de stabilisation est corrigée. Les 21 zones de terrain admises
 suivent l'échelle optique et retrouvent leurs coordonnées, mais **les grandes zones
 manquantes persistent au champ élargi**. Cette correction partielle ne suffit donc
 pas à rétablir la couverture. Aucun rendu continu de Diablo dans le Quest n'est

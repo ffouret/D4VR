@@ -707,7 +707,6 @@
     "meters_per_view_unit": 0.1,
     "physical_scale_inferred": false,
     "fixed_monoscopic_view": true,
-    "settle_seconds_before_measured_capture": 5,
     "captures": [
       {
         "request": 1,
@@ -876,7 +875,7 @@
       91.67324722093173
     ],
     "wide_fov_coverage_passed": false,
-    "wide_coverage_observation": "Large missing/discontinuous regions remain visible after the narrow partner/fragment construction, including after the fixed-view settling interval.",
+    "wide_coverage_observation": "Large missing/discontinuous regions remain in the narrow partner/fragment capture. The five-second gap between requests returned to original pipelines and does not prove transformed-view temporal settling.",
     "cross_session_pixel_improvement_claimed": false,
     "patch_analysis": {
       "summary": {
@@ -2421,7 +2420,10 @@
     "original_game_vendor_files_and_exports_unchanged": true,
     "verified_named_exports": 262,
     "launcher_exit_code": 0,
-    "layer_sha256": "72d71962d0cbacfcbde659abadd283408b165141ab9fe82884b69d3b199a0ff1"
+    "layer_sha256": "72d71962d0cbacfcbde659abadd283408b165141ab9fe82884b69d3b199a0ff1",
+    "inter_request_delay_seconds": 5,
+    "transformed_view_held_during_delay": false,
+    "temporal_settling_of_transformed_view_proven": false
   },
   "limits": [
     "Only four fragment candidates and three partner vertices are overlaid; three fragment override loads were observed. Other stages and output/resource consumers remain unresolved.",
@@ -2432,5 +2434,10 @@
     "No game D32 readback, in-game Khronos measurement, final device teardown/fence accounting or continuous cadence proof. Do not relaunch just for missing final counters.",
     "The owned multiqueue fixture has explicit application synchronization and does not certify an arbitrary asynchronous engine or physical SteamVR.",
     "Physical SteamVR DRM/WAW issues, diorama anchor/gravity, native Windows D3D12/VR and continuous immersive game rendering remain unresolved."
-  ]
+  ],
+  "interpretation_correction": {
+    "previous_claim": "Five-second fixed-view settling before measured captures",
+    "corrected_claim": "Five seconds elapsed between requests, but CaptureProjection selected original pipelines after finishing each pair. No sustained transformed-view settling was proved.",
+    "raw_pixels_and_packet_receipts_changed": false
+  }
 }

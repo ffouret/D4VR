@@ -240,7 +240,7 @@ struct Device {
     bool cameraFault=false;uint64_t cameraReadErrors=0;
     uint64_t captureSubmission=0;d4vr::CameraInterval cameraInterval;
     bool gpuCaptureDryRun=false;std::atomic<uint64_t> gpuCaptureSequence{0};d4vr::FrameOrder gpuFrameOrder;
-    bool poseDiagnostic=false,cooperativeDiagnostic=false;std::atomic<uint32_t> poseEye{2};VkQueue poseQueue{};
+    bool poseDiagnostic=false,cooperativeDiagnostic=false,fixedViewHold=false;std::atomic<bool> poseCopyActive{false};std::atomic<uint32_t> poseEye{2};VkQueue poseQueue{};
     std::unique_ptr<d4vr::present::DiagnosticCapture> poseCapture;
 #ifdef D4VR_COOPERATIVE_XR
     std::unique_ptr<d4vr::present::CooperativeCapture> cooperativeCapture;
@@ -387,7 +387,12 @@ std::string viewportsJson(const Device& d){
     std::lock_guard<std::mutex> lock(stateMutex);std::string out="[";bool first=true;
     for(const auto& v:d.observedViewports){if(!first)out+=",";first=false;out+="{\"x\":"+std::to_string(v.x)+",\"y\":"+std::to_string(v.y)+",\"width\":"+std::to_string(v.width)+",\"height\":"+std::to_string(v.height)+",\"min_depth\":"+std::to_string(v.minDepth)+",\"max_depth\":"+std::to_string(v.maxDepth)+"}";}return out+"]";
 }
-std::string poseStats(const d4vr::present::DiagnosticCapture& capture){auto s=capture.stats();return "{\"requests\":"+std::to_string(s.requests)+",\"pairs\":"+std::to_string(s.pairs)+",\"unavailable\":"+std::to_string(s.unavailable)+",\"rejected_leases\":"+std::to_string(s.rejectedLeases)+",\"deferred_queue_leases\":"+std::to_string(s.foreignLeases)+",\"active\":"+(s.active?"true":"false")+",\"consumer_pending\":"+(s.consumerPending?"true":"false")+",\"stopped\":"+(s.stopped?"true":"false")+",\"fault\":"+(s.fault?"true":"false")+",\"actual_xr_pose_source\":false,\"xr_submission\":false}";}
+std::string fixedViewJson(const d4vr::FixedViewReceipt& r){
+    return "{\"camera\":"+observationJson(r.camera)+",\"observed_present_intervals\":"+std::to_string(r.observed)+",\"rejected_present_intervals\":"+std::to_string(r.rejected)
+        +",\"longest_first_present\":"+std::to_string(r.longestFirst)+",\"longest_last_present\":"+std::to_string(r.longestLast)+",\"host_start_ms\":"+std::to_string(r.longestStartMs)+",\"host_end_ms\":"+std::to_string(r.longestEndMs)
+        +",\"host_span_ms\":"+std::to_string(r.longestEndMs-r.longestStartMs)+",\"same_requested_mapping\":"+(r.sameRequestedMapping?"true":"false")+",\"whole_scene_verified\":false,\"gpu_elapsed_time_proven\":false}";
+}
+std::string poseStats(const d4vr::present::DiagnosticCapture& capture){auto s=capture.stats();return "{\"requests\":"+std::to_string(s.requests)+",\"pairs\":"+std::to_string(s.pairs)+",\"unavailable\":"+std::to_string(s.unavailable)+",\"rejected_leases\":"+std::to_string(s.rejectedLeases)+",\"deferred_queue_leases\":"+std::to_string(s.foreignLeases)+",\"active\":"+(s.active?"true":"false")+",\"consumer_pending\":"+(s.consumerPending?"true":"false")+",\"stopped\":"+(s.stopped?"true":"false")+",\"fixed_view_held\":"+(s.fixedViewHeld?"true":"false")+",\"fault\":"+(s.fault?"true":"false")+",\"actual_xr_pose_source\":false,\"xr_submission\":false}";}
 void writePosePair(Device& d,d4vr::present::DiagnosticPixels pixels){
     auto directory=std::getenv("D4VR_SEQUENTIAL_CAPTURE_DIR");if(!directory || !pixels.frame.successive)return;
     const auto& sample=pixels.request.pose->sample();auto base=std::string(directory)+"/pose-pair-"+std::to_string(getpid())+"-"+std::to_string(d.id)+"-"+std::to_string(sample.session)+"-"+std::to_string(sample.request);
@@ -395,7 +400,7 @@ void writePosePair(Device& d,d4vr::present::DiagnosticPixels pixels){
     std::string json="{\"schema_version\":1,\"mode\":\"successive_diagnostic\",\"input_origin\":\"external_diagnostic_sample\",\"actual_xr_pose_source\":false,\"xr_submission\":false,\"whole_scene_verified\":false,\"common_scene_time_known\":false,\"session\":"+std::to_string(sample.session)+",\"request\":"+std::to_string(sample.request)+",\"display_time\":"+std::to_string(sample.displayTime)
         +",\"diagnostic_sample\":"+quoted(d4vr::encode_diagnostic_pose(*pixels.request.pose).c_str())+",\"packet_sequence\":"+std::to_string(pixels.frame.successive->pose.packetSequence())+",\"width\":"+std::to_string(pixels.frame.extent.width)+",\"height\":"+std::to_string(pixels.frame.extent.height)+",\"format\":"+std::to_string(pixels.frame.format)+",\"bytes\":"+std::to_string(pixels.bytes.size())+",\"eyes\":[";
     for(unsigned i=0;i<2;++i){const auto& e=pixels.frame.successive->eyes[i];if(i)json+=",";json+="{\"eye\":"+std::to_string(i)+",\"lease\":"+std::to_string(e.lease)+",\"capture_sequence\":"+std::to_string(e.captureSequence)+",\"present\":"+std::to_string(e.present)+",\"camera_provenance\":"+frameCameraJson(e.camera)+"}";}
-    json+="],\"observed_viewports\":"+viewportsJson(d)+"}\n";if(!writePrivate(base+".json",json.data(),json.size()))throw std::runtime_error("Diagnostic pair receipt export failed");
+    json+="],\"preceding_fixed_view\":"+(pixels.precedingHold?fixedViewJson(*pixels.precedingHold):"null")+",\"observed_viewports\":"+viewportsJson(d)+"}\n";if(!writePrivate(base+".json",json.data(),json.size()))throw std::runtime_error("Diagnostic pair receipt export failed");
     logFile.write("\"event\":\"pose_capture_pair\",\"session\":"+std::to_string(sample.session)+",\"request\":"+std::to_string(sample.request)+",\"xr_submission\":false");
 }
 void ensurePoseCapture(Device& d,VkQueue queue,const VkPresentInfoKHR& info){
@@ -404,7 +409,7 @@ void ensurePoseCapture(Device& d,VkQueue queue,const VkPresentInfoKHR& info){
     {std::lock_guard<std::mutex> lock(stateMutex);auto q=d.queues.find(queue);auto c=d.poseChains.find(info.pSwapchains[0]);if(q!=d.queues.end() && q->second.first==d.cameraFamily && c!=d.poseChains.end())chain=c->second;}
     if(!chain)return;
     VkPhysicalDeviceMemoryProperties memory{};reinterpret_cast<PFN_vkGetPhysicalDeviceMemoryProperties>(d.instance->get(d.instance->handle,"vkGetPhysicalDeviceMemoryProperties"))(d.physical,&memory);
-    d.poseCapture=std::make_unique<d4vr::present::DiagnosticCapture>(d.handle,d.get,d.setLoaderData,memory,*d.presentation,*d.cameraUpdates,queue,d.cameraFamily,chain->extent,chain->format,[&d](auto pixels){writePosePair(d,std::move(pixels));});d.poseQueue=queue;
+    d.poseCapture=std::make_unique<d4vr::present::DiagnosticCapture>(d.handle,d.get,d.setLoaderData,memory,*d.presentation,*d.cameraUpdates,queue,d.cameraFamily,chain->extent,chain->format,[&d](auto pixels){writePosePair(d,std::move(pixels));},d.fixedViewHold);d.poseQueue=queue;
     logFile.write("\"event\":\"pose_capture_enabled\",\"mode\":\"successive_diagnostic\",\"actual_xr_pose_source\":false,\"xr_submission\":false");
 }
 #ifdef D4VR_COOPERATIVE_XR
@@ -561,6 +566,7 @@ VKAPI_ATTR VkResult VKAPI_CALL d4CreateDevice(VkPhysicalDevice physical, const V
     auto d = std::make_shared<Device>(); d->get = get;d->setLoaderData=setLoaderData;
     auto viewOption=std::getenv("D4VR_VIEW_DIAGNOSTIC");d->viewDiagnostic=viewOption && !std::strcmp(viewOption,"1");
     auto poseOption=std::getenv("D4VR_POSE_CAPTURE_DIAGNOSTIC");d->poseDiagnostic=poseOption && !std::strcmp(poseOption,"1");
+    auto holdOption=std::getenv("D4VR_DIAGNOSTIC_VIEW_HOLD");d->fixedViewHold=holdOption && !std::strcmp(holdOption,"1");
     auto cooperativeOption=std::getenv("D4VR_COOPERATIVE_XR_DIAGNOSTIC");d->cooperativeDiagnostic=cooperativeOption && !std::strcmp(cooperativeOption,"1");
     link->u.pLayerInfo = next->pNext;
     auto status = create(physical, info, allocator, result);
@@ -683,6 +689,7 @@ VKAPI_ATTR VkResult VKAPI_CALL d4CreateDevice(VkPhysicalDevice physical, const V
         auto formats=reinterpret_cast<PFN_vkGetPhysicalDeviceFormatProperties>(instance->get(instance->handle,"vkGetPhysicalDeviceFormatProperties"));
         if(!formats)throw std::runtime_error("Format properties unavailable");
         auto gpu=std::getenv("D4VR_GPU_CAPTURE_DRY_RUN");d->gpuCaptureDryRun=gpu && !std::strcmp(gpu,"1");
+        if(d->fixedViewHold && !d->poseDiagnostic)throw std::invalid_argument("Fixed view hold requires the external pose diagnostic");
         if(d->poseDiagnostic && (!d->cameraUpdates || d->gpuCaptureDryRun || std::getenv("D4VR_TRACE_XR_BINDING") || std::getenv("D4VR_LAYER_REPLAY_POC")))throw std::invalid_argument("Pose capture requires mutable cameras and exclusive diagnostic mode");
         if(d->cooperativeDiagnostic){
 #ifndef D4VR_COOPERATIVE_XR
@@ -1055,6 +1062,7 @@ VKAPI_ATTR VkResult VKAPI_CALL d4GetSwapchainImagesKHR(VkDevice device,VkSwapcha
 }
 void captureBlit(const std::shared_ptr<Device>& d,VkCommandBuffer command,VkImage source,VkImageLayout src,VkImage destination,VkImageLayout dst,uint32_t count,const VkImageBlit* regions,VkFilter filter){
     if(!d->presentation)return;
+    if(d->fixedViewHold && !d->poseCopyActive.load(std::memory_order_acquire))return;
     if(d->gpuCaptureDryRun && d->presentation->stats().leasesIssued>=128)return;
     auto sequence=d->gpuCaptureDryRun || d->poseDiagnostic || d->cooperativeDiagnostic?++d->gpuCaptureSequence:captureRequest("present.request");if(!sequence)return;
     auto eye=(d->poseDiagnostic || d->cooperativeDiagnostic)?2:captureRequest("eye.selection",2);bool allowed=false;
@@ -1245,7 +1253,7 @@ VKAPI_ATTR VkResult VKAPI_CALL d4QueuePresentKHR(VkQueue queue, const VkPresentI
                 if(d->poseCapture)d->poseCapture->offer(frame,queue);
                 else if(frame.queue==queue)d->presentation->retire(frame.lease,queue);
             }
-            if(d->poseCapture && queue==d->poseQueue){d->poseCapture->present(present);poseRequest(*d);d->poseEye.store(d->poseCapture->wantedEye(),std::memory_order_release);}
+            if(d->poseCapture && queue==d->poseQueue){d->poseCapture->observeHeld(present,selectedMask,selectedDraws,cameraInterval);d->poseCapture->present(present);poseRequest(*d);d->poseEye.store(d->poseCapture->wantedEye(),std::memory_order_release);d->poseCopyActive.store(d->poseCapture->stats().active,std::memory_order_release);}
         }else if(d->gpuCaptureDryRun) {
             for(const auto& frame:d->presentation->presentedGpu(*info,result,present,selectedMask,selectedDraws,&cameraInterval)) {
                 // Exercise only the actual producer and lease retirement. There

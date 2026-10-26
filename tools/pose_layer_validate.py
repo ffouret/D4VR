@@ -36,6 +36,9 @@ def validate(a):
         for control in getattr(a,'controls',('normal','short','foreign','cancel')):
             short=control in ('short','cancel');name=('' if control=='normal' else control+'-')+('steam-runtime' if runtime else 'native');directory=(a.output/name).resolve();directory.mkdir(mode=0o700)
             variables={'VK_INSTANCE_LAYERS':vulkan_trace.LAYER+':VK_LAYER_KHRONOS_validation','VK_ADD_LAYER_PATH':str(a.layer.resolve())+':'+str(a.validation_layer.resolve()),'VK_LAYER_ENABLES':'VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT','VK_LAYER_VALIDATE_SYNC':'1','VK_LOADER_DEBUG':'layer','D4VR_TRACE_DIR':str(directory),'D4VR_SEQUENTIAL_CAPTURE_DIR':str(directory),'D4VR_GPU_CAMERA_UPDATES':'1','D4VR_POSE_CAPTURE_DIAGNOSTIC':'1'}
+            if getattr(a,'hold_view',False):
+                variables['D4VR_POSE_FIXTURE_MONOSCOPIC']='1'
+                if not getattr(a,'disable_hold',False):variables['D4VR_DIAGNOSTIC_VIEW_HOLD']='1'
             if getattr(a,'calibrated',False):variables['D4VR_POSE_FIXTURE_CALIBRATED']='1'
             if short:variables['D4VR_POSE_FIXTURE_SHORT']='1'
             if control=='foreign':variables['D4VR_POSE_FIXTURE_FOREIGN']='1'
@@ -43,7 +46,7 @@ def validate(a):
             for eye,side in enumerate(('left','right')):
                 file=directory/(side+'.bin');file.write_bytes(eye_control.encode(eye,separation=.128));file.chmod(0o600);variables['D4VR_PAIR_'+side.upper()+'_FILE']=str(file)
             command=paired_capture.host_command()+['/usr/bin/env']
-            for key in ('VK_LAYER_PATH','VK_INSTANCE_LAYERS','VK_ADD_LAYER_PATH','D4VR_TRACE_XR_BINDING','D4VR_LAYER_REPLAY_POC','D4VR_FRAME_TRACE','D4VR_EYE_STATE_FILE','D4VR_PAIR_LEFT_FILE','D4VR_PAIR_RIGHT_FILE','D4VR_SEQUENTIAL_CAPTURE_DIR','D4VR_GPU_CAPTURE_DRY_RUN','D4VR_GPU_CAMERA_UPDATES','D4VR_XR_LOADER','D4VR_TRACE_DIR','D4VR_POSE_CAPTURE_DIAGNOSTIC','D4VR_POSE_FIXTURE_SHORT','D4VR_POSE_FIXTURE_FOREIGN','D4VR_POSE_FIXTURE_CANCEL','D4VR_POSE_FIXTURE_CALIBRATED','D4VR_METRIC_SOURCE_DEPTH_SCALE'):command+=['-u',key]
+            for key in ('VK_LAYER_PATH','VK_INSTANCE_LAYERS','VK_ADD_LAYER_PATH','D4VR_TRACE_XR_BINDING','D4VR_LAYER_REPLAY_POC','D4VR_FRAME_TRACE','D4VR_EYE_STATE_FILE','D4VR_PAIR_LEFT_FILE','D4VR_PAIR_RIGHT_FILE','D4VR_SEQUENTIAL_CAPTURE_DIR','D4VR_GPU_CAPTURE_DRY_RUN','D4VR_GPU_CAMERA_UPDATES','D4VR_XR_LOADER','D4VR_TRACE_DIR','D4VR_POSE_CAPTURE_DIAGNOSTIC','D4VR_POSE_FIXTURE_SHORT','D4VR_POSE_FIXTURE_FOREIGN','D4VR_POSE_FIXTURE_CANCEL','D4VR_POSE_FIXTURE_CALIBRATED','D4VR_METRIC_SOURCE_DEPTH_SCALE','D4VR_DIAGNOSTIC_VIEW_HOLD','D4VR_POSE_FIXTURE_MONOSCOPIC'):command+=['-u',key]
             command+=[k+'='+v for k,v in variables.items()]
             if runtime:command+=[str(a.runtime.resolve()),'--batch','--']
             command+=[str(a.fixture.resolve()),*map(str,shaders),str(directory)]
@@ -74,7 +77,7 @@ def validate(a):
                 for eye,item in enumerate(d['eyes']):
                     camera=item['camera_provenance'];copy=camera['copy_submit'];draw=camera['selected_draw_interval']
                     if item['eye']!=eye or copy['status']!='uniform' or draw['status']!='uniform' or copy['packet_abi_bytes_hex']!=draw['packet_abi_bytes_hex'] or copy['packet_sequence']!=d['request']+1 or copy['packet_eye']!=eye or not camera['same_diagnostic_packet']:raise ValueError('Uniform original packet absent')
-                    values=eye_control.FORMAT.unpack(bytes.fromhex(copy['packet_abi_bytes_hex']));expected_x=((.064 if eye==0 else -.064)-(0 if d['request']==1 else .125))*(.1 if getattr(a,'calibrated',False) else 1)
+                    values=eye_control.FORMAT.unpack(bytes.fromhex(copy['packet_abi_bytes_hex']));expected_x=(-((.125 if d['request']==1 else .25)) if getattr(a,'hold_view',False) else ((.064 if eye==0 else -.064)-(0 if d['request']==1 else .125)))*(.1 if getattr(a,'calibrated',False) else 1)
                     if getattr(a,'calibrated',False) and (values[1]!=2 or values[3]!=5 or abs(values[-1]-.1)>1e-6):raise ValueError('Metric source-depth policy lost')
                     if abs(values[11]-expected_x)>1e-6:raise ValueError('Requested game-view translation was not queued')
                     image=raw[eye*size:(eye+1)*size];reference=(directory/('source-frame-'+str(item['present']-1)+'.pixels')).read_bytes()
@@ -87,10 +90,20 @@ def validate(a):
                         centers[(eye,channel)]=sum(xs)/len(xs)
                 if d['eyes'][1]['present']<=d['eyes'][0]['present'] or d['eyes'][1]['capture_sequence']<=d['eyes'][0]['capture_sequence']:raise ValueError('Invented common scene instant')
                 disparities=[centers[(0,c)]-centers[(1,c)] for c in (1,2)]
-                if disparities[1]<=0 or not 1.7<disparities[0]/disparities[1]<2.3:raise ValueError('Depth-dependent geometry disparity absent')
+                if getattr(a,'hold_view',False):
+                    if any(v!=0 for v in disparities):raise ValueError('Held view was not monoscopic')
+                elif disparities[1]<=0 or not 1.7<disparities[0]/disparities[1]<2.3:raise ValueError('Depth-dependent geometry disparity absent')
                 centers_by_request[d['request']]=centers
-                pairs.append({'request':d['request'],'packet_sequence':d['packet_sequence'],'source_presents':[e['present'] for e in d['eyes']],'source_capture_sequences':[e['capture_sequence'] for e in d['eyes']],'disparities_pixels':disparities,'exact_original_pixel_bytes':size*2})
+                if getattr(a,'hold_view',False) and d['request']==2:
+                    receipt=d.get('preceding_fixed_view');
+                    if not receipt or receipt['camera']['packet_sequence']!=2 or receipt['same_requested_mapping'] or receipt['observed_present_intervals']<2 or receipt['longest_last_present']<=receipt['longest_first_present']:raise ValueError('Prior held mapping/provenance missing')
+                pairs.append({'request':d['request'],'packet_sequence':d['packet_sequence'],'source_presents':[e['present'] for e in d['eyes']],'source_capture_sequences':[e['capture_sequence'] for e in d['eyes']],'disparities_pixels':disparities,'exact_original_pixel_bytes':size*2,'preceding_fixed_view':d.get('preceding_fixed_view')})
             if not short and (len(pairs)!=2 or (directory/'source-frame-0.pixels').read_bytes()!=(directory/'source-frame-63.pixels').read_bytes()):raise ValueError('Pairs absent or original pixels not restored')
+            if getattr(a,'hold_view',False) and not short:
+                first=next(directory.glob('pose-pair-*-801-1.pixels')).read_bytes();first=first[:len(first)//2]
+                for frame in (16,30,35):
+                    if (directory/('source-frame-'+str(frame)+'.pixels')).read_bytes()!=first:raise ValueError('View not held between capture requests')
+                if state.get('fixed_view_held') is not False or state.get('stopped') is not True:raise ValueError('Stop failed to release held view')
             shifts=[]
             if not short:
                 for eye in (0,1):
@@ -110,6 +123,7 @@ if __name__=='__main__':
     for key in ('fixture','compiler','layer','validation-layer','unit','forwarding','output'):p.add_argument('--'+key,type=Path,required=True)
     p.add_argument('--runtime',type=Path)
     p.add_argument('--calibrated',action='store_true')
+    p.add_argument('--hold-view',action='store_true')
     p.add_argument('--fragment-packet-check',action='store_true')
     try:print(json.dumps(validate(p.parse_args()),indent=2))
     except (OSError,ValueError,subprocess.SubprocessError) as e:raise SystemExit(str(e))
