@@ -10,6 +10,13 @@ répond pas à cet objectif.
 
 ## État du projet
 
+Les [préfixes attachés aux captures](docs/CAPTURED_WRITERS.md) suivent maintenant
+les opérations du jeu sur ses véritables images sources. Un nouvel essai relie
+onze captures à une déclaration couleur et au même pipeline, avec les identités
+et les traces de soumission conservées ; une première capture garde un préfixe
+vide. L’entrée échantillonnée et l’état effectif de dessin restent à établir.
+Les découpes persistent et aucune image de Diablo n’a atteint le Quest.
+
 Le [lien entre une capture couleur et son transfert d’origine](docs/COLOR_BLIT_PROVENANCE.md)
 est maintenant conservé jusqu’à sa livraison. Un nouvel essai réel identifie trois
 images sources précises ; le filtrage évite la saturation observée auparavant.

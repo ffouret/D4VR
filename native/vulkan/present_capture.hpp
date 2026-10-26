@@ -8,6 +8,7 @@
 #include <vector>
 #include "../core/camera_provenance.hpp"
 #include "../core/blit_provenance.hpp"
+#include "../core/captured_writer_prefix.hpp"
 namespace d4vr::present {
 struct Snapshot {
     uint64_t sequence=0,present=0,selectedDraws=0;
@@ -17,6 +18,7 @@ struct Snapshot {
     FrameCamera camera{};
     SourceBlitObservation sourceBlit{};
     SourceBlitStages sourceBlitStages{};
+    CapturedWriterPrefix writerPrefix{};
 };
 enum class CaptureMode { cpuSnapshots, gpuStream };
 struct GpuFrame {
@@ -26,6 +28,7 @@ struct GpuFrame {
     FrameCamera camera{};
     SourceBlitObservation sourceBlit{};
     SourceBlitStages sourceBlitStages{};
+    CapturedWriterPrefix writerPrefix{};
     // Private owned image in TRANSFER_SRC_OPTIMAL. No XR pose/time or common
     // scene instant is inferred from the eye selection or present identifier.
 };
@@ -46,6 +49,11 @@ public:
     // Optional original observer labels are frozen with the actual arguments.
     // No live resource/command lookup is performed at submit or receipt time.
     bool record(uint64_t sequence,uint32_t eye,VkCommandBuffer,bool primaryOneTime,VkImage,VkImageLayout,VkImage,VkImageLayout,uint32_t,const VkImageBlit*,VkFilter,const HistoryBlitRef& sourceBlit={});
+    // Attach the exact admitted hook's bounded writer ticket immediately after
+    // record succeeds. One assignment before submission/reset, with matching
+    // capture sequence and original five observer labels. Explicit unavailable
+    // diagnostics are retained too. No report generation or GPU/fence calls.
+    bool attachWriterPrefix(uint64_t sequence,const CapturedWriterPrefix&);
     void reset(VkCommandBuffer); // Removes lookup, retains inserted resources.
     // Call only AFTER successful original submission, while the application's
     // external queue synchronization is still held. Adds an empty fence marker.

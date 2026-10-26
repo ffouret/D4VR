@@ -1,6 +1,7 @@
 #pragma once
 #include <vulkan/vulkan.h>
 #include "../core/source_history_id.hpp"
+#include "../core/captured_writer_prefix.hpp"
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -70,6 +71,10 @@ public:
     // Validates current command/lifetimes and admits only its source from now
     // on; it cannot reconstruct excluded earlier writers or retain that BLIT.
     bool admitCapturedBlit(VkCommandBuffer,VkImage source,VkImage destination,const HistoryBlitRef&) noexcept;
+    // A live ticket is held by the actual Capture/lease. Its bounded body is
+    // frozen only at the exact original BEFORE occurrence; no global report
+    // slot is consumed and earlier excluded writers cannot be reconstructed.
+    CapturedWriterPrefix reserveCapturedBlit(VkCommandBuffer,VkImage source,VkImage destination,const HistoryBlitRef&,uint64_t captureSequence) noexcept;
     void barrier(VkCommandBuffer,const VkDependencyInfo&) noexcept;
     void unknown(VkCommandBuffer,Gap) noexcept;
     // Mark ONLY a COPY that was actually selected by the readback producer.

@@ -37,6 +37,13 @@ def validate(a):
     if unit.get('source_history_observation_passed') is not True:
         raise ValueError('Bounded CPU source history controls missing')
     run([str(a.forwarding.resolve())], a.output/'forwarding.log')
+    writer_unit = None
+    if a.require_writer_prefix:
+        if not a.writer_unit:
+            raise ValueError('Captured writer WSI controls require their CPU unit executable')
+        writer_unit = json.loads(run([str(a.writer_unit.resolve())], a.output/'writer-unit.log').strip())
+        if writer_unit.get('captured_writer_prefix_passed') is not True:
+            raise ValueError('Bounded captured writer CPU controls missing')
     shaders = []
     for ext in ('vert', 'frag'):
         path = (a.output/('present.'+ext+'.spv')).resolve()
@@ -101,9 +108,13 @@ def validate(a):
             if a.require_blit_stages:
                 from blit_provenance_validate import audit_directory
                 blit = audit_directory(directory, require_bridge=enabled, require_stages=True)
+            writer = None
+            if a.require_writer_prefix:
+                from captured_writer_validate import audit_directory
+                writer = audit_directory(directory, require_available=enabled)
             cases.append({'case': name, 'observer_enabled': enabled, 'actual_x11_wsi': True,
                           'original_controls': data['summary'], 'history_copy_matches': history,
-                          'delivered_blit_lifecycle_audit': blit,
+                          'delivered_blit_lifecycle_audit': blit, 'captured_writer_audit': writer,
                           'exact_original_reference_bytes': sum(map(len, data['pixels'].values())),
                           'all_original_bytes_unchanged': enabled, 'validation_errors': 0})
             print(name+': passed', flush=True)
@@ -115,7 +126,8 @@ def validate(a):
                'native/vulkan/depth_copy_readback.hpp', 'native/vulkan/depth_copy_readback.cpp',
                'tools/source_history_validate.py', 'tools/held_depth_validate.py',
                'native/tests/source_consumer_fixture.hpp',
-               'tools/source_consumer_run.py', 'tools/blit_provenance_validate.py', 'native/tests/vulkan_trace_tests.cpp',
+               'tools/source_consumer_run.py', 'tools/blit_provenance_validate.py', 'tools/captured_writer_validate.py',
+               'native/core/captured_writer_prefix.hpp', 'native/tests/captured_writer_tests.cpp', 'native/tests/vulkan_trace_tests.cpp',
                'native/core/blit_provenance.hpp', 'native/vulkan/present_capture.hpp',
                'native/vulkan/present_capture.cpp', 'native/vulkan/capture_projection.cpp',
                'native/xr/projection_source.hpp', 'native/tests/present_stream_tests.cpp']
@@ -123,7 +135,7 @@ def validate(a):
              'observation_only': True, 'gpu_execution_order_known': False,
              'extra_gpu_commands_or_submissions_from_observer': 0, 'game_rendered': False,
              'xr_submission': False, 'common_scene_time_known': False, 'whole_scene_verified': False,
-             'validation_errors': 0, 'unit': unit, 'cases': cases,
+             'validation_errors': 0, 'unit': unit, 'captured_writer_unit': writer_unit, 'cases': cases,
              'layer_sha256': probe.digest(a.layer/vulkan_trace.LIBRARY),
              'fixture_sha256': probe.digest(a.fixture), 'unit_sha256': probe.digest(a.unit),
              'forwarding_sha256': probe.digest(a.forwarding),
@@ -136,6 +148,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     for key in ('fixture', 'compiler', 'layer', 'validation-layer', 'unit', 'forwarding', 'output'):
         parser.add_argument('--'+key, type=Path, required=True)
+    parser.add_argument('--writer-unit', type=Path, help='Portable captured-writer CPU controls')
+    parser.add_argument('--require-writer-prefix', action='store_true', help='Audit saved source prefixes against owned render scopes')
     parser.add_argument('--require-blit-stages', action='store_true', help='Audit saved lifecycle values against original app arguments/pixels')
     parser.add_argument('--runtime', type=Path)
     parser.add_argument('--validator', type=Path)

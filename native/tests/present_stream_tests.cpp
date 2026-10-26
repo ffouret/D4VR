@@ -1,5 +1,6 @@
 // Portable ownership controls for the game-side GPU image producer. No driver.
 #include "../vulkan/present_capture.hpp"
+#include <algorithm>
 #include <cstring>
 #include <map>
 #include <stdexcept>
@@ -10,6 +11,28 @@ namespace {
 void require(bool v){if(!v)throw std::runtime_error("Presentation stream ownership invariant");}
 template<class T>T h(uintptr_t n){return (T)n;}
 uintptr_t next=1000;unsigned allocations=0,readbacks=0,submits=0,fencePolls=0;bool failSubmit=false,allowReadbacks=false;VkDeviceSize imageBytes=64;
+unsigned writerPayloadAlive=0,writerPayloadPeak=0,writerPayloadCreated=0,writerPayloadDestroyed=0,writerReports=0;
+struct MockWriterPayload final:CapturedWriterPayload {
+    MockWriterPayload(){++writerPayloadCreated;++writerPayloadAlive;writerPayloadPeak=std::max(writerPayloadPeak,writerPayloadAlive);}
+    ~MockWriterPayload() override{--writerPayloadAlive;++writerPayloadDestroyed;}
+    std::string report() const noexcept override{++writerReports;return "{\"mock\":true}";}
+};
+CapturedWriterPrefix mockWriterPrefix(uint64_t sequence,const HistoryBlitRef& original){
+    CapturedWriterPrefix prefix;prefix.captureSequence=sequence;prefix.original=original;prefix.payload=std::make_shared<MockWriterPayload>();return prefix;
+}
+CapturedWriterPrefix unavailableWriterPrefix(uint64_t sequence,const HistoryBlitRef& original,CapturedWriterUnavailable reason){
+    CapturedWriterPrefix prefix;prefix.captureSequence=sequence;prefix.original=original;prefix.unavailable=reason;return prefix;
+}
+void sameWriterPrefix(const CapturedWriterPrefix& actual,const CapturedWriterPrefix& expected){
+    require(actual.captureSequence==expected.captureSequence && actual.original.observerSession==expected.original.observerSession
+        && actual.original.sourceImage==expected.original.sourceImage && actual.original.destinationImage==expected.original.destinationImage
+        && actual.original.recording==expected.original.recording && actual.original.ordinal==expected.original.ordinal
+        && actual.original.eventRetained==expected.original.eventRetained && actual.payload==expected.payload && actual.unavailable==expected.unavailable);
+}
+bool attachPrefix(Capture& capture,uint64_t sequence,const CapturedWriterPrefix& prefix){
+    const auto polls=fencePolls,markers=submits,reports=writerReports;const bool accepted=capture.attachWriterPrefix(sequence,prefix);
+    require(fencePolls==polls && submits==markers && writerReports==reports);return accepted;
+}
 CameraPair pair(unsigned sequence){return CameraPair({make_eye_state(0,sequence,identity(),identity()),make_eye_state(1,sequence,identity(),identity())});}
 struct Fence{bool signaled=false,pending=false;};std::map<VkFence,Fence> fences;
 void complete(){for(auto& entry:fences)if(entry.second.pending){entry.second.pending=false;entry.second.signaled=true;}}
@@ -99,6 +122,51 @@ struct BridgeFixture {
     }
     VkPresentInfoKHR present(VkSwapchainKHR& chain,uint32_t& index){VkPresentInfoKHR info{VK_STRUCTURE_TYPE_PRESENT_INFO_KHR};info.swapchainCount=1;info.pSwapchains=&chain;info.pImageIndices=&index;return info;}
 };
+void writerPrefixAttachmentControls(const VkPhysicalDeviceMemoryProperties& memory){
+    const HistoryBlitRef original{940,71,72,73,74,false};auto command=h<VkCommandBuffer>(350);uint32_t index=0;
+    {
+        BridgeFixture f(memory);auto info=f.present(f.chainB,index);require(f.record(1,command,f.a,f.b,original));auto prefix=mockWriterPrefix(1,original);
+        require(!attachPrefix(f.capture,0,prefix) && !attachPrefix(f.capture,2,prefix) && !attachPrefix(f.capture,1,{}));
+        auto wrong=prefix;wrong.original.ordinal++;require(!attachPrefix(f.capture,1,wrong));wrong=prefix;wrong.captureSequence=2;require(!attachPrefix(f.capture,1,wrong));
+        require(attachPrefix(f.capture,1,prefix) && !attachPrefix(f.capture,1,prefix));const auto expected=prefix;
+        auto replacement=mockWriterPrefix(1,original);require(!attachPrefix(f.capture,1,replacement));replacement={};
+        prefix.captureSequence=999;prefix.original={};prefix.payload.reset(); // Caller wrapper mutation cannot retag the attached value.
+        f.capture.submitted(f.queue,{command},0,31001,nullptr,21001);require(!attachPrefix(f.capture,1,expected));
+        f.capture.submitted(f.queue,{command},0,39999,nullptr,29999);complete();
+        auto ready=f.capture.presentedGpu(info,VK_SUCCESS,101,1,1);require(ready.size()==1 && ready[0].sourceBlit.status==SourceBlitStatus::ambiguous
+            && !ready[0].sourceBlit.bridgeKnown());sameWriterPrefix(ready[0].writerPrefix,expected);
+        require(f.capture.retire(ready[0].lease,f.queue));f.capture.reset(command);complete();
+    }
+    {
+        BridgeFixture f(memory);auto info=f.present(f.chainB,index);require(f.record(1,command,f.a,f.b,original));
+        const auto unavailable=unavailableWriterPrefix(1,original,CapturedWriterUnavailable::ticketLimit);require(attachPrefix(f.capture,1,unavailable));
+        auto replacement=mockWriterPrefix(1,original);require(!attachPrefix(f.capture,1,replacement));replacement={};
+        f.capture.submitted(f.queue,{command,command},0,31002,nullptr,21002);complete();auto ready=f.capture.presentedGpu(info,VK_SUCCESS,102,1,1);
+        require(ready.size()==1 && ready[0].sourceBlit.status==SourceBlitStatus::ambiguous && !ready[0].sourceBlit.bridgeKnown());sameWriterPrefix(ready[0].writerPrefix,unavailable);
+        require(f.capture.retire(ready[0].lease,f.queue));f.capture.reset(command);complete();
+    }
+    {
+        BridgeFixture f(memory);auto info=f.present(f.chainB,index);require(f.record(1,command,f.a,f.b,original));auto late=mockWriterPrefix(1,original);
+        f.capture.submitted(f.queue,{command},0,31003,nullptr,21003);require(!attachPrefix(f.capture,1,late));complete();auto ready=f.capture.presentedGpu(info,VK_SUCCESS,103,1,1);
+        require(ready.size()==1 && ready[0].sourceBlit.bridgeKnown());sameWriterPrefix(ready[0].writerPrefix,CapturedWriterPrefix{});
+        require(f.capture.retire(ready[0].lease,f.queue));f.capture.reset(command);complete();
+    }
+    {
+        BridgeFixture f(memory);auto info=f.present(f.chainB,index);require(f.record(1,command,f.a,f.b,original));auto failed=mockWriterPrefix(1,original);
+        std::weak_ptr<const CapturedWriterPayload> failedWeak=failed.payload;require(attachPrefix(f.capture,1,failed));failed={};
+        const auto markers=submits;require(f.capture.presentedGpu(info,VK_SUCCESS,104,1,1).empty() && submits==markers);f.capture.reset(command);
+        require(f.record(2,command,f.a,f.b,original) && failedWeak.expired());auto afterReset=mockWriterPrefix(2,original);f.capture.reset(command);
+        require(!attachPrefix(f.capture,2,afterReset));
+    }
+    {
+        BridgeFixture f(memory);auto info=f.present(f.chainB,index);require(f.record(1,command,f.a,f.b,{}));auto invented=mockWriterPrefix(1,{});
+        require(!attachPrefix(f.capture,1,invented));invented={};const auto unknown=unavailableWriterPrefix(1,{},CapturedWriterUnavailable::unknownIdentity);
+        require(attachPrefix(f.capture,1,unknown));f.capture.submitted(f.queue,{command},0,31005,nullptr,21005);complete();auto ready=f.capture.presentedGpu(info,VK_SUCCESS,105,1,1);
+        require(ready.size()==1 && !ready[0].sourceBlit.bridgeKnown());sameWriterPrefix(ready[0].writerPrefix,unknown);
+        require(f.capture.retire(ready[0].lease,f.queue));f.capture.reset(command);complete();
+    }
+    require(!writerPayloadAlive && !writerReports);
+}
 void bridgeControls(const VkPhysicalDeviceMemoryProperties& memory){
     imageBytes=64;
     {
@@ -179,10 +247,12 @@ void bridgeControls(const VkPhysicalDeviceMemoryProperties& memory){
         const auto failedStages=stagesFor(f.capture,1);require(failedStages.recordedKnown && !failedStages.submittedKnown && sameObservation(failedStages.recorded,failed[0].second)
             && sameObservation(failedStages.submitted,SourceBlitObservation{}));
         ref={920,51,42,53,54,true};const auto expected=ref;const auto region=f.region;require(f.record(2,command,f.a,f.b,ref));
+        const auto snapshotPrefix=mockWriterPrefix(2,ref);require(attachPrefix(f.capture,2,snapshotPrefix));
         f.capture.submitted(f.queue,{command},0,1201,nullptr,901);const auto frozenStages=stagesFor(f.capture,2);ref={};f.region.dstOffsets[1].y=8;
         require(f.capture.presented(info,VK_SUCCESS,72,1,2).empty());complete();auto ready=f.capture.presented(info,VK_SUCCESS,999,3,999);require(ready.size()==1 && ready[0].present==72 && ready[0].bytes==std::vector<uint8_t>({11,22,33,44}));
         exactBlit(ready[0].sourceBlit,expected,f.a,f.b,region,VK_FILTER_NEAREST,1201,901);require(ready[0].sourceBlit.bridgeKnown());f.capture.reset(command);
         sameStages(ready[0].sourceBlitStages,frozenStages);stageContract(ready[0].sourceBlitStages);
+        sameWriterPrefix(ready[0].writerPrefix,snapshotPrefix);
         allowReadbacks=false;
     }
 }
@@ -192,25 +262,32 @@ void stageRetentionChurn(const VkPhysicalDeviceMemoryProperties& memory){
     // and command/resource callback permutations here are CPU mocks only.
     const auto priorReadbacks=readbacks;BridgeFixture f(memory);auto heldCommand=h<VkCommandBuffer>(340),churnCommand=h<VkCommandBuffer>(341);uint32_t index=0;auto info=f.present(f.chainB,index);
     HistoryBlitRef selectedRef{930,61,62,63,64,false};const auto selectedOriginal=selectedRef;const auto region=f.region;
-    require(f.record(1,heldCommand,f.a,f.b,selectedRef,VK_FILTER_LINEAR));const auto selectedAtRecord=stagesFor(f.capture,1);
+    require(f.record(1,heldCommand,f.a,f.b,selectedRef,VK_FILTER_LINEAR));auto selectedPrefix=mockWriterPrefix(1,selectedRef);
+    const auto selectedPayload=selectedPrefix.payload.get();std::weak_ptr<const CapturedWriterPayload> selectedWeak=selectedPrefix.payload;
+    auto polls=fencePolls,markers=submits,reports=writerReports;require(attachPrefix(f.capture,1,selectedPrefix));selectedPrefix.payload.reset();
+    require(fencePolls==polls && submits==markers && writerReports==reports);const auto selectedAtRecord=stagesFor(f.capture,1);
     f.capture.submitted(f.queue,{heldCommand},0,20001,nullptr,9001);const auto selectedStages=stagesFor(f.capture,1);
     require(sameObservation(selectedStages.recorded,selectedAtRecord.recorded));stageContract(selectedStages);
     selectedRef={};f.region.srcOffsets[1].x=17;require(f.capture.presentedGpu(info,VK_SUCCESS,81,1,12).empty());
     f.capture.reset(heldCommand);f.capture.removeImage(f.a);f.capture.image(f.a,f.image);f.region=region;complete();
     auto first=f.capture.presentedGpu(info,VK_SUCCESS,999,3,999);require(first.size()==1 && first[0].present==81);const auto selected=first[0];
     exactBlit(selected.sourceBlit,selectedOriginal,f.a,f.b,region,VK_FILTER_LINEAR,20001,9001);sameStages(selected.sourceBlitStages,selectedStages);
-    constexpr unsigned discarded=80;
+    require(selected.writerPrefix.payload.get()==selectedPayload && selected.writerPrefix.captureSequence==1 && !selectedWeak.expired());first.clear();
+    constexpr unsigned discarded=80;std::weak_ptr<const CapturedWriterPayload> previousChurn;
     for(unsigned i=0;i<discarded;++i){
         const uint64_t sequence=2+i,captureSubmission=21000+i,historySubmission=10000+i;auto source=i%2?f.a:f.twin;
         f.capture.removeImage(source);f.capture.image(source,f.image);
         HistoryBlitRef original{930,100+i,62,200+i,300+i,i%3==0};if(i%7==0)original={};const auto expected=original;
         auto filter=i%2?VK_FILTER_LINEAR:VK_FILTER_NEAREST;
-        require(f.record(sequence,churnCommand,source,f.b,original,filter));const auto atRecord=stagesFor(f.capture,sequence);
+        require(f.record(sequence,churnCommand,source,f.b,original,filter));require(previousChurn.expired());
+        const auto prefix=bool(original)?mockWriterPrefix(sequence,original):unavailableWriterPrefix(sequence,original,CapturedWriterUnavailable::unknownIdentity);
+        require(attachPrefix(f.capture,sequence,prefix));require(!attachPrefix(f.capture,sequence,selected.writerPrefix));const auto atRecord=stagesFor(f.capture,sequence);
         original={};f.region.dstOffsets[1].y=27;f.capture.submitted(f.queue,{churnCommand},0,captureSubmission,nullptr,historySubmission);
         const auto atSubmit=stagesFor(f.capture,sequence);require(sameObservation(atRecord.recorded,atSubmit.recorded));stageContract(atSubmit);
         require(f.capture.presentedGpu(info,VK_SUCCESS,82+i,1,13+i).empty());f.capture.reset(churnCommand);f.region=region;complete();
         auto ready=f.capture.presentedGpu(info,VK_SUCCESS,9999,3,9999);require(ready.size()==1 && ready[0].sequence==sequence && ready[0].present==82+i);
         exactBlit(ready[0].sourceBlit,expected,source,f.b,region,filter,captureSubmission,historySubmission);sameStages(ready[0].sourceBlitStages,atSubmit);
+        sameWriterPrefix(ready[0].writerPrefix,prefix);require(selected.writerPrefix.payload.get()==selectedPayload && !selectedWeak.expired());previousChurn=prefix.payload;
         require(ready[0].sourceBlit.bridgeKnown()==bool(expected) && ready[0].image!=selected.image);
         // Consumer rejects this lease. Only its actual retirement marker allows
         // its private slot to serve the next original recording.
@@ -222,8 +299,10 @@ void stageRetentionChurn(const VkPhysicalDeviceMemoryProperties& memory){
     require(f.capture.stats().reuses==discarded-1 && f.capture.stats().leasesIssued==discarded+1);
     require(f.capture.retire(selected.lease,f.queue));complete();
     HistoryBlitRef finalRef{930,999,62,998,997,true};require(f.record(1000,churnCommand,f.twin,f.b,finalRef));
+    require(!attachPrefix(f.capture,1000,selected.writerPrefix));const auto finalPrefix=mockWriterPrefix(1000,finalRef);require(attachPrefix(f.capture,1000,finalPrefix));
     f.capture.submitted(f.queue,{churnCommand},0,30001,nullptr,19001);complete();auto reused=f.capture.presentedGpu(info,VK_SUCCESS,1001,1,100);
     require(reused.size()==1 && reused[0].image==selected.image && reused[0].lease!=selected.lease);stageContract(reused[0].sourceBlitStages);
+    sameWriterPrefix(reused[0].writerPrefix,finalPrefix);require(selected.writerPrefix.payload.get()==selectedPayload && !selectedWeak.expired());
     bool originalSlotStillRetained=false;for(const auto& item:f.capture.sourceBlitStages())if(item.first==1)originalSlotStillRetained=true;require(!originalSlotStillRetained);
     // The selected value outlives even replacement of its producer slot. No
     // global log, current raw handle lookup or current metadata is consulted.
@@ -282,6 +361,12 @@ int main()try {
         auto ready=c.presentedGpu(info,VK_SUCCESS,202,2,99);require(ready.size()==1 && ready[0].sequence==1 && ready[0].present==101 && ready[0].selectedDraws==9);require(c.retire(ready[0].lease,queue));complete();c.reset(command);
     }
     bridgeControls(memory);
+    writerPrefixAttachmentControls(memory);
     stageRetentionChurn(memory);
+    require(!writerPayloadAlive && writerPayloadCreated==writerPayloadDestroyed && !writerReports && writerPayloadPeak<=3);
+    std::cout<<"{\"writer_prefix_transport_cpu_control\":{\"held_selected_discarded_frames\":80,\"payloads_created\":"<<writerPayloadCreated
+        <<",\"payloads_destroyed\":"<<writerPayloadDestroyed<<",\"peak_live_payloads\":"<<writerPayloadPeak<<",\"live_payloads_at_end\":"<<writerPayloadAlive
+        <<",\"transport_report_calls\":"<<writerReports<<",\"transport_bytes_per_copy\":"<<sizeof(CapturedWriterPrefix)
+        <<",\"maximum_added_capture_bytes\":"<<(4*sizeof(CapturedWriterPrefix))<<",\"standalone_without_source_history\":true,\"gpu_execution_performed\":false}}\n";
     require(fences.empty());std::cout<<"Portable GPU presentation lease ownership and original BLIT value bridge passed\n";return 0;
 }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}

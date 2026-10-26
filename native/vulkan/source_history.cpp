@@ -27,6 +27,8 @@ struct Event {
     std::shared_ptr<const frame::Pipeline> original;uint64_t selected=0;
     Image associated;uint64_t associatedView=0;uint32_t attachmentIndex=0;
     uint64_t destinationView=0;std::array<uint32_t,4> clearColor{};bool nullAttachment=false;
+    uint64_t renderingScope=0;uint32_t drawColorCount=0;
+    std::array<uint64_t,8> drawColorImages{},drawColorViews{};
     VkImageSubresourceRange destinationRange{};std::array<VkOffset3D,2> blitSource{},blitDestination{};VkFilter filter{};
     explicit Event(std::shared_ptr<Budget> b):budget(std::move(b)){++budget->events;}
     ~Event(){--budget->events;}
@@ -37,6 +39,7 @@ struct Recording {
     std::shared_ptr<const frame::Pipeline> original;uint64_t selected=0;bool substituted=false;
     std::vector<std::shared_ptr<const Event>> events;
     HistoryBlitRef lastBlit{}; // One bounded same-hook marker; never an event/coverage claim.
+    bool captureAdmitted=false;uint64_t renderingScope=0;
 };
 struct CommandSnapshot {uint64_t recording=0,gaps=0,excluded=0;uint32_t batch=0,command=0,family=VK_QUEUE_FAMILY_IGNORED,eye=2;VkCommandBufferLevel level{};VkCommandBufferUsageFlags flags=0;bool known=false,truncated=false;std::vector<std::shared_ptr<const Event>> events;};
 struct Semaphore {uint64_t id=0;bool known=false,timeline=false;};
@@ -69,13 +72,27 @@ ImageUseRef useRef(uint64_t session,const View& v){return {session,v.image.id,v.
 void useJson(Json& j,const ImageUseRef& r){j<<"{\"observer_session\":"<<r.observerSession<<",\"image\":"<<r.image<<",\"view\":"<<r.view<<",\"aspects\":"<<r.aspects<<",\"base_mip\":"<<r.baseMip<<",\"mip_count\":"<<r.mipCount<<",\"base_layer\":"<<r.baseLayer<<",\"layer_count\":"<<r.layerCount<<",\"image_known\":"<<(r.imageKnown?"true":"false")<<",\"view_known\":"<<(r.viewKnown?"true":"false")<<",\"metadata_complete\":"<<(r.metadataComplete?"true":"false")<<"}";}
 void gapsJson(Json& j,uint64_t gaps){j<<"[";bool comma=false;for(unsigned v=0;v<9;++v)if(gaps&(uint64_t(1)<<v)){if(comma)j<<",";j.quoted(gapName(v));comma=true;}j<<"]";}
 }
-struct Completion {bool complete=false;VkResult result=VK_NOT_READY;};
+struct Completion {std::atomic<bool> complete{false};std::atomic<int32_t> result{VK_NOT_READY};};
 struct HistoryOccurrence {
     std::shared_ptr<Budget> budget;uint64_t observerSession=0,sequence=0,queue=0,captureSubmission=0,gaps=0,references=0;
     uint32_t family=VK_QUEUE_FAMILY_IGNORED,index=UINT32_MAX;bool truncated=false;std::shared_ptr<Completion> completion=std::make_shared<Completion>();
     std::vector<CommandSnapshot> commands;std::vector<SemaphoreUse> semaphores;
     ~HistoryOccurrence(){if(budget)budget->references-=references;}
 };
+namespace {
+struct WriterPrefix final:CapturedWriterPayload {
+    mutable std::mutex mutex;
+    uint64_t captureSequence=0,targetSubmission=0,matching=0,admissionRecording=0,admissionOrdinal=0,admissionSubmission=0;
+    HistoryBlitRef target{};Image source,destination;
+    uint32_t eventLimit=0,occurrenceLimit=4,targetBatch=0,targetCommand=0;
+    bool frozen=false,ambiguous=false;CapturedWriterUnavailable reason=CapturedWriterUnavailable::absent;
+    std::string body;std::shared_ptr<Completion> targetCompletion;
+    std::vector<std::pair<uint64_t,std::shared_ptr<Completion>>> completions;
+    std::string report() const noexcept override;
+};
+std::string writerBody(const WriterPrefix&,const std::vector<std::shared_ptr<HistoryOccurrence>>&,bool,bool,uint32_t);
+bool sameBlitLabels(const HistoryBlitRef& a,const HistoryBlitRef& b){return a.observerSession==b.observerSession && a.sourceImage==b.sourceImage && a.destinationImage==b.destinationImage && a.recording==b.recording && a.ordinal==b.ordinal;}
+}
 struct SourceHistory::Impl {
     VkExtent2D footprint;VkFormat format;uint64_t session;Limits limits;mutable std::mutex mutex;std::atomic<bool> faulted{false};
     std::shared_ptr<Budget> budget=std::make_shared<Budget>();
@@ -86,6 +103,10 @@ struct SourceHistory::Impl {
     // Only additional live endpoint lifetimes consume this bounded admission set.
     // Matching depth candidates are selected by the configured format/footprint.
     std::set<uint64_t> admittedEndpoints;
+    struct AdmissionStart{uint64_t recording=0,ordinal=0,submission=0;};
+    std::map<uint64_t,AdmissionStart> capturedAdmissions;
+    std::vector<std::weak_ptr<WriterPrefix>> writerPrefixes; // Strong owners are actual Capture/lease metadata.
+    uint64_t writerReservations=0,writerRefused=0;
     std::map<VkImage,Image> images;std::map<VkImageView,View> views;std::map<VkCommandBuffer,Recording> commands;
     std::map<VkQueue,uint64_t> queues;std::map<VkSemaphore,Semaphore> semaphores;std::map<VkPipeline,uint64_t> selectedPipelines;
     std::map<VkSwapchainKHR,Swapchain> swapchains;uint64_t swapchainHigh=0;
@@ -114,9 +135,23 @@ struct SourceHistory::Impl {
         if(admittedEndpoints.size()>=64){c.gaps|=flag(Gap::missingRoute);++endpointOverflow;++overflow;return false;}
         admittedEndpoints.insert(i.id);return true;
     }
-    void removeImage(VkImage h){auto old=images.find(h);if(old!=images.end()){admittedEndpoints.erase(old->second.id);images.erase(old);}}
+    void removeImage(VkImage h){auto old=images.find(h);if(old!=images.end()){admittedEndpoints.erase(old->second.id);capturedAdmissions.erase(old->second.id);images.erase(old);}}
     uint32_t frozenLimit(bool consumer)const{return std::min(consumer?limits.consumerEventsPerReport:limits.eventsPerReport,limits.reports?limits.liveEvents/((limits.consumerWindows?4u:2u)*limits.reports):0u);}
-    void removeChain(VkSwapchainKHR h){auto chain=swapchains.find(h);if(chain==swapchains.end())return;for(const auto& item:chain->second.images){auto image=images.find(item.first);if(image!=images.end() && image->second.id==item.second && image->second.swapchain==chain->second.id)admittedEndpoints.erase(image->second.id),images.erase(image);}swapchains.erase(chain);}
+    uint32_t writerLimit()const{
+        const uint64_t reserved=uint64_t(limits.reports)*(frozenLimit(false)+frozenLimit(true));
+        const uint64_t nodes=limits.liveEvents/2>reserved?limits.liveEvents/2-reserved:0;
+        const uint64_t refs=limits.snapshotReferences/2>reserved?limits.snapshotReferences/2-reserved:0;
+        return uint32_t(std::min({uint64_t(64),nodes/4,refs/4}));
+    }
+    bool validCaptured(Recording& c,VkImage sourceHandle,VkImage destinationHandle,const HistoryBlitRef& ref)const{
+        if(!ref || ref.observerSession!=session || c.id!=ref.recording || c.ordinal!=ref.ordinal || !sameBlitLabels(c.lastBlit,ref))return false;
+        const auto source=image(sourceHandle),destination=image(destinationHandle);
+        return source.known && destination.known && source.id==ref.sourceImage && destination.id==ref.destinationImage;
+    }
+    void invalidateWriters(uint64_t recording,CapturedWriterUnavailable reason){
+        for(auto& weak:writerPrefixes)if(auto w=weak.lock()){std::lock_guard<std::mutex> lock(w->mutex);if(!w->matching && w->target.recording==recording)w->reason=reason;}
+    }
+    void removeChain(VkSwapchainKHR h){auto chain=swapchains.find(h);if(chain==swapchains.end())return;for(const auto& item:chain->second.images){auto image=images.find(item.first);if(image!=images.end() && image->second.id==item.second && image->second.swapchain==chain->second.id)admittedEndpoints.erase(image->second.id),capturedAdmissions.erase(image->second.id),images.erase(image);}swapchains.erase(chain);}
     std::shared_ptr<HistoryOccurrence> cloneOccurrence(const HistoryOccurrence& source){auto copy=std::make_shared<HistoryOccurrence>();copy->budget=budget;copy->observerSession=source.observerSession;copy->sequence=source.sequence;copy->queue=source.queue;copy->captureSubmission=source.captureSubmission;copy->gaps=source.gaps;copy->family=source.family;copy->index=source.index;copy->truncated=source.truncated;copy->completion=source.completion;copy->semaphores=source.semaphores;return copy;}
     void window(Report& r,const std::shared_ptr<HistoryOccurrence>& occurrence){
         if(!limits.consumerWindows || r.closed)return;
@@ -156,7 +191,7 @@ struct SourceHistory::Impl {
         auto e=std::make_shared<Event>(budget);e->ordinal=c.ordinal;e->kind=kind;e->image=image;e->eye=c.eye;c.events.push_back(e);return e;}
     HistoryBlitRef recordBlit(Recording& c,VkImage sourceHandle,VkImageLayout src,VkImage destinationHandle,VkImageLayout dst,uint32_t n,const VkImageBlit* regions,VkFilter filter){
         const auto source=image(sourceHandle),destination=image(destinationHandle);
-        HistoryBlitRef ref{session,source.id,destination.id,c.id,c.ordinal,false};c.lastBlit=ref;
+        HistoryBlitRef ref{session,source.id,destination.id,c.id,c.ordinal,false};c.lastBlit=ref;c.captureAdmitted=false;
         if(!source.known || !destination.known)c.gaps|=flag(Gap::unknownResource);
         const bool eligible=admitted(source) || admitted(destination);
         if(!eligible){exclude(c,"blit_image");return ref;}
@@ -206,6 +241,53 @@ struct SourceHistory::Impl {
             reports.push_back(std::move(r));request=requested.erase(request);
         }
     }
+    bool writerRelevant(const Event& e,uint64_t source)const{
+        if(!std::strcmp(e.kind,"copy_image") || !std::strcmp(e.kind,"blit_image"))return e.destination.id==source;
+        if(e.image.id==source)return true;
+        if(!std::strcmp(e.kind,"draw"))for(uint32_t k=0;k<e.drawColorCount;++k)if(e.drawColorImages[k]==source)return true;
+        return false;
+    }
+    void freezeWriters(const std::shared_ptr<HistoryOccurrence>& occurrence){
+        for(auto& weak:writerPrefixes)if(auto w=weak.lock()){
+            std::lock_guard<std::mutex> lock(w->mutex);
+            uint32_t count=0,batch=0,command=0;
+            for(const auto& c:occurrence->commands)if(c.recording==w->target.recording){++count;batch=c.batch;command=c.command;}
+            if(!count)continue;
+            w->matching+=count;
+            if(w->matching!=1){w->ambiguous=true;if(!w->frozen && w->reason==CapturedWriterUnavailable::absent)w->reason=CapturedWriterUnavailable::duplicateOccurrence;continue;}
+            if(w->reason!=CapturedWriterUnavailable::absent)continue;
+            w->targetSubmission=occurrence->sequence;w->targetBatch=batch;w->targetCommand=command;w->targetCompletion=occurrence->completion;
+            std::vector<std::shared_ptr<HistoryOccurrence>> candidates(journal.begin(),journal.end());candidates.push_back(occurrence);
+            std::vector<std::shared_ptr<HistoryOccurrence>> snapshots;uint32_t remaining=w->eventLimit,events=0;bool truncated=occurrence->truncated,prefixMissing=evicted || overflow || occurrence->truncated;
+            for(auto oi=candidates.rbegin();oi!=candidates.rend();++oi){
+                if(snapshots.size()>=w->occurrenceLimit){prefixMissing=true;break;}
+                auto copy=cloneOccurrence(**oi);
+                for(auto ci=(*oi)->commands.rbegin();ci!=(*oi)->commands.rend();++ci){
+                    if((*oi)->sequence==w->targetSubmission && (ci->batch>batch || (ci->batch==batch && ci->command>command)))continue;
+                    auto c=*ci;c.events.clear();if(c.truncated)truncated=prefixMissing=true;
+                    for(auto ei=ci->events.rbegin();ei!=ci->events.rend();++ei){
+                        if((*oi)->sequence==w->targetSubmission && ci->batch==batch && ci->command==command && (*ei)->ordinal>=w->target.ordinal)continue;
+                        if(!writerRelevant(**ei,w->target.sourceImage))continue;
+                        if(!remaining){truncated=prefixMissing=true;break;}
+                        if(budget->references>=limits.snapshotReferences){w->reason=CapturedWriterUnavailable::referenceBudget;break;}
+                        c.events.push_back(*ei);++copy->references;++budget->references;--remaining;++events;
+                    }
+                    std::reverse(c.events.begin(),c.events.end());if(!c.events.empty() || c.gaps || c.truncated || ((*oi)->sequence==w->targetSubmission && ci->batch==batch && ci->command==command))copy->commands.push_back(std::move(c));
+                    if(w->reason!=CapturedWriterUnavailable::absent)break;
+                }
+                std::reverse(copy->commands.begin(),copy->commands.end());snapshots.push_back(std::move(copy));
+                if(w->reason!=CapturedWriterUnavailable::absent)break;
+            }
+            if(w->reason!=CapturedWriterUnavailable::absent)continue;
+            std::reverse(snapshots.begin(),snapshots.end());
+            for(const auto& o:snapshots)w->completions.emplace_back(o->sequence,o->completion);
+            auto body=writerBody(*w,snapshots,truncated,prefixMissing,events);
+            if(body.empty()){w->completions.clear();w->reason=CapturedWriterUnavailable::serializationBudget;continue;}
+            // Serialize once, by value. No Event, command, registry or borrowed
+            // pipeline catalog pointer is kept by a selected producer lease.
+            w->body=std::move(body);w->frozen=true;
+        }
+    }
     HistorySubmission before(VkQueue q,uint32_t family,uint32_t index,const std::vector<BatchInput>& batches,uint64_t captureSubmission,bool truncated,uint64_t gaps){
         auto value=std::make_shared<HistoryOccurrence>();value->budget=budget;value->observerSession=session;value->sequence=++submissionHigh;value->queue=queue(q);value->family=family;value->index=index;value->captureSubmission=captureSubmission;value->truncated=truncated;value->gaps=gaps;
         if(!value->queue || family==VK_QUEUE_FAMILY_IGNORED)value->gaps|=flag(Gap::unknownResource);
@@ -215,13 +297,14 @@ struct SourceHistory::Impl {
                 if(old==commands.end()){snapshot.gaps=flag(Gap::unknownResource);++unknownCommands;}else{const auto& c=old->second;snapshot.recording=c.id;snapshot.gaps=c.gaps;snapshot.excluded=c.excluded;snapshot.family=c.family;snapshot.eye=c.eye;snapshot.level=c.level;snapshot.flags=c.flags;snapshot.known=c.known;snapshot.truncated=c.truncated;
                     for(const auto& e:c.events){if(budget->references>=limits.snapshotReferences){snapshot.truncated=value->truncated=true;++referenceOverflow;++overflow;break;}snapshot.events.push_back(e);++budget->references;++value->references;}}
                 value->commands.push_back(std::move(snapshot));}}
+        if(limits.consumerWindows)freezeWriters(value);
         if(limits.consumerWindows)for(auto& r:reports)window(r,value);
         freeze(value);if(limits.occurrences){journal.push_back(value);while(journal.size()>limits.occurrences){journal.pop_front();++evicted;}}else ++evicted;
         return {value->sequence,std::move(value)};
     }
 };
 SourceHistory::SourceHistory(VkExtent2D e,VkFormat f,uint64_t s,Limits l):impl(std::make_unique<Impl>(e,f,s,l)){}
-SourceHistory::~SourceHistory()=default;
+SourceHistory::~SourceHistory(){try{for(auto& weak:impl->writerPrefixes)if(auto w=weak.lock()){std::lock_guard<std::mutex> lock(w->mutex);if(!w->matching && w->reason==CapturedWriterUnavailable::absent)w->reason=CapturedWriterUnavailable::observerDestroyed;}}catch(...){}}
 void SourceHistory::fault() noexcept{impl->faulted=true;}
 #define H_BEGIN try{auto& p=*impl;std::lock_guard<std::mutex> lock(p.mutex);
 #define H_END }catch(...){fault();}
@@ -284,15 +367,16 @@ H_END}
 void SourceHistory::removeSemaphore(VkSemaphore h) noexcept {H_BEGIN p.semaphores.erase(h);H_END}
 void SourceHistory::removePipeline(VkPipeline h) noexcept {H_BEGIN p.selectedPipelines.erase(h);H_END}
 void SourceHistory::begin(VkCommandBuffer cb,VkCommandBufferLevel level,VkCommandBufferUsageFlags flags,uint32_t family,uint32_t eye,bool known) noexcept {H_BEGIN
+    auto previous=p.commands.find(cb);if(previous!=p.commands.end())p.invalidateWriters(previous->second.id,CapturedWriterUnavailable::resetBeforeSubmit);
     p.commands.erase(cb);if(!cb || p.commands.size()>=p.limits.commands || p.recordingHigh==UINT64_MAX){++p.overflow;return;}Recording c;c.id=++p.recordingHigh;c.level=level;c.flags=flags;c.family=family;c.eye=eye<2?eye:2;c.known=known;if(!known)c.gaps|=flag(Gap::unknownResource);if(level!=VK_COMMAND_BUFFER_LEVEL_PRIMARY)c.gaps|=flag(Gap::secondary);p.commands[cb]=std::move(c);
 H_END}
-void SourceHistory::reset(VkCommandBuffer cb) noexcept {H_BEGIN p.commands.erase(cb);H_END}
+void SourceHistory::reset(VkCommandBuffer cb) noexcept {H_BEGIN auto old=p.commands.find(cb);if(old!=p.commands.end())p.invalidateWriters(old->second.id,CapturedWriterUnavailable::resetBeforeSubmit);p.commands.erase(cb);H_END}
 void SourceHistory::bind(VkCommandBuffer cb,std::shared_ptr<const frame::Pipeline> original,VkPipeline selected,bool substituted) noexcept {H_BEGIN
     auto c=p.command(cb);if(!c)return;c->original=std::move(original);c->substituted=substituted;c->selected=0;if(!c->original)c->gaps|=flag(Gap::unknownPipeline);
     if(selected){auto old=p.selectedPipelines.find(selected);if(old!=p.selectedPipelines.end())c->selected=old->second;else if(p.selectedPipelines.size()<p.limits.pipelines)c->selected=p.selectedPipelines[selected]=++p.pipelineHigh;else ++p.overflow;}
 H_END}
 void SourceHistory::beginRendering(VkCommandBuffer cb,const VkRenderingInfo& i) noexcept {H_BEGIN
-    auto c=p.command(cb);if(!c)return;c->active.reset();c->colors.clear();if(i.pNext || i.flags)c->gaps|=flag(Gap::extension);const auto attachment=i.pDepthAttachment?i.pDepthAttachment:i.pStencilAttachment;
+    auto c=p.command(cb);if(!c)return;c->active.reset();c->colors.clear();c->renderingScope=p.limits.consumerWindows?c->ordinal:0;if(i.pNext || i.flags)c->gaps|=flag(Gap::extension);const auto attachment=i.pDepthAttachment?i.pDepthAttachment:i.pStencilAttachment;
     View depth;
     if(attachment && attachment->imageView){depth=p.view(attachment->imageView);
         if(!depth.image.known)c->gaps|=flag(Gap::unknownResource);
@@ -320,9 +404,9 @@ void SourceHistory::beginRendering(VkCommandBuffer cb,const VkRenderingInfo& i) 
     }
     if(!c->active && !c->colors.empty() && c->colors.front().image.known)c->active=c->colors.front();
 H_END}
-void SourceHistory::endRendering(VkCommandBuffer cb) noexcept {H_BEGIN auto c=p.command(cb);if(!c)return;if(c->active){auto e=p.event(*c,"end_rendering",c->active->image);if(e){e->view=c->active->id;e->range=c->active->range;}}c->active.reset();c->colors.clear();H_END}
+void SourceHistory::endRendering(VkCommandBuffer cb) noexcept {H_BEGIN auto c=p.command(cb);if(!c)return;if(c->active){auto e=p.event(*c,"end_rendering",c->active->image);if(e){e->view=c->active->id;e->range=c->active->range;}}c->active.reset();c->colors.clear();c->renderingScope=0;H_END}
 void SourceHistory::draw(VkCommandBuffer cb,uint32_t kind) noexcept {H_BEGIN
-    auto c=p.command(cb);if(!c)return;if(kind>=6)c->gaps|=flag(Gap::generated);if(!c->active)return;auto e=p.event(*c,"draw",c->active->image);if(!e)return;e->view=c->active->id;e->range=c->active->range;e->drawKind=kind;e->original=kind>=6?nullptr:c->original;e->selected=kind>=6?0:c->selected;e->substituted=c->substituted;c->gaps|=flag(Gap::unknownState);if(!e->original)c->gaps|=flag(Gap::unknownPipeline);
+    auto c=p.command(cb);if(!c)return;if(kind>=6)c->gaps|=flag(Gap::generated);if(!c->active)return;auto e=p.event(*c,"draw",c->active->image);if(!e)return;e->view=c->active->id;e->range=c->active->range;e->drawKind=kind;e->renderingScope=c->renderingScope;e->drawColorCount=uint32_t(std::min(c->colors.size(),size_t(8)));for(uint32_t k=0;k<e->drawColorCount;++k){e->drawColorImages[k]=c->colors[k].image.id;e->drawColorViews[k]=c->colors[k].id;}e->original=kind>=6?nullptr:c->original;e->selected=kind>=6?0:c->selected;e->substituted=c->substituted;c->gaps|=flag(Gap::unknownState);if(!e->original)c->gaps|=flag(Gap::unknownPipeline);
 H_END}
 void SourceHistory::clearDepthStencil(VkCommandBuffer cb,VkImage image,VkImageLayout layout,const VkClearDepthStencilValue* clear,uint32_t n,const VkImageSubresourceRange* ranges) noexcept {H_BEGIN
     auto c=p.command(cb);if(!c)return;auto source=p.image(image);if(!source.known)c->gaps|=flag(Gap::unknownResource);if(!source.candidate)return;if(!clear || (n && !ranges)){c->gaps|=flag(Gap::missingRoute);return;}if(n>64){c->truncated=true;++p.overflow;}
@@ -349,17 +433,33 @@ HistoryBlitRef SourceHistory::blit(VkCommandBuffer cb,const VkBlitImageInfo2& in
     return p.recordBlit(*c,info.srcImage,info.srcImageLayout,info.dstImage,info.dstImageLayout,info.regionCount,regions.data(),info.filter);
 H_END return {};}
 bool SourceHistory::admitCapturedBlit(VkCommandBuffer cb,VkImage sourceHandle,VkImage destinationHandle,const HistoryBlitRef& ref) noexcept {H_BEGIN
-    if(!p.limits.consumerWindows || !ref || ref.observerSession!=p.session)return false;
-    // An admission receipt is not another original Vulkan command: do not
-    // advance its common ordinal or resolve it again when a lease is exported.
-    auto c=p.command(cb,false);if(!c || c->id!=ref.recording || c->ordinal!=ref.ordinal)return false;
-    const auto& original=c->lastBlit;
-    if(original.observerSession!=ref.observerSession || original.recording!=ref.recording || original.ordinal!=ref.ordinal
-        || original.sourceImage!=ref.sourceImage || original.destinationImage!=ref.destinationImage)return false;
-    const auto source=p.image(sourceHandle),destination=p.image(destinationHandle);
-    if(!source.known || !destination.known || source.id!=ref.sourceImage || destination.id!=ref.destinationImage)return false;
-    return p.admitEndpoint(*c,source);
+    if(!p.limits.consumerWindows)return false;
+    auto c=p.command(cb,false);if(!c || !p.validCaptured(*c,sourceHandle,destinationHandle,ref))return false;
+    if(!p.capturedAdmissions.count(ref.sourceImage) && p.capturedAdmissions.size()>=64){c->gaps|=flag(Gap::missingRoute);++p.endpointOverflow;++p.overflow;return false;}
+    if(!p.admitEndpoint(*c,p.image(sourceHandle)))return false;
+    c->captureAdmitted=true;
+    if(!p.capturedAdmissions.count(ref.sourceImage))p.capturedAdmissions[ref.sourceImage]={ref.recording,ref.ordinal,p.submissionHigh};
+    return true;
 H_END return false;}
+CapturedWriterPrefix SourceHistory::reserveCapturedBlit(VkCommandBuffer cb,VkImage sourceHandle,VkImage destinationHandle,const HistoryBlitRef& ref,uint64_t captureSequence) noexcept {
+    CapturedWriterPrefix out;out.captureSequence=captureSequence;out.original=ref;
+    try{auto& p=*impl;std::lock_guard<std::mutex> lock(p.mutex);
+        auto refuse=[&](CapturedWriterUnavailable reason){out.unavailable=reason;++p.writerRefused;return out;};
+        if(!p.limits.consumerWindows)return refuse(CapturedWriterUnavailable::disabled);
+        if(p.faulted)return refuse(CapturedWriterUnavailable::observerFault);
+        if(!captureSequence || !ref)return refuse(CapturedWriterUnavailable::unknownIdentity);
+        auto c=p.command(cb,false);if(!c || !p.validCaptured(*c,sourceHandle,destinationHandle,ref))return refuse(CapturedWriterUnavailable::hookMismatch);
+        auto admission=p.capturedAdmissions.find(ref.sourceImage);
+        if(!c->captureAdmitted || admission==p.capturedAdmissions.end())return refuse(CapturedWriterUnavailable::notAdmitted);
+        p.writerPrefixes.erase(std::remove_if(p.writerPrefixes.begin(),p.writerPrefixes.end(),[](const auto& w){return w.expired();}),p.writerPrefixes.end());
+        for(const auto& weak:p.writerPrefixes)if(auto w=weak.lock())if(w->captureSequence==captureSequence && sameBlitLabels(w->target,ref)){out.payload=w;return out;}
+        if(p.writerPrefixes.size()>=4)return refuse(CapturedWriterUnavailable::ticketLimit);
+        const auto cap=p.writerLimit();if(!cap){const uint64_t reserved=uint64_t(p.limits.reports)*(p.frozenLimit(false)+p.frozenLimit(true));return refuse(p.limits.liveEvents/2<=reserved?CapturedWriterUnavailable::eventBudget:CapturedWriterUnavailable::referenceBudget);}
+        auto w=std::make_shared<WriterPrefix>();w->captureSequence=captureSequence;w->target=ref;w->source=p.image(sourceHandle);w->destination=p.image(destinationHandle);w->eventLimit=cap;
+        w->admissionRecording=admission->second.recording;w->admissionOrdinal=admission->second.ordinal;w->admissionSubmission=admission->second.submission;
+        p.writerPrefixes.push_back(w);++p.writerReservations;out.payload=std::move(w);return out;
+    }catch(...){fault();out.unavailable=CapturedWriterUnavailable::observerFault;return out;}
+}
 void SourceHistory::barrier(VkCommandBuffer cb,const VkDependencyInfo& i) noexcept {H_BEGIN
     auto c=p.command(cb);if(!c)return;if(i.pNext)c->gaps|=flag(Gap::extension);if(i.imageMemoryBarrierCount && !i.pImageMemoryBarriers){c->gaps|=flag(Gap::missingRoute);return;}if(i.imageMemoryBarrierCount>64){c->truncated=true;++p.overflow;}
     for(uint32_t k=0;k<std::min(i.imageMemoryBarrierCount,64u);++k){const auto& b=i.pImageMemoryBarriers[k];auto source=p.image(b.image);if(p.limits.consumerWindows && !source.known)c->gaps|=flag(Gap::unknownResource);if(!source.candidate && !p.limits.consumerWindows)continue;if(p.limits.consumerWindows && !p.admitted(source)){p.exclude(*c,"barrier");continue;}auto e=p.event(*c,"barrier",source);if(!e)break;e->range=b.subresourceRange;e->layout=b.oldLayout;e->destinationLayout=b.newLayout;e->srcStage=b.srcStageMask;e->dstStage=b.dstStageMask;e->srcAccess=b.srcAccessMask;e->dstAccess=b.dstAccessMask;if(b.pNext)c->gaps|=flag(Gap::extension);}
@@ -402,7 +502,7 @@ HistorySubmission SourceHistory::before(VkQueue q,uint32_t family,uint32_t index
     return p.before(q,family,index,batches,serial,truncated,gaps);
 H_END return {};}
 void SourceHistory::after(const HistorySubmission& token,VkResult result) noexcept {H_BEGIN
-    if(!token.occurrence || token.occurrence->observerSession!=p.session || token.sequence!=token.occurrence->sequence){p.faulted=true;return;}auto& occurrence=*token.occurrence;if(occurrence.completion->complete){++p.duplicateReturns;return;}occurrence.completion->complete=true;occurrence.completion->result=result;if(result==VK_SUCCESS)++p.successful;else ++p.failed;
+    if(!token.occurrence || token.occurrence->observerSession!=p.session || token.sequence!=token.occurrence->sequence){p.faulted=true;return;}auto& occurrence=*token.occurrence;if(occurrence.completion->complete){++p.duplicateReturns;return;}occurrence.completion->result.store(result,std::memory_order_relaxed);occurrence.completion->complete.store(true,std::memory_order_release);if(result==VK_SUCCESS)++p.successful;else ++p.failed;
 H_END}
 namespace {
 void eventJson(Json& j,const Event& e){
@@ -414,6 +514,7 @@ void eventJson(Json& j,const Event& e){
         <<",\"draw_kind\":"<<e.drawKind<<",\"recording_eye\":"<<e.eye<<",\"original_pipeline_id\":"<<(e.original?e.original->id:0)<<",\"selected_pipeline_id\":"<<e.selected<<",\"pipeline_substituted\":"<<(e.substituted?"true":"false")
         <<",\"selected_pipeline_metadata_known\":"<<(!e.substituted && e.original?"true":"false")<<",\"selected_pipeline_lifetime_known\":false,\"resolve_present\":"<<(e.resolve?"true":"false")
         <<",\"src_stage\":"<<e.srcStage<<",\"dst_stage\":"<<e.dstStage<<",\"src_access\":"<<e.srcAccess<<",\"dst_access\":"<<e.dstAccess;
+    if(!std::strcmp(e.kind,"draw") && e.renderingScope){j<<",\"rendering_scope_ordinal\":"<<e.renderingScope<<",\"draw_color_images\":[";for(uint32_t k=0;k<e.drawColorCount;++k){if(k)j<<",";j<<e.drawColorImages[k];}j<<"],\"draw_color_views\":[";for(uint32_t k=0;k<e.drawColorCount;++k){if(k)j<<",";j<<e.drawColorViews[k];}j<<"],\"declared_color_membership_only\":true,\"actual_gpu_write_proven\":false";}
     if(!std::strcmp(e.kind,"declared_color_attachment")){j<<",\"attachment_index\":"<<e.attachmentIndex<<",\"associated_image\":"<<e.associated.id<<",\"associated_view\":"<<e.associatedView<<",\"destination_view\":"<<e.destinationView<<",\"null_attachment\":"<<(e.nullAttachment?"true":"false")<<",\"declared_attachment_use\":true,\"actual_gpu_write_proven\":false,\"clear_color_bits\":["<<e.clearColor[0]<<","<<e.clearColor[1]<<","<<e.clearColor[2]<<","<<e.clearColor[3]<<"]";}
     if(!std::strcmp(e.kind,"blit_image")){j<<",\"filter\":"<<uint32_t(e.filter)<<",\"blit_source_offsets\":[";for(unsigned k=0;k<2;++k){if(k)j<<",";j<<"["<<e.blitSource[k].x<<","<<e.blitSource[k].y<<","<<e.blitSource[k].z<<"]";}j<<"],\"blit_destination_offsets\":[";for(unsigned k=0;k<2;++k){if(k)j<<",";j<<"["<<e.blitDestination[k].x<<","<<e.blitDestination[k].y<<","<<e.blitDestination[k].z<<"]";}j<<"]";}
     if(!std::strcmp(e.kind,"blit_image") || e.resolve)j<<",\"destination_aspects\":"<<e.destinationRange.aspectMask<<",\"destination_base_mip\":"<<e.destinationRange.baseMipLevel<<",\"destination_mip_count\":"<<e.destinationRange.levelCount<<",\"destination_base_layer\":"<<e.destinationRange.baseArrayLayer<<",\"destination_layer_count\":"<<e.destinationRange.layerCount;
@@ -424,8 +525,8 @@ void queryJson(Json& j,const Query& q){
     constexpr const char* hex="0123456789abcdef";uint64_t hash=14695981039346656037ull;for(const auto byte:q.bytes){j<<std::string{hex[byte>>4],hex[byte&15]};hash=(hash^byte)*1099511628211ull;}
     j<<"\",\"bytes_fnv1a64\":"<<(q.bytesComplete?hash:0)<<",\"before_observed_submission\":"<<q.beforeSubmission<<",\"after_observed_submission\":"<<q.afterSubmission<<",\"descriptor_selected\":false,\"gpu_read_proven\":false,\"placement_known\":false,\"sampler_state_known\":false}";
 }
-void occurrenceJson(Json& j,const HistoryOccurrence& o){
-    j<<"{\"submission\":"<<o.sequence<<",\"queue_id\":"<<o.queue<<",\"family\":"<<o.family<<",\"index\":"<<o.index<<",\"capture_submission\":"<<o.captureSubmission<<",\"complete\":"<<(o.completion->complete?"true":"false")<<",\"result\":"<<int32_t(o.completion->result)<<",\"truncated\":"<<(o.truncated?"true":"false")<<",\"gaps\":";gapsJson(j,o.gaps);j<<",\"semaphores\":[";
+void occurrenceJson(Json& j,const HistoryOccurrence& o,bool completion=true){
+    j<<"{\"submission\":"<<o.sequence<<",\"queue_id\":"<<o.queue<<",\"family\":"<<o.family<<",\"index\":"<<o.index<<",\"capture_submission\":"<<o.captureSubmission;if(completion)j<<",\"complete\":"<<(o.completion->complete?"true":"false")<<",\"result\":"<<int32_t(o.completion->result);j<<",\"truncated\":"<<(o.truncated?"true":"false")<<",\"gaps\":";gapsJson(j,o.gaps);j<<",\"semaphores\":[";
     for(size_t k=0;k<o.semaphores.size();++k){if(k)j<<",";const auto& s=o.semaphores[k];j<<"{\"id\":"<<s.id<<",\"batch\":"<<s.batch<<",\"signal\":"<<(s.signal?"true":"false")<<",\"value\":"<<s.value<<",\"stage_mask\":"<<s.stage<<",\"device_index\":"<<s.device<<",\"lifetime_known\":"<<(s.lifetimeKnown?"true":"false")<<",\"value_known\":"<<(s.valueKnown?"true":"false")<<"}";}
     j<<"],\"commands\":[";
     for(size_t k=0;k<o.commands.size();++k){if(k)j<<",";const auto& c=o.commands[k];j<<"{\"recording\":"<<c.recording<<",\"batch\":"<<c.batch<<",\"command\":"<<c.command<<",\"family\":"<<c.family<<",\"level\":"<<uint32_t(c.level)<<",\"flags\":"<<c.flags<<",\"known\":"<<(c.known?"true":"false")<<",\"recording_eye\":"<<c.eye<<",\"truncated\":"<<(c.truncated?"true":"false")<<",\"outside_admitted_event_attempts\":"<<c.excluded<<",\"gaps\":";gapsJson(j,c.gaps);j<<",\"events\":[";
@@ -434,6 +535,30 @@ void occurrenceJson(Json& j,const HistoryOccurrence& o){
 }
 void pipelineJson(Json& j,const frame::Pipeline& p){j<<"{\"id\":"<<p.id<<",\"original_metadata_only\":true,\"missing_libraries\":"<<(p.missingLibraries?"true":"false")<<",\"metadata_truncated\":"<<(p.shaders.size()>16?"true":"false")<<",\"shaders\":[";
     for(size_t k=0;k<std::min(p.shaders.size(),size_t(16));++k){if(k)j<<",";const auto& s=p.shaders[k];j<<"{\"stage\":"<<uint32_t(s.stage)<<",\"known\":"<<(s.known?"true":"false")<<",\"fnv\":"<<s.fnv<<",\"bytes\":"<<s.bytes<<",\"identifier\":";j.quoted(s.identifier);j<<",\"identifier_truncated\":"<<(s.identifier.size()>128?"true":"false")<<"}";}j<<"]}";}
+
+std::string writerBody(const WriterPrefix& w,const std::vector<std::shared_ptr<HistoryOccurrence>>& snapshots,bool truncated,bool prefixMissing,uint32_t events){
+    Json j(131072-4096);
+    j<<"\"target_submission\":"<<w.targetSubmission<<",\"target_batch\":"<<w.targetBatch<<",\"target_command\":"<<w.targetCommand<<",\"cutoff_ordinal\":"<<w.target.ordinal<<",\"cutoff_exclusive\":true,\"missing_before_admission\":true,\"prefix_missing\":"<<(prefixMissing?"true":"false")<<",\"truncated\":"<<(truncated?"true":"false")<<",\"event_count\":"<<events
+        <<",\"admission_start\":{\"recording\":"<<w.admissionRecording<<",\"ordinal\":"<<w.admissionOrdinal<<",\"before_observed_submission\":"<<w.admissionSubmission<<"},\"limits\":{\"events_per_prefix\":"<<w.eventLimit<<",\"occurrences_per_prefix\":"<<w.occurrenceLimit<<",\"serialized_bytes\":131072},\"occurrences\":[";
+    std::map<uint64_t,Image> images;images[w.source.id]=w.source;images[w.destination.id]=w.destination;
+    std::map<uint64_t,std::shared_ptr<const frame::Pipeline>> catalog;
+    for(size_t k=0;k<snapshots.size();++k){if(k)j<<",";occurrenceJson(j,*snapshots[k],false);for(const auto& c:snapshots[k]->commands)for(const auto& e:c.events){if(e->image.id)images[e->image.id]=e->image;if(e->destination.id)images[e->destination.id]=e->destination;if(e->associated.id)images[e->associated.id]=e->associated;if(e->original)catalog[e->original->id]=e->original;}}
+    j<<"],\"images\":[";bool comma=false;for(const auto& image:images){if(comma)j<<",";comma=true;imageJson(j,image.second,true);}
+    j<<"],\"catalog\":[";comma=false;for(const auto& pipeline:catalog){if(comma)j<<",";comma=true;pipelineJson(j,*pipeline.second);}j<<"]";
+    return j.overflow?std::string{}:j.take();
+}
+std::string WriterPrefix::report() const noexcept {try{
+    std::lock_guard<std::mutex> lock(mutex);Json j(131072);
+    j<<"{\"schema_version\":1,\"observation_only\":true,\"capture_sequence\":"<<captureSequence<<",\"target_blit\":{\"observer_session\":"<<target.observerSession<<",\"source_image\":"<<target.sourceImage<<",\"destination_image\":"<<target.destinationImage<<",\"recording\":"<<target.recording<<",\"ordinal\":"<<target.ordinal<<"},\"available\":"<<(frozen?"true":"false")<<",\"frozen\":"<<(frozen?"true":"false")<<",\"unavailable_reason\":";
+    j.quoted(reason==CapturedWriterUnavailable::absent?(frozen?"none":"pending"):captured_writer_unavailable_name(reason));
+    j<<",\"ambiguous\":"<<(ambiguous?"true":"false")<<",\"matching_original_occurrences\":"<<matching<<",\"gpu_execution_order_known\":false,\"last_gpu_writer_known\":false,\"gpu_write_proven\":false,\"initialized_pixels_verified\":false,\"all_write_routes_observed\":false,\"sampled_consumer_proven\":false,\"retention\":\"immutable_cpu_values\",\"event_nodes_held\":0,\"snapshot_event_references_held\":0";
+    const bool complete=targetCompletion && targetCompletion->complete.load(std::memory_order_acquire);
+    j<<",\"original_submit_complete\":"<<(complete?"true":"false")<<",\"original_submit_result\":"<<(complete?targetCompletion->result.load(std::memory_order_relaxed):int32_t(VK_NOT_READY));
+    j<<",\"cpu_completions\":[";for(size_t k=0;k<completions.size();++k){if(k)j<<",";const auto& state=completions[k];const bool done=state.second->complete.load(std::memory_order_acquire);j<<"{\"submission\":"<<state.first<<",\"complete\":"<<(done?"true":"false")<<",\"result\":"<<(done?state.second->result.load(std::memory_order_relaxed):int32_t(VK_NOT_READY))<<"}";}j<<"]";
+    if(frozen)j<<","<<body;
+    else j<<",\"target_submission\":"<<targetSubmission<<",\"target_batch\":"<<targetBatch<<",\"target_command\":"<<targetCommand<<",\"cutoff_ordinal\":"<<target.ordinal<<",\"cutoff_exclusive\":true,\"missing_before_admission\":true,\"prefix_missing\":true,\"truncated\":false,\"event_count\":0,\"limits\":{\"events_per_prefix\":"<<eventLimit<<",\"occurrences_per_prefix\":"<<occurrenceLimit<<",\"serialized_bytes\":131072},\"occurrences\":[],\"images\":[],\"catalog\":[]";
+    j<<"}";if(j.overflow){CapturedWriterPrefix unavailable;unavailable.captureSequence=captureSequence;unavailable.original=target;unavailable.unavailable=CapturedWriterUnavailable::serializationBudget;return unavailable.report();}return j.take();
+}catch(...){return {};}}
 }
 std::string SourceHistory::report() const {try{auto& p=*impl;std::lock_guard<std::mutex> lock(p.mutex);Json j(p.limits.serializedBytes);
     j<<"{\"schema_version\":1,\"observer_session\":"<<p.session<<",\"observation_only\":true,\"gpu_commands_inserted\":0,\"application_calls_rejected\":0,\"gpu_execution_order_known\":false,\"last_gpu_writer_known\":false,\"initialized_pixels_verified\":false,\"whole_scene_verified\":false,\"common_scene_time_known\":false,\"xr_pose_known\":false,\"image_memory_aliasing_observed\":false,\"all_write_routes_observed\":false,\"faulted\":"<<(p.faulted?"true":"false")
@@ -444,6 +569,8 @@ std::string SourceHistory::report() const {try{auto& p=*impl;std::lock_guard<std
     j<<"],\"candidate_images_truncated\":"<<(totalCandidates>64?"true":"false")
         <<",\"limits\":{\"events_per_report\":"<<p.limits.eventsPerReport<<",\"occurrences_per_report\":"<<p.limits.occurrencesPerReport<<",\"events_per_recording\":"<<p.limits.eventsPerRecording<<",\"live_events\":"<<p.limits.liveEvents<<",\"snapshot_references\":"<<p.limits.snapshotReferences<<",\"occurrences\":"<<p.limits.occurrences<<",\"reports\":"<<p.limits.reports<<",\"serialized_bytes\":"<<p.limits.serializedBytes<<"}";
     if(p.limits.consumerWindows){
+        size_t activeWriters=0;for(const auto& w:p.writerPrefixes)if(!w.expired())++activeWriters;
+        j<<",\"captured_writer_limits\":{\"live_tickets\":4,\"effective_events_per_prefix\":"<<p.writerLimit()<<",\"occurrences_per_prefix\":4,\"serialized_bytes_per_prefix\":131072,\"active_tickets\":"<<activeWriters<<",\"reservations\":"<<p.writerReservations<<",\"refused\":"<<p.writerRefused<<",\"retention\":\"immutable_cpu_values\"}";
         j<<",\"consumer_admission\":{\"scope\":\"configured_depth_candidates_declared_directed_or_accepted_capture_live_endpoints\",\"outside_scope_complete\":false,\"event_absence_means_unused\":false,\"additional_live_endpoints\":"<<p.admittedEndpoints.size()<<",\"additional_endpoint_limit\":64,\"excluded_event_attempts\":"<<p.excludedEvents<<",\"excluded_by_kind\":{";
         bool excludedComma=false;for(const auto& item:p.excludedKinds){if(excludedComma)j<<",";excludedComma=true;j.quoted(item.first);j<<":"<<item.second;}j<<"},\"overflow_causes\":{\"recording_event_limit\":"<<p.eventRecordingOverflow<<",\"live_event_limit\":"<<p.eventLiveOverflow<<",\"snapshot_reference_limit\":"<<p.referenceOverflow<<",\"additional_endpoint_limit\":"<<p.endpointOverflow<<"}}";
         j<<",\"consumer_observation_enabled\":true,\"descriptor_query_calls\":"<<p.queryCalls<<",\"descriptor_query_evicted\":"<<p.queryEvicted<<",\"descriptor_query_deduplicated\":"<<p.queryDeduplicated<<",\"descriptor_query_unknown\":"<<p.queryUnknown<<",\"late_descriptor_callbacks\":"<<p.queryLate<<",\"descriptor_query_catalog_scope\":\"live_bounded_cache_at_report\",\"descriptor_image_query_catalog\":[";

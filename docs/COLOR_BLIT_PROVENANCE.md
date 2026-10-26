@@ -173,9 +173,10 @@ opt-in and shares the unchanged 64-additional-endpoint limit.
 
 This admission affects subsequent observed commands only. It cannot reconstruct
 writers excluded before that hook or change the old `eventRetained` flag.
-A per-delivered-image writer prefix frozen against the original submission is
-still required before the next targeted game observation. No new game or headset
-session is claimed by this change. The last Diablo result and its unresolved
-wide-field cutouts remain the preceding section's experiment.
+The subsequent [capture-owned writer prefix](CAPTURED_WRITERS.md) now freezes
+source operations against the original submission and survives the selected
+lease. That page records its separate owned controls and new Diablo trial.
+Neither metadata addition repairs the wide-field cutouts or establishes headset
+delivery.
 
 See the [lifecycle proof](proofs/blit-lifecycle-v1.json) for the new owned controls.

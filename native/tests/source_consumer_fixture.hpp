@@ -27,13 +27,15 @@ struct SourceConsumerFixture {
         output<<"{\"ordinal\":"<<++calls<<",\"label\":\""<<label<<"\",\"frame\":"<<frame<<",\"image\":"<<HeldDepthFixture::handle(image)<<",\"view\":"<<HeldDepthFixture::handle(view)<<",\"descriptor_type\":"<<uint32_t(info.type)<<",\"layout\":"<<uint32_t(input.imageLayout)<<",\"size\":"<<bytes.size()<<",\"bytes_hex\":\""<<hex<<"\",\"descriptor_bound\":false,\"shader_read_verified\":false}\n";
         output.flush();if(!output)throw std::runtime_error("Owned descriptor reference write failed");
     }
-    void originalBlit(unsigned frame,VkCommandBuffer command,VkImage source,VkImage destination,const VkImageBlit& region,VkResult result){
+    void originalBlit(unsigned frame,VkCommandBuffer command,VkImage source,VkImage destination,const VkImageBlit& region,VkResult result,VkPipeline writerPipeline,VkImageView writerView){
         auto layers=[&](const VkImageSubresourceLayers& r){blits<<"["<<r.aspectMask<<","<<r.mipLevel<<","<<r.baseArrayLayer<<","<<r.layerCount<<"]";};
         auto offsets=[&](const VkOffset3D* r){blits<<"[["<<r[0].x<<","<<r[0].y<<","<<r[0].z<<"],["<<r[1].x<<","<<r[1].y<<","<<r[1].z<<"]]";};
         blits<<"{\"frame\":"<<frame<<",\"command\":"<<HeldDepthFixture::handle(command)<<",\"source_image_handle\":"<<HeldDepthFixture::handle(source)<<",\"destination_image_handle\":"<<HeldDepthFixture::handle(destination)
             <<",\"source_layout\":"<<VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL<<",\"destination_layout\":"<<VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL<<",\"filter\":"<<VK_FILTER_LINEAR<<",\"source_subresource\":";
         layers(region.srcSubresource);blits<<",\"destination_subresource\":";layers(region.dstSubresource);blits<<",\"source_offsets\":";offsets(region.srcOffsets);blits<<",\"destination_offsets\":";offsets(region.dstOffsets);
-        blits<<",\"original_submit_result\":"<<int(result)<<"}\n";blits.flush();if(!blits)throw std::runtime_error("Owned BLIT reference write failed");
+        blits<<",\"writer_pipeline_handle\":"<<HeldDepthFixture::handle(writerPipeline)<<",\"writer_view_handle\":"<<HeldDepthFixture::handle(writerView)
+            <<",\"writer_draw_calls\":2,\"writer_color_attachment_count\":1,\"writer_load_op\":"<<VK_ATTACHMENT_LOAD_OP_CLEAR<<",\"writer_store_op\":"<<VK_ATTACHMENT_STORE_OP_STORE
+            <<",\"writer_render_area\":[0,0,"<<region.srcOffsets[1].x<<","<<region.srcOffsets[1].y<<"],\"original_submit_result\":"<<int(result)<<"}\n";blits.flush();if(!blits)throw std::runtime_error("Owned BLIT reference write failed");
     }
     void beforeFrame(unsigned frame){if(frame==32 && twin){vkDestroyImageView(f.device,twin,nullptr);twin=VK_NULL_HANDLE;}}
     void afterHistoryFrame(unsigned frame){

@@ -29,7 +29,7 @@ struct Capture::Impl {
     struct Copy {
         Impl& owner;VkImage image{};VkDeviceMemory imageMemory{},bufferMemory{};VkBuffer buffer{};void* mapped{};VkFence fence{},retireFence{};VkDeviceSize allocatedBytes=0;
         VkCommandBuffer command{};VkSwapchainKHR chain{};uint32_t index=0;Snapshot snapshot;
-        bool queued=false,seenPresent=false,exported=false,presentAccepted=false,issued=false,retiring=false;
+        bool queued=false,seenPresent=false,exported=false,presentAccepted=false,issued=false,retiring=false,writerPrefixAttached=false;
         VkResult markerResult=VK_NOT_READY,retireResult=VK_NOT_READY;
         VkQueue queue{};uint32_t family=VK_QUEUE_FAMILY_IGNORED;uint64_t lease=0;
         explicit Copy(Impl& i):owner(i){}
@@ -143,6 +143,7 @@ bool Capture::record(uint64_t sequence,uint32_t eye,VkCommandBuffer command,bool
         std::array<VkFence,2> fences{selected->fence,selected->retireFence};check(p.ResetFences(p.device,2,fences.data()));++p.counters.reuses;
     }
     auto& c=*selected;c.command=command;c.chain=chain;c.index=index;c.snapshot={};c.snapshot.sequence=sequence;c.snapshot.eye=eye;
+    c.writerPrefixAttached=false;
     c.snapshot.format=target.format;c.snapshot.extent=target.extent;c.queued=c.seenPresent=c.exported=c.presentAccepted=c.issued=c.retiring=false;
     auto& observation=c.snapshot.sourceBlit;observation.original=sourceBlit;observation.sourceImage=source;observation.destinationImage=destination;
     observation.region=region;observation.sourceLayout=srcLayout;observation.destinationLayout=dstLayout;observation.filter=filter;
@@ -165,6 +166,18 @@ bool Capture::record(uint64_t sequence,uint32_t eye,VkCommandBuffer command,bool
         p.CmdPipelineBarrier(command,VK_PIPELINE_STAGE_TRANSFER_BIT,VK_PIPELINE_STAGE_HOST_BIT,0,1,&host,0,nullptr,0,nullptr);
     }
     return true;
+}
+bool Capture::attachWriterPrefix(uint64_t sequence,const CapturedWriterPrefix& prefix){
+    auto& p=*impl;std::lock_guard<std::mutex> lock(p.mutex);
+    if(!sequence || prefix.captureSequence!=sequence || (!prefix.payload && prefix.unavailable==CapturedWriterUnavailable::absent))return false;
+    for(auto& c:p.copies)if(c->snapshot.sequence==sequence){
+        const auto& original=c->snapshot.sourceBlit.original;const auto& target=prefix.original;
+        if(!c->command || c->queued || c->writerPrefixAttached || target.observerSession!=original.observerSession || target.sourceImage!=original.sourceImage
+            || target.destinationImage!=original.destinationImage || target.recording!=original.recording || target.ordinal!=original.ordinal
+            || (prefix.payload && (!bool(target) || !c->snapshot.sourceBlit.identityKnown)))return false;
+        c->snapshot.writerPrefix=prefix;c->writerPrefixAttached=true;return true;
+    }
+    return false;
 }
 void Capture::reset(VkCommandBuffer command){auto& p=*impl;std::lock_guard<std::mutex> lock(p.mutex);for(auto& c:p.copies)if(c->command==command)c->command=VK_NULL_HANDLE;}
 void Capture::submitted(VkQueue queue,const std::vector<VkCommandBuffer>& commands,uint32_t queueFamily,uint64_t submission,const CameraPair* camera,uint64_t historySubmission){
@@ -204,7 +217,7 @@ std::vector<GpuFrame> Capture::presentedGpu(const VkPresentInfoKHR& info,VkResul
         if(c->issued || !p.eligible(*c) || c->markerResult!=VK_SUCCESS || p.GetFenceStatus(p.device,c->fence)!=VK_SUCCESS)continue;
         if(c->snapshot.sourceBlit.status==SourceBlitStatus::submitted){c->snapshot.sourceBlit.gpuComplete=true;c->snapshot.sourceBlit.status=SourceBlitStatus::producerComplete;}
         const auto& s=c->snapshot;c->issued=true;++p.counters.leasesIssued;
-        out.push_back({c->lease,s.sequence,s.present,s.selectedDraws,s.eye,s.selectedMask,c->family,s.format,s.extent,c->image,c->queue,s.camera,s.sourceBlit,s.sourceBlitStages});
+        out.push_back({c->lease,s.sequence,s.present,s.selectedDraws,s.eye,s.selectedMask,c->family,s.format,s.extent,c->image,c->queue,s.camera,s.sourceBlit,s.sourceBlitStages,s.writerPrefix});
     }
     return out;
 }

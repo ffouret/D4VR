@@ -2,6 +2,7 @@
 #include "../core/eye_state.hpp"
 #include "../core/pose_request.hpp"
 #include "../core/blit_provenance.hpp"
+#include "../core/captured_writer_prefix.hpp"
 #include <vulkan/vulkan.h>
 #include <array>
 #include <functional>
@@ -21,6 +22,7 @@ struct ProjectionEye {
     uint64_t sceneSequence=0;
     SourceBlitObservation sourceBlit{};
     SourceBlitStages sourceBlitStages{};
+    CapturedWriterPrefix writerPrefix{};
 };
 // Diagnostic receipts for two DIFFERENT game presentations. These retain the
 // requested pose and the observed packets, but make no whole-scene/time claim.
@@ -30,6 +32,7 @@ struct SuccessiveEye {
     FrameCamera camera{};
     SourceBlitObservation sourceBlit{};
     SourceBlitStages sourceBlitStages{};
+    CapturedWriterPrefix writerPrefix{};
 };
 struct SuccessiveProjection {
     PoseRequest pose;
