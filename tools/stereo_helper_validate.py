@@ -24,10 +24,10 @@ def validate(compiler: Path,tools: Path,grammar_path: Path,glsl_path: Path,outpu
         subprocess.run([str(compiler),'-V','--target-env','vulkan1.1','-Od',*defines,str(src),'-o',str(path)],check=True,capture_output=True,timeout=30)
         subprocess.run([str(tools/'spirv-val'),'--target-env','vulkan1.2',str(path)],check=True,capture_output=True,timeout=30)
         return path
-    for name,defines in [('diagnostic',()),('no-telemetry',('-DD4VR_DIAGNOSTIC_TELEMETRY=0',))]:
+    for name,defines in [('diagnostic',()),('no-telemetry',('-DD4VR_DIAGNOSTIC_TELEMETRY=0',)),('source-clip-units',('-DD4VR_DIAGNOSTIC_TELEMETRY=0','-DD4VR_SOURCE_CLIP_UNITS=1'))]:
         path=compile_source('native/probe_gpu/stereo_transform.vert','helper-'+name,defines)
         result=analyze(path.read_bytes(),grammar,glsl)
-        if name=='no-telemetry':
+        if name!='diagnostic':
             contract=verify(path.read_bytes())
             if result['non_atomic_external_pointer_write_instructions'] or result['atomic_instructions'] or result['barrier_instructions']:
                 raise ValueError('Telemetry-free helper retains diagnostic memory operations')
@@ -47,13 +47,13 @@ def validate(compiler: Path,tools: Path,grammar_path: Path,glsl_path: Path,outpu
         original=compile_source(source,stem)
         for name,helper in helpers.items():
             path=output/(stem+'-'+name+'.spv')
-            build(original,helper,path,tools,3,0,72,stereo=True,helper_no_telemetry=name=='no-telemetry')
+            build(original,helper,path,tools,3,0,72,stereo=True,helper_no_telemetry=name!='diagnostic')
             module=Module(path.read_bytes());markers=[literal(a) for op,a in module.instructions if op==330]
             result=analyze(path.read_bytes(),grammar,glsl)
             expected=writes+(9 if name=='diagnostic' else 0)
             if result['non_atomic_external_pointer_write_instructions']!=expected or result['unresolved_pointer_write_instructions']:
                 raise ValueError('Source/helper writes were dropped or introduced')
-            if (MARKER in markers)!=(name=='no-telemetry') or 'D4VR_STEREO_ABI_1' not in markers:
+            if (MARKER in markers)!=(name!='diagnostic') or 'D4VR_STEREO_ABI_1' not in markers:
                 raise ValueError('Helper provenance marker missing or added to diagnostic output')
             if result['external_memory_writes_excluded'] or result['replay_allowed']:
                 raise ValueError('Helper marker falsely authorized a transformed module')

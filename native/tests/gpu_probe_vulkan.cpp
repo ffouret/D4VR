@@ -14,13 +14,14 @@
 #include "calibration_gpu_checks.hpp"
 #include "camera_block_gpu_checks.hpp"
 #include "fixed_partner_gpu_checks.hpp"
+#include "post_depth_gpu_checks.hpp"
 
 #include "vulkan_fixture.hpp"
 
 int main(int argc, char** argv) try {
     if (argc < 4) throw std::runtime_error("Usage: gpu_probe_vulkan original.spv probed.spv fragment.spv [--geometry|--stereo|--eye-bridge] [--dynamic] [--identifiers]");
     bool geometry = false, dynamic = false, identifiers = false, stereo = false, bridge = false,telemetryEnabled=true,depthCalibration=false,cameraBlock=false,fixedPartner=false;
-    std::string fragmentProjectionPath;
+    std::string fragmentProjectionPath,postDepthSuffix,postDepthControl="reference";
     for (int i = 4; i < argc; ++i) {
         auto arg = std::string(argv[i]);
         if (arg == "--geometry") geometry = true;
@@ -31,10 +32,15 @@ int main(int argc, char** argv) try {
         else if (arg == "--depth-calibration") {depthCalibration=true;stereo=true;geometry=true;dynamic=true;telemetryEnabled=false;}
         else if (arg == "--camera-block") {cameraBlock=true;geometry=true;dynamic=true;}
         else if (arg == "--fixed-partner") {fixedPartner=true;depthCalibration=true;stereo=true;geometry=true;dynamic=true;telemetryEnabled=false;}
+        else if (arg == "--post-depth" && i+1<argc) {postDepthSuffix=argv[++i];depthCalibration=true;stereo=true;geometry=true;dynamic=true;telemetryEnabled=false;}
+        else if (arg == "--post-depth-control" && i+1<argc) {postDepthControl=argv[++i];}
         else if (arg == "--fragment-projection" && i+1<argc) {fragmentProjectionPath=argv[++i];}
         else if (arg == "--eye-bridge") { bridge = true; geometry = true; dynamic = true; }
         else throw std::runtime_error("Unknown option: " + arg);
     }
+    if(!postDepthSuffix.empty() && postDepthSuffix!="bias" && postDepthSuffix!="clamp")throw std::runtime_error("Post-depth suffix must be bias or clamp");
+    if(postDepthControl!="reference" && postDepthControl!="naive" && postDepthControl!="late")throw std::runtime_error("Post-depth control must be reference, naive or late");
+    if(postDepthSuffix.empty() && postDepthControl!="reference")throw std::runtime_error("Post-depth control requires --post-depth");
     Fixture f(dynamic, identifiers);
     const uint32_t width = geometry ? 256 : 64, height = width, pixels = width * height * 4, ring_words = 8192;
     auto uniform = f.buffer(113 * 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
@@ -121,7 +127,7 @@ int main(int argc, char** argv) try {
         VkPipelineRenderingCreateInfo rendering{VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO}; rendering.colorAttachmentCount = 1; rendering.pColorAttachmentFormats = &image_create.format;
         if (dynamic) { p.renderPass = VK_NULL_HANDLE; p.pNext = &rendering; }
         VkPipelineDepthStencilStateCreateInfo depthState{VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO};
-        if(depthCalibration){rendering.depthAttachmentFormat=VK_FORMAT_D32_SFLOAT;depthState.depthTestEnable=depthState.depthWriteEnable=VK_TRUE;depthState.depthCompareOp=VK_COMPARE_OP_LESS;p.pDepthStencilState=&depthState;}
+        if(depthCalibration){rendering.depthAttachmentFormat=VK_FORMAT_D32_SFLOAT;depthState.depthTestEnable=depthState.depthWriteEnable=VK_TRUE;depthState.depthCompareOp=postDepthSuffix.empty()?VK_COMPARE_OP_LESS:VK_COMPARE_OP_LESS_OR_EQUAL;p.pDepthStencilState=&depthState;}
         VkPipeline result{}; check(vkCreateGraphicsPipelines(f.device, VK_NULL_HANDLE, 1, &p, nullptr, &result));
         if (identifiers) {
             auto query = reinterpret_cast<PFN_vkGetShaderModuleIdentifierEXT>(vkGetDeviceProcAddr(f.device,"vkGetShaderModuleIdentifierEXT"));
@@ -221,6 +227,7 @@ int main(int argc, char** argv) try {
         vkDestroyInstance(f.instance,nullptr); f.instance = VK_NULL_HANDLE;
     };
     if(cameraBlock){int result=d4vr_test_camera_block_gpu(uniform.mapped,control.mapped,ring.mapped,values.shader,original_pipeline,observer_pipeline,render);cleanup();return result;}
+    if(!postDepthSuffix.empty()){auto depth=[&]{auto p=static_cast<const float*>(depthStaging.mapped);return std::vector<float>(p,p+width*height);};int result=d4vr_test_post_depth_gpu(width,height,uniform.mapped,second_uniform.mapped,original_pipeline,observer_pipeline,render,depth,postDepthSuffix,postDepthControl);cleanup();return result;}
     if(depthCalibration){auto depth=[&]{auto p=static_cast<const float*>(depthStaging.mapped);return std::vector<float>(p,p+width*height);};int result=fixedPartner?d4vr_test_fixed_partner_gpu(width,height,uniform.mapped,second_uniform.mapped,original_pipeline,observer_pipeline,render,depth):d4vr_test_calibration_gpu(width,height,uniform.mapped,second_uniform.mapped,original_pipeline,observer_pipeline,render,depth);cleanup();return result;}
     if (bridge) {
         int result = d4vr_test_eye_bridge_gpu(uniform.mapped,second_uniform.mapped,control.mapped,ring.mapped,original_pipeline,observer_pipeline,render);

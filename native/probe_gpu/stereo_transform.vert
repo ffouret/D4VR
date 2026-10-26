@@ -4,6 +4,14 @@
 #ifndef D4VR_DIAGNOSTIC_TELEMETRY
 #define D4VR_DIAGNOSTIC_TELEMETRY 1
 #endif
+// Opt-in: keep the clip-space magnitude expected by original computations
+// performed AFTER projection (for example a reciprocal-W depth bias).
+#ifndef D4VR_SOURCE_CLIP_UNITS
+#define D4VR_SOURCE_CLIP_UNITS 0
+#endif
+#if D4VR_SOURCE_CLIP_UNITS != 0 && D4VR_SOURCE_CLIP_UNITS != 1
+#error D4VR_SOURCE_CLIP_UNITS must be zero or one
+#endif
 #if D4VR_DIAGNOSTIC_TELEMETRY != 0 && D4VR_DIAGNOSTIC_TELEMETRY != 1
 #error D4VR_DIAGNOSTIC_TELEMETRY must be zero or one
 #endif
@@ -99,7 +107,16 @@ void d4vr_stereo(uint vertex_id, vec4 p0, vec4 p1, vec4 p2, vec4 p3,
                                       dot(state.eye_projection[2], eye_view), dot(state.eye_projection[3], eye_view));
                 // Optical XY in meters; each pass retains its own forward
                 // depth coefficients, with the near coefficient scaled too.
-                if (source_depth) {clip_position.z = p2.z * eye_view.z + p2.w * gate.w * eye_view.w; clip_position.w = -eye_view.z;}
+                if (source_depth) {
+                    clip_position.z = p2.z * eye_view.z + p2.w * gate.w * eye_view.w;
+                    clip_position.w = -eye_view.z;
+#if D4VR_SOURCE_CLIP_UNITS
+                    // gate.w is the validated positive meters-per-VIEW-unit.
+                    // A uniform homogeneous divide preserves NDC while restoring
+                    // source clip units before the original nonlinear suffix.
+                    clip_position /= gate.w;
+#endif
+                }
             }
             applied = true;
         }

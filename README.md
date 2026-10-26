@@ -10,6 +10,14 @@ répond pas à cet objectif.
 
 ## État du projet
 
+L’analyse des quatre shaders sans variante a isolé deux calculs de profondeur
+appliqués après la projection. Le [nouveau contrôle géométrique](docs/POST_PROJECTION_DEPTH.md)
+préserve ces calculs et corrige leurs unités de clip : 144 références GPU passent
+en natif et dans le runtime Steam, sans erreur Khronos. Deux candidats privés
+sont construits et validés, mais ne sont pas admis dans le bundle du jeu.
+Cette étape n’a lancé ni Diablo ni le casque et ne prouve aucune réparation
+des trous au champ élargi.
+
 Le [suivi de la source de profondeur](docs/SOURCE_HISTORY.md) relie maintenant les
 lectures aux utilisations exactes de leur image, dans la même session. Un
 [nouvel essai Diablo](docs/proofs/diablo-source-history-v1.json) garde trois ponts
