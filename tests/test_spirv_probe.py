@@ -36,6 +36,25 @@ class ObserverInstrumentationTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'extent'):
                 spirv_probe.instrument(self.data, 3, 0, first, 1, second)
 
+    def test_fixed_partner_mode_requires_both_original_projection_reads(self):
+        with self.assertRaisesRegex(ValueError,'requires early'):
+            spirv_probe.instrument(self.data,3,0,72,fixed_partner_projection=True)
+        with self.assertRaisesRegex(ValueError,'Both original'):
+            spirv_probe.instrument(self.data,3,0,72,stereo=True,projection_only_helper=True,projection_input=True,fixed_partner_projection=True)
+
+    def test_fixed_partner_keeps_original_stores_and_adds_only_local_outputs(self):
+        m=spirv_probe.Module(self.data);target=next(a[0] for op,a in m.instructions if op==71 and a[1:]==[33,0])
+        access=next(a for op,a in m.instructions if op==65 and a[2]==target)
+        types={a[0]:(op,a[1:]) for op,a in m.instructions if 19<=op<=39}
+        row=next(a[1] for op,a in m.instructions if op==43 and a[2:]==[80])
+        ptr,value=m.allocate(),m.allocate();extra=[(65,[access[0],ptr,target,access[3],row]),(61,[types[access[0]][1][1],value,ptr])]
+        i=next(i for i,(op,a) in enumerate(m.instructions) if op==253);m.instructions[i:i]=extra
+        transformed=spirv_probe.Module(spirv_probe.instrument(m.binary(),3,0,72,stereo=True,projection_only_helper=True,projection_input=True,fixed_partner_projection=True))
+        self.assertEqual(sum(op==57 for op,a in transformed.instructions),8)
+        old=[a for op,a in m.instructions if op==62];variables={a[1]:a[2] for op,a in transformed.instructions if op==59}
+        for a in old:self.assertIn((62,a),transformed.instructions)
+        self.assertTrue(all(variables.get(a[0])==7 for op,a in transformed.instructions if op==62 and a not in old))
+
     def test_geometry_mode_adds_position_parameter_and_explicit_output_store(self):
         observed = spirv_probe.Module(spirv_probe.instrument(self.data, 3, 0, 72, geometry=True))
         imports = [a for op, a in observed.instructions if op == 71 and a[1] == 41]

@@ -71,7 +71,8 @@ def helper_library(data: bytes, geometry: bool = False, stereo: bool = False, ca
     return module.binary()
 
 
-def instrument(data: bytes, descriptor_set: int, binding: int, first_row: int, secondary_binding: int = 1, secondary_row: int = 56, geometry: bool = False, stereo: bool = False, projection_only_helper: bool = False, projection_input: bool = False, camera_block_rows: int = 0) -> bytes:
+def instrument(data: bytes, descriptor_set: int, binding: int, first_row: int, secondary_binding: int = 1, secondary_row: int = 56, geometry: bool = False, stereo: bool = False, projection_only_helper: bool = False, projection_input: bool = False, camera_block_rows: int = 0, fixed_partner_projection: bool = False) -> bytes:
+    if fixed_partner_projection and not projection_input:raise ValueError('Fixed partner projection requires early projection input')
     if camera_block_rows and (not 4<=camera_block_rows<=128 or geometry or stereo or projection_only_helper or projection_input):raise ValueError('Camera block observer mode/row budget')
     if projection_only_helper and not stereo:raise ValueError('Projection-only helper requires stereo mode')
     if projection_input and not projection_only_helper:raise ValueError('Projection input requires the projection-only helper')
@@ -129,6 +130,7 @@ def instrument(data: bytes, descriptor_set: int, binding: int, first_row: int, s
         return target, vector_type
 
     target, vector_type = uniform_source(descriptor_set, binding, first_row)
+    if fixed_partner_projection:uniform_source(descriptor_set,binding,80)
     if camera_block_rows:
         uniform_source(descriptor_set,binding,first_row+camera_block_rows-4)
     elif not projection_only_helper:
@@ -246,7 +248,10 @@ def instrument(data: bytes, descriptor_set: int, binding: int, first_row: int, s
         return code
 
     if projection_input:
-        from projection_input import rewrite
+        if fixed_partner_projection:
+            from fixed_partner_projection import rewrite
+        else:
+            from projection_input import rewrite
         output=rewrite(module,main,target,first_row,vector_type,types,constants,locals_,local_declarations,
             imported,void,uint,zero,unused_vector,uniform_vector_pointer,type_id,constant)
         module.instructions=output
@@ -292,7 +297,7 @@ def instrument(data: bytes, descriptor_set: int, binding: int, first_row: int, s
     return module.binary()
 
 
-def build(original: Path, helper: Path, output: Path, tools: Path, descriptor_set: int, binding: int, first_row: int, secondary_binding: int = 1, secondary_row: int = 56, geometry: bool = False, stereo: bool = False, helper_no_telemetry: bool = False, projection_only_helper: bool = False, projection_input: bool = False, camera_block_rows: int = 0):
+def build(original: Path, helper: Path, output: Path, tools: Path, descriptor_set: int, binding: int, first_row: int, secondary_binding: int = 1, secondary_row: int = 56, geometry: bool = False, stereo: bool = False, helper_no_telemetry: bool = False, projection_only_helper: bool = False, projection_input: bool = False, camera_block_rows: int = 0, fixed_partner_projection: bool = False):
     if projection_input and not (projection_only_helper and helper_no_telemetry):raise ValueError('Projection input requires a validated projection-only telemetry-free helper')
     if projection_only_helper and not (stereo and helper_no_telemetry):
         raise ValueError('Projection-only helper requires stereo and telemetry-free validation')
@@ -312,7 +317,7 @@ def build(original: Path, helper: Path, output: Path, tools: Path, descriptor_se
             subprocess.run([str(tools / 'spirv-val'), '--target-env', 'vulkan1.2', str(snapshot)], check=True, capture_output=True)
         (verify_projection_only if projection_only_helper else verify)(helper_data)
     library.write_bytes(helper_library(helper_data, geometry, stereo,camera_block_rows))
-    caller.write_bytes(instrument(original.read_bytes(), descriptor_set, binding, first_row, secondary_binding, secondary_row, geometry, stereo, projection_only_helper,projection_input,camera_block_rows))
+    caller.write_bytes(instrument(original.read_bytes(), descriptor_set, binding, first_row, secondary_binding, secondary_row, geometry, stereo, projection_only_helper,projection_input,camera_block_rows,fixed_partner_projection))
     subprocess.run([str(tools / "spirv-link"), "--target-env", "spv1.3", str(caller), str(library), "-o", str(linked)], check=True, capture_output=True)
     subprocess.run([str(tools / "spirv-opt"), "--eliminate-dead-functions", "--eliminate-dead-variables", str(linked), "-o", str(output)], check=True, capture_output=True)
     if stereo:
@@ -326,6 +331,7 @@ def build(original: Path, helper: Path, output: Path, tools: Path, descriptor_se
             from stereo_helper import PROJECTION_MARKER
             module.instructions.insert(index+2, (330, string_words(PROJECTION_MARKER)))
         if projection_input:module.instructions.insert(index+3,(330,string_words('D4VR_PROJECTION_INPUT_1')))
+        if fixed_partner_projection:module.instructions.insert(index+4,(330,string_words('D4VR_FIXED_PARTNER_PROJECTION_1')))
         output.write_bytes(module.binary())
     subprocess.run([str(tools / "spirv-val"), "--target-env", "vulkan1.2", str(output)], check=True, capture_output=True)
     return output
@@ -348,8 +354,9 @@ def main():
     parser.add_argument("--projection-only-helper", action="store_true", help="Omit added model-view buffer reads after proving that the helper's four object parameters are unused")
     parser.add_argument('--projection-input',action='store_true',help='Transform canonical projection loads before all original vertex computations; diagnostic only')
     parser.add_argument('--camera-block-rows',type=int,default=0,help='Read a bounded camera neighborhood through the matching block-observer helper')
+    parser.add_argument('--fixed-partner-projection',action='store_true',help='Owned diagnostic: one fixed transform for source projections 72 and 80; no temporal XR history')
     args = parser.parse_args()
-    print(build(args.original, args.helper, args.output, args.tools, args.descriptor_set, args.binding, args.first_row, args.secondary_binding, args.secondary_row, args.geometry, args.stereo, args.helper_no_telemetry, args.projection_only_helper,args.projection_input,args.camera_block_rows))
+    print(build(args.original, args.helper, args.output, args.tools, args.descriptor_set, args.binding, args.first_row, args.secondary_binding, args.secondary_row, args.geometry, args.stereo, args.helper_no_telemetry, args.projection_only_helper,args.projection_input,args.camera_block_rows,args.fixed_partner_projection))
 
 
 if __name__ == "__main__":

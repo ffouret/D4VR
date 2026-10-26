@@ -13,12 +13,13 @@
 #include "stereo_gpu_checks.hpp"
 #include "calibration_gpu_checks.hpp"
 #include "camera_block_gpu_checks.hpp"
+#include "fixed_partner_gpu_checks.hpp"
 
 #include "vulkan_fixture.hpp"
 
 int main(int argc, char** argv) try {
     if (argc < 4) throw std::runtime_error("Usage: gpu_probe_vulkan original.spv probed.spv fragment.spv [--geometry|--stereo|--eye-bridge] [--dynamic] [--identifiers]");
-    bool geometry = false, dynamic = false, identifiers = false, stereo = false, bridge = false,telemetryEnabled=true,depthCalibration=false,cameraBlock=false;
+    bool geometry = false, dynamic = false, identifiers = false, stereo = false, bridge = false,telemetryEnabled=true,depthCalibration=false,cameraBlock=false,fixedPartner=false;
     for (int i = 4; i < argc; ++i) {
         auto arg = std::string(argv[i]);
         if (arg == "--geometry") geometry = true;
@@ -28,6 +29,7 @@ int main(int argc, char** argv) try {
         else if (arg == "--stereo-no-telemetry") { stereo = true; geometry = true; dynamic = true;telemetryEnabled=false; }
         else if (arg == "--depth-calibration") {depthCalibration=true;stereo=true;geometry=true;dynamic=true;telemetryEnabled=false;}
         else if (arg == "--camera-block") {cameraBlock=true;geometry=true;dynamic=true;}
+        else if (arg == "--fixed-partner") {fixedPartner=true;depthCalibration=true;stereo=true;geometry=true;dynamic=true;telemetryEnabled=false;}
         else if (arg == "--eye-bridge") { bridge = true; geometry = true; dynamic = true; }
         else throw std::runtime_error("Unknown option: " + arg);
     }
@@ -212,7 +214,7 @@ int main(int argc, char** argv) try {
         vkDestroyInstance(f.instance,nullptr); f.instance = VK_NULL_HANDLE;
     };
     if(cameraBlock){int result=d4vr_test_camera_block_gpu(uniform.mapped,control.mapped,ring.mapped,values.shader,original_pipeline,observer_pipeline,render);cleanup();return result;}
-    if(depthCalibration){auto depth=[&]{auto p=static_cast<const float*>(depthStaging.mapped);return std::vector<float>(p,p+width*height);};int result=d4vr_test_calibration_gpu(width,height,uniform.mapped,second_uniform.mapped,original_pipeline,observer_pipeline,render,depth);cleanup();return result;}
+    if(depthCalibration){auto depth=[&]{auto p=static_cast<const float*>(depthStaging.mapped);return std::vector<float>(p,p+width*height);};int result=fixedPartner?d4vr_test_fixed_partner_gpu(width,height,uniform.mapped,second_uniform.mapped,original_pipeline,observer_pipeline,render,depth):d4vr_test_calibration_gpu(width,height,uniform.mapped,second_uniform.mapped,original_pipeline,observer_pipeline,render,depth);cleanup();return result;}
     if (bridge) {
         int result = d4vr_test_eye_bridge_gpu(uniform.mapped,second_uniform.mapped,control.mapped,ring.mapped,original_pipeline,observer_pipeline,render);
         cleanup(); return result;

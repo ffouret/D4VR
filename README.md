@@ -10,6 +10,15 @@ répond pas à cet objectif.
 
 ## État du projet
 
+Un [diagnostic de projections partenaires](docs/PARTNER_PROJECTION.md) suit
+maintenant les lectures repérées jusqu'aux sorties originales. La projection
+voisine alimente une autre sortie dans six shaders ; l'inverse contribue à
+d'autres coordonnées et à des conditions dans deux shaders. Un nouveau mode
+expérimental transforme deux projections distinctes avec une transformation
+fixe et conserve l'inverse original. Il passe 48 références GPU par environnement,
+avec contrôles négatifs, mais **n'a pas été lancé dans Diablo**. Les rôles
+temporels et les consommateurs de ces sorties restent à établir avant son essai.
+
 Un [relevé GPU sans modification de caméra](docs/CAMERA_BLOCK.md) identifie
 maintenant des matrices associées dans Diablo réel : 64 blocs complets retrouvent
 les mêmes couples de matrices inverses et trois variantes de projection. Six des
