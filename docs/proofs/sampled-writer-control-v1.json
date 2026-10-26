@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "scope": "Owned sampled-image writer control using two unchanged privately verified stage modules and owned inputs; no new game trial",
+  "environments": [
+    "native",
+    "Steam Runtime"
+  ],
+  "physical_cases": 18,
+  "cases_per_environment": 9,
+  "normal_states_per_environment": 6,
+  "wrong_field_controls_per_environment": 3,
+  "target_format": "B8G8R8A8_UNORM",
+  "target_extent": [
+    2560,
+    1440
+  ],
+  "bytes_per_readback": 14745600,
+  "total_compared_bytes": 265420800,
+  "mismatched_bytes_against_independent_actual_state_reference": 0,
+  "native_and_steam_runtime_bytes_equal": true,
+  "independent_reference": "Integer pixel-center UV, nearest sampling of two known8x8RGBA8 textures, clamp/repeat, exact1/8 offsets, nonzero initialized LOAD sentinel, explicit viewport/scissor; GPU output hashes are not references",
+  "wrong_field_controls_per_environment_results": [
+    {
+      "case": "wrong_image_word",
+      "reference": "B_clamp_offset",
+      "different_pixels": 3686400,
+      "different_bytes": 11001600
+    },
+    {
+      "case": "wrong_ubo_component",
+      "reference": "B_clamp_offset",
+      "different_pixels": 3628800,
+      "different_bytes": 10080000
+    },
+    {
+      "case": "wrong_sampler_word",
+      "reference": "B_repeat_offset",
+      "different_pixels": 864000,
+      "different_bytes": 1785600
+    }
+  ],
+  "coverage_controls_per_environment": [
+    {
+      "actual": "B_clamp_offset_center_scissor_LOAD",
+      "reference": "B_clamp_offset",
+      "bytes": 8294400,
+      "pixels": 2764800,
+      "reference_sha256": "adc159963d8f05525f079a12e990e14cd7686f7cb063dbc3ca7b25cf60a2f4c6"
+    },
+    {
+      "actual": "B_clamp_offset_center_viewport_LOAD",
+      "reference": "B_clamp_offset_center_scissor_LOAD",
+      "bytes": 2246400,
+      "pixels": 864000,
+      "reference_sha256": "e0114fbd71a171c05f22f8b31a18de185940960c77ef08b3357d05f94b133248"
+    }
+  ],
+  "synchronization_validation_errors": 0,
+  "callback_warning_counts": {
+    "native": 3,
+    "steam-runtime": 5
+  },
+  "warnings": "Loader notices: explicit validation-layer environment twice, unsupported nonselected DZN ICD skipped; Steam Runtime additionally removes two duplicate NVIDIA implicit layers. No VUID or synchronization hazard reported.",
+  "original_private_module_files_unchanged": true,
+  "private_module_contents_paths_and_identities_published": false,
+  "fixture_sha256": "7f25dad0ecf34b283164ea001707f24156466c9f62bf301f3e11e08f91b14c19",
+  "source_sha256": {
+    "native/tests/sampled_writer_gpu.cpp": "fd3be6f88711be741c2f29d9dae91468f77c2466e494ea34cbaa6a24c3ef2efb",
+    "native/tests/sampled_writer_hash.hpp": "f6b59c3568c23d6f3198a8d952fbdcf8a4da85db945d311a0b369d15ae266f9e",
+    "tools/sampled_writer_validate.py": "f2414d310ef86f5c2e62b0158e676caa9129e5342c526a2e08a86b899b8419b7",
+    "tests/test_sampled_writer_validate.py": "228896984007d2ad5e75b37eafaee9fc47d24c3896204b365cbe98523c2918ed",
+    "native/CMakeLists.txt": "58d71e904cc1664019d0fc0072b31f1dfbd2bd8651b739e53cb65a37dae5080a"
+  },
+  "physical_proof_sha256": "9e9db6039dcafca857bb0d9321fbecea4eb8142c51a861702a2caff260298d6b",
+  "build_proof_sha256": "841073d2652308ebf53917dfb3cb07bf9e5b35d06a2d632815124cc406189762",
+  "local_host_build_strict": true,
+  "local_windows_object_compiled_not_executed": true,
+  "cpu_hash_vectors": 12,
+  "audit_tests": 14,
+  "portable_python_tests": 324,
+  "original_pipeline_and_resource_lifetimes_not_inherited_from_game": true,
+  "claims": {
+    "game_rendered": false,
+    "new_game_trial": false,
+    "game_sampled_resource_identified": false,
+    "game_uv_offset_known": false,
+    "game_viewport_scissor_known": false,
+    "game_pixel_cause_proven": false,
+    "game_coverage_repaired": false,
+    "shader_modified": false,
+    "new_game_bundle": false,
+    "xr_submission": false,
+    "physical_steamvr_certified": false,
+    "immersive_continuous_vr": false
+  },
+  "limits": [
+    "Independent owned raster workload; it does not identify which alternative explains the game rectangle.",
+    "Original CPU draw state, descriptor placement and UBO resource/value remain to be observed safely in the same recording and lease.",
+    "Each owned submission is serially fence-waited; no game or VR cadence is established.",
+    "No new layer, game shader override or helper is built. Existing game evidence and resource budgets are unchanged."
+  ],
+  "independent_execution_review_sha256": "60a266ef74f26a20389cc5f694f79961555195ebc2b9e88ee038e015cdd0cee8",
+  "independent_execution_review": "Re-read all18 actual readbacks against the independent CPU oracle prepared before the GPU fixture, all five pixel mismatch counts, raw PC/UBO inputs, unchanged private modules and frozen source/binary chain; no GPU re-execution."
+}

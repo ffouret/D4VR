@@ -1,0 +1,188 @@
+// Owned pixel control using unchanged original modules supplied privately at
+// execution. No WSI, game, OpenXR, observer layer, substitute shader or bundle.
+#include <vulkan/vulkan.h>
+#include "sampled_writer_hash.hpp"
+#include <array>
+#include <atomic>
+#include <cstring>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <mutex>
+#include <stdexcept>
+#include <vector>
+
+namespace {
+constexpr uint32_t width=2560,height=1440,textureSize=8;
+constexpr std::size_t targetBytes=std::size_t(width)*height*4;
+void require(bool value,const char* message){if(!value)throw std::runtime_error(message);}
+void check(VkResult result,const char* operation){if(result!=VK_SUCCESS)throw std::runtime_error(std::string(operation)+": "+std::to_string(result));}
+std::string quote(const std::string& value){std::ostringstream out;out<<'"';for(unsigned char c:value){if(c=='"'||c=='\\')out<<'\\'<<c;else if(c<32)out<<"\\u"<<std::hex<<std::setw(4)<<std::setfill('0')<<unsigned(c)<<std::dec;else out<<c;}out<<'"';return out.str();}
+void write(const std::filesystem::path& path,const void* data,std::size_t bytes){std::ofstream out(path,std::ios::binary);require(bool(out),"Cannot create output");out.write(static_cast<const char*>(data),std::streamsize(bytes));require(bool(out),"Output write failed");}
+struct Module {
+    std::string path;uint32_t stage=0,executionModel=0;std::vector<uint32_t> code;VkShaderModule handle{};
+    Module(const std::string& name,uint32_t s,uint32_t model):path(std::filesystem::absolute(name).string()),stage(s),executionModel(model){
+        std::ifstream file(path,std::ios::binary|std::ios::ate);require(bool(file),"Cannot read original shader");const auto size=file.tellg();
+        require(size>0 && uint64_t(size)%4==0 && uint64_t(size)<=1024*1024,"Invalid original shader size");code.resize(std::size_t(size)/4);file.seekg(0);file.read(reinterpret_cast<char*>(code.data()),size);require(bool(file),"Incomplete original shader read");
+        require(code.size()>=5 && code[0]==0x07230203,"Expected unchanged little-endian SPIR-V");bool entry=false;
+        for(std::size_t i=5;i<code.size();){const auto count=code[i]>>16,opcode=code[i]&65535;require(count && count<=code.size()-i,"Malformed SPIR-V instruction");
+            if(opcode==15){require(count>=4,"Malformed SPIR-V entry point");const auto* text=reinterpret_cast<const char*>(&code[i+3]);const auto length=std::size_t(count-3)*4;
+                require(std::memchr(text,0,length)!=nullptr,"Unterminated SPIR-V entry");if(std::string(text)=="main"){require(code[i+1]==executionModel,"Wrong main execution model");entry=true;}}
+            i+=count;
+        }require(entry,"Original shader has no matching main entry");
+    }
+    std::string metadata() const {const auto bytes=code.size()*4;std::ostringstream out;out<<"{\"stage\":"<<stage<<",\"execution_model\":"<<executionModel<<",\"entry\":\"main\",\"path\":"<<quote(path)
+        <<",\"bytes\":"<<bytes<<",\"sha256\":"<<quote(sampled_writer::sha256(code.data(),bytes))<<",\"fnv\":"<<quote(std::to_string(sampled_writer::fnv1a64(code.data(),bytes)))<<'}';return out.str();}
+};
+struct Case {
+    const char* name;uint32_t image=1,sampler=0;int shiftX=1,shiftY=-1;bool centerScissor=false,centerViewport=false;
+    bool negative=false;const char* intended="B_clamp_offset";bool wrongImage=false,wrongUbo=false,wrongSampler=false;
+};
+const std::array<Case,9> cases{{
+    {"A_clamp_zero",0,0,0,0,false,false,false,"A_clamp_zero"},
+    {"B_clamp_zero",1,0,0,0,false,false,false,"B_clamp_zero"},
+    {"B_clamp_offset",1,0,1,-1,false,false,false,"B_clamp_offset"},
+    {"B_repeat_offset",1,1,1,-1,false,false,false,"B_repeat_offset"},
+    {"B_clamp_offset_center_scissor_LOAD",1,0,1,-1,true,false,false,"B_clamp_offset_center_scissor_LOAD"},
+    {"B_clamp_offset_center_viewport_LOAD",1,0,1,-1,false,true,false,"B_clamp_offset_center_viewport_LOAD"},
+    {"wrong_image_word",0,0,1,-1,false,false,true,"B_clamp_offset",true,false,false},
+    {"wrong_ubo_component",1,0,0,0,false,false,true,"B_clamp_offset",false,true,false},
+    {"wrong_sampler_word",1,0,1,-1,false,false,true,"B_repeat_offset",false,false,true}
+}};
+struct Buffer {VkBuffer handle{};VkDeviceMemory memory{};void* mapped{};VkDeviceSize size=0;};
+struct Image {VkImage handle{};VkDeviceMemory memory{};VkImageView view{};};
+struct Owned {
+    VkInstance instance{};VkDebugUtilsMessengerEXT messenger{};VkPhysicalDevice physical{};VkDevice device{};VkQueue queue{};uint32_t family=0;
+    VkPhysicalDeviceProperties properties{};VkPhysicalDeviceMemoryProperties memory{};
+    std::atomic<unsigned> errors{0},warnings{0};std::mutex logMutex;std::ofstream validationLog;
+    PFN_vkDestroyDebugUtilsMessengerEXT destroyMessenger{};
+    std::array<Image,2> textures{};Image target{};Buffer staging{},ubo{},readback{};
+    std::array<VkSampler,2> samplers{};std::array<VkDescriptorSetLayout,4> setLayouts{};std::array<VkDescriptorSet,4> sets{};
+    VkDescriptorPool descriptorPool{};VkPipelineLayout layout{};VkPipeline pipeline{};VkCommandPool pool{};VkCommandBuffer command{};VkFence fence{};
+    Module& vertex;Module& fragment;bool targetInitialized=false;uint32_t submissions=0;
+    Owned(Module& v,Module& f,const std::filesystem::path& output):validationLog(output/"validation.log"),vertex(v),fragment(f){require(bool(validationLog),"Cannot create validation log");}
+    static VKAPI_ATTR VkBool32 VKAPI_CALL debug(VkDebugUtilsMessageSeverityFlagBitsEXT severity,VkDebugUtilsMessageTypeFlagsEXT,const VkDebugUtilsMessengerCallbackDataEXT* data,void* user){
+        auto& self=*static_cast<Owned*>(user);if(severity&VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)++self.errors;else if(severity&VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)++self.warnings;
+        std::lock_guard<std::mutex> lock(self.logMutex);self.validationLog<<(data&&data->pMessage?data->pMessage:"missing validation message")<<'\n';self.validationLog.flush();
+        if(severity&VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)std::cerr<<(data&&data->pMessage?data->pMessage:"validation error")<<'\n';
+        return VK_FALSE;
+    }
+    void setup(){
+        uint32_t count=0;check(vkEnumerateInstanceLayerProperties(&count,nullptr),"Enumerate layers");std::vector<VkLayerProperties> layers(count);check(vkEnumerateInstanceLayerProperties(&count,layers.data()),"Enumerate layers");bool validation=false;
+        for(const auto& layer:layers)if(!std::strcmp(layer.layerName,"VK_LAYER_KHRONOS_validation"))validation=true;
+        require(validation,"Khronos validation layer required");
+        VkDebugUtilsMessengerCreateInfoEXT debugInfo{VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT};debugInfo.messageSeverity=VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT|VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+        debugInfo.messageType=VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT|VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT|VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;debugInfo.pfnUserCallback=debug;debugInfo.pUserData=this;
+        const VkValidationFeatureEnableEXT sync=VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT;VkValidationFeaturesEXT validationFeatures{VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT};validationFeatures.enabledValidationFeatureCount=1;validationFeatures.pEnabledValidationFeatures=&sync;validationFeatures.pNext=&debugInfo;
+        const char* extensions[]{VK_EXT_DEBUG_UTILS_EXTENSION_NAME,VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME};const char* layer="VK_LAYER_KHRONOS_validation";
+        VkApplicationInfo app{VK_STRUCTURE_TYPE_APPLICATION_INFO};app.pApplicationName="D4VR owned original sampled writer pixel control";app.apiVersion=VK_API_VERSION_1_3;
+        VkInstanceCreateInfo create{VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO};create.pNext=&validationFeatures;create.pApplicationInfo=&app;create.enabledLayerCount=1;create.ppEnabledLayerNames=&layer;create.enabledExtensionCount=2;create.ppEnabledExtensionNames=extensions;check(vkCreateInstance(&create,nullptr,&instance),"Create instance");
+        auto createMessenger=reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(vkGetInstanceProcAddr(instance,"vkCreateDebugUtilsMessengerEXT"));destroyMessenger=reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(vkGetInstanceProcAddr(instance,"vkDestroyDebugUtilsMessengerEXT"));require(createMessenger&&destroyMessenger,"Debug messenger unavailable");check(createMessenger(instance,&debugInfo,nullptr,&messenger),"Create debug messenger");
+        check(vkEnumeratePhysicalDevices(instance,&count,nullptr),"Enumerate devices");std::vector<VkPhysicalDevice> devices(count);check(vkEnumeratePhysicalDevices(instance,&count,devices.data()),"Enumerate devices");
+        for(auto candidate:devices){VkPhysicalDeviceProperties p{};vkGetPhysicalDeviceProperties(candidate,&p);if(p.vendorID==0x10de && p.apiVersion>=VK_API_VERSION_1_3){physical=candidate;properties=p;break;}}require(physical,"NVIDIA Vulkan 1.3 device required");
+        VkPhysicalDeviceVulkan13Features supported13{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES};VkPhysicalDeviceVulkan12Features supported12{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES};VkPhysicalDeviceVulkan11Features supported11{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES};supported11.pNext=&supported12;supported12.pNext=&supported13;
+        VkPhysicalDeviceFeatures2 supported{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2};supported.pNext=&supported11;vkGetPhysicalDeviceFeatures2(physical,&supported);
+        require(supported.features.shaderSampledImageArrayDynamicIndexing && supported11.shaderDrawParameters && supported12.bufferDeviceAddress && supported12.runtimeDescriptorArray && supported13.dynamicRendering,"Exact original shader descriptor/draw/address/rendering features unavailable");
+        require(properties.limits.maxUniformBufferRange>=1280 && properties.limits.maxPushConstantsSize>=28 && properties.limits.maxBoundDescriptorSets>=4,"Required owned pipeline limits unavailable");
+        vkGetPhysicalDeviceMemoryProperties(physical,&memory);vkGetPhysicalDeviceQueueFamilyProperties(physical,&count,nullptr);std::vector<VkQueueFamilyProperties> families(count);vkGetPhysicalDeviceQueueFamilyProperties(physical,&count,families.data());for(;family<count;++family)if(families[family].queueFlags&VK_QUEUE_GRAPHICS_BIT)break;require(family<count,"Graphics queue required");
+        float priority=1;VkDeviceQueueCreateInfo queueInfo{VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO};queueInfo.queueFamilyIndex=family;queueInfo.queueCount=1;queueInfo.pQueuePriorities=&priority;
+        VkPhysicalDeviceFeatures enabled{};enabled.shaderSampledImageArrayDynamicIndexing=VK_TRUE;
+        VkPhysicalDeviceVulkan11Features enabled11{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES};enabled11.shaderDrawParameters=VK_TRUE;
+        VkPhysicalDeviceVulkan12Features enabled12{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES};enabled12.runtimeDescriptorArray=enabled12.bufferDeviceAddress=VK_TRUE;
+        VkPhysicalDeviceVulkan13Features enabled13{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES};enabled13.dynamicRendering=VK_TRUE;enabled11.pNext=&enabled12;enabled12.pNext=&enabled13;
+        VkDeviceCreateInfo deviceInfo{VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO};deviceInfo.pNext=&enabled11;deviceInfo.pEnabledFeatures=&enabled;deviceInfo.queueCreateInfoCount=1;deviceInfo.pQueueCreateInfos=&queueInfo;check(vkCreateDevice(physical,&deviceInfo,nullptr,&device),"Create feature-exact device");vkGetDeviceQueue(device,family,0,&queue);
+        createImage(textures[0],8,8,VK_FORMAT_R8G8B8A8_UNORM,VK_IMAGE_USAGE_TRANSFER_DST_BIT|VK_IMAGE_USAGE_SAMPLED_BIT);
+        createImage(textures[1],8,8,VK_FORMAT_R8G8B8A8_UNORM,VK_IMAGE_USAGE_TRANSFER_DST_BIT|VK_IMAGE_USAGE_SAMPLED_BIT);
+        createImage(target,width,height,VK_FORMAT_B8G8R8A8_UNORM,VK_IMAGE_USAGE_TRANSFER_DST_BIT|VK_IMAGE_USAGE_TRANSFER_SRC_BIT|VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+        createBuffer(staging,512,VK_BUFFER_USAGE_TRANSFER_SRC_BIT);createBuffer(ubo,1280,VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);createBuffer(readback,targetBytes,VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+        VkCommandPoolCreateInfo poolInfo{VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};poolInfo.queueFamilyIndex=family;check(vkCreateCommandPool(device,&poolInfo,nullptr,&pool),"Create command pool");VkCommandBufferAllocateInfo allocate{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};allocate.commandPool=pool;allocate.level=VK_COMMAND_BUFFER_LEVEL_PRIMARY;allocate.commandBufferCount=1;check(vkAllocateCommandBuffers(device,&allocate,&command),"Allocate command buffer");VkFenceCreateInfo fenceInfo{VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};check(vkCreateFence(device,&fenceInfo,nullptr,&fence),"Create owned fence");
+        createDescriptors();createPipeline();require(!errors.load(),"Validation error during owned setup");
+    }
+    uint32_t memoryType(uint32_t mask,VkMemoryPropertyFlags flags){for(uint32_t i=0;i<memory.memoryTypeCount;++i)if((mask&(1u<<i)) && (memory.memoryTypes[i].propertyFlags&flags)==flags)return i;throw std::runtime_error("Required memory type unavailable");}
+    void createBuffer(Buffer& out,VkDeviceSize size,VkBufferUsageFlags usage){out.size=size;VkBufferCreateInfo info{VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};info.size=size;info.usage=usage;check(vkCreateBuffer(device,&info,nullptr,&out.handle),"Create owned buffer");VkMemoryRequirements mr{};vkGetBufferMemoryRequirements(device,out.handle,&mr);VkMemoryAllocateInfo a{VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};a.allocationSize=mr.size;a.memoryTypeIndex=memoryType(mr.memoryTypeBits,VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT|VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);check(vkAllocateMemory(device,&a,nullptr,&out.memory),"Allocate owned buffer memory");check(vkBindBufferMemory(device,out.handle,out.memory,0),"Bind buffer");check(vkMapMemory(device,out.memory,0,size,0,&out.mapped),"Map owned buffer");std::memset(out.mapped,0,std::size_t(size));}
+    void createImage(Image& out,uint32_t w,uint32_t h,VkFormat format,VkImageUsageFlags usage){
+        VkFormatProperties features{};vkGetPhysicalDeviceFormatProperties(physical,format,&features);VkFormatFeatureFlags required=VK_FORMAT_FEATURE_TRANSFER_DST_BIT;if(usage&VK_IMAGE_USAGE_SAMPLED_BIT)required|=VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT;if(usage&VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)required|=VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT;if(usage&VK_IMAGE_USAGE_TRANSFER_SRC_BIT)required|=VK_FORMAT_FEATURE_TRANSFER_SRC_BIT;require((features.optimalTilingFeatures&required)==required,"Required format features unavailable");
+        VkImageCreateInfo info{VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};info.imageType=VK_IMAGE_TYPE_2D;info.format=format;info.extent={w,h,1};info.mipLevels=info.arrayLayers=1;info.samples=VK_SAMPLE_COUNT_1_BIT;info.tiling=VK_IMAGE_TILING_OPTIMAL;info.usage=usage;check(vkCreateImage(device,&info,nullptr,&out.handle),"Create owned image");VkMemoryRequirements mr{};vkGetImageMemoryRequirements(device,out.handle,&mr);VkMemoryAllocateInfo a{VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};a.allocationSize=mr.size;a.memoryTypeIndex=memoryType(mr.memoryTypeBits,VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);check(vkAllocateMemory(device,&a,nullptr,&out.memory),"Allocate image memory");check(vkBindImageMemory(device,out.handle,out.memory,0),"Bind image");
+        VkImageViewCreateInfo view{VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};view.image=out.handle;view.viewType=VK_IMAGE_VIEW_TYPE_2D;view.format=format;view.subresourceRange={VK_IMAGE_ASPECT_COLOR_BIT,0,1,0,1};check(vkCreateImageView(device,&view,nullptr,&out.view),"Create image view");
+    }
+    void createDescriptors(){
+        for(unsigned i=0;i<2;++i){VkSamplerCreateInfo info{VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO};info.magFilter=info.minFilter=VK_FILTER_NEAREST;info.mipmapMode=VK_SAMPLER_MIPMAP_MODE_NEAREST;info.addressModeU=info.addressModeV=info.addressModeW=i?VK_SAMPLER_ADDRESS_MODE_REPEAT:VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;info.minLod=info.maxLod=0;info.maxAnisotropy=1;check(vkCreateSampler(device,&info,nullptr,&samplers[i]),"Create nearest sampler");}
+        for(unsigned i=0;i<4;++i){VkDescriptorSetLayoutBinding binding{};binding.binding=i==0?0:1;binding.descriptorCount=i==3?1:2;binding.descriptorType=i==0?VK_DESCRIPTOR_TYPE_SAMPLER:i==1?VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE:VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;binding.stageFlags=i==3?VK_SHADER_STAGE_VERTEX_BIT:VK_SHADER_STAGE_FRAGMENT_BIT;
+            VkDescriptorSetLayoutCreateInfo info{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO};if(i!=2){info.bindingCount=1;info.pBindings=&binding;}check(vkCreateDescriptorSetLayout(device,&info,nullptr,&setLayouts[i]),"Create fixed descriptor array layout");}
+        const std::array<VkDescriptorPoolSize,3> sizes{{{VK_DESCRIPTOR_TYPE_SAMPLER,2},{VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,2},{VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,1}}};VkDescriptorPoolCreateInfo poolInfo{VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};poolInfo.maxSets=4;poolInfo.poolSizeCount=uint32_t(sizes.size());poolInfo.pPoolSizes=sizes.data();check(vkCreateDescriptorPool(device,&poolInfo,nullptr,&descriptorPool),"Create descriptor pool");VkDescriptorSetAllocateInfo allocate{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};allocate.descriptorPool=descriptorPool;allocate.descriptorSetCount=4;allocate.pSetLayouts=setLayouts.data();check(vkAllocateDescriptorSets(device,&allocate,sets.data()),"Allocate descriptors");
+        std::array<VkDescriptorImageInfo,2> samplerInfo{},imageInfo{};for(unsigned i=0;i<2;++i){samplerInfo[i].sampler=samplers[i];imageInfo[i].imageView=textures[i].view;imageInfo[i].imageLayout=VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;}
+        VkDescriptorBufferInfo bufferInfo{ubo.handle,0,1280};std::array<VkWriteDescriptorSet,3> writes{};for(auto& w:writes)w.sType=VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        writes[0].dstSet=sets[0];writes[0].dstBinding=0;writes[0].descriptorCount=2;writes[0].descriptorType=VK_DESCRIPTOR_TYPE_SAMPLER;writes[0].pImageInfo=samplerInfo.data();
+        writes[1].dstSet=sets[1];writes[1].dstBinding=1;writes[1].descriptorCount=2;writes[1].descriptorType=VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;writes[1].pImageInfo=imageInfo.data();
+        writes[2].dstSet=sets[3];writes[2].dstBinding=1;writes[2].descriptorCount=1;writes[2].descriptorType=VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;writes[2].pBufferInfo=&bufferInfo;vkUpdateDescriptorSets(device,uint32_t(writes.size()),writes.data(),0,nullptr);
+    }
+    void createPipeline(){
+        for(auto* module:{&vertex,&fragment}){VkShaderModuleCreateInfo info{VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO};info.codeSize=module->code.size()*4;info.pCode=module->code.data();check(vkCreateShaderModule(device,&info,nullptr,&module->handle),"Create unchanged original module");}
+        VkPushConstantRange range{VK_SHADER_STAGE_VERTEX_BIT|VK_SHADER_STAGE_FRAGMENT_BIT,0,28};VkPipelineLayoutCreateInfo layoutInfo{VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};layoutInfo.setLayoutCount=4;layoutInfo.pSetLayouts=setLayouts.data();layoutInfo.pushConstantRangeCount=1;layoutInfo.pPushConstantRanges=&range;check(vkCreatePipelineLayout(device,&layoutInfo,nullptr,&layout),"Create original-compatible pipeline layout");
+        std::array<VkPipelineShaderStageCreateInfo,2> stages{};for(unsigned i=0;i<2;++i){stages[i].sType=VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;stages[i].stage=i?VK_SHADER_STAGE_FRAGMENT_BIT:VK_SHADER_STAGE_VERTEX_BIT;stages[i].module=i?fragment.handle:vertex.handle;stages[i].pName="main";}
+        VkPipelineVertexInputStateCreateInfo input{VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO};VkPipelineInputAssemblyStateCreateInfo assembly{VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO};assembly.topology=VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+        VkPipelineViewportStateCreateInfo viewport{VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO};viewport.viewportCount=viewport.scissorCount=1;
+        VkPipelineRasterizationStateCreateInfo raster{VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO};raster.polygonMode=VK_POLYGON_MODE_FILL;raster.cullMode=VK_CULL_MODE_NONE;raster.frontFace=VK_FRONT_FACE_COUNTER_CLOCKWISE;raster.lineWidth=1;
+        VkPipelineMultisampleStateCreateInfo multisample{VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO};multisample.rasterizationSamples=VK_SAMPLE_COUNT_1_BIT;
+        VkPipelineDepthStencilStateCreateInfo depth{VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO};VkPipelineColorBlendAttachmentState color{};color.colorWriteMask=VK_COLOR_COMPONENT_R_BIT|VK_COLOR_COMPONENT_G_BIT|VK_COLOR_COMPONENT_B_BIT|VK_COLOR_COMPONENT_A_BIT;
+        VkPipelineColorBlendStateCreateInfo blend{VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO};blend.attachmentCount=1;blend.pAttachments=&color;std::array<VkDynamicState,2> dynamic{{VK_DYNAMIC_STATE_VIEWPORT,VK_DYNAMIC_STATE_SCISSOR}};VkPipelineDynamicStateCreateInfo dynamicInfo{VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO};dynamicInfo.dynamicStateCount=2;dynamicInfo.pDynamicStates=dynamic.data();
+        VkFormat format=VK_FORMAT_B8G8R8A8_UNORM;VkPipelineRenderingCreateInfo rendering{VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO};rendering.colorAttachmentCount=1;rendering.pColorAttachmentFormats=&format;
+        VkGraphicsPipelineCreateInfo info{VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO};info.pNext=&rendering;info.stageCount=2;info.pStages=stages.data();info.pVertexInputState=&input;info.pInputAssemblyState=&assembly;info.pViewportState=&viewport;info.pRasterizationState=&raster;info.pMultisampleState=&multisample;info.pDepthStencilState=&depth;info.pColorBlendState=&blend;info.pDynamicState=&dynamicInfo;info.layout=layout;check(vkCreateGraphicsPipelines(device,VK_NULL_HANDLE,1,&info,nullptr,&pipeline),"Create owned original graphics pipeline");
+    }
+    void begin(){check(vkResetCommandPool(device,pool,0),"Reset completed owned command pool");VkCommandBufferBeginInfo info{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};info.flags=VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;check(vkBeginCommandBuffer(command,&info),"Begin command buffer");}
+    void submit(){check(vkEndCommandBuffer(command),"End command buffer");check(vkResetFences(device,1,&fence),"Reset owned fence");VkSubmitInfo info{VK_STRUCTURE_TYPE_SUBMIT_INFO};info.commandBufferCount=1;info.pCommandBuffers=&command;check(vkQueueSubmit(queue,1,&info,fence),"Submit owned work");++submissions;check(vkWaitForFences(device,1,&fence,VK_TRUE,UINT64_MAX),"Wait owned fence");require(!errors.load(),"Khronos validation error during owned execution");}
+    void imageBarrier(VkImage image,VkImageLayout old,VkImageLayout next,VkAccessFlags fromAccess,VkAccessFlags toAccess,VkPipelineStageFlags from,VkPipelineStageFlags to){VkImageMemoryBarrier b{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};b.srcAccessMask=fromAccess;b.dstAccessMask=toAccess;b.oldLayout=old;b.newLayout=next;b.srcQueueFamilyIndex=b.dstQueueFamilyIndex=VK_QUEUE_FAMILY_IGNORED;b.image=image;b.subresourceRange={VK_IMAGE_ASPECT_COLOR_BIT,0,1,0,1};vkCmdPipelineBarrier(command,from,to,0,0,nullptr,0,nullptr,1,&b);}
+    void bufferBarrier(const Buffer& buffer,VkAccessFlags fromAccess,VkAccessFlags toAccess,VkPipelineStageFlags from,VkPipelineStageFlags to){VkBufferMemoryBarrier b{VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER};b.srcAccessMask=fromAccess;b.dstAccessMask=toAccess;b.srcQueueFamilyIndex=b.dstQueueFamilyIndex=VK_QUEUE_FAMILY_IGNORED;b.buffer=buffer.handle;b.size=buffer.size;vkCmdPipelineBarrier(command,from,to,0,0,nullptr,1,&b,0,nullptr);}
+    void uploadTextures(const std::filesystem::path& output){
+        auto* data=static_cast<uint8_t*>(staging.mapped);for(unsigned t=0;t<2;++t)for(unsigned y=0;y<textureSize;++y)for(unsigned x=0;x<textureSize;++x){const auto offset=t*256+(y*8+x)*4;data[offset]=uint8_t(t?233-11*x:17+13*x);data[offset+1]=uint8_t(t?211-17*y:29+19*y);data[offset+2]=uint8_t(t?197-5*x-9*y:41+7*x+11*y);data[offset+3]=255;}
+        write(output/"texture-A.rgba",data,256);write(output/"texture-B.rgba",data+256,256);begin();bufferBarrier(staging,VK_ACCESS_HOST_WRITE_BIT,VK_ACCESS_TRANSFER_READ_BIT,VK_PIPELINE_STAGE_HOST_BIT,VK_PIPELINE_STAGE_TRANSFER_BIT);
+        for(unsigned i=0;i<2;++i){imageBarrier(textures[i].handle,VK_IMAGE_LAYOUT_UNDEFINED,VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,0,VK_ACCESS_TRANSFER_WRITE_BIT,VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,VK_PIPELINE_STAGE_TRANSFER_BIT);VkBufferImageCopy copy{};copy.bufferOffset=i*256;copy.imageSubresource={VK_IMAGE_ASPECT_COLOR_BIT,0,0,1};copy.imageExtent={8,8,1};vkCmdCopyBufferToImage(command,staging.handle,textures[i].handle,VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,1,&copy);imageBarrier(textures[i].handle,VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,VK_ACCESS_TRANSFER_WRITE_BIT,VK_ACCESS_SHADER_READ_BIT,VK_PIPELINE_STAGE_TRANSFER_BIT,VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);}submit();
+    }
+    std::string execute(const Case& test,const std::filesystem::path& output){
+        std::array<uint32_t,7> pc{};pc[2]=test.image;pc[6]=test.sampler;if(test.wrongImage)pc[1]=1;if(test.wrongSampler)pc[5]=1;
+        std::array<float,320> uniform{};uniform[0]=float(test.shiftX)/8;uniform[1]=float(test.shiftY)/8;if(test.wrongUbo){uniform[2]=.125f;uniform[3]=-.125f;}
+        static_assert(sizeof(uniform)==1280 && sizeof(pc)==28,"Exact original block sizes");std::memcpy(ubo.mapped,uniform.data(),sizeof(uniform));
+        const auto pcFile=std::string(test.name)+".pc.bin",uboFile=std::string(test.name)+".ubo.bin",rawFile=std::string(test.name)+".bgra";write(output/pcFile,pc.data(),sizeof(pc));write(output/uboFile,ubo.mapped,1280);
+        const VkRect2D scissor=test.centerScissor?VkRect2D{{640,360},{1280,720}}:VkRect2D{{0,0},{width,height}};const VkViewport viewport=test.centerViewport?VkViewport{640,360,1280,720,0,1}:VkViewport{0,0,float(width),float(height),0,1};
+        begin();bufferBarrier(ubo,VK_ACCESS_HOST_WRITE_BIT,VK_ACCESS_UNIFORM_READ_BIT,VK_PIPELINE_STAGE_HOST_BIT,VK_PIPELINE_STAGE_VERTEX_SHADER_BIT);
+        imageBarrier(target.handle,targetInitialized?VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:VK_IMAGE_LAYOUT_UNDEFINED,VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,targetInitialized?VK_ACCESS_TRANSFER_READ_BIT:0,VK_ACCESS_TRANSFER_WRITE_BIT,targetInitialized?VK_PIPELINE_STAGE_TRANSFER_BIT:VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,VK_PIPELINE_STAGE_TRANSFER_BIT);
+        const VkClearColorValue sentinel{{3.f/255,5.f/255,7.f/255,1}};const VkImageSubresourceRange range{VK_IMAGE_ASPECT_COLOR_BIT,0,1,0,1};vkCmdClearColorImage(command,target.handle,VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,&sentinel,1,&range);imageBarrier(target.handle,VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,VK_ACCESS_TRANSFER_WRITE_BIT,VK_ACCESS_COLOR_ATTACHMENT_READ_BIT|VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,VK_PIPELINE_STAGE_TRANSFER_BIT,VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+        VkRenderingAttachmentInfo attachment{VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO};attachment.imageView=target.view;attachment.imageLayout=VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;attachment.loadOp=VK_ATTACHMENT_LOAD_OP_LOAD;attachment.storeOp=VK_ATTACHMENT_STORE_OP_STORE;VkRenderingInfo rendering{VK_STRUCTURE_TYPE_RENDERING_INFO};rendering.renderArea={{0,0},{width,height}};rendering.layerCount=1;rendering.colorAttachmentCount=1;rendering.pColorAttachments=&attachment;
+        vkCmdBeginRendering(command,&rendering);vkCmdBindPipeline(command,VK_PIPELINE_BIND_POINT_GRAPHICS,pipeline);vkCmdBindDescriptorSets(command,VK_PIPELINE_BIND_POINT_GRAPHICS,layout,0,4,sets.data(),0,nullptr);vkCmdPushConstants(command,layout,VK_SHADER_STAGE_VERTEX_BIT|VK_SHADER_STAGE_FRAGMENT_BIT,0,28,pc.data());vkCmdSetViewport(command,0,1,&viewport);vkCmdSetScissor(command,0,1,&scissor);vkCmdDraw(command,3,1,0,0);vkCmdEndRendering(command);
+        imageBarrier(target.handle,VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,VK_ACCESS_TRANSFER_READ_BIT,VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,VK_PIPELINE_STAGE_TRANSFER_BIT);bufferBarrier(readback,VK_ACCESS_HOST_READ_BIT,VK_ACCESS_TRANSFER_WRITE_BIT,VK_PIPELINE_STAGE_HOST_BIT,VK_PIPELINE_STAGE_TRANSFER_BIT);
+        VkBufferImageCopy copy{};copy.imageSubresource={VK_IMAGE_ASPECT_COLOR_BIT,0,0,1};copy.imageExtent={width,height,1};vkCmdCopyImageToBuffer(command,target.handle,VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,readback.handle,1,&copy);bufferBarrier(readback,VK_ACCESS_TRANSFER_WRITE_BIT,VK_ACCESS_HOST_READ_BIT,VK_PIPELINE_STAGE_TRANSFER_BIT,VK_PIPELINE_STAGE_HOST_BIT);submit();targetInitialized=true;write(output/rawFile,readback.mapped,targetBytes);
+        std::ostringstream out;out<<"{\"name\":"<<quote(test.name)<<",\"raw_file\":"<<quote(rawFile)<<",\"bytes\":"<<targetBytes<<",\"sha256\":"<<quote(sampled_writer::sha256(readback.mapped,targetBytes))
+            <<",\"texture_index\":"<<pc[2]<<",\"sampler_index\":"<<pc[6]<<",\"shift_texels\":["<<test.shiftX<<','<<test.shiftY<<"],\"ubo_row0_xy\":["<<uniform[0]<<','<<uniform[1]<<"],\"ubo_row0_zw\":["<<uniform[2]<<','<<uniform[3]
+            <<"],\"scissor\":["<<scissor.offset.x<<','<<scissor.offset.y<<','<<scissor.extent.width<<','<<scissor.extent.height<<"],\"viewport\":["<<viewport.x<<','<<viewport.y<<','<<viewport.width<<','<<viewport.height<<"],\"push_constants\":[";
+        for(unsigned i=0;i<pc.size();++i){if(i)out<<',';out<<pc[i];}out<<"],\"pc_file\":"<<quote(pcFile)<<",\"pc_sha256\":"<<quote(sampled_writer::sha256(pc.data(),sizeof(pc)))<<",\"ubo_file\":"<<quote(uboFile)<<",\"ubo_sha256\":"<<quote(sampled_writer::sha256(ubo.mapped,1280))<<",\"negative_control\":"<<(test.negative?"true":"false")<<",\"intended_reference\":"<<quote(test.intended)<<'}';return out.str();
+    }
+    void cleanup() noexcept {
+        if(device){vkDeviceWaitIdle(device);if(pipeline)vkDestroyPipeline(device,pipeline,nullptr);if(layout)vkDestroyPipelineLayout(device,layout,nullptr);if(descriptorPool)vkDestroyDescriptorPool(device,descriptorPool,nullptr);
+            for(auto s:setLayouts)if(s)vkDestroyDescriptorSetLayout(device,s,nullptr);
+            for(auto s:samplers)if(s)vkDestroySampler(device,s,nullptr);
+            for(auto* module:{&vertex,&fragment})if(module->handle){vkDestroyShaderModule(device,module->handle,nullptr);module->handle=VK_NULL_HANDLE;}
+            if(fence)vkDestroyFence(device,fence,nullptr);
+            if(pool)vkDestroyCommandPool(device,pool,nullptr);
+            for(auto* image:{&textures[0],&textures[1],&target}){if(image->view)vkDestroyImageView(device,image->view,nullptr);if(image->handle)vkDestroyImage(device,image->handle,nullptr);if(image->memory)vkFreeMemory(device,image->memory,nullptr);}
+            for(auto* buffer:{&staging,&ubo,&readback}){if(buffer->mapped)vkUnmapMemory(device,buffer->memory);if(buffer->handle)vkDestroyBuffer(device,buffer->handle,nullptr);if(buffer->memory)vkFreeMemory(device,buffer->memory,nullptr);}vkDestroyDevice(device,nullptr);device=VK_NULL_HANDLE;}
+        if(messenger && destroyMessenger){destroyMessenger(instance,messenger,nullptr);messenger=VK_NULL_HANDLE;}if(instance){vkDestroyInstance(instance,nullptr);instance=VK_NULL_HANDLE;}validationLog.flush();
+    }
+    ~Owned(){cleanup();}
+};
+} // namespace
+
+int main(int argc,char** argv)try {
+    std::string vertexPath,fragmentPath,outputPath;require(argc==7,"Usage: sampled_writer_gpu --vertex ORIGINAL.spv --fragment ORIGINAL.spv --output NEW_DIRECTORY");
+    for(int i=1;i<argc;i+=2){const std::string key=argv[i];if(key=="--vertex" && vertexPath.empty())vertexPath=argv[i+1];else if(key=="--fragment" && fragmentPath.empty())fragmentPath=argv[i+1];else if(key=="--output" && outputPath.empty())outputPath=argv[i+1];else throw std::runtime_error("Unknown or repeated argument");}
+    require(!vertexPath.empty()&&!fragmentPath.empty()&&!outputPath.empty(),"Missing fixture argument");const uint32_t endian=1;require(*reinterpret_cast<const uint8_t*>(&endian)==1,"Little-endian host required");
+    require(sampled_writer::sha256("",0)=="e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" && sampled_writer::sha256("abc",3)=="ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad","SHA256 self test failed");
+    Module vertex(vertexPath,1,0),fragment(fragmentPath,16,4);const auto output=std::filesystem::absolute(outputPath);require(!std::filesystem::exists(output),"Output directory must be new");require(std::filesystem::create_directories(output),"Cannot create private output directory");std::filesystem::permissions(output,std::filesystem::perms::owner_all,std::filesystem::perm_options::replace);
+    Owned owned(vertex,fragment,output);owned.setup();owned.uploadTextures(output);std::vector<std::string> results;for(const auto& test:cases)results.push_back(owned.execute(test,output));const auto properties=owned.properties;const auto submissions=owned.submissions;owned.cleanup();require(!owned.errors.load(),"Validation error including teardown");
+    std::ostringstream out;out<<"{\"schema_version\":1,\"owned_fixture\":true,\"game_rendered\":false,\"shader_modified\":false,\"width\":"<<width<<",\"height\":"<<height<<",\"format\":44,\"target_format\":\"B8G8R8A8_UNORM\",\"modules\":["<<vertex.metadata()<<','<<fragment.metadata()<<"],\"device\":{\"vendor_id\":"<<properties.vendorID<<",\"device_id\":"<<properties.deviceID<<",\"device_name\":"<<quote(properties.deviceName)<<",\"api_version\":"<<properties.apiVersion<<",\"driver_version\":"<<properties.driverVersion<<"},"
+        <<"\"render_area\":[0,0,2560,1440],\"dynamic_state\":{\"viewport\":true,\"scissor\":true},\"features\":{\"dynamicRendering\":true,\"bufferDeviceAddress\":true,\"shaderDrawParameters\":true,\"runtimeDescriptorArray\":true,\"shaderSampledImageArrayDynamicIndexing\":true,\"descriptorBindingVariableDescriptorCount\":false,\"descriptorBindingPartiallyBound\":false,\"shaderSampledImageArrayNonUniformIndexing\":false},"
+        <<"\"pipeline_state\":{\"topology\":\"triangle_list\",\"vertex_count\":3,\"instance_count\":1,\"first_vertex\":0,\"first_instance\":0,\"cull_mode\":\"none\",\"depth_test\":false,\"depth_write\":false,\"stencil_test\":false,\"blend\":false,\"color_write_mask\":15,\"rasterizer_discard\":false,\"sample_count\":1,\"load_op\":\"LOAD\",\"store_op\":\"STORE\",\"sentinel_rgba8\":[3,5,7,255]},"
+        <<"\"descriptor_state\":{\"sampled_images\":{\"set\":1,\"binding\":1,\"count\":2,\"type\":\"sampled_image\"},\"samplers\":{\"set\":0,\"binding\":0,\"count\":2,\"type\":\"sampler\"},\"ubo\":{\"set\":3,\"binding\":1,\"bytes\":1280,\"type\":\"uniform_buffer\"},\"push_constant_bytes\":28,\"push_constant_stages\":[1,16]},"
+        <<"\"sampler_state\":[{\"index\":0,\"address\":\"clamp_to_edge\",\"min_filter\":\"nearest\",\"mag_filter\":\"nearest\",\"mipmap_mode\":\"nearest\",\"min_lod\":0,\"max_lod\":0,\"anisotropy\":false,\"compare\":false},{\"index\":1,\"address\":\"repeat\",\"min_filter\":\"nearest\",\"mag_filter\":\"nearest\",\"mipmap_mode\":\"nearest\",\"min_lod\":0,\"max_lod\":0,\"anisotropy\":false,\"compare\":false}],"
+        <<"\"texture_state\":{\"width\":8,\"height\":8,\"format\":37,\"mip_levels\":1,\"files\":[\"texture-A.rgba\",\"texture-B.rgba\"]},\"validation\":{\"debug_messenger\":true,\"synchronization_validation\":true,\"errors\":"<<owned.errors.load()<<",\"warnings\":"<<owned.warnings.load()<<",\"log_file\":\"validation.log\"},\"counts\":{\"submissions\":"<<submissions<<",\"draws\":9,\"image_uploads\":2,\"target_initializations\":9,\"target_readbacks\":9},\"cases\":[";
+    for(std::size_t i=0;i<results.size();++i){if(i)out<<',';out<<results[i];}out<<"]}\n";const auto manifest=out.str();write(output/"manifest.json",manifest.data(),manifest.size());std::cout<<"{\"sampled_writer_gpu_passed\":true,\"cases\":9,\"validation_errors\":"<<owned.errors.load()<<",\"validation_warnings\":"<<owned.warnings.load()<<",\"manifest\":"<<quote((output/"manifest.json").string())<<"}\n";return 0;
+}catch(const std::exception& error){std::cerr<<error.what()<<'\n';return 1;}

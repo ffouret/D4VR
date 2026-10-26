@@ -10,6 +10,13 @@ répond pas à cet objectif.
 
 ## État du projet
 
+Le [contrôle ciblé de la passe couleur](docs/SAMPLED_WRITER_CONTROL.md) utilise
+ses deux modules originaux inchangés sur des textures possédées. Dix-huit cas
+GPU en natif et dans le runtime Steam comparent exactement 265 420 800 octets,
+sans erreur de synchronisation Khronos. Ils distinguent l’image choisie, le
+décalage UV, le sampler et la couverture viewport/scissor. Les valeurs réelles
+de ces entrées dans Diablo restent à observer ; les découpes ne sont pas réparées.
+
 Les [préfixes attachés aux captures](docs/CAPTURED_WRITERS.md) suivent maintenant
 les opérations du jeu sur ses véritables images sources. Un nouvel essai relie
 onze captures à une déclaration couleur et au même pipeline, avec les identités
