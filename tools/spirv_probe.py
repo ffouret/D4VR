@@ -71,8 +71,9 @@ def helper_library(data: bytes, geometry: bool = False, stereo: bool = False) ->
     return module.binary()
 
 
-def instrument(data: bytes, descriptor_set: int, binding: int, first_row: int, secondary_binding: int = 1, secondary_row: int = 56, geometry: bool = False, stereo: bool = False, projection_only_helper: bool = False) -> bytes:
+def instrument(data: bytes, descriptor_set: int, binding: int, first_row: int, secondary_binding: int = 1, secondary_row: int = 56, geometry: bool = False, stereo: bool = False, projection_only_helper: bool = False, projection_input: bool = False) -> bytes:
     if projection_only_helper and not stereo:raise ValueError('Projection-only helper requires stereo mode')
+    if projection_input and not projection_only_helper:raise ValueError('Projection input requires the projection-only helper')
     geometry = geometry or stereo
     module = Module(data)
     entries = [args for op, args in module.instructions if op == 15]
@@ -241,6 +242,16 @@ def instrument(data: bytes, descriptor_set: int, binding: int, first_row: int, s
             code += [(61, [vector_type, value, locals_[-1]]), (62, [position_pointer, value])]
         return code
 
+    if projection_input:
+        from projection_input import rewrite
+        output=rewrite(module,main,target,first_row,vector_type,types,constants,locals_,local_declarations,
+            imported,void,uint,zero,unused_vector,uniform_vector_pointer,type_id,constant)
+        module.instructions=output
+        module.add_capability(5);module.decorate(added_decorations)
+        first_function=next(i for i,(op,_) in enumerate(module.instructions) if op==54)
+        module.instructions[first_function:first_function]=declarations+import_body
+        return module.binary()
+
     output = []
     function = None
     locals_inserted = False
@@ -267,7 +278,8 @@ def instrument(data: bytes, descriptor_set: int, binding: int, first_row: int, s
     return module.binary()
 
 
-def build(original: Path, helper: Path, output: Path, tools: Path, descriptor_set: int, binding: int, first_row: int, secondary_binding: int = 1, secondary_row: int = 56, geometry: bool = False, stereo: bool = False, helper_no_telemetry: bool = False, projection_only_helper: bool = False):
+def build(original: Path, helper: Path, output: Path, tools: Path, descriptor_set: int, binding: int, first_row: int, secondary_binding: int = 1, secondary_row: int = 56, geometry: bool = False, stereo: bool = False, helper_no_telemetry: bool = False, projection_only_helper: bool = False, projection_input: bool = False):
+    if projection_input and not (projection_only_helper and helper_no_telemetry):raise ValueError('Projection input requires a validated projection-only telemetry-free helper')
     if projection_only_helper and not (stereo and helper_no_telemetry):
         raise ValueError('Projection-only helper requires stereo and telemetry-free validation')
     if helper_no_telemetry:
@@ -286,7 +298,7 @@ def build(original: Path, helper: Path, output: Path, tools: Path, descriptor_se
             subprocess.run([str(tools / 'spirv-val'), '--target-env', 'vulkan1.2', str(snapshot)], check=True, capture_output=True)
         (verify_projection_only if projection_only_helper else verify)(helper_data)
     library.write_bytes(helper_library(helper_data, geometry, stereo))
-    caller.write_bytes(instrument(original.read_bytes(), descriptor_set, binding, first_row, secondary_binding, secondary_row, geometry, stereo, projection_only_helper))
+    caller.write_bytes(instrument(original.read_bytes(), descriptor_set, binding, first_row, secondary_binding, secondary_row, geometry, stereo, projection_only_helper,projection_input))
     subprocess.run([str(tools / "spirv-link"), "--target-env", "spv1.3", str(caller), str(library), "-o", str(linked)], check=True, capture_output=True)
     subprocess.run([str(tools / "spirv-opt"), "--eliminate-dead-functions", "--eliminate-dead-variables", str(linked), "-o", str(output)], check=True, capture_output=True)
     if stereo:
@@ -299,6 +311,7 @@ def build(original: Path, helper: Path, output: Path, tools: Path, descriptor_se
         if projection_only_helper:
             from stereo_helper import PROJECTION_MARKER
             module.instructions.insert(index+2, (330, string_words(PROJECTION_MARKER)))
+        if projection_input:module.instructions.insert(index+3,(330,string_words('D4VR_PROJECTION_INPUT_1')))
         output.write_bytes(module.binary())
     subprocess.run([str(tools / "spirv-val"), "--target-env", "vulkan1.2", str(output)], check=True, capture_output=True)
     return output
@@ -319,8 +332,9 @@ def main():
     parser.add_argument("--stereo", action="store_true", help="Apply the per-eye transform helper controlled by specialization ID 4")
     parser.add_argument("--helper-no-telemetry", action="store_true", help="Require a validated telemetry-free stereo helper; does not audit the original shader")
     parser.add_argument("--projection-only-helper", action="store_true", help="Omit added model-view buffer reads after proving that the helper's four object parameters are unused")
+    parser.add_argument('--projection-input',action='store_true',help='Transform canonical projection loads before all original vertex computations; diagnostic only')
     args = parser.parse_args()
-    print(build(args.original, args.helper, args.output, args.tools, args.descriptor_set, args.binding, args.first_row, args.secondary_binding, args.secondary_row, args.geometry, args.stereo, args.helper_no_telemetry, args.projection_only_helper))
+    print(build(args.original, args.helper, args.output, args.tools, args.descriptor_set, args.binding, args.first_row, args.secondary_binding, args.secondary_row, args.geometry, args.stereo, args.helper_no_telemetry, args.projection_only_helper,args.projection_input))
 
 
 if __name__ == "__main__":

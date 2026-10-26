@@ -10,6 +10,13 @@ répond pas à cet objectif.
 
 ## État du projet
 
+Une [variante de projection en amont des calculs du vertex](docs/PROJECTION_INPUT.md)
+conserve maintenant la cohérence des sorties qui dépendent de cette projection,
+vérifiée par un contrôle GPU que la modification finale de Position échoue.
+Son nouvel essai dans Diablo garde 22 zones de terrain décalées puis revenues,
+mais les trous au champ élargi persistent. Cela oriente la suite vers les autres
+passes et le culling ; la cause exacte et la couverture immersive restent ouvertes.
+
 La [calibration de projection et de profondeur](docs/VIEW_CALIBRATION.md) a
 maintenant été essayée dans **Diablo IV réel**, sans casque : six paires GPU
 successives conservent les paquets caméra de leur production. Les 26 zones de

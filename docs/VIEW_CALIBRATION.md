@@ -1,5 +1,10 @@
 # VIEW units, optical projection and source depth
 
+The later [projection-input variant](PROJECTION_INPUT.md) applies the same
+policy to original vertex projection reads, including dependent outputs. Its
+new real-game trial still fails wide-FOV coverage; it does not supersede that
+limitation or establish the missing scene dependencies.
+
 The new opt-in projection policy combines optical X/Y with the original pass's scaled depth coefficients. It has now run in a stationary Diablo IV session through the regular layer's external-pose diagnostic. Six actual GPU pairs retain their own camera packets and presentation IDs. This is **partial, successive game rendering, without OpenXR or a Quest submission**. The widened-FOV capture has visible missing regions; complete game projection remains unresolved.
 
 ## Measured conventions and explicit choices

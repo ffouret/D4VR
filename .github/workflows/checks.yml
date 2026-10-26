@@ -84,6 +84,9 @@ jobs:
       - name: Verify projection-only helper with absent secondary descriptors
         if: runner.os == 'Linux'
         run: python tools/projection_helper_validate.py --compiler /usr/bin/glslangValidator --tools /usr/bin --grammar work/spirv-headers/include/spirv/unified1/spirv.core.grammar.json --glsl-grammar work/spirv-headers/include/spirv/unified1/extinst.glsl.std.450.grammar.json --output-directory work/projection-helper-ci
+      - name: Verify projection input construction and conservative refusals
+        if: runner.os == 'Linux'
+        run: python tools/projection_input_validate.py --compiler /usr/bin/glslangValidator --tools /usr/bin --helper work/stereo-helper-ci/helper-no-telemetry.spv --output work/projection-input-ci
       - name: Verify every Windows export name, ordinal and forwarder
         if: runner.os == 'Windows'
         run: python -c "import pathlib,sys; sys.path.insert(0,'tools'); import probe; probe.validate_probe(pathlib.Path('work/native-ci/probe/Release/sl.interposer.dll'),probe.profile())"

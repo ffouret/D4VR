@@ -30,6 +30,19 @@ def select_candidates(candidates: dict,projection_only: bool=False) -> list[dict
 
 def build(args) -> dict:
     projection_only=getattr(args,'projection_only_helper',False)
+    projection_input=getattr(args,'projection_input',False);input_certificate=None
+    if projection_input:
+        if not args.stereo or not projection_only or not getattr(args,'source_depth_calibration',False):raise ValueError('Projection input bundle requires source-depth projection-only stereo')
+        certificate=getattr(args,'projection_input_certificate',None)
+        if not certificate:raise ValueError('Projection input requires its dependent-fragment GPU certificate')
+        input_certificate=json.loads(certificate.read_text());root=Path(__file__).resolve().parents[1]
+        if input_certificate.get('helper_sha256')!=probe.digest(args.helper):raise ValueError('Projection input helper certificate mismatch')
+        expected={name:probe.digest(root/name) for name in ['tools/projection_input.py','tools/spirv_probe.py','native/tests/projection_input.vert','native/tests/projection_input.frag']}
+        if input_certificate.get('source_sha256')!=expected:raise ValueError('Projection input source certificate mismatch')
+        if set(input_certificate.get('construction_refusals',[]))!={'dynamic-row','dynamic-component','function','volatile'}:raise ValueError('Projection input refusals unverified')
+        for environment in ('native','steam-runtime'):
+            cases=[c for c in input_certificate.get('gpu_cases',[]) if c.get('environment')==environment]
+            if len(cases)!=2 or any(c.get('validation_errors')!=0 for c in cases) or not any(c.get('case')=='late-negative' and c.get('expected_failure_observed') for c in cases) or not any(c.get('case')=='dependent' and c.get('proof',{}).get('calibration_gpu_passed') and c.get('proof',{}).get('independent_reference_cases')==48 and c.get('proof',{}).get('maximum_reference_depth_error',1)<2e-6 for c in cases):raise ValueError('Projection input dependent-fragment controls missing')
     if projection_only and not args.stereo:raise ValueError('Projection-only construction requires stereo mode')
     if args.output.exists() and any(args.output.iterdir()):
         raise ValueError("Use an empty directory for this observer bundle")
@@ -37,7 +50,7 @@ def build(args) -> dict:
     args.output.chmod(0o700)
     validation = args.output / "validation"
     patched_fixture = validation / "fixture.observed.spv"
-    spirv_probe.build(args.fixture_vertex, args.helper, patched_fixture, args.tools, 3, 0, 72, 1, 56, args.geometry, args.stereo,projection_only,projection_only)
+    spirv_probe.build(args.fixture_vertex, args.helper, patched_fixture, args.tools, 3, 0, 72, 1, 56, args.geometry, args.stereo,projection_only,projection_only,projection_input)
     bridge = Path("/run/host/usr/bin/flatpak-spawn")
     command = [str(bridge), "--host"] if bridge.exists() else []
     command += [str(p.resolve()) for p in (args.gpu_fixture, args.fixture_vertex, patched_fixture, args.fixture_fragment)]
@@ -82,7 +95,7 @@ def build(args) -> dict:
         if probe.digest(original_spirv) != identities.get(original_spirv.name):
             raise ValueError("SPIR-V identity differs from captured inventory")
         output = overrides / original_spirv.name
-        spirv_probe.build(original_spirv, args.helper, output, args.tools, 3, 0, 72, 1, 56, args.geometry, args.stereo,projection_only,projection_only)
+        spirv_probe.build(original_spirv, args.helper, output, args.tools, 3, 0, 72, 1, 56, args.geometry, args.stereo,projection_only,projection_only,projection_input)
         return {"file": output.name, "original_sha256": identities[original_spirv.name],
                 "override_sha256": probe.digest(output)}
 
@@ -111,6 +124,7 @@ def build(args) -> dict:
         manifest.update(projection_only_helper=True,helper_no_telemetry=True,uniform_bindings=[0],matrix_byte_offsets=[1152],
                         stereo_telemetry=False,maximum_stereo_samples=0,selection_requires_input_matrix_chain=False)
     if depth_proof:manifest.update(source_depth_packet_version=2,source_depth_gpu_validation=depth_proof)
+    if projection_input:manifest.update(projection_application='canonical_input_loads',projection_input_gpu_certificate=input_certificate)
     probe.write_json(args.output / "bundle.json", manifest)
     return {k: v for k, v in manifest.items() if k != "entries"} | {"validated_shaders": len(entries)}
 
@@ -121,6 +135,8 @@ def main():
                    "fixture-vertex", "fixture-fragment", "output"):
         parser.add_argument("--" + option, type=Path, required=True)
     parser.add_argument("--source-depth-calibration",action="store_true",help="Require the explicit metric source-depth GPU certificate")
+    parser.add_argument('--projection-input',action='store_true',help='Replace canonical projection reads before original vertex computations')
+    parser.add_argument('--projection-input-certificate',type=Path)
     modes = parser.add_mutually_exclusive_group()
     modes.add_argument("--geometry", action="store_true", help="Build the visible vertex displacement test")
     modes.add_argument("--stereo", action="store_true", help="Build the controlled per-eye geometry helper")

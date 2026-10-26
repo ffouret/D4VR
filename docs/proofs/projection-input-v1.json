@@ -1,0 +1,1633 @@
+{
+  "schema_version": 1,
+  "source_base_commit": "0ca35d9edf4c6a2e54db5f185b11eeb9f9cc8b84",
+  "scope": "Opt-in early projection loads: dependent-output owned GPU controls plus a new actual stationary Diablo trial. Wider game coverage still fails.",
+  "construction_source_sha256": {
+    "tools/projection_input.py": "758bce4ac386d341a279c8110fd514a8d9e4375b59fcf36adb64a9327d0bbefe",
+    "tools/spirv_probe.py": "d6b836f349c3642a483aebb64a127d5886577aa4f649b69434e7623e11ae2c70",
+    "tools/camera_bundle.py": "711eff2dd1fc0586b8dc48f4b211695ef92c00bf5adb3f67e3b955b45fd95f4c",
+    "tools/projection_input_validate.py": "44a9a163c2117acfcdebbb5617a81dd383f7e4732a39d4ccea2775779e4e0c71",
+    "native/tests/projection_input.vert": "95dafb32c1554b9670782f6031bb393bffd472021ce1f19e5272cb6550dce983",
+    "native/tests/projection_input.frag": "fddcf73a406c5d8b54a47c99f2ea488ea0f6d160030d4e9de3932a1fa9e88580"
+  },
+  "layer_unchanged": true,
+  "layer_source_commit": "0ca35d9edf4c6a2e54db5f185b11eeb9f9cc8b84",
+  "layer_sha256": "a848bc3ce3232ab23bc2a44f5f0195fda98d0ea14c799bafa7c6a3ad9159adf1",
+  "gpu_controls": {
+    "schema_version": 1,
+    "synthetic_scene": true,
+    "game_rendered": false,
+    "actual_steamvr_submission": false,
+    "source_shader_stores_preserved": true,
+    "source_uniform_writes_added": 0,
+    "helper_calls_per_invocation": 4,
+    "construction_refusals": [
+      "dynamic-row",
+      "dynamic-component",
+      "function",
+      "volatile"
+    ],
+    "uniform_pointer_copy_validated": true,
+    "gpu_cases": [
+      {
+        "environment": "native",
+        "case": "dependent",
+        "proof": {
+          "calibration_gpu_passed": true,
+          "synthetic_scene": true,
+          "independent_reference_cases": 48,
+          "color_reference_bytes": 12582912,
+          "d32_reference_texels": 651842,
+          "original_depth_preserved_texels": 229766,
+          "maximum_reference_depth_error": 1.78814e-07,
+          "maximum_original_depth_error": 5.96046e-08,
+          "wrong_fixed_depth_error": 0.499499,
+          "source_far_units": [
+            80,
+            200
+          ],
+          "metric_scales": [
+            0.05,
+            0.1,
+            1
+          ],
+          "game_rendered": false
+        },
+        "validation_errors": 0
+      },
+      {
+        "environment": "native",
+        "case": "late-negative",
+        "expected_failure_observed": true,
+        "validation_errors": 0
+      },
+      {
+        "environment": "steam-runtime",
+        "case": "dependent",
+        "proof": {
+          "calibration_gpu_passed": true,
+          "synthetic_scene": true,
+          "independent_reference_cases": 48,
+          "color_reference_bytes": 12582912,
+          "d32_reference_texels": 651842,
+          "original_depth_preserved_texels": 229766,
+          "maximum_reference_depth_error": 1.78814e-07,
+          "maximum_original_depth_error": 5.96046e-08,
+          "wrong_fixed_depth_error": 0.499499,
+          "source_far_units": [
+            80,
+            200
+          ],
+          "metric_scales": [
+            0.05,
+            0.1,
+            1
+          ],
+          "game_rendered": false
+        },
+        "validation_errors": 0
+      },
+      {
+        "environment": "steam-runtime",
+        "case": "late-negative",
+        "expected_failure_observed": true,
+        "validation_errors": 0
+      }
+    ],
+    "original_sha256": "95479dae436f75016ad42908d2d3499894be6ddab4b3f7546381547184aae48f",
+    "early_sha256": "2d4e04eee9a0cb84c908600315292d517381bd6398ccbd407b49d3268af2dbb5",
+    "late_sha256": "fcb27a85ea5f8f4c6cf0f23582e2d62a36286c13811ac03b5045a3eeb7a6c758",
+    "helper_sha256": "94df302388f8254213d8db805348a5ffd21c3eaa2893a07b33e17ade3b196c8b",
+    "source_sha256": {
+      "tools/projection_input.py": "758bce4ac386d341a279c8110fd514a8d9e4375b59fcf36adb64a9327d0bbefe",
+      "tools/spirv_probe.py": "d6b836f349c3642a483aebb64a127d5886577aa4f649b69434e7623e11ae2c70",
+      "native/tests/projection_input.vert": "95dafb32c1554b9670782f6031bb393bffd472021ce1f19e5272cb6550dce983",
+      "native/tests/projection_input.frag": "fddcf73a406c5d8b54a47c99f2ea488ea0f6d160030d4e9de3932a1fa9e88580"
+    },
+    "source_certificate_collected_by_identical_binary_static_rebuild": true
+  },
+  "private_corpus": {
+    "accepted": 5373,
+    "rejected_multi_function": 5,
+    "original_store_instructions_preserved": 173023,
+    "added_function_store_instructions": 91341,
+    "added_external_store_instructions": 0,
+    "source_uniform_writes_added": 0,
+    "direct_late_position_stores_added": 0,
+    "helper_calls_per_invocation": 4
+  },
+  "private_game_bundle_sha256": "e63ffe986423cf2f9b2a1467c223b9872e6eef09450771800197788d346f8c5c",
+  "simple_color_v1_regression": {
+    "stereo_gpu_fixture_passed": true,
+    "packet_gpu_updates_verified": true,
+    "independent_reference_images_verified": true,
+    "reference_cases": 11,
+    "telemetry_samples": 0,
+    "telemetry_disabled_and_buffers_preserved": true,
+    "max_reference_different_bytes": 0,
+    "eye_separation_view_units": 0.064,
+    "disparity_pixels_depth_2": 7.29788,
+    "disparity_pixels_depth_4": 3.65839,
+    "head_translation_rotation_verified": true,
+    "asymmetric_projection_verified": true,
+    "source_jitter_depth_changes_verified": true,
+    "inactive_and_non_target_unchanged": true,
+    "game_stereo_proven": false
+  },
+  "simple_color_depth_regression": {
+    "calibration_gpu_passed": true,
+    "synthetic_scene": true,
+    "independent_reference_cases": 48,
+    "color_reference_bytes": 12582912,
+    "d32_reference_texels": 651842,
+    "original_depth_preserved_texels": 229766,
+    "maximum_reference_depth_error": 1.78814e-07,
+    "maximum_original_depth_error": 5.96046e-08,
+    "wrong_fixed_depth_error": 0.499499,
+    "source_far_units": [
+      80,
+      200
+    ],
+    "metric_scales": [
+      0.05,
+      0.1,
+      1
+    ],
+    "game_rendered": false
+  },
+  "python_tests_passed": 178,
+  "actual_game": {
+    "synthetic_scene": false,
+    "game_version": "3.2.3.73883",
+    "pose_source": "external_diagnostic_sample",
+    "actual_xr_pose_source": false,
+    "request_times_are_predicted_xr_times": false,
+    "render_extent": [
+      2560,
+      1440
+    ],
+    "meters_per_view_unit": 0.1,
+    "physical_scale_inferred": false,
+    "source_depth_packet_version": 2,
+    "same_instant_pair": false,
+    "whole_scene_verified": false,
+    "common_scene_time_known": false,
+    "actual_steamvr_submission": false,
+    "continuous_immersive_game": false,
+    "captures": [
+      {
+        "request": 1,
+        "role": "baseline",
+        "packet_sequence": 2,
+        "eyes": [
+          {
+            "eye": 0,
+            "capture_sequence": 11672,
+            "present": 11672,
+            "lease": 2,
+            "packet_sequence": 2,
+            "packet_version": 2,
+            "flags": 5,
+            "packet_sha256": "1653862c6d787e6c5560969ba67530dc8208861ef5fcc5b159bf7adb3b59d9f2",
+            "copy_and_selected_draw_packets_identical": true,
+            "all_expected_packet_values_verified": true
+          },
+          {
+            "eye": 1,
+            "capture_sequence": 11674,
+            "present": 11674,
+            "lease": 4,
+            "packet_sequence": 2,
+            "packet_version": 2,
+            "flags": 5,
+            "packet_sha256": "f38d35a50d7d72902e9c58450ab6addc943b0053b40d773264e4ff9b0973abf6",
+            "copy_and_selected_draw_packets_identical": true,
+            "all_expected_packet_values_verified": true
+          }
+        ],
+        "readback_bytes": 29491200,
+        "raw_private_pixels_sha256": "e0b4eb35ee261b24bd685a0238204656487375ede852574115b71d29bb8eb887"
+      },
+      {
+        "request": 2,
+        "role": "wide_coverage_failure",
+        "packet_sequence": 3,
+        "eyes": [
+          {
+            "eye": 0,
+            "capture_sequence": 11756,
+            "present": 11756,
+            "lease": 6,
+            "packet_sequence": 3,
+            "packet_version": 2,
+            "flags": 5,
+            "packet_sha256": "06a3ac99ab1a410fc4f11a430dcfceb06181fc8e72919947e3a105c212bd2cc3",
+            "copy_and_selected_draw_packets_identical": true,
+            "all_expected_packet_values_verified": true
+          },
+          {
+            "eye": 1,
+            "capture_sequence": 11759,
+            "present": 11759,
+            "lease": 9,
+            "packet_sequence": 3,
+            "packet_version": 2,
+            "flags": 5,
+            "packet_sha256": "41c6182d3d99bfef813bf2a5a809a74acdc14d17632bb69d552604b200c8e08a",
+            "copy_and_selected_draw_packets_identical": true,
+            "all_expected_packet_values_verified": true
+          }
+        ],
+        "readback_bytes": 29491200,
+        "raw_private_pixels_sha256": "8999747fd09fd6ba68bec8ddedbcbaf96e524d9a49ed24acb4def655900fd28d"
+      },
+      {
+        "request": 3,
+        "role": "stereo",
+        "packet_sequence": 4,
+        "eyes": [
+          {
+            "eye": 0,
+            "capture_sequence": 11838,
+            "present": 11838,
+            "lease": 11,
+            "packet_sequence": 4,
+            "packet_version": 2,
+            "flags": 5,
+            "packet_sha256": "a131d150e907d74c43b97b1a457f132c8fed9b04d8660e20a7dfbc49dcf10177",
+            "copy_and_selected_draw_packets_identical": true,
+            "all_expected_packet_values_verified": true
+          },
+          {
+            "eye": 1,
+            "capture_sequence": 11840,
+            "present": 11840,
+            "lease": 13,
+            "packet_sequence": 4,
+            "packet_version": 2,
+            "flags": 5,
+            "packet_sha256": "3f1928ee9402f59dfee5df0b84b3b8287ace62332e63ab8068bc0e7293fc7dcb",
+            "copy_and_selected_draw_packets_identical": true,
+            "all_expected_packet_values_verified": true
+          }
+        ],
+        "readback_bytes": 29491200,
+        "raw_private_pixels_sha256": "859022d7594718b905aeec7233cf0ecb9b8f05b3824644542ab6b6641135daae"
+      },
+      {
+        "request": 4,
+        "role": "restored",
+        "packet_sequence": 5,
+        "eyes": [
+          {
+            "eye": 0,
+            "capture_sequence": 11923,
+            "present": 11923,
+            "lease": 15,
+            "packet_sequence": 5,
+            "packet_version": 2,
+            "flags": 5,
+            "packet_sha256": "3920d63d97efb848945147b3af48df3498d9e1be8db542a1836128903ce024ba",
+            "copy_and_selected_draw_packets_identical": true,
+            "all_expected_packet_values_verified": true
+          },
+          {
+            "eye": 1,
+            "capture_sequence": 11925,
+            "present": 11925,
+            "lease": 17,
+            "packet_sequence": 5,
+            "packet_version": 2,
+            "flags": 5,
+            "packet_sha256": "afc069b6abd33e51c8317b4e0d09661f25280a40bd816a104d9b550db798c58b",
+            "copy_and_selected_draw_packets_identical": true,
+            "all_expected_packet_values_verified": true
+          }
+        ],
+        "readback_bytes": 29491200,
+        "raw_private_pixels_sha256": "4b908840643d801fe33c3101e807f02661bea65474b7e1f81194b87eebea9d35"
+      }
+    ],
+    "readback_bytes": 117964800,
+    "patch_analysis": {
+      "summary": {
+        "analysis": "Mean-centered 49-sample local grayscale patches, downsampled 2x; fixed world ROI grid; acceptance only contrast/MAE/uniqueness, not expected motion. No full-scene guarantee.",
+        "contrasted_patches": 40,
+        "accepted_patches": 22,
+        "same_instant_pair": false,
+        "left": {
+          "median_dx": 42.0,
+          "dx_range": [
+            32,
+            46
+          ],
+          "median_dy": 0.0,
+          "dy_range": [
+            0,
+            2
+          ],
+          "nonzero_count": 22
+        },
+        "right": {
+          "median_dx": -40.0,
+          "dx_range": [
+            -44,
+            -32
+          ],
+          "median_dy": 0.0,
+          "dy_range": [
+            0,
+            0
+          ],
+          "nonzero_count": 22
+        },
+        "restore": {
+          "median_dx": 0.0,
+          "dx_range": [
+            0,
+            0
+          ],
+          "median_dy": 0.0,
+          "dy_range": [
+            0,
+            0
+          ],
+          "nonzero_count": 0
+        },
+        "opposite_horizontal_disparity_count": 22
+      },
+      "patches": [
+        {
+          "xy": [
+            1060,
+            320
+          ],
+          "matches": {
+            "left": {
+              "dx": 34,
+              "dy": 0,
+              "mae": 3.457725947521865,
+              "contrast": 12.453977509371096,
+              "uniqueness": 1.1698385931100945
+            },
+            "right": {
+              "dx": -32,
+              "dy": 0,
+              "mae": 1.4852144939608516,
+              "contrast": 12.453977509371096,
+              "uniqueness": 2.233875490745931
+            },
+            "restore": {
+              "dx": 0,
+              "dy": 0,
+              "mae": 0.7638483965014576,
+              "contrast": 12.453977509371096,
+              "uniqueness": 4.147219193020721
+            }
+          },
+          "accepted": false
+        },
+        {
+          "xy": [
+            1220,
+            320
+          ],
+          "matches": {
+            "left": {
+              "dx": 34,
+              "dy": 0,
+              "mae": 1.1003748438150767,
+              "contrast": 2.1882548937942525,
+              "uniqueness": 1.573807721423165
+            },
+            "right": {
+              "dx": -34,
+              "dy": 0,
+              "mae": 1.5560183256976257,
+              "contrast": 2.1882548937942525,
+              "uniqueness": 1.1349036402569594
+            },
+            "restore": {
+              "dx": 0,
+              "dy": 0,
+              "mae": 0.5930862140774688,
+              "contrast": 2.1882548937942525,
+              "uniqueness": 3.0716292134831407
+            }
+          },
+          "accepted": false
+        },
+        {
+          "xy": [
+            1380,
+            320
+          ],
+          "matches": {
+            "left": {
+              "dx": 34,
+              "dy": 0,
+              "mae": 1.5976676384839652,
+              "contrast": 2.2598917117867563,
+              "uniqueness": 1.2080291970802914
+            },
+            "right": {
+              "dx": -34,
+              "dy": 0,
+              "mae": 1.5768429820907954,
+              "contrast": 2.2598917117867563,
+              "uniqueness": 1.2239830956154258
+            },
+            "restore": {
+              "dx": 0,
+              "dy": 0,
+              "mae": 0.6938775510204082,
+              "contrast": 2.2598917117867563,
+              "uniqueness": 3.869147659063625
+            }
+          },
+          "accepted": false
+        },
+        {
+          "xy": [
+            1540,
+            320
+          ],
+          "matches": {
+            "left": {
+              "dx": 34,
+              "dy": 0,
+              "mae": 1.7992503123698462,
+              "contrast": 2.6380674718867136,
+              "uniqueness": 1.445833333333333
+            },
+            "right": {
+              "dx": -34,
+              "dy": 0,
+              "mae": 1.912536443148688,
+              "contrast": 2.6380674718867136,
+              "uniqueness": 1.270905923344948
+            },
+            "restore": {
+              "dx": 0,
+              "dy": 0,
+              "mae": 0.6647230320699711,
+              "contrast": 2.6380674718867136,
+              "uniqueness": 4.314536340852129
+            }
+          },
+          "accepted": false
+        },
+        {
+          "xy": [
+            1700,
+            320
+          ],
+          "matches": {
+            "left": {
+              "dx": 34,
+              "dy": 0,
+              "mae": 1.4427321949187824,
+              "contrast": 3.8458975426905457,
+              "uniqueness": 2.1945727482679005
+            },
+            "right": {
+              "dx": -34,
+              "dy": 0,
+              "mae": 1.9341940857975841,
+              "contrast": 3.8458975426905457,
+              "uniqueness": 1.5452196382428942
+            },
+            "restore": {
+              "dx": 0,
+              "dy": 0,
+              "mae": 0.7230320699708478,
+              "contrast": 3.8458975426905457,
+              "uniqueness": 6.074884792626708
+            }
+          },
+          "accepted": true
+        },
+        {
+          "xy": [
+            1860,
+            320
+          ],
+          "matches": {
+            "left": {
+              "dx": 34,
+              "dy": 0,
+              "mae": 2.765514369012912,
+              "contrast": 4.1749271137026245,
+              "uniqueness": 1.267469879518072
+            },
+            "right": {
+              "dx": -34,
+              "dy": 0,
+              "mae": 2.2332361516034993,
+              "contrast": 4.1749271137026245,
+              "uniqueness": 1.6807161506900412
+            },
+            "restore": {
+              "dx": 0,
+              "dy": 0,
+              "mae": 0.8371511870054134,
+              "contrast": 4.1749271137026245,
+              "uniqueness": 5.65970149253732
+            }
+          },
+          "accepted": false
+        },
+        {
+          "xy": [
+            900,
+            480
+          ],
+          "matches": {
+            "left": {
+              "dx": 16,
+              "dy": 0,
+              "mae": 1.3352769679300291,
+              "contrast": 2.4947938359017066,
+              "uniqueness": 1.4778540237055497
+            },
+            "right": {
+              "dx": -14,
+              "dy": 4,
+              "mae": 2.0,
+              "contrast": 2.4947938359017066,
+              "uniqueness": 1.0095793419408576
+            },
+            "restore": {
+              "dx": 0,
+              "dy": 0,
+              "mae": 0.5947521865889215,
+              "contrast": 2.4947938359017066,
+              "uniqueness": 4.5672268907563
+            }
+          },
+          "accepted": false
+        },
+        {
+          "xy": [
+            1540,
+            480
+          ],
+          "matches": {
+            "left": {
+              "dx": 36,
+              "dy": 0,
+              "mae": 1.072886297376094,
+              "contrast": 3.6992919616826327,
+              "uniqueness": 2.668478260869563
+            },
+            "right": {
+              "dx": -36,
+              "dy": 0,
+              "mae": 1.9866722199083717,
+              "contrast": 3.6992919616826327,
+              "uniqueness": 1.4222222222222218
+            },
+            "restore": {
+              "dx": 0,
+              "dy": 0,
+              "mae": 0.7205331112036651,
+              "contrast": 3.6992919616826327,
+              "uniqueness": 5.110982658959537
+            }
+          },
+          "accepted": false
+        },
+        {
+          "xy": [
+            1860,
+            480
+          ],
+          "matches": {
+            "left": {
+              "dx": 36,
+              "dy": 0,
+              "mae": 1.0437317784256561,
+              "contrast": 2.8304872969596,
+              "uniqueness": 2.3184357541899434
+            },
+            "right": {
+              "dx": -36,
+              "dy": 0,
+              "mae": 1.3311120366513953,
+              "contrast": 2.8304872969596,
+              "uniqueness": 1.787234042553191
+            },
+            "restore": {
+              "dx": 0,
+              "dy": 0,
+              "mae": 0.8438150770512295,
+              "contrast": 2.8304872969596,
+              "uniqueness": 3.4906219151036497
+            }
+          },
+          "accepted": true
+        },
+        {
+          "xy": [
+            900,
+            640
+          ],
+          "matches": {
+            "left": {
+              "dx": 32,
+              "dy": 2,
+              "mae": 2.2182423990004185,
+              "contrast": 19.996668054977093,
+              "uniqueness": 2.2211791212917733
+            },
+            "right": {
+              "dx": -32,
+              "dy": 0,
+              "mae": 1.7451062057476052,
+              "contrast": 19.996668054977093,
+              "uniqueness": 2.8439140811455843
+            },
+            "restore": {
+              "dx": 0,
+              "dy": 0,
+              "mae": 0.867138692211578,
+              "contrast": 19.996668054977093,
+              "uniqueness": 5.164265129682998
+            }
+          },
+          "accepted": true
+        },
+        {
+          "xy": [
+            1060,
+            640
+          ],
+          "matches": {
+            "left": {
+              "dx": 36,
+              "dy": 0,
+              "mae": 2.044148271553519,
+              "contrast": 7.02707205331112,
+              "uniqueness": 1.6414017929910354
+            },
+            "right": {
+              "dx": -36,
+              "dy": 0,
+              "mae": 1.9700124947938358,
+              "contrast": 7.02707205331112,
+              "uniqueness": 1.8714587737843553
+            },
+            "restore": {
+              "dx": 0,
+              "dy": 0,
+              "mae": 1.3152852977925862,
+              "contrast": 7.02707205331112,
+              "uniqueness": 3.6934768841038634
+            }
+          },
+          "accepted": true
+        },
+        {
+          "xy": [
+            1540,
+            640
+          ],
+          "matches": {
+            "left": {
+              "dx": 38,
+              "dy": 0,
+              "mae": 1.3152852977925864,
+              "contrast": 2.3215326947105375,
+              "uniqueness": 1.5148828372387586
+            },
+            "right": {
+              "dx": -36,
+              "dy": 0,
+              "mae": 1.78009162848813,
+              "contrast": 2.3215326947105375,
+              "uniqueness": 1.1750116986429573
+            },
+            "restore": {
+              "dx": 0,
+              "dy": 0,
+              "mae": 0.8321532694710528,
+              "contrast": 2.3215326947105375,
+              "uniqueness": 3.5925925925925966
+            }
+          },
+          "accepted": false
+        },
+        {
+          "xy": [
+            1700,
+            640
+          ],
+          "matches": {
+            "left": {
+              "dx": 38,
+              "dy": 0,
+              "mae": 1.4210745522698875,
+              "contrast": 3.5918367346938775,
+              "uniqueness": 1.9859320046893316
+            },
+            "right": {
+              "dx": -36,
+              "dy": 0,
+              "mae": 2.932944606413994,
+              "contrast": 3.5918367346938775,
+              "uniqueness": 1.077534791252485
+            },
+            "restore": {
+              "dx": 0,
+              "dy": 0,
+              "mae": 1.072886297376094,
+              "contrast": 3.5918367346938775,
+              "uniqueness": 3.7647515527950293
+            }
+          },
+          "accepted": false
+        },
+        {
+          "xy": [
+            1860,
+            640
+          ],
+          "matches": {
+            "left": {
+              "dx": 38,
+              "dy": 0,
+              "mae": 0.8987921699291963,
+              "contrast": 4.012494793835902,
+              "uniqueness": 3.2613531047265987
+            },
+            "right": {
+              "dx": -36,
+              "dy": 0,
+              "mae": 1.5218658892128292,
+              "contrast": 4.012494793835902,
+              "uniqueness": 1.9901477832512304
+            },
+            "restore": {
+              "dx": 0,
+              "dy": 0,
+              "mae": 0.9079550187421883,
+              "contrast": 4.012494793835902,
+              "uniqueness": 3.735779816513772
+            }
+          },
+          "accepted": true
+        },
+        {
+          "xy": [
+            2020,
+            640
+          ],
+          "matches": {
+            "left": {
+              "dx": 38,
+              "dy": 0,
+              "mae": 1.0803831736776353,
+              "contrast": 4.823823406913786,
+              "uniqueness": 3.41634541249036
+            },
+            "right": {
+              "dx": -36,
+              "dy": 0,
+              "mae": 1.6676384839650147,
+              "contrast": 4.823823406913786,
+              "uniqueness": 2.3266733266733266
+            },
+            "restore": {
+              "dx": 0,
+              "dy": 0,
+              "mae": 0.6988754685547693,
+              "contrast": 4.823823406913786,
+              "uniqueness": 7.109654350417158
+            }
+          },
+          "accepted": true
+        },
+        {
+          "xy": [
+            2180,
+            640
+          ],
+          "matches": {
+            "left": {
+              "dx": 38,
+              "dy": 0,
+              "mae": 0.9637650978758859,
+              "contrast": 2.189087880049979,
+              "uniqueness": 2.1719965427830576
+            },
+            "right": {
+              "dx": -38,
+              "dy": 0,
+              "mae": 1.5085381091211993,
+              "contrast": 2.189087880049979,
+              "uniqueness": 1.255107675317504
+            },
+            "restore": {
+              "dx": 0,
+              "dy": 0,
+              "mae": 0.5164514785506042,
+              "contrast": 2.189087880049979,
+              "uniqueness": 5.183870967741933
+            }
+          },
+          "accepted": false
+        },
+        {
+          "xy": [
+            1060,
+            800
+          ],
+          "matches": {
+            "left": {
+              "dx": 38,
+              "dy": 0,
+              "mae": 1.5351936693044566,
+              "contrast": 6.2099125364431496,
+              "uniqueness": 2.5453065653825284
+            },
+            "right": {
+              "dx": -36,
+              "dy": 0,
+              "mae": 1.559350270720533,
+              "contrast": 6.2099125364431496,
+              "uniqueness": 2.034188034188035
+            },
+            "restore": {
+              "dx": 0,
+              "dy": 0,
+              "mae": 1.092877967513536,
+              "contrast": 6.2099125364431496,
+              "uniqueness": 3.5777439024390243
+            }
+          },
+          "accepted": true
+        },
+        {
+          "xy": [
+            1220,
+            800
+          ],
+          "matches": {
+            "left": {
+              "dx": 38,
+              "dy": 0,
+              "mae": 1.5510204081632653,
+              "contrast": 2.2082465639316946,
+              "uniqueness": 1.3673469387755097
+            },
+            "right": {
+              "dx": -38,
+              "dy": 0,
+              "mae": 1.2619741774260727,
+              "contrast": 2.2082465639316946,
+              "uniqueness": 1.4778877887788775
+            },
+            "restore": {
+              "dx": 0,
+              "dy": 0,
+              "mae": 0.9454394002498955,
+              "contrast": 2.2082465639316946,
+              "uniqueness": 2.441409691629957
+            }
+          },
+          "accepted": false
+        },
+        {
+          "xy": [
+            1380,
+            800
+          ],
+          "matches": {
+            "left": {
+              "dx": 40,
+              "dy": 0,
+              "mae": 1.506039150354019,
+              "contrast": 2.4531445231153683,
+              "uniqueness": 1.3130530973451333
+            },
+            "right": {
+              "dx": -38,
+              "dy": 0,
+              "mae": 1.4127446897126203,
+              "contrast": 2.4531445231153683,
+              "uniqueness": 1.3820754716981125
+            },
+            "restore": {
+              "dx": 0,
+              "dy": 0,
+              "mae": 0.7880049979175359,
+              "contrast": 2.4531445231153683,
+              "uniqueness": 3.107822410147986
+            }
+          },
+          "accepted": false
+        },
+        {
+          "xy": [
+            1700,
+            800
+          ],
+          "matches": {
+            "left": {
+              "dx": 40,
+              "dy": 0,
+              "mae": 1.3336109954185758,
+              "contrast": 3.665972511453561,
+              "uniqueness": 2.3041848844472193
+            },
+            "right": {
+              "dx": -40,
+              "dy": 0,
+              "mae": 1.8075801749271136,
+              "contrast": 3.665972511453561,
+              "uniqueness": 1.6838709677419355
+            },
+            "restore": {
+              "dx": 0,
+              "dy": 0,
+              "mae": 0.8454810495626821,
+              "contrast": 3.665972511453561,
+              "uniqueness": 4.187192118226601
+            }
+          },
+          "accepted": true
+        },
+        {
+          "xy": [
+            1860,
+            800
+          ],
+          "matches": {
+            "left": {
+              "dx": 40,
+              "dy": 0,
+              "mae": 0.9454394002498961,
+              "contrast": 3.682632236568097,
+              "uniqueness": 3.299559471365638
+            },
+            "right": {
+              "dx": -38,
+              "dy": 0,
+              "mae": 2.064972927946689,
+              "contrast": 3.682632236568097,
+              "uniqueness": 1.536506655909641
+            },
+            "restore": {
+              "dx": 0,
+              "dy": 0,
+              "mae": 0.8338192419825078,
+              "contrast": 3.682632236568097,
+              "uniqueness": 5.444555444555441
+            }
+          },
+          "accepted": true
+        },
+        {
+          "xy": [
+            2020,
+            800
+          ],
+          "matches": {
+            "left": {
+              "dx": 40,
+              "dy": 0,
+              "mae": 0.8979591836734697,
+              "contrast": 3.5610162432319865,
+              "uniqueness": 2.421150278293134
+            },
+            "right": {
+              "dx": -40,
+              "dy": 0,
+              "mae": 1.396084964598084,
+              "contrast": 3.5610162432319865,
+              "uniqueness": 1.6121718377088308
+            },
+            "restore": {
+              "dx": 0,
+              "dy": 0,
+              "mae": 0.7288629737609327,
+              "contrast": 3.5610162432319865,
+              "uniqueness": 3.374857142857144
+            }
+          },
+          "accepted": true
+        },
+        {
+          "xy": [
+            2180,
+            800
+          ],
+          "matches": {
+            "left": {
+              "dx": 40,
+              "dy": 0,
+              "mae": 0.942107455226989,
+              "contrast": 2.075801749271137,
+              "uniqueness": 1.6030061892130851
+            },
+            "right": {
+              "dx": -38,
+              "dy": 0,
+              "mae": 1.1611828404831332,
+              "contrast": 2.075801749271137,
+              "uniqueness": 1.1341463414634145
+            },
+            "restore": {
+              "dx": 0,
+              "dy": 0,
+              "mae": 0.6197417742607247,
+              "contrast": 2.075801749271137,
+              "uniqueness": 3.352150537634408
+            }
+          },
+          "accepted": false
+        },
+        {
+          "xy": [
+            900,
+            960
+          ],
+          "matches": {
+            "left": {
+              "dx": 36,
+              "dy": 6,
+              "mae": 4.857142857142857,
+              "contrast": 15.333610995418576,
+              "uniqueness": 1.501972217458412
+            },
+            "right": {
+              "dx": -38,
+              "dy": 0,
+              "mae": 3.2578092461474397,
+              "contrast": 15.333610995418576,
+              "uniqueness": 1.4088468422398357
+            },
+            "restore": {
+              "dx": 0,
+              "dy": 0,
+              "mae": 0.6938775510204085,
+              "contrast": 15.333610995418576,
+              "uniqueness": 7.058823529411762
+            }
+          },
+          "accepted": false
+        },
+        {
+          "xy": [
+            1060,
+            960
+          ],
+          "matches": {
+            "left": {
+              "dx": 42,
+              "dy": 0,
+              "mae": 1.8692211578508957,
+              "contrast": 3.032069970845481,
+              "uniqueness": 1.589126559714794
+            },
+            "right": {
+              "dx": -40,
+              "dy": 0,
+              "mae": 1.7434402332361518,
+              "contrast": 3.032069970845481,
+              "uniqueness": 1.5351170568561874
+            },
+            "restore": {
+              "dx": 0,
+              "dy": 0,
+              "mae": 0.7346938775510204,
+              "contrast": 3.032069970845481,
+              "uniqueness": 4.683673469387755
+            }
+          },
+          "accepted": true
+        },
+        {
+          "xy": [
+            1220,
+            960
+          ],
+          "matches": {
+            "left": {
+              "dx": 42,
+              "dy": 0,
+              "mae": 1.1353602665556015,
+              "contrast": 3.0245730945439404,
+              "uniqueness": 2.4666177549523116
+            },
+            "right": {
+              "dx": -40,
+              "dy": 0,
+              "mae": 1.8059142024156607,
+              "contrast": 3.0245730945439404,
+              "uniqueness": 1.6203874538745382
+            },
+            "restore": {
+              "dx": 0,
+              "dy": 0,
+              "mae": 0.767180341524365,
+              "contrast": 3.0245730945439404,
+              "uniqueness": 4.775244299674266
+            }
+          },
+          "accepted": true
+        },
+        {
+          "xy": [
+            1380,
+            960
+          ],
+          "matches": {
+            "left": {
+              "dx": 42,
+              "dy": 0,
+              "mae": 1.3152852977925864,
+              "contrast": 2.451478550603915,
+              "uniqueness": 1.7384420519316022
+            },
+            "right": {
+              "dx": -40,
+              "dy": 0,
+              "mae": 1.7284464806330695,
+              "contrast": 2.451478550603915,
+              "uniqueness": 1.3349397590361447
+            },
+            "restore": {
+              "dx": 0,
+              "dy": 0,
+              "mae": 0.6447313619325282,
+              "contrast": 2.451478550603915,
+              "uniqueness": 4.328165374677003
+            }
+          },
+          "accepted": false
+        },
+        {
+          "xy": [
+            1540,
+            960
+          ],
+          "matches": {
+            "left": {
+              "dx": 42,
+              "dy": 0,
+              "mae": 0.6838817159516845,
+              "contrast": 2.0016659725114536,
+              "uniqueness": 2.6857490864799116
+            },
+            "right": {
+              "dx": -42,
+              "dy": 0,
+              "mae": 1.1703456892961266,
+              "contrast": 2.0016659725114536,
+              "uniqueness": 1.5693950177935945
+            },
+            "restore": {
+              "dx": 0,
+              "dy": 0,
+              "mae": 0.7871720116618075,
+              "contrast": 2.0016659725114536,
+              "uniqueness": 2.710052910052909
+            }
+          },
+          "accepted": true
+        },
+        {
+          "xy": [
+            1700,
+            960
+          ],
+          "matches": {
+            "left": {
+              "dx": 42,
+              "dy": 0,
+              "mae": 1.2619741774260704,
+              "contrast": 3.387755102040817,
+              "uniqueness": 2.254785478547859
+            },
+            "right": {
+              "dx": -42,
+              "dy": 0,
+              "mae": 1.4152436484798,
+              "contrast": 3.387755102040817,
+              "uniqueness": 1.9340788699234848
+            },
+            "restore": {
+              "dx": 0,
+              "dy": 0,
+              "mae": 0.7646813827571842,
+              "contrast": 3.387755102040817,
+              "uniqueness": 4.897603485838782
+            }
+          },
+          "accepted": true
+        },
+        {
+          "xy": [
+            1860,
+            960
+          ],
+          "matches": {
+            "left": {
+              "dx": 44,
+              "dy": 0,
+              "mae": 1.1145356101624322,
+              "contrast": 3.4510620574760518,
+              "uniqueness": 2.332585949177877
+            },
+            "right": {
+              "dx": -42,
+              "dy": 0,
+              "mae": 1.1211995002082473,
+              "contrast": 3.4510620574760518,
+              "uniqueness": 2.662704309063891
+            },
+            "restore": {
+              "dx": 0,
+              "dy": 0,
+              "mae": 0.72969596001666,
+              "contrast": 3.4510620574760518,
+              "uniqueness": 4.366438356164382
+            }
+          },
+          "accepted": true
+        },
+        {
+          "xy": [
+            2180,
+            960
+          ],
+          "matches": {
+            "left": {
+              "dx": 42,
+              "dy": 0,
+              "mae": 1.2578092461474386,
+              "contrast": 2.8371511870054142,
+              "uniqueness": 1.6993377483443703
+            },
+            "right": {
+              "dx": -42,
+              "dy": 0,
+              "mae": 1.0337359433569355,
+              "contrast": 2.8371511870054142,
+              "uniqueness": 2.3053988718775162
+            },
+            "restore": {
+              "dx": 0,
+              "dy": 0,
+              "mae": 0.6089129529362767,
+              "contrast": 2.8371511870054142,
+              "uniqueness": 5.039671682626538
+            }
+          },
+          "accepted": true
+        },
+        {
+          "xy": [
+            900,
+            1120
+          ],
+          "matches": {
+            "left": {
+              "dx": 44,
+              "dy": 0,
+              "mae": 1.4927113702623909,
+              "contrast": 4.064972927946689,
+              "uniqueness": 2.140066964285714
+            },
+            "right": {
+              "dx": -42,
+              "dy": 0,
+              "mae": 1.3819241982507287,
+              "contrast": 4.064972927946689,
+              "uniqueness": 2.0
+            },
+            "restore": {
+              "dx": 0,
+              "dy": 0,
+              "mae": 0.8263223656809663,
+              "contrast": 4.064972927946689,
+              "uniqueness": 4.320564516129032
+            }
+          },
+          "accepted": true
+        },
+        {
+          "xy": [
+            1060,
+            1120
+          ],
+          "matches": {
+            "left": {
+              "dx": 44,
+              "dy": 0,
+              "mae": 1.5085381091211996,
+              "contrast": 3.770095793419409,
+              "uniqueness": 2.2573163997791275
+            },
+            "right": {
+              "dx": -42,
+              "dy": 0,
+              "mae": 1.4435651811745107,
+              "contrast": 3.770095793419409,
+              "uniqueness": 2.231390652048471
+            },
+            "restore": {
+              "dx": 0,
+              "dy": 0,
+              "mae": 0.8912952936276552,
+              "contrast": 3.770095793419409,
+              "uniqueness": 4.027102803738317
+            }
+          },
+          "accepted": true
+        },
+        {
+          "xy": [
+            1220,
+            1120
+          ],
+          "matches": {
+            "left": {
+              "dx": 44,
+              "dy": 0,
+              "mae": 1.1236984589754266,
+              "contrast": 3.636817992503124,
+              "uniqueness": 2.286137879911046
+            },
+            "right": {
+              "dx": -42,
+              "dy": 0,
+              "mae": 2.015826738858809,
+              "contrast": 3.636817992503124,
+              "uniqueness": 1.4272727272727272
+            },
+            "restore": {
+              "dx": 0,
+              "dy": 0,
+              "mae": 0.8438150770512288,
+              "contrast": 3.636817992503124,
+              "uniqueness": 4.637709772951628
+            }
+          },
+          "accepted": false
+        },
+        {
+          "xy": [
+            1380,
+            1120
+          ],
+          "matches": {
+            "left": {
+              "dx": 44,
+              "dy": 0,
+              "mae": 1.1320283215326952,
+              "contrast": 2.682215743440233,
+              "uniqueness": 2.2582781456953636
+            },
+            "right": {
+              "dx": -44,
+              "dy": 0,
+              "mae": 1.8267388588088296,
+              "contrast": 2.682215743440233,
+              "uniqueness": 1.4724122207022343
+            },
+            "restore": {
+              "dx": 0,
+              "dy": 0,
+              "mae": 0.7905039566847145,
+              "contrast": 2.682215743440233,
+              "uniqueness": 3.6217070600632253
+            }
+          },
+          "accepted": false
+        },
+        {
+          "xy": [
+            1540,
+            1120
+          ],
+          "matches": {
+            "left": {
+              "dx": 44,
+              "dy": 0,
+              "mae": 1.8375676801332776,
+              "contrast": 3.633486047480216,
+              "uniqueness": 1.8399818676337263
+            },
+            "right": {
+              "dx": -44,
+              "dy": 0,
+              "mae": 2.027488546438984,
+              "contrast": 3.633486047480216,
+              "uniqueness": 1.64215283483977
+            },
+            "restore": {
+              "dx": 0,
+              "dy": 0,
+              "mae": 0.8196584756351522,
+              "contrast": 3.633486047480216,
+              "uniqueness": 4.9156504065040645
+            }
+          },
+          "accepted": true
+        },
+        {
+          "xy": [
+            1700,
+            1120
+          ],
+          "matches": {
+            "left": {
+              "dx": -78,
+              "dy": -12,
+              "mae": 3.7259475218658893,
+              "contrast": 4.174094127446897,
+              "uniqueness": 1.0118488710038007
+            },
+            "right": {
+              "dx": -44,
+              "dy": 0,
+              "mae": 1.0320699708454801,
+              "contrast": 4.174094127446897,
+              "uniqueness": 3.3793381759483485
+            },
+            "restore": {
+              "dx": 0,
+              "dy": 0,
+              "mae": 0.6530612244897942,
+              "contrast": 4.174094127446897,
+              "uniqueness": 7.202806122448998
+            }
+          },
+          "accepted": false
+        },
+        {
+          "xy": [
+            1860,
+            1120
+          ],
+          "matches": {
+            "left": {
+              "dx": 46,
+              "dy": 0,
+              "mae": 1.2294877134527287,
+              "contrast": 3.487713452728029,
+              "uniqueness": 2.296070460704606
+            },
+            "right": {
+              "dx": -44,
+              "dy": 0,
+              "mae": 0.8188254893794265,
+              "contrast": 3.487713452728029,
+              "uniqueness": 3.3296032553407886
+            },
+            "restore": {
+              "dx": 0,
+              "dy": 0,
+              "mae": 0.651395251978342,
+              "contrast": 3.487713452728029,
+              "uniqueness": 4.3925831202046055
+            }
+          },
+          "accepted": true
+        },
+        {
+          "xy": [
+            2020,
+            1120
+          ],
+          "matches": {
+            "left": {
+              "dx": 46,
+              "dy": 0,
+              "mae": 1.1320283215326956,
+              "contrast": 3.002082465639317,
+              "uniqueness": 2.240618101545252
+            },
+            "right": {
+              "dx": -44,
+              "dy": 0,
+              "mae": 1.121199500208246,
+              "contrast": 3.002082465639317,
+              "uniqueness": 2.3157503714710264
+            },
+            "restore": {
+              "dx": 0,
+              "dy": 0,
+              "mae": 0.6813827571845074,
+              "contrast": 3.002082465639317,
+              "uniqueness": 3.9400977995109967
+            }
+          },
+          "accepted": true
+        },
+        {
+          "xy": [
+            2180,
+            1120
+          ],
+          "matches": {
+            "left": {
+              "dx": 46,
+              "dy": 0,
+              "mae": 1.236984589754269,
+              "contrast": 3.6551436901291123,
+              "uniqueness": 2.6606060606060606
+            },
+            "right": {
+              "dx": -44,
+              "dy": 0,
+              "mae": 0.8721366097459385,
+              "contrast": 3.6551436901291123,
+              "uniqueness": 3.6131805157593146
+            },
+            "restore": {
+              "dx": 0,
+              "dy": 0,
+              "mae": 0.6339025406080788,
+              "contrast": 3.6551436901291123,
+              "uniqueness": 6.135348226018409
+            }
+          },
+          "accepted": true
+        }
+      ]
+    },
+    "wide_fov_degrees": [
+      91.67324722093173,
+      91.67324722093173
+    ],
+    "wide_fov_coverage_passed": false,
+    "wide_coverage_observation": "Visible missing/discontinuous regions persist after early projection-load construction; no full-scene fix or isolated cause established.",
+    "cross_session_pixel_improvement_comparison_claimed": false,
+    "camera_update_sequences": [
+      2,
+      3,
+      4,
+      5
+    ],
+    "error_events_observed": 0,
+    "in_game_khronos_validation": false,
+    "device_destroy_trace_observed": false,
+    "last_sampled_camera_stats": {
+      "updates": 4,
+      "packet_sequence": 5,
+      "registered_queues": 5,
+      "cross_queue_waits": 0,
+      "markers": 272602,
+      "busy_boundaries": 0,
+      "uncovered_boundaries": 0,
+      "marker_backpressure": 334731,
+      "write_holds": 0,
+      "inhibited_boundaries": 0,
+      "xr_pose_known": false
+    },
+    "terminal_stop_written": true,
+    "all_owned_processes_exited": true,
+    "original_game_and_vendor_files_and_exports_verified": true,
+    "original_exports_count": 262,
+    "launcher_exit_code": 0
+  },
+  "preceding_wide_capture_offline_analysis": {
+    "optical_ndc_scale": [
+      0.5443961265209271,
+      0.30622277512859486
+    ],
+    "source_fov_footprint_in_target_pixels": [
+      583.1729580532134,
+      499.5196019074117,
+      1976.8270419467865,
+      940.4803980925883
+    ],
+    "contrasted_patches": 45,
+    "inverse_optics_and_restore_accepted": 16,
+    "optical_winner_count": 16,
+    "zero_residual_inverse_optics_count": 15,
+    "unmodified_hypothesis_accepted_count": 0,
+    "whole_scene_or_culling_verified": false
+  },
+  "static_original_output_audit": {
+    "original_modules": 5378,
+    "position_store_instructions": 21512,
+    "modules_with_clip_distance_stores": 329,
+    "direct_ssa_clip_to_location_aliases_observed": 0,
+    "scope": "Direct output stores only, no fragment-use or culling causality proof. Original clip distances not disabled."
+  },
+  "limits": [
+    "The owned dependent-fragment failure does not establish Diablo uses the same visibility test or that it causes the game holes.",
+    "Four shader helper calls per invocation; no VR cadence certified.",
+    "Five multi-function candidates are excluded and their original shaders remain in use.",
+    "Partner/inverse matrices, other stages/passes and upstream CPU/GPU culling remain unchanged.",
+    "Moving original uniform reads earlier still needs source resource-aliasing/effects audit; preserved store instructions do not authorize replay.",
+    "Distinct source present IDs and partial packet observations do not establish simultaneous scene or whole-scene pose correctness.",
+    "Actual game images use CPU diagnostic exports, no OpenXR pose/runtime/headset.",
+    "No game D32 readback or final device/fence accounting; no relaunch just for counters.",
+    "Physical SteamVR dispatch/threads and earlier DRM/WAW issues remain unresolved; native Windows D3D12/VR absent."
+  ]
+}

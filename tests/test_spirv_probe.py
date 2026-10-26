@@ -88,6 +88,36 @@ class ObserverInstrumentationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'reserved'):
             spirv_probe.instrument(module.binary(),3,0,72,stereo=True)
 
+    def test_projection_input_preserves_original_outputs_and_only_writes_function_locals(self):
+        data=spirv_probe.instrument(self.data,3,0,72,stereo=True,projection_only_helper=True,projection_input=True)
+        observed=spirv_probe.Module(data);old_stores=[a for op,a in self.original.instructions if op==62]
+        variables={a[1]:a[2] for op,a in observed.instructions if op==59}
+        for store in old_stores:self.assertIn((62,store),observed.instructions)
+        for op,a in observed.instructions:
+            if op==62 and a not in old_stores:self.assertEqual(variables[a[0]],7)
+        function=next(a[0] for op,a in observed.instructions if op==71 and a[1]==41)
+        self.assertEqual(sum(op==57 and a[2]==function for op,a in observed.instructions),4)
+        # No late output write was added; original varying/Position computations
+        # retain their IDs and all consume the invocation's transformed rows.
+        self.assertEqual(sum(op==62 and a[0] not in variables for op,a in observed.instructions),
+                         sum(op==62 and a[0] not in variables for op,a in self.original.instructions))
+
+    def test_projection_input_is_explicit_and_requires_projection_only_mode(self):
+        with self.assertRaisesRegex(ValueError,'requires'):
+            spirv_probe.instrument(self.data,3,0,72,stereo=True,projection_input=True)
+
+    def test_projection_input_does_not_guess_dynamic_camera_loads(self):
+        module=spirv_probe.Module(self.data)
+        camera=next(a[0] for op,a in module.instructions if op==71 and a[1:]==[33,0])
+        vertex=next(a[0] for op,a in module.instructions if op==71 and a[1:]==[11,42])
+        vertex_value=next(a[1] for op,a in module.instructions if op==61 and a[2]==vertex)
+        for op,a in module.instructions:
+            if op==65 and len(a)==5 and a[2]==camera:
+                # A nonconstant index is outside the admitted static path.
+                a[-1]=vertex_value;break
+        with self.assertRaisesRegex(ValueError,'cannot bound'):
+            spirv_probe.instrument(module.binary(),3,0,72,stereo=True,projection_only_helper=True,projection_input=True)
+
 
 if __name__ == '__main__':
     unittest.main()
