@@ -60,6 +60,8 @@ if(D4VR_BUILD_GPU_PROBE_FIXTURE)
     # owned-resource pixel control and never requires game shaders or a GPU.
     add_executable(d4vr_sampled_writer_fixture tests/sampled_writer_gpu.cpp)
     target_link_libraries(d4vr_sampled_writer_fixture PRIVATE Vulkan::Vulkan)
+    add_executable(d4vr_sampled_uv_fixture tests/sampled_uv_gpu.cpp)
+    target_link_libraries(d4vr_sampled_uv_fixture PRIVATE Vulkan::Vulkan)
     add_executable(d4vr_gpu_probe_fixture tests/gpu_probe_vulkan.cpp)
     target_link_libraries(d4vr_gpu_probe_fixture PRIVATE Vulkan::Vulkan)
     add_executable(d4vr_borrowed_binding_fixture tests/borrowed_binding_vulkan.cpp)

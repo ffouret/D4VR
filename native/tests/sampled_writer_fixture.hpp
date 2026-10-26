@@ -3,14 +3,15 @@
 // Fragment push words are deliberately unused by present_eye.frag. Observing
 // their values therefore establishes CPU state only, never a sampled image.
 struct SampledWriterFixture {
-    Fixture& f;std::ofstream out;VkPipelineLayout compatible{};VkPipeline regular{},counted{};VkPipelineCreateFlags originalFlags{};
+    Fixture& f;std::ofstream out;VkPipelineLayout compatible{};VkPipeline regular{},counted{};VkPipelineCreateFlags originalFlags{};bool outputControl=false;
     PFN_vkCmdSetViewportWithCount viewportCount{};PFN_vkCmdSetViewportWithCountEXT viewportCountExt{};
     PFN_vkCmdSetScissorWithCount scissorCount{};PFN_vkCmdSetScissorWithCountEXT scissorCountExt{};
 #ifdef VK_KHR_maintenance6
     PFN_vkCmdPushConstants2KHR push2{};
 #endif
-    SampledWriterFixture(Fixture& fixture,const std::filesystem::path& directory,const VkPipelineLayoutCreateInfo& layoutInfo,const VkGraphicsPipelineCreateInfo& original)
-        :f(fixture),out(directory/"sampled-writer-fixture.jsonl"),originalFlags(original.flags){
+    SampledWriterFixture(Fixture& fixture,const std::filesystem::path& directory,const VkPipelineLayoutCreateInfo& layoutInfo,const VkGraphicsPipelineCreateInfo& original,bool output=false,VkFormat colorFormat=VK_FORMAT_UNDEFINED)
+        :f(fixture),out(directory/"sampled-writer-fixture.jsonl"),originalFlags(original.flags),outputControl(output){
+        if(outputControl && (colorFormat!=VK_FORMAT_B8G8R8A8_UNORM || !original.pColorBlendState || original.pColorBlendState->attachmentCount!=1 || !original.pColorBlendState->pAttachments || original.pColorBlendState->logicOpEnable || original.pColorBlendState->pAttachments[0].blendEnable || original.pColorBlendState->pAttachments[0].colorWriteMask!=15 || !original.pMultisampleState || original.pMultisampleState->rasterizationSamples!=VK_SAMPLE_COUNT_1_BIT))throw std::runtime_error("Original output control differs from finite decoding requirements");
         if(!out)throw std::runtime_error("Owned writer argument file unavailable");
         check(vkCreatePipelineLayout(f.device,&layoutInfo,nullptr,&compatible));
         std::array<VkDynamicState,2> modes{VK_DYNAMIC_STATE_VIEWPORT,VK_DYNAMIC_STATE_SCISSOR};
@@ -70,6 +71,7 @@ struct SampledWriterFixture {
            <<",\"maintenance6_enabled\":"<<(f.writerMaintenance6Enabled?"true":"false");
         if(f.writerFsrAttachmentEnabled)out<<",\"pipeline_flags\":"<<originalFlags<<",\"attachment_fsr_feature_enabled\":true,\"rate_attachment_present\":false,\"static_rate_pnext_present\":false,\"dynamic_rate_declared\":false";
         if(f.writerDepthClipEnabled)out<<",\"depth_clip_feature_enabled\":true,\"depth_clip_chain_type\":"<<VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_DEPTH_CLIP_STATE_CREATE_INFO_EXT<<",\"depth_clip_state_flags\":0,\"depth_clip_enable_payload\":true";
+        if(outputControl)out<<",\"fragment_output\":{\"color_formats\":[44],\"color_attachment_count\":1,\"blend_enable\":false,\"color_write_mask\":15,\"logic_op_enable\":false,\"rasterization_samples\":1}";
         out<<",\"fragment_shader_reads_push_constants\":false,\"push_values_identify_sampled_resource\":false}\n";
         out.flush();if(!out)throw std::runtime_error("Owned original writer argument write failed");
     }

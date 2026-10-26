@@ -201,6 +201,49 @@ def raw_state(original=None, ordinal=10):
     return value
 
 
+def output_owned(frame=0, draw=0):
+    value = clip_owned(frame, draw)
+    value['fragment_output'] = {'color_formats': [44], 'color_attachment_count': 1,
+        'blend_enable': False, 'color_write_mask': 15, 'logic_op_enable': False,
+        'rasterization_samples': 1}
+    return value
+
+
+def output_state(original=None, ordinal=10):
+    original = original or output_owned()
+    value = raw_state(original, ordinal);value['schema_version'] = 4
+    dynamic = original['mode'] != 'static'
+    def header():
+        return {'status': 'observed', 'flags': 0, 'chain_types': [],
+                'chain_truncated': False, 'chain_duplicate': False}
+    dyn = header();dyn.update(status='observed' if dynamic else 'absent', flags=0 if dynamic else None,
+        original_count=2 if dynamic else 0, scanned_count=2 if dynamic else 0,
+        relevant_count=0, relevant_types=[], duplicate_states=False, unknown_states=False,
+        relevant_truncated=False)
+    blend = header();blend.update(attachment_count=1, attachment0_status='observed',
+                                  blend_enable=0, color_write_mask=15, logic_op_enable=0)
+    sample = header();sample.update(scope='combined_fragment_shader_and_output_owner_only', rasterization_samples=1)
+    value['fragment_output'] = {'scope': 'original_fragment_output_declarations', 'output_owners': 1,
+        'owner_generation': 15, 'owner_own_parts': 15, 'pre_raster_guard_applied': True,
+        'known': dict.fromkeys(audit.OUTPUT_FACETS, True),
+        'reasons': {name: [] for name in audit.OUTPUT_FACETS},
+        'reason_masks': dict.fromkeys(audit.OUTPUT_FACETS, 0), 'dynamic': dyn,
+        'rendering': {'status': 'observed', 'render_pass_null': True, 'color_attachment_count': 1,
+                      'formats': [44], 'array_status': 'observed'},
+        'color_blend': blend, 'multisample': sample,
+        'attachment_binding_known': False, 'stored_color_decode_proven': False}
+    return value
+
+
+def output_reason(value, facets, reason):
+    output = value['fragment_output']
+    for name in facets:
+        output['reason_masks'][name] |= audit.OUTPUT_BITS[reason]
+        mask = output['reason_masks'][name]
+        output['reasons'][name] = [name for name in audit.OUTPUT_REASONS if mask & audit.OUTPUT_BITS[name]]
+        output['known'][name] = False
+
+
 class SampledWriterStateAudit(unittest.TestCase):
     def check(self, value=None, original=None, ordinal=10):
         with patch('subprocess.Popen', side_effect=AssertionError('Read-only CPU audit cannot execute a process')):
@@ -705,6 +748,139 @@ class SampledWriterStateAudit(unittest.TestCase):
         sc['origin_ordinal'] = sc['last_observed_call']['ordinal'] = vp['origin_ordinal']
         value['scissor'].update(setter_ordinal=vp['origin_ordinal'], count_ordinal=vp['origin_ordinal'], last_ordinal=vp['origin_ordinal'])
         with self.assertRaises(ValueError): audit.audit_state(value)
+
+    def test_schema4_owned_output_controls_are_joined_to_each_delivered_draw(self):
+        for frame in (0, 1, 3):
+            receipt, controls = delivered(frame)
+            draws = [e for e in receipt['captured_writer_prefix']['occurrences'][0]['commands'][0]['events'] if e['kind'] == 'draw']
+            for index, event in enumerate(draws):
+                original = output_owned(frame, index);controls[(frame, index)] = original
+                event['writer_state'] = output_state(original, event['ordinal'])
+            result = audit.audit_receipt(receipt, controls, require_raw=True, require_output=True)
+            self.assertEqual(len(result['states']), 2)
+            self.assertTrue(all(all(row['fragment_output_known'].values()) for row in result['states']))
+            changed = deepcopy(controls);del changed[(frame, 1)]['fragment_output']
+            with self.assertRaises(ValueError): audit.audit_receipt(receipt, changed, require_output=True)
+            draws[0]['writer_state'] = raw_state(controls[(frame, 0)], draws[0]['ordinal'])
+            with self.assertRaises(ValueError): audit.audit_receipt(receipt, controls, require_output=True)
+        receipt, controls = delivered(enabled=False)
+        with self.assertRaises(ValueError): audit.audit_receipt(receipt, controls, observer_enabled=False, require_output=True)
+        controls = {(0, index): output_owned(0, index) for index in range(2)}
+        self.assertTrue(audit.audit_receipt(receipt, controls, observer_enabled=False, require_output=True)['legacy_draw_events_unchanged'])
+
+    def test_schema4_output_facet_reason_masks_scope_and_no_inference_are_strict(self):
+        for change in (lambda o: o['known'].update(color_formats=False),
+                       lambda o: o['reason_masks'].update(blend_enable=1),
+                       lambda o: o['reasons'].update(color_write_mask=['dynamic_declaration']),
+                       lambda o: o.update(scope='current_bound_attachment'),
+                       lambda o: o.update(owner_generation=99),
+                       lambda o: o.update(pre_raster_guard_applied=False),
+                       lambda o: o.update(attachment_binding_known=True),
+                       lambda o: o.update(stored_color_decode_proven=True)):
+            value = output_state();change(value['fragment_output'])
+            with self.subTest(change=change), self.assertRaises(ValueError): audit.audit_state(value)
+        for version in (1, 2, 3):
+            value = output_state();value['schema_version'] = version
+            with self.assertRaises(ValueError): audit.audit_state(value)
+
+    def test_schema4_original_output_values_are_not_recovered_from_masks_or_sizes(self):
+        for section, key, replacement in (('rendering', 'formats', [37]), ('rendering', 'color_attachment_count', 2),
+                ('color_blend', 'blend_enable', 1), ('color_blend', 'color_write_mask', 7),
+                ('color_blend', 'logic_op_enable', 1), ('multisample', 'rasterization_samples', 2)):
+            value = output_state();value['fragment_output'][section][key] = replacement
+            with self.subTest(section=section, key=key), self.assertRaises(ValueError):
+                audit.audit_state(value, original=output_owned())
+        value = output_state();value['fragment_output']['color_blend']['blend_enable'] = True
+        with self.assertRaises(ValueError): audit.audit_state(value)
+
+    def test_schema4_dynamic_output_declarations_keep_unrelated_formats_and_fields_known(self):
+        cases = ((1000455010, 'blend_enable', 'color_blend', 'blend_enable'),
+                 (1000455012, 'color_write_mask', 'color_blend', 'color_write_mask'),
+                 (1000455009, 'logic_op_enable', 'color_blend', 'logic_op_enable'),
+                 (1000455005, 'rasterization_samples', 'multisample', 'rasterization_samples'))
+        for dynamic, facet, section, field in cases:
+            value = output_state();output = value['fragment_output']
+            output['owner_own_parts'] = 12;output['pre_raster_guard_applied'] = False
+            value['pipeline_creation']['own_parts'] = 3;output['owner_generation'] = 99
+            output['dynamic'].update(status='observed', flags=0, original_count=1, scanned_count=1,
+                                     relevant_count=1, relevant_types=[dynamic])
+            output[section][field] = None
+            if section == 'multisample': output[section].update(status='unobserved', flags=None)
+            output_reason(value, [facet], 'dynamic_declaration')
+            result = audit.audit_state(value)
+            self.assertTrue(result['fragment_output_known']['color_formats'])
+            self.assertFalse(result['fragment_output_known'][facet])
+            changed = deepcopy(value);changed['fragment_output']['known'][facet] = True
+            with self.assertRaises(ValueError): audit.audit_state(changed)
+
+    def test_schema4_undefined_attachment_zero_does_not_hide_global_logic_declaration(self):
+        value = output_state();output = value['fragment_output']
+        output['rendering'].update(color_attachment_count=2, formats=[0, 44])
+        output['color_blend'].update(attachment_count=None, attachment0_status='ignored', blend_enable=None, color_write_mask=None)
+        output_reason(value, ('blend_enable', 'color_write_mask'), 'no_defined_color_attachment')
+        result = audit.audit_state(value)
+        self.assertTrue(result['fragment_output_known']['logic_op_enable'])
+        for field, operand in (('attachment_count', 2), ('blend_enable', 0), ('color_write_mask', 15)):
+            changed = deepcopy(value);changed['fragment_output']['color_blend'][field] = operand
+            with self.assertRaises(ValueError): audit.audit_state(changed)
+
+    def test_schema4_refused_subchains_and_limits_never_retain_ignored_array_payload(self):
+        value = output_state();output = value['fragment_output']
+        output['color_blend'].update(chain_types=[123456], attachment_count=None, attachment0_status='unobserved',
+                                    blend_enable=None, color_write_mask=None, logic_op_enable=None)
+        output_reason(value, ('blend_enable', 'color_write_mask', 'logic_op_enable'), 'unknown_state_chain')
+        audit.audit_state(value)
+        for field, operand in (('attachment_count', 1), ('blend_enable', 0), ('color_write_mask', 15), ('logic_op_enable', 0)):
+            changed = deepcopy(value);changed['fragment_output']['color_blend'][field] = operand
+            with self.assertRaises(ValueError): audit.audit_state(changed)
+        value = output_state();output = value['fragment_output']
+        output['color_blend'].update(attachment_count=9, attachment0_status='unobserved', blend_enable=None, color_write_mask=None)
+        output_reason(value, ('blend_enable', 'color_write_mask'), 'attachment_limit')
+        output_reason(value, ('blend_enable', 'color_write_mask', 'logic_op_enable'), 'color_count_mismatch')
+        audit.audit_state(value)
+        changed = deepcopy(value);changed['fragment_output']['color_blend']['attachment0_status'] = 'observed'
+        with self.assertRaises(ValueError): audit.audit_state(changed)
+
+    def test_schema4_formats_cap_renderpass_and_sample_gpl_scope_remain_independent(self):
+        value = output_state();output = value['fragment_output']
+        output['rendering'].update(color_attachment_count=9, formats=[], array_status='unobserved')
+        output['color_blend'].update(status='unobserved', flags=None, attachment_count=None,
+                                    attachment0_status='unobserved', blend_enable=None, color_write_mask=None, logic_op_enable=None)
+        output_reason(value, audit.OUTPUT_FACETS[:4], 'format_limit')
+        self.assertTrue(audit.audit_state(value)['fragment_output_known']['rasterization_samples'])
+        changed = deepcopy(value);changed['fragment_output']['rendering']['formats'] = [44]*9
+        with self.assertRaises(ValueError): audit.audit_state(changed)
+        value = output_state();output = value['fragment_output']
+        output.update(owner_own_parts=8, owner_generation=99, pre_raster_guard_applied=False)
+        value['pipeline_creation']['own_parts'] = 3
+        output['multisample'].update(status='unobserved', flags=None, rasterization_samples=None)
+        output_reason(value, ['rasterization_samples'], 'sample_owner_scope')
+        self.assertTrue(audit.audit_state(value)['fragment_output_known']['color_formats'])
+        output['multisample'].update(status='observed', flags=0, rasterization_samples=1)
+        with self.assertRaises(ValueError): audit.audit_state(value)
+
+    def test_schema4_own_output_lifetime_body_and_raster_guard_cannot_be_borrowed(self):
+        for change in (lambda v: v['fragment_output'].update(owner_own_parts=12),
+                       lambda v: v['fragment_output'].update(owner_generation=99),
+                       lambda v: v['pipeline_creation'].update(own_parts=3),
+                       lambda v: v['fragment_output'].update(pre_raster_guard_applied=False)):
+            value = output_state();change(value)
+            with self.assertRaises(ValueError): audit.audit_state(value)
+        value = output_state()
+        value['raster_declarations']['raster_chain_types'].append(123456)
+        for group in ('viewport_declaration', 'scissor_declaration'): set_reason(value, group, 'unknown_raster_chain')
+        unknown_rectangles(value)
+        with self.assertRaises(ValueError): audit.audit_state(value)
+        value = output_state()
+        value['fragment_output']['rendering'].update(color_attachment_count=9, array_status='absent', formats=[])
+        with self.assertRaises(ValueError): audit.audit_state(value)
+        value = output_state();value['pipeline_creation']['own_parts'] = 8
+        value['raster_declarations']['owner_generation'] = 99
+        for name in ('viewport', 'scissor'): value[name]['pipeline_generation'] = 99
+        value['fragment_output'].update(owner_own_parts=8, pre_raster_guard_applied=True)
+        value['fragment_output']['multisample'].update(status='unobserved', flags=None, rasterization_samples=None)
+        output_reason(value, ['rasterization_samples'], 'sample_owner_scope')
+        self.assertTrue(audit.audit_state(value)['fragment_output_known']['color_formats'])
 
 
 if __name__ == '__main__':

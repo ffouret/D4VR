@@ -95,6 +95,10 @@ jobs:
         if: runner.os == 'Linux'
         # Static construction only; the owned GPU certificate is produced separately.
         run: python tools/post_depth_validate.py --compiler /usr/bin/glslangValidator --tools /usr/bin --helper work/stereo-helper-ci/helper-source-clip-units.spv --naive-helper work/stereo-helper-ci/helper-no-telemetry.spv --grammar work/spirv-headers/include/spirv/unified1/spirv.core.grammar.json --glsl-grammar work/spirv-headers/include/spirv/unified1/extinst.glsl.std.450.grammar.json --output work/post-depth-ci
+      - name: Verify closed sampled-UV construction with owned SPIR-V controls
+        if: runner.os == 'Linux'
+        # Static construction and valid refusals; private originals and GPU are absent.
+        run: python tests/test_sampled_uv_probe.py --validate-owned --validator /usr/bin/spirv-val --grammar work/spirv-headers/include/spirv/unified1/spirv.core.grammar.json --glsl-grammar work/spirv-headers/include/spirv/unified1/extinst.glsl.std.450.grammar.json --output work/sampled-uv-static-ci
       - name: Verify bounded camera neighborhood observer construction
         if: runner.os == 'Linux'
         run: python tools/camera_block_validate.py --compiler /usr/bin/glslangValidator --tools /usr/bin --output work/camera-block-ci

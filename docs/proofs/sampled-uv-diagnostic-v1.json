@@ -1,0 +1,121 @@
+{
+  "schema_version": 1,
+  "proof_status": "complete_owned_controls_only",
+  "scope": "Closed R/G sample-coordinate candidate, independent finite pixel references and preserved original B/A; no game admission",
+  "constructor_source_sha256": "fdb2c111a76a92fc7916efba3081b6fa362ecc7c5f024d121aac636b9e1bc244",
+  "candidate_bytes": 2572,
+  "original_bytes": 1972,
+  "original_loads_unchanged": 6,
+  "original_image_samples_unchanged": 1,
+  "intentionally_changed_store_value_operands": 2,
+  "unchanged_BA_store_value_operands": 2,
+  "added_declarations": 7,
+  "added_value_instructions": 24,
+  "additional_loads_stores_image_operations_or_control_flow": 0,
+  "cpu_module_validation": {
+    "positive_modules": 4,
+    "valid_original_negatives_refused": 24,
+    "valid_candidate_negatives_refused": 28,
+    "owned_CI_modules_private_inputs_absent": true,
+    "proof_sha256": "89ddf7938ea82a4102bec3096c76676dbb0295e06d72f41b9acf138d53a455db"
+  },
+  "physical": {
+    "environments": [
+      "native",
+      "Steam Runtime"
+    ],
+    "fixture_executions": 2,
+    "readbacks": 48,
+    "classic_descriptor_set_readbacks": 44,
+    "descriptor_buffer_readbacks": 4,
+    "total_readback_bytes": 707788800,
+    "original_reference_bytes_exact": 353894400,
+    "diagnostic_BA_bytes_exact": 176947200,
+    "encoded_or_overflow_pixels_checked": 77414400,
+    "unchanged_nonzero_LOAD_pixels_checked": 11059200,
+    "native_runtime_bytes_identical": true,
+    "validation_errors": 0,
+    "recorded_loader_warning_counts_per_group": [
+      3,
+      3,
+      3,
+      3,
+      5,
+      5,
+      5,
+      5
+    ],
+    "loader_warning_categories": [
+      "VK_INSTANCE_LAYERS announcement",
+      "unsupported DZN ICD skipped",
+      "duplicate NVIDIA implicit-layer registrations removed in Steam Runtime"
+    ],
+    "maximum_observed_RG_code_error": 0.5595703125,
+    "code_arithmetic_budget": 0.005,
+    "UNORM_conversion": "floor_or_ceil_allowed",
+    "uniform_finite_range": [
+      -1,
+      2
+    ],
+    "nonfinite_behavior_certified": false,
+    "universal_interpolation_bound_claimed": false,
+    "fixture_sha256": "9f499e525837a13408815d3f1ebb97a5b3976fb8b401c313611e37defda23b88",
+    "final_proof_sha256": "e8bee2751fe5024d744a3c1c8b06e75f155a4425031f9e667d31791010f68095",
+    "independent_cpu_file_audit_sha256": "749e88a6595bd566ac3061252e24c5b819caa7438bed3a233a75500553060579",
+    "independent_actual_pixel_mutations_refused": 4
+  },
+  "causal_controls": [
+    "wrong image index changes sampled B but not encoded coordinates",
+    "wrong sampler index changes sampled B but not encoded coordinates",
+    "wrong UBO component is distinguished from the actual sample-coordinate offset",
+    "nonzero LOAD sentinel outside central scissor and viewport",
+    "negative-height viewport",
+    "finite overflow sentinels",
+    "known finite descriptor-buffer slots with actually queried and enabled descriptorBuffer/synchronization2"
+  ],
+  "evidence_ledger": {
+    "earlier_owned_attempt_failed": "VUID08063 on assigning an offset to unused empty set2; preserved as failed, not a certificate",
+    "corrected_setup": "bind offsets only for referenced sets0/1 and3; empty set2 layout remains",
+    "physical_before_source_sha256": {
+      "native/tests/sampled_writer_gpu.cpp": "4ad16048bff2be4290e93f8adbd4e7e42d3daebd9b04118bff66249af3892640",
+      "native/tests/sampled_uv_gpu.cpp": "cb7fdc8213ec0610632d13a6a215fb2b61b9f0eba500504a3c9423ac2cb46694",
+      "native/tests/sampled_writer_hash.hpp": "f6b59c3568c23d6f3198a8d952fbdcf8a4da85db945d311a0b369d15ae266f9e",
+      "tools/sampled_uv_probe.py": "fdb2c111a76a92fc7916efba3081b6fa362ecc7c5f024d121aac636b9e1bc244",
+      "tests/test_sampled_uv_probe.py": "6e1616fa10cba0f546f028dc82dfc72aa1168bf037a5c35c15c73a9fcf89f9a2",
+      "tools/sampled_uv_validate.py": "4e4e13aedfcd3a5eae4bd8b6249e34ffac9baadfe43ea4f6947cd11f703b6f20",
+      "tests/test_sampled_uv_validate.py": "a0959244bb2cfc55a798413be5c0fd173ad61feedeedc274e339d38b1c321f55",
+      "tools/sampled_writer_validate.py": "f2414d310ef86f5c2e62b0158e676caa9129e5342c526a2e08a86b899b8419b7"
+    },
+    "final_source_sha256": {
+      "native/tests/sampled_writer_gpu.cpp": "4ad16048bff2be4290e93f8adbd4e7e42d3daebd9b04118bff66249af3892640",
+      "native/tests/sampled_uv_gpu.cpp": "cb7fdc8213ec0610632d13a6a215fb2b61b9f0eba500504a3c9423ac2cb46694",
+      "native/tests/sampled_writer_hash.hpp": "f6b59c3568c23d6f3198a8d952fbdcf8a4da85db945d311a0b369d15ae266f9e",
+      "tools/sampled_uv_probe.py": "fdb2c111a76a92fc7916efba3081b6fa362ecc7c5f024d121aac636b9e1bc244",
+      "tests/test_sampled_uv_probe.py": "6e1616fa10cba0f546f028dc82dfc72aa1168bf037a5c35c15c73a9fcf89f9a2",
+      "tools/sampled_uv_validate.py": "9673219b158d5aacfa62f3c5912a5f8ccc95d50387868a770bcc19196071b2e5",
+      "tests/test_sampled_uv_validate.py": "bc2f8b131c84595b7408e65e177242f7a0ce6096044257fcd17f5fd3f1f03d59",
+      "tools/sampled_writer_validate.py": "f2414d310ef86f5c2e62b0158e676caa9129e5342c526a2e08a86b899b8419b7"
+    },
+    "post_physical_changes": {
+      "tools/sampled_uv_validate.py": {
+        "physical_before": "4e4e13aedfcd3a5eae4bd8b6249e34ffac9baadfe43ea4f6947cd11f703b6f20",
+        "final": "9673219b158d5aacfa62f3c5912a5f8ccc95d50387868a770bcc19196071b2e5"
+      },
+      "tests/test_sampled_uv_validate.py": {
+        "physical_before": "a0959244bb2cfc55a798413be5c0fd173ad61feedeedc274e339d38b1c321f55",
+        "final": "bc2f8b131c84595b7408e65e177242f7a0ce6096044257fcd17f5fd3f1f03d59"
+      }
+    },
+    "post_physical_change_scope": "Repair aggregate-only hash collection from nested tuples to JSON arrays; all individual physical byte audits had already passed. Numeric oracle, fixture, constructor and candidate unchanged.",
+    "initial_per_environment_audits_unchanged": true,
+    "final_CPU_audits_equal_initial_saved_audits": true,
+    "GPU_reexecuted_for_aggregate_comparator_change": false
+  },
+  "game_bundle_authorized": false,
+  "game_executed": false,
+  "game_sampled_image_identified": false,
+  "game_pixel_cause_proven": false,
+  "coverage_repaired": false,
+  "xr_submission": false,
+  "continuous_immersive_rendering_established": false
+}

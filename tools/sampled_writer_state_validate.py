@@ -20,7 +20,8 @@ NO_INFERENCE = (*writer.NO_INFERENCE, 'effective_raster_state_known',
                 'descriptor_placement_known', 'sampled_resource_known', 'coverage_known',
                 'fragment_shading_rate_known', 'effective_write_coverage_known',
                 'push_values_identify_sampled_resource', 'fragment_shader_reads_push_constants',
-                'depth_clip_value_known', 'effective_clipping_known', 'effective_operand_claimed')
+                'depth_clip_value_known', 'effective_clipping_known', 'effective_operand_claimed',
+                'attachment_binding_known', 'stored_color_decode_proven')
 MODES = {'unknown', 'static', 'dynamic', 'with_count'}
 UINT32 = (1 << 32)-1
 FSR_ATTACHMENT = 0x00200000
@@ -48,6 +49,17 @@ REASONS = (
     'rendering_fsr_attachment', 'fsr_static_declaration', 'fsr_dynamic_declaration',
     'depth_clip_flags', 'depth_clip_unobserved')
 REASON_BITS = {name: 1 << index for index, name in enumerate(REASONS)}
+OUTPUT_FACETS = ('color_formats', 'blend_enable', 'color_write_mask', 'logic_op_enable', 'rasterization_samples')
+OUTPUT_REASONS = ('no_pipeline', 'pipeline_structure', 'missing_output_owner', 'ambiguous_output_owner',
+    'library_not_executable', 'render_pass_unreviewed', 'format_limit', 'missing_formats', 'invalid_dynamic_info',
+    'dynamic_chain', 'dynamic_flags', 'dynamic_limit', 'missing_dynamic_values', 'duplicate_dynamic_state',
+    'unknown_dynamic_state', 'dynamic_declaration', 'missing_state', 'invalid_state_header', 'unknown_state_chain',
+    'state_flags', 'attachment_zero_unavailable', 'attachment_limit', 'color_count_mismatch', 'sample_owner_scope',
+    'invalid_sample_count', 'raster_scope_unreviewed', 'no_defined_color_attachment', 'incomplete_pipeline')
+OUTPUT_BITS = {name: 1 << index for index, name in enumerate(OUTPUT_REASONS)}
+OUTPUT_STATES = {'unobserved', 'absent', 'observed', 'ignored'}
+OUTPUT_DYNAMIC = {4, 1000377003, 1000381000, *range(1000455005, 1000455013), 1000455018}
+OUTPUT_BENIGN_DYNAMIC = ALLOWED_DYNAMIC - {4}
 
 
 def claims(value):
@@ -127,7 +139,7 @@ def audit_facets(value):
         raise ValueError('Schema2 facet names or reason groups changed')
     version = value['schema_version']
     for group in REASON_GROUPS:
-        mask = integer(masks[group], 0, (1 << (38 if version == 3 else 37))-1)
+        mask = integer(masks[group], 0, (1 << (38 if version >= 3 else 37))-1)
         names = [name for index, name in enumerate(REASONS) if mask & (1 << index)]
         if reasons[group] != names:
             raise ValueError('Facet reason names disagree with their fixed bit assignments')
@@ -258,7 +270,7 @@ def audit_facets(value):
         if truncated and len(types) != 8:
             raise ValueError('Raster subchain truncation lost its bounded prefix')
         unreviewed = bool(types or truncated)
-        if version == 3 and prefix == 'raster':
+        if version >= 3 and prefix == 'raster':
             unreviewed = audit_depth_clip(value, types, truncated)
         if unreviewed and any(not masks[facet] & REASON_BITS[reason_name]
                                       for facet in ('viewport_declaration', 'scissor_declaration')):
@@ -347,6 +359,15 @@ def golden(value):
                 or type(value.get('depth_clip_state_flags')) is not int or value['depth_clip_state_flags'] != 0
                 or value.get('depth_clip_enable_payload') is not True):
             raise ValueError('Owned DepthClip control did not preserve its explicitly enabled fixed configuration')
+    if 'fragment_output' in value:
+        output = value['fragment_output']
+        if (not isinstance(output, dict) or set(output) != {'color_formats', 'color_attachment_count', 'blend_enable',
+                'color_write_mask', 'logic_op_enable', 'rasterization_samples'} or output['color_formats'] != [44]
+                or type(output['color_attachment_count']) is not int or output['color_attachment_count'] != 1
+                or output['blend_enable'] is not False or type(output['color_write_mask']) is not int
+                or output['color_write_mask'] != 15 or output['logic_op_enable'] is not False
+                or type(output['rasterization_samples']) is not int or output['rasterization_samples'] != 1):
+            raise ValueError('Owned fragment-output control is not the fixed unblended RGBA single-sample BGRA reference')
     flags = integer(value.get('pipeline_flags', 0), 0, (1 << 64)-1)
     if flags:
         if flags != FSR_ATTACHMENT or value.get('attachment_fsr_feature_enabled') is not True:
@@ -541,8 +562,246 @@ def audit_raw_setters(value, *, original=None):
     return banks
 
 
+def audit_fragment_output(value, *, original=None):
+    """Check original output declarations; none establishes a bound attachment."""
+    output = value['fragment_output']
+    if output.get('scope') != 'original_fragment_output_declarations':
+        raise ValueError('Fragment-output declarations lost their limited original scope')
+    known, reasons, masks = (output[key] for key in ('known', 'reasons', 'reason_masks'))
+    if any(not isinstance(item, dict) or set(item) != set(OUTPUT_FACETS) for item in (known, reasons, masks)):
+        raise ValueError('Fragment-output facet names changed')
+    for name in OUTPUT_FACETS:
+        writer.boolean(known[name], name)
+        mask = integer(masks[name], 0, (1 << len(OUTPUT_REASONS))-1)
+        if reasons[name] != [name for index, name in enumerate(OUTPUT_REASONS) if mask & (1 << index)]:
+            raise ValueError('Output reason names differ from their fixed bit assignments')
+    owners = integer(output['output_owners']);owner = integer(output['owner_generation'], 0, (1 << 64)-1)
+    parts = integer(output['owner_own_parts'], 0, 15)
+    guard = writer.boolean(output['pre_raster_guard_applied'], 'pre_raster_guard_applied')
+    if parts & 2 and not guard or owner and (not parts & 8 or owners != 1) or not owner and parts:
+        raise ValueError('Original fragment-output metadata has no unique owning GPL part')
+    if owner and value['pipeline_creation']['own_parts'] & 8:
+        if owner != value['pipeline_generation'] or parts != value['pipeline_creation']['own_parts']:
+            raise ValueError('Own output declarations were replaced by another pipeline lifetime or GPL body')
+    elif owner and owner == value['pipeline_generation']:
+        raise ValueError('An inherited output owner was relabeled as a link-only pipeline lifetime')
+    if (owner == value['pipeline_generation'] and owner and value['pipeline_creation']['own_parts'] & 8
+            and guard != bool(value['pipeline_creation']['pre_raster_owners'])):
+        raise ValueError('Own output declaration lost its actual linked pre-raster pointer guard')
+    for field in ('attachment_binding_known', 'stored_color_decode_proven'):
+        if output.get(field) is not False:
+            raise ValueError('A pipeline declaration was promoted to bound or stored-color evidence')
+    dynamic, rendering, blend, sample = (output[key] for key in ('dynamic', 'rendering', 'color_blend', 'multisample'))
+    def status(item):
+        if not isinstance(item, dict) or item.get('status') not in OUTPUT_STATES:
+            raise ValueError('Output structure status is absent or unreviewed')
+        return item['status']
+    def optional(value):
+        return None if value is None else integer(value)
+    def chain(item):
+        types = bounded_types(item['chain_types'], 8)
+        truncated = writer.boolean(item['chain_truncated'], 'chain_truncated')
+        duplicate = writer.boolean(item['chain_duplicate'], 'chain_duplicate')
+        if duplicate != (len(set(types)) != len(types)) or truncated and len(types) != 8:
+            raise ValueError('Output subchain diagnostics disagree with its retained bounded types')
+        if status(item) != 'observed' and (types or truncated or duplicate):
+            raise ValueError('Ignored or unobserved output header contains a parsed subchain')
+        return bool(types or truncated)
+    def header(item):
+        state = status(item);flags = optional(item['flags']);has_chain = chain(item)
+        if (flags is not None) != (state == 'observed'):
+            raise ValueError('Output header flags were inferred from an unobserved or ignored structure')
+        return state, flags, has_chain
+    ds, df, dc = header(dynamic);bs, bf, bc = header(blend);ss, sf, sc = header(sample);rs = status(rendering)
+    if sample.get('scope') != 'combined_fragment_shader_and_output_owner_only':
+        raise ValueError('Sample-count declaration was detached from its combined owning GPL scope')
+    original_count = optional(dynamic['original_count']);scanned = integer(dynamic['scanned_count'], 0, 64)
+    relevant_count = integer(dynamic['relevant_count'], 0, 64)
+    relevant = bounded_types(dynamic['relevant_types'], 8)
+    duplicate = writer.boolean(dynamic['duplicate_states'], 'duplicate_states')
+    unknown = writer.boolean(dynamic['unknown_states'], 'unknown_states')
+    truncated = writer.boolean(dynamic['relevant_truncated'], 'relevant_truncated')
+    if (len(relevant) != min(relevant_count, 8) or relevant_count > scanned or truncated != (relevant_count > 8)
+            or any(item in OUTPUT_BENIGN_DYNAMIC for item in relevant)):
+        raise ValueError('Output dynamic-state retained list/count exceeds its original scan or includes an unrelated type')
+    if (original_count is not None) != (ds in ('observed', 'absent')):
+        raise ValueError('Unobserved dynamic header acquired an original array count')
+    if ds != 'observed' and (scanned or relevant_count or relevant or duplicate or unknown or truncated or original_count not in (None, 0)):
+        raise ValueError('Unobserved or absent dynamic header acquired scanned array values')
+    if scanned and scanned != original_count or scanned == 0 and (duplicate or unknown):
+        raise ValueError('Output dynamic classification differs from its bounded original full scan')
+    if any(item not in OUTPUT_DYNAMIC for item in relevant) and not unknown:
+        raise ValueError('An unsupported dynamic state was silently admitted')
+    if not truncated and unknown != any(item not in OUTPUT_DYNAMIC for item in relevant):
+        raise ValueError('Unknown dynamic-state classification differs from its retained complete relevant list')
+    if len(set(relevant)) != len(relevant) and not duplicate:
+        raise ValueError('Duplicate output dynamic states lost their refusal')
+    render_pass_null = rendering['render_pass_null']
+    if render_pass_null is not None: writer.boolean(render_pass_null, 'render_pass_null')
+    color_count = optional(rendering['color_attachment_count'])
+    formats = bounded_types(rendering['formats'], 8);array_status = rendering['array_status']
+    if array_status not in OUTPUT_STATES or (color_count is not None) != (rs in ('observed', 'absent')):
+        raise ValueError('Output format count or array status was invented from an ignored structure')
+    if array_status == 'observed':
+        if color_count is None or not 1 <= color_count <= 8 or len(formats) != color_count:
+            raise ValueError('Captured color-format list differs from its original bounded count')
+    elif formats:
+        raise ValueError('Unobserved output format array contains values')
+    blend_count = optional(blend['attachment_count']);attachment_status = blend['attachment0_status']
+    if attachment_status not in OUTPUT_STATES:
+        raise ValueError('Output attachment0 status is unreviewed')
+    blend_enable, write_mask, logic_enable, samples = (optional(item) for item in
+        (blend['blend_enable'], blend['color_write_mask'], blend['logic_op_enable'], sample['rasterization_samples']))
+    expected = [0]*5
+    def add(indices, name):
+        for index in indices: expected[index] |= OUTPUT_BITS[name]
+    all_ = range(5);nonformats = range(1, 5);colors = range(1, 4)
+    if not value['pipeline_generation']: add(all_, 'no_pipeline')
+    else:
+        if value['pipeline_facet_reason_masks']['structure']: add(all_, 'pipeline_structure')
+        if not owners: add(all_, 'missing_output_owner')
+        if owners > 1: add(all_, 'ambiguous_output_owner')
+        if value['pipeline_flags'] & 0x800: add(all_, 'library_not_executable')
+        if value['pipeline_creation']['parts'] != 15: add(all_, 'incomplete_pipeline')
+    stopped = not owner
+    if owner == value['pipeline_generation'] and owner and guard:
+        raster = value['raster_declarations']
+        guard_failure = (not raster['raster_info_observed'] or bool(value['pipeline_facet_reason_masks']['viewport_declaration'] &
+            sum(REASON_BITS[name] for name in ('unknown_raster_chain', 'raster_flags', 'rasterizer_discard'))))
+        if (render_pass_null is None) != guard_failure:
+            raise ValueError('Own output guard refusal differs from its frozen actual pre-raster declaration')
+    if stopped:
+        if owners == 1 and not value['pipeline_facet_reason_masks']['structure']:
+            raise ValueError('A unique output owner disappeared without a structural refusal')
+    elif guard and render_pass_null is None:
+        add(all_, 'raster_scope_unreviewed');stopped = True
+    elif render_pass_null is False:
+        if rs != 'ignored' or array_status != 'ignored':
+            raise ValueError('Unreviewed render-pass mapping was parsed as dynamic-rendering formats')
+        add(all_, 'render_pass_unreviewed');stopped = True
+    elif render_pass_null is not True or rs not in ('observed', 'absent'):
+        raise ValueError('Observed output owner lacks its original render-pass/declaration status')
+    if not stopped:
+        if rs == 'absent' and (color_count != 0 or array_status != 'absent'):
+            raise ValueError('Absent rendering node was retagged with a format array')
+        if color_count > 8:
+            add((0,), 'format_limit')
+            if array_status != 'unobserved':
+                raise ValueError('Oversized original color-format array was relabeled parsed or absent')
+        elif color_count and array_status != 'observed': add((0,), 'missing_formats')
+        elif not color_count and array_status != 'absent':
+            raise ValueError('Empty color-format declaration acquired a parsed array')
+        dynamic_failure = []
+        if ds == 'unobserved': dynamic_failure.append('invalid_dynamic_info')
+        elif ds not in ('observed', 'absent'):
+            raise ValueError('A consumed output dynamic declaration was relabeled ignored')
+        if ds == 'observed':
+            if dc: dynamic_failure.append('dynamic_chain')
+            if df: dynamic_failure.append('dynamic_flags')
+            if original_count > 64: dynamic_failure.append('dynamic_limit')
+            if original_count and not scanned and not dynamic_failure: dynamic_failure.append('missing_dynamic_values')
+            if scanned and (dc or df or original_count > 64):
+                raise ValueError('Refused output dynamic header still read its original array')
+            if duplicate: dynamic_failure.append('duplicate_dynamic_state')
+            if unknown: dynamic_failure.append('unknown_dynamic_state')
+            if truncated: dynamic_failure.append('dynamic_limit')
+        for name in dynamic_failure: add(nonformats, name)
+        stopped = bool(dynamic_failure)
+    if stopped:
+        if render_pass_null is not True and (ds != 'unobserved' or color_count is not None or formats):
+            raise ValueError('A refused original owner acquired rendering or dynamic payload')
+        if render_pass_null is None and (rs != 'unobserved' or array_status != 'unobserved'):
+            raise ValueError('Unobserved original rendering header acquired a parsed status')
+        if (bs != 'unobserved' or ss != 'unobserved'
+                or attachment_status != 'unobserved' or any(item is not None for item in (blend_count, blend_enable, write_mask, logic_enable, samples))):
+            raise ValueError('A refused owner/header acquired ignored blend or sample payload')
+    else:
+        present = set(relevant)
+        blend_dyn, equation_dyn, mask_dyn = (item in present for item in (1000455010, 1000455011, 1000455012))
+        write_dyn, logic_dyn, logic_op_dyn, constants_dyn, advanced_dyn = (item in present for item in (1000381000, 1000455009, 1000377003, 4, 1000455018))
+        sample_dyn = bool(present & set(range(1000455005, 1000455009)))
+        for index, dynamic_ in ((1, blend_dyn or advanced_dyn), (2, mask_dyn or write_dyn), (3, logic_dyn), (4, sample_dyn)):
+            if dynamic_: add((index,), 'dynamic_declaration')
+        formats_fail = expected[0] & (OUTPUT_BITS['format_limit'] | OUTPUT_BITS['missing_formats'])
+        if formats_fail:
+            for index in colors: expected[index] |= formats_fail
+            if bs != 'unobserved' or attachment_status != 'unobserved':
+                raise ValueError('Refused format declaration acquired blend state')
+        elif not any(formats):
+            add(colors, 'no_defined_color_attachment')
+            if bs != 'ignored' or attachment_status != 'ignored':
+                raise ValueError('Colorless output acquired a consumed blend attachment')
+        elif blend_dyn and equation_dyn and mask_dyn and logic_dyn and logic_op_dyn and constants_dyn:
+            add(colors, 'dynamic_declaration')
+            if bs != 'unobserved' or attachment_status != ('ignored' if advanced_dyn else 'unobserved'):
+                raise ValueError('Ignored dynamic blend payload was treated as a static declaration')
+        elif bs == 'absent': add(colors, 'missing_state')
+        elif bs == 'unobserved': add(colors, 'invalid_state_header')
+        elif bs != 'observed': raise ValueError('A consumed color blend header was relabeled ignored')
+        elif bc or bf:
+            if bc: add(colors, 'unknown_state_chain')
+            if bf: add(colors, 'state_flags')
+            if attachment_status != 'unobserved' or any(item is not None for item in (blend_count, blend_enable, write_mask, logic_enable)):
+                raise ValueError('Refused blend header acquired member payload')
+        else:
+            if (logic_enable is None) != logic_dyn:
+                raise ValueError('Logic-enable value was erased or read from an ignored dynamic member')
+            if formats[0] == 0:
+                add((1, 2), 'no_defined_color_attachment')
+                if attachment_status != 'ignored' or blend_count is not None:
+                    raise ValueError('Undefined attachment0 acquired static attachment-array state')
+            elif blend_dyn and equation_dyn and mask_dyn:
+                add((1, 2), 'dynamic_declaration')
+                if attachment_status != ('ignored' if advanced_dyn else 'unobserved') or blend_count is not None:
+                    raise ValueError('Ignored blend attachment array acquired original count or payload')
+            else:
+                if blend_count is None: raise ValueError('Consumed blend header lost its original attachment count')
+                if blend_count != color_count: add(colors, 'color_count_mismatch')
+                if blend_count > 8:
+                    add((1, 2), 'attachment_limit')
+                    if attachment_status != 'unobserved':
+                        raise ValueError('Oversized original blend attachment array was read')
+                elif attachment_status != 'observed':
+                    add((1, 2), 'attachment_zero_unavailable')
+                    if attachment_status != ('absent' if not blend_count else 'unobserved'):
+                        raise ValueError('Missing static attachment array has an inconsistent original status')
+                elif not blend_count or (blend_enable is None) != (blend_dyn or advanced_dyn) or (write_mask is None) != (mask_dyn or write_dyn):
+                    raise ValueError('Attachment0 members were erased or read despite their dynamic declarations')
+        if parts & 12 != 12:
+            add((4,), 'sample_owner_scope')
+            if ss != 'unobserved': raise ValueError('Split GPL ownership read an unreviewed multisample pointer')
+        elif sample_dyn:
+            if ss != 'unobserved': raise ValueError('Dynamic sample declaration read an ignored static sample member')
+        elif ss == 'absent': add((4,), 'missing_state')
+        elif ss == 'unobserved': add((4,), 'invalid_state_header')
+        elif ss != 'observed': raise ValueError('A consumed sample declaration was relabeled ignored')
+        else:
+            if sc: add((4,), 'unknown_state_chain')
+            if sf: add((4,), 'state_flags')
+            if not (sc or sf):
+                if samples is None: raise ValueError('Observed multisample header lost its rasterization sample count')
+                if not samples or samples & (samples-1) or samples > 64: add((4,), 'invalid_sample_count')
+    if bs != 'observed' and any(item is not None for item in (blend_count, blend_enable, write_mask, logic_enable)):
+        raise ValueError('Unobserved or ignored blend header retained member values')
+    if attachment_status != 'observed' and (blend_enable is not None or write_mask is not None):
+        raise ValueError('Unread blend attachment retained values')
+    if (ss != 'observed' or sc or sf) and samples is not None:
+        raise ValueError('Unread or refused sample header retained a sample-count value')
+    observed_values = (render_pass_null is True, blend_enable is not None, write_mask is not None, logic_enable is not None, samples is not None)
+    for index, name in enumerate(OUTPUT_FACETS):
+        if masks[name] != expected[index] or known[name] != bool(not expected[index] and observed_values[index]):
+            raise ValueError('Output facet knowledge/reasons disagree with its original bounded declarations: '+name)
+    if original is not None and 'fragment_output' in original:
+        reference = original['fragment_output']
+        if (not all(known.values()) or formats != reference['color_formats'] or color_count != reference['color_attachment_count']
+                or blend_enable != int(reference['blend_enable']) or write_mask != reference['color_write_mask']
+                or logic_enable != int(reference['logic_op_enable']) or samples != reference['rasterization_samples']):
+            raise ValueError('Frozen output declarations differ from independent original application controls')
+    return known
+
+
 def audit_state(value, *, original=None, ordinal=None):
-    if not isinstance(value, dict) or type(value.get('schema_version')) is not int or value['schema_version'] not in (1, 2, 3):
+    if not isinstance(value, dict) or type(value.get('schema_version')) is not int or value['schema_version'] not in (1, 2, 3, 4):
         raise ValueError('Frozen per-draw writer state schema is missing')
     version = value['schema_version']
     if version == 1 and any(key in value for key in ('pipeline_facet_known', 'pipeline_recognized_rendering_flags',
@@ -553,6 +812,8 @@ def audit_state(value, *, original=None, ordinal=None):
             'effective_clipping_known', 'clipping_reasons', 'clipping_reason_mask'))
             or any(key in value.get('raster_declarations', {}) for key in ('depth_clip_declared', 'reviewed_depth_clip_nodes'))):
         raise ValueError('Historical receipt was retroactively retagged with raw setter or DepthClip semantics')
+    if version < 4 and 'fragment_output' in value:
+        raise ValueError('Historical receipt was retroactively retagged with fragment-output declarations')
     claims(value)
     for field in ('effective_raster_state_known', 'descriptor_placement_known', 'sampled_resource_known', 'coverage_known'):
         if value[field] is not False:
@@ -627,8 +888,9 @@ def audit_state(value, *, original=None, ordinal=None):
     viewport = rectangle(value['viewport'], viewport=True)
     scissor = rectangle(value['scissor'], viewport=False)
     facets = audit_facets(value) if version >= 2 else None
-    if version == 3:
+    if version >= 3:
         audit_raw_setters(value, original=original)
+    output = audit_fragment_output(value, original=original) if version == 4 else None
     if version == 1 and (value['pipeline_unknown_flags'] or not value['pipeline_declarations_complete']):
         if push['layout_known'] or any(r['value_known'] or r['count_known'] or r['effective_known'] for r in (viewport, scissor)):
             raise ValueError('Legacy unknown whole-pipeline gate was silently upgraded to independent facets')
@@ -655,7 +917,7 @@ def audit_state(value, *, original=None, ordinal=None):
                 raise ValueError('Owned narrow facet control differs from its exact original pipeline declaration')
             raster = value['raster_declarations']
             expected_dynamic = [] if original['mode'] == 'static' else list(COUNT_DYNAMIC if original['mode'] == 'with_count' else REGULAR_DYNAMIC)
-            expected_raster_chain = [DEPTH_CLIP_TYPE] if version == 3 and 'depth_clip_chain_type' in original else []
+            expected_raster_chain = [DEPTH_CLIP_TYPE] if version >= 3 and 'depth_clip_chain_type' in original else []
             if (raster['dynamic_state_types'] != expected_dynamic or raster['dynamic_state_count'] != len(expected_dynamic)
                     or any(raster[key] for key in ('dynamic_chain_types', 'viewport_chain_types'))
                     or raster['raster_chain_types'] != expected_raster_chain
@@ -722,16 +984,19 @@ def audit_state(value, *, original=None, ordinal=None):
         result.update(writer_state_schema_version=version, pipeline_facet_known=dict(facets),
                       pipeline_recognized_rendering_flags=value['pipeline_recognized_rendering_flags'],
                       fragment_shading_rate_known=False, coverage_known=False)
-    if version == 3:
+    if version >= 3:
         result.update(raw_argument_banks_audited=2,
                       raw_captured_payload_banks=sum(bank['value_captured'] for bank in value['raw_setter_arguments'].values()),
                       depth_clip_declared=value['raster_declarations']['depth_clip_declared'],
                       depth_clip_value_known=False, effective_clipping_known=False)
+    if version == 4:
+        result.update(fragment_output_known=dict(output), attachment_binding_known=False,
+                      stored_color_decode_proven=False)
     return result
 
 
-def audit_receipt(receipt, controls, *, observer_enabled=True, require_facets=False, require_raw=False):
-    require_facets = require_facets or require_raw
+def audit_receipt(receipt, controls, *, observer_enabled=True, require_facets=False, require_raw=False, require_output=False):
+    require_facets = require_facets or require_raw or require_output
     prefix = receipt['captured_writer_prefix']
     observed = receipt['source_blit']
     writer.audit_prefix(prefix, original=observed['original'],
@@ -755,11 +1020,15 @@ def audit_receipt(receipt, controls, *, observer_enabled=True, require_facets=Fa
             raise ValueError('Per-draw state is attached to an unrelated source lifetime')
         if require_raw and controls[(present-1, index)].get('depth_clip_feature_enabled') is not True:
             raise ValueError('Required raw control lacks the independently saved original DepthClip feature/configuration')
+        if require_output and 'fragment_output' not in controls[(present-1, index)]:
+            raise ValueError('Required output control lacks independently saved original fragment-output arguments')
         if observer_enabled:
-            if require_facets and event['writer_state'].get('schema_version') not in (2, 3):
+            if require_facets and event['writer_state'].get('schema_version') not in (2, 3, 4):
                 raise ValueError('New FSR facet control requires a newly produced facet observation')
-            if require_raw and event['writer_state'].get('schema_version') != 3:
+            if require_raw and event['writer_state'].get('schema_version') not in (3, 4):
                 raise ValueError('New raw setter control requires a newly produced schema3 observation')
+            if require_output and event['writer_state'].get('schema_version') != 4:
+                raise ValueError('New fragment-output control requires a newly produced schema4 observation')
             if event['writer_state_original_pipeline_handle'] != controls[(present-1, index)]['pipeline_handle']:
                 raise ValueError('State pipeline was joined to a different raw original draw handle')
             results.append(audit_state(event['writer_state'], original=controls[(present-1, index)], ordinal=event['ordinal']))
@@ -770,13 +1039,15 @@ def audit_receipt(receipt, controls, *, observer_enabled=True, require_facets=Fa
             'states': results}
 
 
-def audit_directory(directory, *, observer_enabled=True, shader_directory=None, require_facets=False, require_raw=False):
-    require_facets = require_facets or require_raw
+def audit_directory(directory, *, observer_enabled=True, shader_directory=None, require_facets=False, require_raw=False, require_output=False):
+    require_facets = require_facets or require_raw or require_output
     directory = Path(directory)
     base = writer.audit_directory(directory, require_available=True, shader_directory=shader_directory)
     originals = [golden(row) for row in blit.json_lines(directory/'sampled-writer-fixture.jsonl')]
     if require_raw and any(row.get('depth_clip_feature_enabled') is not True for row in originals):
         raise ValueError('Required raw setter trial did not preserve the explicit original DepthClip feature/configuration')
+    if require_output and any('fragment_output' not in row for row in originals):
+        raise ValueError('Required output trial lacks original application fragment-output controls')
     controls = {(row['frame'], row['draw_index']): row for row in originals}
     if len(originals) != 128 or len(controls) != 128 or set(controls) != {(frame, draw) for frame in range(64) for draw in range(2)}:
         raise ValueError('Original fixture must retain exactly128 unique original draw controls')
@@ -792,7 +1063,7 @@ def audit_directory(directory, *, observer_enabled=True, shader_directory=None, 
     for path in sorted(directory.glob('vulkan-*.jsonl')):
         receipts.extend(row for row in blit.json_lines(path) if row.get('event') == 'gpu_capture_lease')
     rows = [audit_receipt(receipt, controls, observer_enabled=observer_enabled, require_facets=require_facets,
-                          require_raw=require_raw) for receipt in receipts]
+                          require_raw=require_raw, require_output=require_output) for receipt in receipts]
     dynamic_count, maintenance6 = next(iter(features))
     compared = [state for row in rows for state in row['states']]
     result = {'schema_version': 1, 'observation_only': True, 'observer_enabled': observer_enabled,
@@ -809,14 +1080,18 @@ def audit_directory(directory, *, observer_enabled=True, shader_directory=None, 
                                              | {row['push_command'] for row in originals}),
             'sampled_resource_known': False, 'coverage_known': False, 'xr_submission': False,
             'receipts': rows, 'input_sha256': base['input_sha256']}
-    if require_facets or any(row.get('writer_state_schema_version') in (2, 3) for row in compared):
+    if require_facets or any(row.get('writer_state_schema_version') in (2, 3, 4) for row in compared):
         result.update(facet_schema_required=require_facets, application_pipeline_flags=next(iter(flags)),
                       newly_produced_schema2_draws=sum(row.get('writer_state_schema_version') == 2 for row in compared),
                       fragment_shading_rate_known=False)
-    if require_raw or any(row.get('writer_state_schema_version') == 3 for row in compared):
+    if require_raw or any(row.get('writer_state_schema_version') in (3, 4) for row in compared):
         result.update(raw_schema_required=require_raw,
                       newly_produced_schema3_draws=sum(row.get('writer_state_schema_version') == 3 for row in compared),
                       depth_clip_value_known=False, effective_clipping_known=False)
+    if require_output or any(row.get('writer_state_schema_version') == 4 for row in compared):
+        result.update(output_schema_required=require_output,
+                      newly_produced_schema4_draws=sum(row.get('writer_state_schema_version') == 4 for row in compared),
+                      attachment_binding_known=False, stored_color_decode_proven=False)
     return result
 
 
@@ -827,11 +1102,12 @@ def main():
     parser.add_argument('--shader-directory', type=Path)
     parser.add_argument('--require-facets', action='store_true', help='Require new schema2 states from the controlled FSR pipeline-flag configuration')
     parser.add_argument('--require-raw', action='store_true', help='Require schema3 raw arguments and the controlled original DepthClip configuration')
+    parser.add_argument('--require-output', action='store_true', help='Require schema4 fragment-output declarations and independent original output controls')
     args = parser.parse_args()
     print(json.dumps({'new_gpu_execution_performed': False,
                       'audit': audit_directory(args.validation, observer_enabled=not args.observer_disabled,
                                                shader_directory=args.shader_directory, require_facets=args.require_facets,
-                                               require_raw=args.require_raw)}, indent=2))
+                                               require_raw=args.require_raw, require_output=args.require_output)}, indent=2))
 
 
 if __name__ == '__main__':

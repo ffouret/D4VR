@@ -55,6 +55,7 @@ int main(int argc,char** argv)try{
     bool sourceConsumerFixture=std::getenv("D4VR_SOURCE_CONSUMER_FIXTURE");
     bool sampledWriterFixture=std::getenv("D4VR_SAMPLED_WRITER_FIXTURE");
     const auto fsrOption=std::getenv("D4VR_SAMPLED_WRITER_FSR_FIXTURE");const bool sampledWriterFsrFixture=fsrOption && !std::strcmp(fsrOption,"1");
+    const auto outputOption=std::getenv("D4VR_SAMPLED_WRITER_OUTPUT_FIXTURE");const bool sampledWriterOutputFixture=outputOption && !std::strcmp(outputOption,"1");
     const auto rawOption=std::getenv("D4VR_SAMPLED_WRITER_RAW_FIXTURE");const bool sampledWriterRawFixture=rawOption && !std::strcmp(rawOption,"1");
     bool foreignProducer=(poseCapture || cooperative) && std::getenv("D4VR_POSE_FIXTURE_FOREIGN");
     if(heldDepthFixture && (!poseCapture || !heldView || !cameraUpdates || depthFixture || transferFixture || auditFixture || cooperative || foreignProducer))throw std::invalid_argument("Held depth fixture requires the monoscopic pose-camera fixture alone");
@@ -62,6 +63,7 @@ int main(int argc,char** argv)try{
     if(sourceConsumerFixture && !sourceHistoryFixture)throw std::invalid_argument("Source consumer fixture requires source history workload");
     if(sampledWriterFixture && !sourceConsumerFixture)throw std::invalid_argument("Writer state controls require the source consumer fixture");
     if(sampledWriterFsrFixture && !sampledWriterFixture)throw std::invalid_argument("FSR flag controls require the writer state fixture");
+    if(sampledWriterOutputFixture && !sampledWriterRawFixture)throw std::invalid_argument("Output controls require the existing feature-enabled raw fixture");
     if(sampledWriterRawFixture && (!sampledWriterFixture || !sampledWriterFsrFixture))throw std::invalid_argument("Raw setter controls require the feature-enabled writer facet fixture");
     if(poseCapture)text(directory/"pose.request","invalid diagnostic input\n");
     Window window;Fixture f(true,false,sourceConsumerFixture,false,false,"D4VR presentation selection fixture",cameraUpdates || auditFixture,{"VK_KHR_surface","VK_KHR_xlib_surface"},{VK_KHR_SWAPCHAIN_EXTENSION_NAME},{},cameraUpdates?5:1,cooperative || auditFixture || heldDepthFixture,sampledWriterFixture,sampledWriterFsrFixture,sampledWriterRawFixture);
@@ -120,7 +122,7 @@ int main(int argc,char** argv)try{
     gp.pViewportState=&viewport;gp.pRasterizationState=&raster;gp.pMultisampleState=&ms;gp.pColorBlendState=&blend;gp.layout=layout;
     if(depthFixture || heldDepthFixture)gp.pDepthStencilState=&depthState;
     VkPipeline pipeline{};check(vkCreateGraphicsPipelines(f.device,VK_NULL_HANDLE,1,&gp,nullptr,&pipeline));
-    std::unique_ptr<SampledWriterFixture> sampledWriter;if(sampledWriterFixture)sampledWriter=std::make_unique<SampledWriterFixture>(f,directory,li,gp);
+    std::unique_ptr<SampledWriterFixture> sampledWriter;if(sampledWriterFixture)sampledWriter=std::make_unique<SampledWriterFixture>(f,directory,li,gp,sampledWriterOutputFixture,ici.format);
     VkCommandPoolCreateInfo pi{VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};pi.queueFamilyIndex=f.family;pi.flags=VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;VkCommandPool pool{};check(vkCreateCommandPool(f.device,&pi,nullptr,&pool));
     VkCommandBufferAllocateInfo ai{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};ai.commandPool=pool;ai.commandBufferCount=1;ai.level=VK_COMMAND_BUFFER_LEVEL_PRIMARY;VkCommandBuffer command{};check(vkAllocateCommandBuffers(f.device,&ai,&command));
     VkSemaphoreCreateInfo sem{VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};VkSemaphore acquired{};check(vkCreateSemaphore(f.device,&sem,nullptr,&acquired));
@@ -219,6 +221,7 @@ int main(int argc,char** argv)try{
     if(sourceConsumerFixture)std::cout<<",\"source_consumer_fixture\":true,\"original_descriptor_image_queries\":8,\"descriptor_queries_bound_or_sampled\":false";
     if(sampledWriterFixture)std::cout<<",\"sampled_writer_state_fixture\":true,\"original_writer_draw_states\":"<<frameCount*2<<",\"writer_dynamic_count_enabled\":"<<(f.writerDynamicCountEnabled?"true":"false")<<",\"writer_maintenance6_enabled\":"<<(f.writerMaintenance6Enabled?"true":"false")<<",\"fragment_push_constants_read_by_shader\":false";
     if(sampledWriterFsrFixture)std::cout<<",\"sampled_writer_fsr_fixture\":true,\"writer_attachment_fsr_enabled\":true,\"writer_pipeline_fsr_flag\":"<<VK_PIPELINE_CREATE_RENDERING_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR<<",\"writer_rate_attachment_present\":false,\"writer_static_rate_pnext_present\":false,\"writer_dynamic_rate_declared\":false";
+    if(sampledWriterOutputFixture)std::cout<<",\"sampled_writer_output_fixture\":true,\"original_color_format\":44,\"original_blend_enable\":false,\"original_color_write_mask\":15,\"original_logic_op_enable\":false,\"original_rasterization_samples\":1";
     if(sampledWriterRawFixture)std::cout<<",\"sampled_writer_raw_fixture\":true,\"depth_clip_feature_enabled\":true,\"depth_clip_chain_type\":"<<VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_DEPTH_CLIP_STATE_CREATE_INFO_EXT<<",\"depth_clip_state_flags\":0,\"depth_clip_enable_payload\":true";
     std::cout<<"}\n";
     return 0;

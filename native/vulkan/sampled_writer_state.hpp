@@ -113,16 +113,149 @@ struct RasterDeclaration {
     bool dynamicInfoAbsent=false,rasterInfoAbsent=false,viewportInfoAbsent=false;
     std::array<uint32_t,8> depthClipFlags{};uint8_t depthClipFlagsKnownMask=0;bool depthClipDeclared=false;
 };
+enum class OutputStatus : uint8_t {unobserved,absent,observed,ignored};
+inline const char* outputStatusName(OutputStatus s) noexcept {return s==OutputStatus::observed?"observed":s==OutputStatus::absent?"absent":s==OutputStatus::ignored?"ignored":"unobserved";}
+enum class OutputReason : uint32_t {
+    noPipeline,pipelineStructure,missingOutputOwner,ambiguousOutputOwner,libraryNotExecutable,
+    renderPassUnreviewed,formatLimit,missingFormats,invalidDynamicInfo,dynamicChain,dynamicFlags,
+    dynamicLimit,missingDynamicValues,duplicateDynamicState,unknownDynamicState,dynamicDeclaration,
+    missingState,invalidStateHeader,unknownStateChain,stateFlags,attachmentZeroUnavailable,
+    attachmentLimit,colorCountMismatch,sampleOwnerScope,invalidSampleCount,rasterScopeUnreviewed,
+    noDefinedColorAttachment,incompletePipeline
+};
+inline constexpr uint32_t outputReason(OutputReason r) noexcept {return uint32_t(1)<<uint32_t(r);}
+inline constexpr std::array<const char*,28> outputReasonNames{{
+    "no_pipeline","pipeline_structure","missing_output_owner","ambiguous_output_owner","library_not_executable",
+    "render_pass_unreviewed","format_limit","missing_formats","invalid_dynamic_info","dynamic_chain","dynamic_flags",
+    "dynamic_limit","missing_dynamic_values","duplicate_dynamic_state","unknown_dynamic_state","dynamic_declaration",
+    "missing_state","invalid_state_header","unknown_state_chain","state_flags","attachment_zero_unavailable",
+    "attachment_limit","color_count_mismatch","sample_owner_scope","invalid_sample_count","raster_scope_unreviewed",
+    "no_defined_color_attachment","incomplete_pipeline"
+}};
+struct OutputChain {
+    std::array<VkStructureType,8> types{};uint8_t count=0;bool truncated=false,duplicate=false;
+};
+inline OutputChain outputChain(const void* next) noexcept {
+    const auto c=chainTypes<8>(next);OutputChain r;r.types=c.types;r.count=uint8_t(c.count);r.truncated=c.truncated;r.duplicate=c.duplicate;return r;
+}
+// Fixed original declarations only. No attachment binding, transfer, rate,
+// sample mask, sample shading, alpha state or pixel coverage is inferred.
+struct OutputDeclaration {
+    uint64_t ownerGeneration=0;
+    std::array<VkFormat,8> colorFormats{};
+    OutputChain dynamicChain{},blendChain{},sampleChain{};
+    std::array<VkDynamicState,8> relevantTypes{};
+    std::array<uint32_t,5> reasons{}; // formats, blend-enable, write-mask, logic-enable, samples
+    uint32_t dynamicCount=0,dynamicFlags=0,colorCount=0,blendCount=0,blendFlags=0,sampleFlags=0;
+    VkBool32 blendEnable=0,logicOpEnable=0;VkColorComponentFlags writeMask=0;
+    VkSampleCountFlagBits samples=VkSampleCountFlagBits(0);
+    OutputStatus dynamicStatus:2;OutputStatus renderingStatus:2;OutputStatus colorArrayStatus:2;
+    OutputStatus blendStatus:2;OutputStatus attachmentStatus:2;OutputStatus sampleStatus:2;
+    uint8_t scannedCount=0,relevantCount=0,colorRetained=0,properties=0,ownerParts=0,dynamicProperties=0;
+    enum : uint8_t {renderPassObserved=1,renderPassNull=2,blendCountObserved=4,blendValueObserved=8,maskValueObserved=16,logicValueObserved=32,sampleValueObserved=64,preRasterGuardApplied=128};
+    OutputDeclaration() noexcept :dynamicStatus(OutputStatus::unobserved),renderingStatus(OutputStatus::unobserved),colorArrayStatus(OutputStatus::unobserved),blendStatus(OutputStatus::unobserved),attachmentStatus(OutputStatus::unobserved),sampleStatus(OutputStatus::unobserved){}
+};
+static_assert(sizeof(OutputDeclaration)<=248,"Bounded original output declaration payload");
 struct PipelineSnapshot {
-    uint64_t generation=0;uint32_t ownParts=0,parts=0,preRasterOwners=0,fragmentOwners=0;
+    uint64_t generation=0;uint32_t ownParts=0,parts=0,preRasterOwners=0,fragmentOwners=0,fragmentOutputOwners=0;
     VkPipelineCreateFlags2KHR flags=0,unknownFlags=0,recognizedRenderingFlags=0,inheritedRenderingFlags=0,inheritedUnknownFlags=0;
     VkPipelineCreateFlags legacyFlags=0;bool flags2=false;
     bool library=false,linked=false,complete=false,layoutKnown=false,viewportDeclarationKnown=false,scissorDeclarationKnown=false,fsrStaticDeclared=false;
     ReasonMask structureReasons=0,pushLayoutReasons=0,viewportReasons=0,scissorReasons=0,rateReasons=reason(Reason::fragmentShadingRateUnobserved);
     ChainTypes<32> creationChain{};std::array<VkStructureType,8> unknownChainTypes{};uint32_t unknownChainCount=0;
-    LayoutRef preRasterLayout,fragmentLayout,layout;RasterDeclaration raster{};
+    LayoutRef preRasterLayout,fragmentLayout,layout;RasterDeclaration raster{};OutputDeclaration output{};
 };
 using PipelineRef=std::shared_ptr<const PipelineSnapshot>;
+inline bool outputBenignDynamic(VkDynamicState s) noexcept {
+    switch(s){case VK_DYNAMIC_STATE_VIEWPORT:case VK_DYNAMIC_STATE_SCISSOR:case VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT:case VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT:
+    case VK_DYNAMIC_STATE_LINE_WIDTH:case VK_DYNAMIC_STATE_DEPTH_BIAS:case VK_DYNAMIC_STATE_DEPTH_BOUNDS:case VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK:case VK_DYNAMIC_STATE_STENCIL_WRITE_MASK:case VK_DYNAMIC_STATE_STENCIL_REFERENCE:
+    case VK_DYNAMIC_STATE_CULL_MODE:case VK_DYNAMIC_STATE_FRONT_FACE:case VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY:case VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE:case VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE:case VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE:case VK_DYNAMIC_STATE_DEPTH_COMPARE_OP:case VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE:case VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE:case VK_DYNAMIC_STATE_STENCIL_OP:case VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE:case VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE:case VK_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR:return true;
+    default:return false;}
+}
+inline OutputDeclaration captureOutput(uint64_t generation,uint32_t parts,bool preRasterSpecified,const VkGraphicsPipelineCreateInfo& info,const RasterDeclaration& raster,const VkPipelineRenderingCreateInfo* rendering) noexcept {
+    OutputDeclaration r;r.ownerGeneration=generation;r.ownerParts=uint8_t(parts);
+    const auto all=[&](OutputReason v){for(auto& mask:r.reasons)mask|=outputReason(v);};
+    // Unknown/ignored pre-raster bodies never justify touching output pointers.
+    // The existing pre-raster scan can also refuse unrelated dynamic output
+    // declarations. Such cases conservatively lose this metadata; no mode or
+    // original-pointer consumption is guessed to recover it.
+    if(preRasterSpecified)r.properties|=OutputDeclaration::preRasterGuardApplied;
+    if(preRasterSpecified && (!raster.rasterInfoObserved || (raster.viewportReasons&(reason(Reason::unknownRasterChain)|reason(Reason::rasterFlags)|reason(Reason::rasterizerDiscard))))){all(OutputReason::rasterScopeUnreviewed);return r;}
+    r.properties|=OutputDeclaration::renderPassObserved;
+    if(info.renderPass!=VK_NULL_HANDLE){r.renderingStatus=OutputStatus::ignored;r.colorArrayStatus=OutputStatus::ignored;all(OutputReason::renderPassUnreviewed);return r;}
+    r.properties|=OutputDeclaration::renderPassNull;
+    r.renderingStatus=rendering?OutputStatus::observed:OutputStatus::absent;
+    if(rendering){r.colorCount=rendering->colorAttachmentCount;
+        if(r.colorCount>8)r.reasons[0]|=outputReason(OutputReason::formatLimit);
+        else if(r.colorCount&&!rendering->pColorAttachmentFormats)r.reasons[0]|=outputReason(OutputReason::missingFormats);
+        else {for(uint32_t i=0;i<r.colorCount;++i)r.colorFormats[r.colorRetained++]=rendering->pColorAttachmentFormats[i];r.colorArrayStatus=r.colorCount?OutputStatus::observed:OutputStatus::absent;}}
+    else r.colorArrayStatus=OutputStatus::absent;
+    bool blendDynamic=false,equationDynamic=false,maskDynamic=false,writeEnableDynamic=false,logicDynamic=false,logicOpDynamic=false,constantsDynamic=false,advancedDynamic=false,sampleDynamic=false;
+    uint32_t dynamicFailure=0;
+    if(info.pDynamicState){const auto& d=*info.pDynamicState;
+        if(d.sType!=VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO)dynamicFailure|=outputReason(OutputReason::invalidDynamicInfo);
+        else {r.dynamicStatus=OutputStatus::observed;r.dynamicCount=d.dynamicStateCount;r.dynamicFlags=d.flags;r.dynamicChain=outputChain(d.pNext);
+            if(d.pNext)dynamicFailure|=outputReason(OutputReason::dynamicChain);
+            if(d.flags)dynamicFailure|=outputReason(OutputReason::dynamicFlags);
+            if(d.dynamicStateCount>64)dynamicFailure|=outputReason(OutputReason::dynamicLimit);
+            if(d.dynamicStateCount&&!d.pDynamicStates)dynamicFailure|=outputReason(OutputReason::missingDynamicValues);
+            if(!dynamicFailure)for(uint32_t i=0;i<d.dynamicStateCount;++i){const auto s=d.pDynamicStates[i];++r.scannedCount;
+                for(uint32_t j=0;j<i;++j)if(d.pDynamicStates[j]==s){r.dynamicProperties|=1;dynamicFailure|=outputReason(OutputReason::duplicateDynamicState);}
+                bool relevant=true;
+                switch(s){case VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT:blendDynamic=true;break;case VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT:equationDynamic=true;break;
+                case VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT:maskDynamic=true;break;case VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT:writeEnableDynamic=true;break;
+                case VK_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT:logicDynamic=true;break;case VK_DYNAMIC_STATE_LOGIC_OP_EXT:logicOpDynamic=true;break;
+                case VK_DYNAMIC_STATE_BLEND_CONSTANTS:constantsDynamic=true;break;case VK_DYNAMIC_STATE_COLOR_BLEND_ADVANCED_EXT:advancedDynamic=true;break;
+                case VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT:case VK_DYNAMIC_STATE_SAMPLE_MASK_EXT:case VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT:case VK_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT:sampleDynamic=true;break;
+                default:if(outputBenignDynamic(s))relevant=false;else {r.dynamicProperties|=2;dynamicFailure|=outputReason(OutputReason::unknownDynamicState);}break;}
+                if(relevant){if(r.relevantCount<r.relevantTypes.size())r.relevantTypes[r.relevantCount]=s;++r.relevantCount;}
+            }
+        }
+    }else r.dynamicStatus=OutputStatus::absent;
+    if(r.relevantCount>8)dynamicFailure|=outputReason(OutputReason::dynamicLimit);
+    if(dynamicFailure){for(uint32_t i=1;i<5;++i)r.reasons[i]|=dynamicFailure;return r;}
+    if(blendDynamic||advancedDynamic)r.reasons[1]|=outputReason(OutputReason::dynamicDeclaration);
+    if(maskDynamic||writeEnableDynamic)r.reasons[2]|=outputReason(OutputReason::dynamicDeclaration);
+    if(logicDynamic)r.reasons[3]|=outputReason(OutputReason::dynamicDeclaration);
+    if(sampleDynamic)r.reasons[4]|=outputReason(OutputReason::dynamicDeclaration);
+    bool anyColor=false;for(uint32_t i=0;i<r.colorRetained;++i)anyColor|=r.colorFormats[i]!=VK_FORMAT_UNDEFINED;
+    if(r.reasons[0])for(uint32_t i=1;i<4;++i)r.reasons[i]|=r.reasons[0];
+    else if(!anyColor){for(uint32_t i=1;i<4;++i)r.reasons[i]|=outputReason(OutputReason::noDefinedColorAttachment);r.blendStatus=r.attachmentStatus=OutputStatus::ignored;}
+    else if(blendDynamic&&equationDynamic&&maskDynamic&&logicDynamic&&logicOpDynamic&&constantsDynamic){r.blendStatus=OutputStatus::unobserved;r.attachmentStatus=advancedDynamic?OutputStatus::ignored:OutputStatus::unobserved;for(uint32_t i=1;i<4;++i)r.reasons[i]|=outputReason(OutputReason::dynamicDeclaration);}
+    else if(!info.pColorBlendState){r.blendStatus=OutputStatus::absent;for(uint32_t i=1;i<4;++i)r.reasons[i]|=outputReason(OutputReason::missingState);}
+    else {const auto& b=*info.pColorBlendState;
+        if(b.sType!=VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO){for(uint32_t i=1;i<4;++i)r.reasons[i]|=outputReason(OutputReason::invalidStateHeader);}
+        else {r.blendStatus=OutputStatus::observed;r.blendFlags=b.flags;r.blendChain=outputChain(b.pNext);uint32_t fail=0;
+            if(b.pNext)fail|=outputReason(OutputReason::unknownStateChain);
+            if(b.flags)fail|=outputReason(OutputReason::stateFlags);
+            if(fail)for(uint32_t i=1;i<4;++i)r.reasons[i]|=fail;
+            else {if(!logicDynamic){r.logicOpEnable=b.logicOpEnable;r.properties|=OutputDeclaration::logicValueObserved;}
+                if(r.colorFormats[0]==VK_FORMAT_UNDEFINED){r.attachmentStatus=OutputStatus::ignored;for(uint32_t i=1;i<3;++i)r.reasons[i]|=outputReason(OutputReason::noDefinedColorAttachment);}
+                else if(blendDynamic&&equationDynamic&&maskDynamic){r.attachmentStatus=advancedDynamic?OutputStatus::ignored:OutputStatus::unobserved;for(uint32_t i=1;i<3;++i)r.reasons[i]|=outputReason(OutputReason::dynamicDeclaration);}
+                else {r.blendCount=b.attachmentCount;r.properties|=OutputDeclaration::blendCountObserved;
+                    if(r.blendCount!=r.colorCount)for(uint32_t i=1;i<4;++i)r.reasons[i]|=outputReason(OutputReason::colorCountMismatch);
+                    if(r.blendCount>8){for(uint32_t i=1;i<3;++i)r.reasons[i]|=outputReason(OutputReason::attachmentLimit);}
+                    else if(!r.blendCount||!b.pAttachments){r.attachmentStatus=r.blendCount?OutputStatus::unobserved:OutputStatus::absent;for(uint32_t i=1;i<3;++i)r.reasons[i]|=outputReason(OutputReason::attachmentZeroUnavailable);}
+                    else {r.attachmentStatus=OutputStatus::observed;const auto& a=b.pAttachments[0];
+                        if(!blendDynamic&&!advancedDynamic){r.blendEnable=a.blendEnable;r.properties|=OutputDeclaration::blendValueObserved;}
+                        if(!maskDynamic&&!writeEnableDynamic){r.writeMask=a.colorWriteMask;r.properties|=OutputDeclaration::maskValueObserved;}}
+                }
+            }
+        }
+    }
+    if((parts&12)!=12){r.reasons[4]|=outputReason(OutputReason::sampleOwnerScope);return r;}
+    if(sampleDynamic)return r;
+    if(!info.pMultisampleState){r.sampleStatus=OutputStatus::absent;r.reasons[4]|=outputReason(OutputReason::missingState);return r;}
+    const auto& m=*info.pMultisampleState;
+    if(m.sType!=VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO){r.reasons[4]|=outputReason(OutputReason::invalidStateHeader);return r;}
+    r.sampleStatus=OutputStatus::observed;r.sampleFlags=m.flags;r.sampleChain=outputChain(m.pNext);
+    if(m.pNext)r.reasons[4]|=outputReason(OutputReason::unknownStateChain);
+    if(m.flags)r.reasons[4]|=outputReason(OutputReason::stateFlags);
+    if(r.reasons[4])return r;
+    r.samples=m.rasterizationSamples;r.properties|=OutputDeclaration::sampleValueObserved;
+    if(!uint32_t(r.samples)||(uint32_t(r.samples)&(uint32_t(r.samples)-1))||uint32_t(r.samples)>64)r.reasons[4]|=outputReason(OutputReason::invalidSampleCount);
+    return r;
+}
 inline RasterDeclaration captureRaster(const VkGraphicsPipelineCreateInfo& info) noexcept {
     RasterDeclaration r;bool dynamicViewport=false,dynamicScissor=false,countViewport=false,countScissor=false;
     const auto both=[&r](Reason value){r.viewportReasons|=reason(value);r.scissorReasons|=reason(value);};
@@ -186,7 +319,7 @@ inline RasterDeclaration captureRaster(const VkGraphicsPipelineCreateInfo& info)
 }
 inline PipelineRef capturePipeline(uint64_t generation,const VkGraphicsPipelineCreateInfo& info,const LayoutCatalog& layouts,const std::vector<PipelineRef>& libraries={},bool librariesComplete=true) noexcept {
     try {
-        auto r=std::make_shared<PipelineSnapshot>();r->generation=generation;r->legacyFlags=info.flags;VkPipelineCreateFlags2KHR flags=info.flags;bool explicitParts=false,staticFsr=false;uint32_t linkedCount=0;
+        auto r=std::make_shared<PipelineSnapshot>();r->generation=generation;r->legacyFlags=info.flags;VkPipelineCreateFlags2KHR flags=info.flags;bool explicitParts=false,staticFsr=false;uint32_t linkedCount=0;const VkPipelineRenderingCreateInfo* rendering=nullptr;
         for(auto* p=static_cast<const VkBaseInStructure*>(info.pNext);p;p=p->pNext){
             if(r->creationChain.count==32){r->creationChain.truncated=true;r->structureReasons|=reason(Reason::pipelineChainLimit);break;}
             bool duplicate=false;for(uint32_t i=0;i<r->creationChain.count;++i)if(r->creationChain.types[i]==p->sType)duplicate=true;
@@ -198,7 +331,8 @@ inline PipelineRef capturePipeline(uint64_t generation,const VkGraphicsPipelineC
             // Presence is independent of push/viewport/scissor declarations. Do
             // not read the FSR payload, even when the owning GPL part uses it.
             case VK_STRUCTURE_TYPE_PIPELINE_FRAGMENT_SHADING_RATE_STATE_CREATE_INFO_KHR:staticFsr=true;break;
-            case VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO:case VK_STRUCTURE_TYPE_PIPELINE_CREATION_FEEDBACK_CREATE_INFO:break;
+            case VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO:rendering=reinterpret_cast<const VkPipelineRenderingCreateInfo*>(p);break;
+            case VK_STRUCTURE_TYPE_PIPELINE_CREATION_FEEDBACK_CREATE_INFO:break;
             default:if(r->unknownChainCount<r->unknownChainTypes.size())r->unknownChainTypes[r->unknownChainCount]=p->sType;++r->unknownChainCount;r->structureReasons|=reason(Reason::unknownPipelineChain);break;}
         }
         r->library=(flags&VK_PIPELINE_CREATE_2_LIBRARY_BIT_KHR)!=0;if(!explicitParts&&!r->library&&!r->linked)r->ownParts=15;
@@ -211,7 +345,7 @@ inline PipelineRef capturePipeline(uint64_t generation,const VkGraphicsPipelineC
         if(r->unknownFlags)r->structureReasons|=reason(Reason::unknownPipelineFlags);
         if(!librariesComplete || libraries.size()!=linkedCount || libraries.size()>32)r->structureReasons|=reason(Reason::incompleteLibraryList);
         if(r->ownParts&~15u)r->structureReasons|=reason(Reason::invalidLibraryParts);
-        r->parts=r->ownParts;r->fsrStaticDeclared=staticFsr && (r->ownParts&6);
+        r->parts=r->ownParts;r->fsrStaticDeclared=staticFsr && (r->ownParts&6);r->fragmentOutputOwners=(r->ownParts&8)?1:0;
         // Refused creation metadata cannot establish which otherwise-optional
         // pointers the driver consumes. Keep their bodies untouched.
         if(r->ownParts&2){r->preRasterOwners=1;if(!r->structureReasons){r->preRasterLayout=layouts.snapshot(info.layout);r->raster=captureRaster(info);r->raster.ownerGeneration=generation;}}
@@ -219,9 +353,13 @@ inline PipelineRef capturePipeline(uint64_t generation,const VkGraphicsPipelineC
         for(std::size_t i=0;i<std::min<std::size_t>(libraries.size(),32);++i){const auto& lib=libraries[i];if(!lib){r->structureReasons|=reason(Reason::missingLibrary);continue;}
             if(r->parts&lib->parts)r->structureReasons|=reason(Reason::overlappingLibraryParts);
             r->parts|=lib->parts;r->structureReasons|=lib->structureReasons;r->preRasterOwners+=lib->preRasterOwners;r->fragmentOwners+=lib->fragmentOwners;
+            if(lib->fragmentOutputOwners){if(!r->fragmentOutputOwners)r->output=lib->output;else r->output={};r->fragmentOutputOwners+=lib->fragmentOutputOwners;}
             r->inheritedUnknownFlags|=lib->unknownFlags|lib->inheritedUnknownFlags;r->inheritedRenderingFlags|=lib->recognizedRenderingFlags|lib->inheritedRenderingFlags;r->rateReasons|=lib->rateReasons;
             if(lib->preRasterOwners){r->preRasterLayout=lib->preRasterLayout;r->raster=lib->raster;}if(lib->fragmentOwners)r->fragmentLayout=lib->fragmentLayout;
         }
+        // Ownership/header failures are resolved before any newly observed
+        // output body is read. Link-only create pointers are never consulted.
+        if((r->ownParts&8)&&!r->structureReasons)r->output=captureOutput(generation,r->ownParts,r->preRasterOwners!=0,info,r->raster,rendering);
         if(r->recognizedRenderingFlags || r->inheritedRenderingFlags)r->rateReasons|=reason(Reason::renderingFsrAttachment);
         if(r->fsrStaticDeclared)r->rateReasons|=reason(Reason::fsrStaticDeclaration);
         if(r->raster.fsrDynamicDeclared)r->rateReasons|=reason(Reason::fsrDynamicDeclaration);
@@ -326,6 +464,50 @@ template<class T> inline void rawSetterJson(std::ostream& out,const RawSetterObs
 }
 inline void reasonsJson(std::ostream& out,ReasonMask mask){out<<'[';bool comma=false;for(uint32_t i=0;i<reasonNames.size();++i)if(mask&(ReasonMask(1)<<i)){if(comma)out<<',';out<<'"'<<reasonNames[i]<<'"';comma=true;}out<<']';}
 template<class T,std::size_t N> inline void enumArrayJson(std::ostream& out,const std::array<T,N>& values,uint32_t count){out<<'[';for(uint32_t i=0;i<std::min<uint32_t>(count,uint32_t(N));++i){if(i)out<<',';out<<int32_t(values[i]);}out<<']';}
+inline std::array<uint32_t,5> outputMasks(const PipelineRef& p) noexcept {
+    if(!p){std::array<uint32_t,5> r{};r.fill(outputReason(OutputReason::noPipeline));return r;}
+    auto r=p->output.reasons;uint32_t base=0;
+    if(p->structureReasons)base|=outputReason(OutputReason::pipelineStructure);
+    if(!p->fragmentOutputOwners)base|=outputReason(OutputReason::missingOutputOwner);
+    if(p->fragmentOutputOwners>1)base|=outputReason(OutputReason::ambiguousOutputOwner);
+    if(p->library)base|=outputReason(OutputReason::libraryNotExecutable);
+    if(p->parts!=15)base|=outputReason(OutputReason::incompletePipeline);
+    for(auto& value:r)value|=base;
+    return r;
+}
+inline std::array<bool,5> outputKnown(const PipelineRef& p) noexcept {
+    const auto masks=outputMasks(p);const OutputDeclaration empty{};const auto& d=p?p->output:empty;
+    return {{!masks[0]&&bool(d.properties&OutputDeclaration::renderPassNull),!masks[1]&&bool(d.properties&OutputDeclaration::blendValueObserved),!masks[2]&&bool(d.properties&OutputDeclaration::maskValueObserved),!masks[3]&&bool(d.properties&OutputDeclaration::logicValueObserved),!masks[4]&&bool(d.properties&OutputDeclaration::sampleValueObserved)}};
+}
+inline void outputReasonsJson(std::ostream& out,uint32_t mask){out<<'[';bool comma=false;for(uint32_t i=0;i<outputReasonNames.size();++i)if(mask&(uint32_t(1)<<i)){if(comma)out<<',';out<<'"'<<outputReasonNames[i]<<'"';comma=true;}out<<']';}
+inline void outputChainJson(std::ostream& out,const OutputChain& c){out<<"\"chain_types\":";enumArrayJson(out,c.types,c.count);out<<",\"chain_truncated\":"<<c.truncated<<",\"chain_duplicate\":"<<c.duplicate;}
+inline void outputJson(std::ostream& out,const PipelineRef& p){
+    const OutputDeclaration empty{};const auto& d=p?p->output:empty;const auto masks=outputMasks(p);const auto known=outputKnown(p);
+    constexpr std::array<const char*,5> names{{"color_formats","blend_enable","color_write_mask","logic_op_enable","rasterization_samples"}};
+    out<<",\"fragment_output\":{\"scope\":\"original_fragment_output_declarations\",\"output_owners\":"<<(p?p->fragmentOutputOwners:0)<<",\"owner_generation\":"<<d.ownerGeneration<<",\"owner_own_parts\":"<<unsigned(d.ownerParts)<<",\"pre_raster_guard_applied\":"<<bool(d.properties&OutputDeclaration::preRasterGuardApplied)<<",\"known\":{";
+    for(uint32_t i=0;i<5;++i){if(i)out<<',';out<<'"'<<names[i]<<"\":"<<known[i];}out<<"},\"reasons\":{";
+    for(uint32_t i=0;i<5;++i){if(i)out<<',';out<<'"'<<names[i]<<"\":";outputReasonsJson(out,masks[i]);}out<<"},\"reason_masks\":{";
+    for(uint32_t i=0;i<5;++i){if(i)out<<',';out<<'"'<<names[i]<<"\":"<<masks[i];}
+    out<<"},\"dynamic\":{\"status\":\""<<outputStatusName(d.dynamicStatus)<<"\",\"original_count\":";
+    if(d.dynamicStatus==OutputStatus::observed||d.dynamicStatus==OutputStatus::absent)out<<d.dynamicCount;else out<<"null";
+    out<<",\"scanned_count\":"<<unsigned(d.scannedCount)<<",\"relevant_count\":"<<unsigned(d.relevantCount)<<",\"relevant_types\":";enumArrayJson(out,d.relevantTypes,d.relevantCount);out<<",\"flags\":";
+    if(d.dynamicStatus==OutputStatus::observed)out<<d.dynamicFlags;else out<<"null";
+    out<<',';outputChainJson(out,d.dynamicChain);out<<",\"duplicate_states\":"<<bool(d.dynamicProperties&1)<<",\"unknown_states\":"<<bool(d.dynamicProperties&2)<<",\"relevant_truncated\":"<<(d.relevantCount>8)<<"},\"rendering\":{\"status\":\""<<outputStatusName(d.renderingStatus)<<"\",\"render_pass_null\":";
+    if(d.properties&OutputDeclaration::renderPassObserved)out<<bool(d.properties&OutputDeclaration::renderPassNull);else out<<"null";
+    out<<",\"color_attachment_count\":";
+    if(d.renderingStatus==OutputStatus::observed||d.renderingStatus==OutputStatus::absent)out<<d.colorCount;else out<<"null";
+    out<<",\"formats\":";enumArrayJson(out,d.colorFormats,d.colorRetained);out<<",\"array_status\":\""<<outputStatusName(d.colorArrayStatus)<<"\"},\"color_blend\":{\"status\":\""<<outputStatusName(d.blendStatus)<<"\",\"flags\":";
+    if(d.blendStatus==OutputStatus::observed)out<<d.blendFlags;else out<<"null";out<<',';outputChainJson(out,d.blendChain);out<<",\"attachment_count\":";
+    if(d.properties&OutputDeclaration::blendCountObserved)out<<d.blendCount;else out<<"null";
+    out<<",\"attachment0_status\":\""<<outputStatusName(d.attachmentStatus)<<"\",\"blend_enable\":";
+    if(d.properties&OutputDeclaration::blendValueObserved)out<<d.blendEnable;else out<<"null";out<<",\"color_write_mask\":";
+    if(d.properties&OutputDeclaration::maskValueObserved)out<<d.writeMask;else out<<"null";out<<",\"logic_op_enable\":";
+    if(d.properties&OutputDeclaration::logicValueObserved)out<<d.logicOpEnable;else out<<"null";
+    out<<"},\"multisample\":{\"status\":\""<<outputStatusName(d.sampleStatus)<<"\",\"scope\":\"combined_fragment_shader_and_output_owner_only\",\"flags\":";
+    if(d.sampleStatus==OutputStatus::observed)out<<d.sampleFlags;else out<<"null";out<<',';outputChainJson(out,d.sampleChain);out<<",\"rasterization_samples\":";
+    if(d.properties&OutputDeclaration::sampleValueObserved)out<<uint32_t(d.samples);else out<<"null";
+    out<<"},\"attachment_binding_known\":false,\"stored_color_decode_proven\":false}";
+}
 inline void pipelineJson(std::ostream& out,const PipelineRef& p){
     const ReasonMask absent=reason(Reason::noPipeline);const std::array<ReasonMask,5> masks{{p?p->structureReasons:absent,p?p->pushLayoutReasons:absent,p?p->viewportReasons:absent,p?p->scissorReasons:absent,p?p->rateReasons:(absent|reason(Reason::fragmentShadingRateUnobserved))}};
     constexpr std::array<const char*,5> names{{"structure","push_layout","viewport_declaration","scissor_declaration","fragment_shading_rate"}};
@@ -347,7 +529,7 @@ inline void pipelineJson(std::ostream& out,const PipelineRef& p){
     out<<"]},\"depth_clip_value_known\":false,\"effective_clipping_known\":false,\"clipping_reasons\":[\"depth_clip_unobserved\"],\"clipping_reason_mask\":"<<reason(Reason::depthClipUnobserved)<<",\"fragment_shading_rate_known\":false,\"effective_write_coverage_known\":false,\"conventional_operand_scope\":true";
 }
 inline std::string json(const DrawSnapshot& r,std::size_t cap=16384) noexcept {
-    try {std::ostringstream out;out<<std::boolalpha<<"{\"schema_version\":3,\"available\":true,\"ordinal\":"<<r.ordinal<<",\"pipeline_generation\":"<<r.pipelineGeneration<<",\"pipeline_flags\":"<<r.pipelineFlags<<",\"pipeline_unknown_flags\":"<<r.pipelineUnknownFlags<<",\"pipeline_declarations_complete\":"<<r.pipelineDeclarationsComplete<<",\"overflow\":"<<r.overflow;pipelineJson(out,r.pipelineDeclaration);out<<",\"push\":{\"raw_hex\":\"";
+    try {std::ostringstream out;out<<std::boolalpha<<"{\"schema_version\":4,\"available\":true,\"ordinal\":"<<r.ordinal<<",\"pipeline_generation\":"<<r.pipelineGeneration<<",\"pipeline_flags\":"<<r.pipelineFlags<<",\"pipeline_unknown_flags\":"<<r.pipelineUnknownFlags<<",\"pipeline_declarations_complete\":"<<r.pipelineDeclarationsComplete<<",\"overflow\":"<<r.overflow;pipelineJson(out,r.pipelineDeclaration);outputJson(out,r.pipelineDeclaration);out<<",\"push\":{\"raw_hex\":\"";
         for(auto b:r.push.bytes)out<<"0123456789abcdef"[b>>4]<<"0123456789abcdef"[b&15];
         out<<"\",\"byte_known_mask\":"<<r.push.byteKnownMask<<",\"compatible_word_mask\":"<<unsigned(r.push.compatibleWordMask)<<",\"host_little_endian\":"<<r.push.littleEndian<<",\"bound_layout_generation\":"<<r.push.boundLayoutGeneration<<",\"bound_layout\":";layoutJson(out,r.push.boundLayout);out<<",\"layout_known\":"<<r.push.layoutKnown<<",\"image_index_known\":"<<r.push.imageIndexKnown<<",\"image_index\":";if(r.push.imageIndexKnown)out<<r.push.imageIndex;else out<<"null";out<<",\"sampler_index_known\":"<<r.push.samplerIndexKnown<<",\"sampler_index\":";if(r.push.samplerIndexKnown)out<<r.push.samplerIndex;else out<<"null";out<<",\"words\":[";
         for(unsigned i=0;i<8;++i){if(i)out<<',';const auto& w=r.push.words[i];out<<"{\"word\":"<<i<<",\"known\":"<<((r.push.byteKnownMask&(0xfu<<(i*4)))==(0xfu<<(i*4)))<<",\"compatible\":"<<bool(r.push.compatibleWordMask&(1u<<i))<<",\"ordinal\":"<<w.ordinal<<",\"stage_flags\":"<<w.stages<<",\"offset\":"<<w.offset<<",\"size\":"<<w.size<<",\"layout\":";layoutJson(out,w.layout);out<<'}';}
