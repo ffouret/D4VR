@@ -37,6 +37,7 @@ void text(const std::filesystem::path& p,const std::string& value){auto tmp=p;tm
 #include "depth_transfer_fixture.hpp"
 #include "held_depth_fixture.hpp"
 #include "source_consumer_fixture.hpp"
+#include "sampled_writer_fixture.hpp"
 }
 int main(int argc,char** argv)try{
     if(argc!=4)throw std::invalid_argument("Usage: present_layer_fixture vertex.spv fragment.spv private-directory");
@@ -52,12 +53,14 @@ int main(int argc,char** argv)try{
     bool heldDepthFixture=std::getenv("D4VR_HELD_DEPTH_FIXTURE");
     bool sourceHistoryFixture=std::getenv("D4VR_SOURCE_HISTORY_FIXTURE");
     bool sourceConsumerFixture=std::getenv("D4VR_SOURCE_CONSUMER_FIXTURE");
+    bool sampledWriterFixture=std::getenv("D4VR_SAMPLED_WRITER_FIXTURE");
     bool foreignProducer=(poseCapture || cooperative) && std::getenv("D4VR_POSE_FIXTURE_FOREIGN");
     if(heldDepthFixture && (!poseCapture || !heldView || !cameraUpdates || depthFixture || transferFixture || auditFixture || cooperative || foreignProducer))throw std::invalid_argument("Held depth fixture requires the monoscopic pose-camera fixture alone");
     if(sourceHistoryFixture && !heldDepthFixture)throw std::invalid_argument("Source history fixture requires held geometric depth");
     if(sourceConsumerFixture && !sourceHistoryFixture)throw std::invalid_argument("Source consumer fixture requires source history workload");
+    if(sampledWriterFixture && !sourceConsumerFixture)throw std::invalid_argument("Writer state controls require the source consumer fixture");
     if(poseCapture)text(directory/"pose.request","invalid diagnostic input\n");
-    Window window;Fixture f(true,false,sourceConsumerFixture,false,false,"D4VR presentation selection fixture",cameraUpdates || auditFixture,{"VK_KHR_surface","VK_KHR_xlib_surface"},{VK_KHR_SWAPCHAIN_EXTENSION_NAME},{},cameraUpdates?5:1,cooperative || auditFixture || heldDepthFixture);
+    Window window;Fixture f(true,false,sourceConsumerFixture,false,false,"D4VR presentation selection fixture",cameraUpdates || auditFixture,{"VK_KHR_surface","VK_KHR_xlib_surface"},{VK_KHR_SWAPCHAIN_EXTENSION_NAME},{},cameraUpdates?5:1,cooperative || auditFixture || heldDepthFixture,sampledWriterFixture);
     std::array<VkQueue,5> readerQueues{};if(cameraUpdates)for(unsigned i=0;i<5;++i)vkGetDeviceQueue(f.device,f.family,i,&readerQueues[i]);
     auto createSurface=reinterpret_cast<CreateSurface>(vkGetInstanceProcAddr(f.instance,"vkCreateXlibSurfaceKHR"));if(!createSurface)throw std::runtime_error("Xlib Vulkan surface unavailable");
     XlibSurfaceInfo si{VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR,nullptr,0,window.display,window.window};VkSurfaceKHR surface{};check(createSurface(f.instance,&si,nullptr,&surface));
@@ -85,7 +88,7 @@ int main(int argc,char** argv)try{
     if(depthFixture){auto depthInfo=ici;depthInfo.format=VK_FORMAT_D24_UNORM_S8_UINT;depthInfo.usage=VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT|VK_IMAGE_USAGE_TRANSFER_SRC_BIT;check(vkCreateImage(f.device,&depthInfo,nullptr,&depthImage));
         VkMemoryRequirements requirements{};vkGetImageMemoryRequirements(f.device,depthImage,&requirements);auto allocation=mai;allocation.allocationSize=requirements.size;allocation.memoryTypeIndex=f.type(requirements.memoryTypeBits,VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);check(vkAllocateMemory(f.device,&allocation,nullptr,&depthMemory));check(vkBindImageMemory(f.device,depthImage,depthMemory,0));
         auto depthInfoView=vi;depthInfoView.image=depthImage;depthInfoView.format=depthInfo.format;depthInfoView.subresourceRange.aspectMask=VK_IMAGE_ASPECT_DEPTH_BIT|VK_IMAGE_ASPECT_STENCIL_BIT;check(vkCreateImageView(f.device,&depthInfoView,nullptr,&depthView));}
-    auto vertex=f.shader(argv[1]),fragment=f.shader(argv[2]);VkPushConstantRange push{VK_SHADER_STAGE_VERTEX_BIT,0,sizeof(Item)};
+    auto vertex=f.shader(argv[1]),fragment=f.shader(argv[2]);VkPushConstantRange push{VK_SHADER_STAGE_VERTEX_BIT|(sampledWriterFixture?VkShaderStageFlags(VK_SHADER_STAGE_FRAGMENT_BIT):0u),0,sizeof(Item)};
     VkPipelineLayoutCreateInfo li{VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};li.pushConstantRangeCount=1;li.pPushConstantRanges=&push;VkPipelineLayout layout{};check(vkCreatePipelineLayout(f.device,&li,nullptr,&layout));
     VkPipelineShaderStageCreateInfo stages[2]{};for(auto& s:stages){s.sType=VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;s.pName="main";}
     stages[0].stage=VK_SHADER_STAGE_VERTEX_BIT;stages[0].module=vertex;stages[1].stage=VK_SHADER_STAGE_FRAGMENT_BIT;stages[1].module=fragment;
@@ -102,6 +105,7 @@ int main(int argc,char** argv)try{
     gp.pViewportState=&viewport;gp.pRasterizationState=&raster;gp.pMultisampleState=&ms;gp.pColorBlendState=&blend;gp.layout=layout;
     if(depthFixture || heldDepthFixture)gp.pDepthStencilState=&depthState;
     VkPipeline pipeline{};check(vkCreateGraphicsPipelines(f.device,VK_NULL_HANDLE,1,&gp,nullptr,&pipeline));
+    std::unique_ptr<SampledWriterFixture> sampledWriter;if(sampledWriterFixture)sampledWriter=std::make_unique<SampledWriterFixture>(f,directory,li,gp);
     VkCommandPoolCreateInfo pi{VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};pi.queueFamilyIndex=f.family;pi.flags=VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;VkCommandPool pool{};check(vkCreateCommandPool(f.device,&pi,nullptr,&pool));
     VkCommandBufferAllocateInfo ai{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};ai.commandPool=pool;ai.commandBufferCount=1;ai.level=VK_COMMAND_BUFFER_LEVEL_PRIMARY;VkCommandBuffer command{};check(vkAllocateCommandBuffers(f.device,&ai,&command));
     VkSemaphoreCreateInfo sem{VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};VkSemaphore acquired{};check(vkCreateSemaphore(f.device,&sem,nullptr,&acquired));
@@ -161,7 +165,7 @@ int main(int argc,char** argv)try{
             depthAttachment.imageView=depthView;depthAttachment.imageLayout=VK_IMAGE_LAYOUT_GENERAL;depthAttachment.loadOp=VK_ATTACHMENT_LOAD_OP_CLEAR;depthAttachment.storeOp=VK_ATTACHMENT_STORE_OP_STORE;depthAttachment.clearValue.depthStencil={float(frame%4)/4,17};info.pDepthAttachment=info.pStencilAttachment=&depthAttachment;}
         if(heldDepth){depthAttachment=heldDepth->attachment(command);info.pDepthAttachment=&depthAttachment;}
         vkCmdBeginRendering(command,&info);vkCmdBindPipeline(command,VK_PIPELINE_BIND_POINT_GRAPHICS,pipeline);
-        for(const auto& item:std::array<Item,2>{{{{-.35f,0,2,.3f},{0,1,0,1}},{{.6f,.3f,4,.4f},{1,0,0,1}}}}){vkCmdPushConstants(command,layout,VK_SHADER_STAGE_VERTEX_BIT,0,sizeof(item),&item);vkCmdDraw(command,3,1,0,0);}
+        unsigned drawIndex=0;for(const auto& item:std::array<Item,2>{{{{-.35f,0,2,.3f},{0,1,0,1}},{{.6f,.3f,4,.4f},{1,0,0,1}}}}){if(sampledWriter)sampledWriter->draw(command,frame,drawIndex,pipeline,layout,vp,sc,item);else{vkCmdPushConstants(command,layout,VK_SHADER_STAGE_VERTEX_BIT,0,sizeof(item),&item);vkCmdDraw(command,3,1,0,0);}++drawIndex;}
         vkCmdEndRendering(command);if(heldDepth){heldDepth->copy(command);if(sourceHistoryFixture)heldDepth->historyAfterCopy(command);}transition(source,VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,VK_ACCESS_TRANSFER_READ_BIT,VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,VK_PIPELINE_STAGE_TRANSFER_BIT);
         auto wsiBlitTransition=[&](VkImageLayout old,VkImageLayout next,VkAccessFlags2 from,VkAccessFlags2 to){VkImageMemoryBarrier2 b{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2};b.image=images[index];b.oldLayout=old;b.newLayout=next;b.srcStageMask=b.dstStageMask=VK_PIPELINE_STAGE_2_BLIT_BIT;b.srcAccessMask=from;b.dstAccessMask=to;b.srcQueueFamilyIndex=b.dstQueueFamilyIndex=VK_QUEUE_FAMILY_IGNORED;b.subresourceRange={VK_IMAGE_ASPECT_COLOR_BIT,0,1,0,1};VkDependencyInfo d{VK_STRUCTURE_TYPE_DEPENDENCY_INFO};d.imageMemoryBarrierCount=1;d.pImageMemoryBarriers=&b;vkCmdPipelineBarrier2(command,&d);};
         if(heldDepthFixture)wsiBlitTransition(VK_IMAGE_LAYOUT_UNDEFINED,VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,0,VK_ACCESS_2_TRANSFER_WRITE_BIT);
@@ -188,7 +192,7 @@ int main(int argc,char** argv)try{
         if(save){std::string name=(poseCapture || cooperative)?"source-frame-"+std::to_string(frame)+".pixels":frame==0?"mono-before.pixels":frame==8?"left-reference.pixels":frame==28?"right-reference.pixels":frame==16?"camera-plus.pixels":frame==44?"camera-minus.pixels":frame==56?"camera-restored-right.pixels":"mono-after.pixels";std::ofstream out(directory/name,std::ios::binary);out.write(static_cast<const char*>(golden.mapped),std::streamsize(extent.width)*extent.height*4);}
         if(heldDepth)heldDepth->save(directory,frame);
     }
-    check(vkDeviceWaitIdle(f.device));vkDestroyCommandPool(f.device,pool,nullptr);vkDestroyPipeline(f.device,pipeline,nullptr);vkDestroyPipelineLayout(f.device,layout,nullptr);vkDestroyShaderModule(f.device,vertex,nullptr);vkDestroyShaderModule(f.device,fragment,nullptr);
+    check(vkDeviceWaitIdle(f.device));vkDestroyCommandPool(f.device,pool,nullptr);sampledWriter.reset();vkDestroyPipeline(f.device,pipeline,nullptr);vkDestroyPipelineLayout(f.device,layout,nullptr);vkDestroyShaderModule(f.device,vertex,nullptr);vkDestroyShaderModule(f.device,fragment,nullptr);
     for(auto s:finished)vkDestroySemaphore(f.device,s,nullptr);
     if(serial)vkDestroySemaphore(f.device,serial,nullptr);
     vkDestroySemaphore(f.device,acquired,nullptr);vkDestroyFence(f.device,fence,nullptr);vkUnmapMemory(f.device,golden.memory);vkDestroyBuffer(f.device,golden.handle,nullptr);vkFreeMemory(f.device,golden.memory,nullptr);
@@ -198,6 +202,7 @@ int main(int argc,char** argv)try{
     if(heldDepthFixture)std::cout<<",\"held_depth_geometry\":true,\"original_depth_copies\":"<<frameCount<<",\"original_null_fence_submits\":"<<frameCount<<",\"original_copy_stage_mask\":"<<VK_PIPELINE_STAGE_2_COPY_BIT<<",\"original_blit_stage_mask\":"<<VK_PIPELINE_STAGE_2_BLIT_BIT<<",\"application_completion\":\"device_wait_idle_after_present\",\"depth_color_common_instant_claimed\":false";
     if(sourceHistoryFixture)std::cout<<",\"source_history_fixture\":true,\"original_late_source_clears\":"<<frameCount<<",\"original_twin_clears\":"<<frameCount<<",\"twin_lifetimes\":2,\"history_gpu_execution_order_inferred\":false";
     if(sourceConsumerFixture)std::cout<<",\"source_consumer_fixture\":true,\"original_descriptor_image_queries\":8,\"descriptor_queries_bound_or_sampled\":false";
+    if(sampledWriterFixture)std::cout<<",\"sampled_writer_state_fixture\":true,\"original_writer_draw_states\":"<<frameCount*2<<",\"writer_dynamic_count_enabled\":"<<(f.writerDynamicCountEnabled?"true":"false")<<",\"writer_maintenance6_enabled\":"<<(f.writerMaintenance6Enabled?"true":"false")<<",\"fragment_push_constants_read_by_shader\":false";
     std::cout<<"}\n";
     return 0;
 }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}

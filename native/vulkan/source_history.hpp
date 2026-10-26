@@ -2,6 +2,7 @@
 #include <vulkan/vulkan.h>
 #include "../core/source_history_id.hpp"
 #include "../core/captured_writer_prefix.hpp"
+#include "sampled_writer_state.hpp"
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -18,6 +19,7 @@ struct Limits {
     bool consumerWindows=false;
     uint32_t consumerEventsPerReport=512,consumerOccurrencesPerReport=8;
     uint32_t descriptorQueries=64,descriptorQueriesPerReport=16,descriptorBytesPerQuery=256;
+    bool sampledWriterState=false; // Requires consumerWindows; no default observation changes.
 };
 enum class Gap : uint32_t {legacy=0,secondary,generated,alias,missingRoute,unknownState,unknownResource,unknownPipeline,extension};
 struct HistoryOccurrence;
@@ -51,15 +53,29 @@ public:
     DescriptorImageQuery descriptorImageQueryBefore(VkImageView,VkDescriptorType,VkImageLayout,bool inputChainComplete,size_t outputSize) noexcept;
     void descriptorImageQueryAfter(const DescriptorImageQuery&,size_t,const void*) noexcept;
     void semaphore(VkSemaphore,const VkSemaphoreCreateInfo&) noexcept;void removeSemaphore(VkSemaphore) noexcept;
+    void pipelineLayout(VkPipelineLayout,const VkPipelineLayoutCreateInfo&) noexcept;
+    void removeLayout(VkPipelineLayout) noexcept;
+    // Capture consumed original pointers/layout/library lifetimes before the
+    // driver call; publish each successful non-null output afterwards.
+    writer_state::PipelineRef pipelineBefore(const VkGraphicsPipelineCreateInfo&) noexcept;
+    void graphicsPipeline(VkPipeline,writer_state::PipelineRef) noexcept;
+    void graphicsPipeline(VkPipeline,const VkGraphicsPipelineCreateInfo&) noexcept;
+    writer_state::PipelineRef writerPipeline(VkPipeline) const noexcept;
     void removePipeline(VkPipeline) noexcept;
     void begin(VkCommandBuffer,VkCommandBufferLevel,VkCommandBufferUsageFlags,uint32_t family,uint32_t eye=2,bool known=true) noexcept;
     void reset(VkCommandBuffer) noexcept;
     // Original immutable catalog metadata and actual opaque selected handle are
     // separate. A private handle does not acquire the original shader metadata.
-    void bind(VkCommandBuffer,std::shared_ptr<const frame::Pipeline> original,VkPipeline selected=VK_NULL_HANDLE,bool substituted=false) noexcept;
+    void bind(VkCommandBuffer,std::shared_ptr<const frame::Pipeline> original,VkPipeline selected=VK_NULL_HANDLE,bool substituted=false,VkPipeline originalHandle=VK_NULL_HANDLE) noexcept;
+    void pushConstants(VkCommandBuffer,VkPipelineLayout,VkShaderStageFlags,uint32_t offset,uint32_t size,const void*,bool chainComplete=true) noexcept;
+#ifdef VK_KHR_maintenance6
+    void pushConstants2(VkCommandBuffer,const VkPushConstantsInfoKHR&) noexcept;
+#endif
+    void viewport(VkCommandBuffer,uint32_t first,uint32_t count,const VkViewport*,bool withCount=false,bool chainComplete=true) noexcept;
+    void scissor(VkCommandBuffer,uint32_t first,uint32_t count,const VkRect2D*,bool withCount=false,bool chainComplete=true) noexcept;
     void beginRendering(VkCommandBuffer,const VkRenderingInfo&) noexcept;
     void endRendering(VkCommandBuffer) noexcept;
-    void draw(VkCommandBuffer,uint32_t kind) noexcept;
+    void draw(VkCommandBuffer,uint32_t kind,const writer_state::DrawArguments& = {}) noexcept;
     void clearDepthStencil(VkCommandBuffer,VkImage,VkImageLayout,const VkClearDepthStencilValue*,uint32_t,const VkImageSubresourceRange*) noexcept;
     void clearAttachments(VkCommandBuffer,uint32_t,const VkClearAttachment*,uint32_t,const VkClearRect*) noexcept;
     HistoryCopyRef sourceCopy(VkCommandBuffer,const VkCopyImageInfo2&) noexcept;

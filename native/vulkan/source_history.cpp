@@ -14,9 +14,10 @@
 
 namespace d4vr::history {
 namespace {
-struct Budget {std::atomic<uint64_t> events{0},references{0};};
+struct Budget {std::atomic<uint64_t> events{0},references{0},writerDraws{0};};
 struct Image {uint64_t id=0;VkFormat format{};VkExtent3D extent{};VkImageUsageFlags usage=0;VkImageCreateFlags flags=0;bool known=false,candidate=false,next=false;uint64_t swapchain=0;VkSwapchainCreateFlagsKHR swapchainFlags=0;};
 struct View {uint64_t id=0;Image image;VkImageSubresourceRange range{};VkImage handle{};bool complete=false;};
+struct WriterDraw {writer_state::DrawSnapshot state;VkPipeline originalHandle=VK_NULL_HANDLE;};
 struct Event {
     std::shared_ptr<Budget> budget;uint64_t ordinal=0;const char* kind="unknown";
     Image image,destination;uint64_t view=0;VkImageSubresourceRange range{};VkRect2D area{};
@@ -30,8 +31,9 @@ struct Event {
     uint64_t renderingScope=0;uint32_t drawColorCount=0;
     std::array<uint64_t,8> drawColorImages{},drawColorViews{};
     VkImageSubresourceRange destinationRange{};std::array<VkOffset3D,2> blitSource{},blitDestination{};VkFilter filter{};
+    std::unique_ptr<WriterDraw> writerState;
     explicit Event(std::shared_ptr<Budget> b):budget(std::move(b)){++budget->events;}
-    ~Event(){--budget->events;}
+    ~Event(){if(writerState)--budget->writerDraws;--budget->events;}
 };
 struct Recording {
     uint64_t id=0,ordinal=0,gaps=0,excluded=0;VkCommandBufferLevel level{};VkCommandBufferUsageFlags flags=0;uint32_t family=VK_QUEUE_FAMILY_IGNORED,eye=2;
@@ -40,6 +42,7 @@ struct Recording {
     std::vector<std::shared_ptr<const Event>> events;
     HistoryBlitRef lastBlit{}; // One bounded same-hook marker; never an event/coverage claim.
     bool captureAdmitted=false;uint64_t renderingScope=0;
+    std::unique_ptr<writer_state::Recording> writerState;VkPipeline originalHandle=VK_NULL_HANDLE;
 };
 struct CommandSnapshot {uint64_t recording=0,gaps=0,excluded=0;uint32_t batch=0,command=0,family=VK_QUEUE_FAMILY_IGNORED,eye=2;VkCommandBufferLevel level{};VkCommandBufferUsageFlags flags=0;bool known=false,truncated=false;std::vector<std::shared_ptr<const Event>> events;};
 struct Semaphore {uint64_t id=0;bool known=false,timeline=false;};
@@ -52,6 +55,7 @@ struct Query {
 };
 struct Swapchain {uint64_t id=0;VkFormat format{};VkExtent2D extent{};uint32_t layers=0;VkImageUsageFlags usage=0;VkSwapchainCreateFlagsKHR flags=0;bool next=false;std::map<VkImage,uint64_t> images;};
 uint32_t bits(float x){uint32_t result;std::memcpy(&result,&x,4);return result;}
+template<class T>uint64_t rawHandle(T value){if constexpr(std::is_pointer_v<T>)return uint64_t(reinterpret_cast<uintptr_t>(value));else return uint64_t(value);}
 uint64_t flag(Gap gap){return uint64_t(1)<<uint32_t(gap);}
 const char* gapName(unsigned v){constexpr const char* names[]={"legacy_attachments_unknown","secondary_not_expanded","generated_pipeline_unknown","alias_route_unknown","write_route_missing","effective_write_state_unknown","resource_unknown","pipeline_unknown","extension_unknown"};return v<std::size(names)?names[v]:"unknown";}
 class Json {
@@ -110,6 +114,12 @@ struct SourceHistory::Impl {
     std::map<VkImage,Image> images;std::map<VkImageView,View> views;std::map<VkCommandBuffer,Recording> commands;
     std::map<VkQueue,uint64_t> queues;std::map<VkSemaphore,Semaphore> semaphores;std::map<VkPipeline,uint64_t> selectedPipelines;
     std::map<VkSwapchainKHR,Swapchain> swapchains;uint64_t swapchainHigh=0;
+    struct WriterCatalog {
+        writer_state::LayoutCatalog layouts;
+        std::map<VkPipeline,writer_state::PipelineRef> pipelines;
+        uint64_t pipelineHigh=0,layoutCalls=0,pipelineCalls=0,refused=0;
+    };
+    std::unique_ptr<WriterCatalog> writer;
     std::map<uint64_t,std::shared_ptr<Query>> queries;uint64_t queryHigh=0,queryCalls=0,queryEvicted=0,queryDeduplicated=0,queryUnknown=0,queryLate=0;
     std::deque<std::shared_ptr<HistoryOccurrence>> journal;
     std::vector<HistoryCopyRef> requested;
@@ -122,6 +132,7 @@ struct SourceHistory::Impl {
         limits.images=std::min(limits.images,65536u);limits.views=std::min(limits.views,65536u);limits.commands=std::min(limits.commands,32768u);limits.queues=std::min(limits.queues,64u);limits.semaphores=std::min(limits.semaphores,256u);limits.pipelines=std::min(limits.pipelines,65536u);
         limits.eventsPerReport=std::min(limits.eventsPerReport,512u);limits.occurrencesPerReport=std::min(limits.occurrencesPerReport,8u);limits.eventsPerRecording=std::min(limits.eventsPerRecording,2048u);limits.liveEvents=std::min(limits.liveEvents,8192u);limits.snapshotReferences=std::min(limits.snapshotReferences,32768u);limits.occurrences=std::min(limits.occurrences,64u);limits.commandsPerSubmit=std::min(limits.commandsPerSubmit,256u);limits.batchesPerSubmit=std::min(limits.batchesPerSubmit,256u);limits.semaphoresPerSubmit=std::min(limits.semaphoresPerSubmit,256u);limits.reports=std::min(limits.reports,8u);limits.serializedBytes=std::clamp(limits.serializedBytes,size_t(512),size_t(8*1024*1024));
         limits.consumerEventsPerReport=std::min(limits.consumerEventsPerReport,512u);limits.consumerOccurrencesPerReport=std::min(limits.consumerOccurrencesPerReport,8u);limits.descriptorQueries=std::min(limits.descriptorQueries,64u);limits.descriptorQueriesPerReport=std::min(limits.descriptorQueriesPerReport,16u);limits.descriptorBytesPerQuery=std::min(limits.descriptorBytesPerQuery,256u);
+        if(limits.consumerWindows && limits.sampledWriterState)writer=std::make_unique<WriterCatalog>();
         if(!s || !e.width || !e.height || e.width>4096 || e.height>4096)faulted=true;
     }
     Recording* command(VkCommandBuffer cb,bool advance=true){auto i=commands.find(cb);if(i==commands.end()){++unknownCommands;return nullptr;}auto& c=i->second;if(advance){if(c.ordinal==UINT64_MAX){faulted=true;return nullptr;}++c.ordinal;}return &c;}
@@ -365,15 +376,60 @@ void SourceHistory::semaphore(VkSemaphore h,const VkSemaphoreCreateInfo& i) noex
     for(auto next=static_cast<const VkBaseInStructure*>(i.pNext);next;next=next->pNext){if(++count>16){value.known=false;break;}if(next->sType==VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO)value.timeline=reinterpret_cast<const VkSemaphoreTypeCreateInfo*>(next)->semaphoreType==VK_SEMAPHORE_TYPE_TIMELINE;else value.known=false;}p.semaphores[h]=value;
 H_END}
 void SourceHistory::removeSemaphore(VkSemaphore h) noexcept {H_BEGIN p.semaphores.erase(h);H_END}
-void SourceHistory::removePipeline(VkPipeline h) noexcept {H_BEGIN p.selectedPipelines.erase(h);H_END}
+void SourceHistory::pipelineLayout(VkPipelineLayout h,const VkPipelineLayoutCreateInfo& info) noexcept {H_BEGIN
+    if(!p.writer || p.faulted)return;
+    ++p.writer->layoutCalls;if(!p.writer->layouts.created(h,info)){++p.writer->refused;++p.overflow;}
+H_END}
+void SourceHistory::removeLayout(VkPipelineLayout h) noexcept {H_BEGIN if(p.writer)p.writer->layouts.destroyed(h);H_END}
+writer_state::PipelineRef SourceHistory::pipelineBefore(const VkGraphicsPipelineCreateInfo& info) noexcept {H_BEGIN
+    if(!p.writer || p.faulted)return {};
+    auto& writer=*p.writer;++writer.pipelineCalls;
+    if(writer.pipelineHigh==UINT64_MAX || writer.pipelines.size()>=p.limits.pipelines){++writer.refused;++p.overflow;return {};}
+    std::vector<writer_state::PipelineRef> libraries;bool complete=true,found=false;unsigned nodes=0;
+    for(auto next=static_cast<const VkBaseInStructure*>(info.pNext);next;next=next->pNext){
+        if(++nodes>32){complete=false;break;}
+        if(next->sType!=VK_STRUCTURE_TYPE_PIPELINE_LIBRARY_CREATE_INFO_KHR)continue;
+        if(found){complete=false;continue;}found=true;
+        const auto& linked=*reinterpret_cast<const VkPipelineLibraryCreateInfoKHR*>(next);
+        if(linked.libraryCount>32 || (linked.libraryCount && !linked.pLibraries))complete=false;
+        if(linked.pLibraries)for(uint32_t k=0;k<std::min(linked.libraryCount,32u);++k){auto lib=writer.pipelines.find(linked.pLibraries[k]);libraries.push_back(lib==writer.pipelines.end()?writer_state::PipelineRef{}:lib->second);}
+    }
+    auto snapshot=writer_state::capturePipeline(++writer.pipelineHigh,info,writer.layouts,libraries,complete);
+    if(!snapshot){++writer.refused;++p.overflow;}return snapshot;
+H_END return {};}
+void SourceHistory::graphicsPipeline(VkPipeline h,writer_state::PipelineRef snapshot) noexcept {H_BEGIN
+    if(!p.writer)return;
+    auto& writer=*p.writer;writer.pipelines.erase(h);
+    if(!h || !snapshot || p.faulted)return;
+    if(writer.pipelines.size()>=p.limits.pipelines){++writer.refused;++p.overflow;return;}writer.pipelines[h]=std::move(snapshot);
+H_END}
+void SourceHistory::graphicsPipeline(VkPipeline h,const VkGraphicsPipelineCreateInfo& info) noexcept {auto snapshot=pipelineBefore(info);graphicsPipeline(h,std::move(snapshot));}
+writer_state::PipelineRef SourceHistory::writerPipeline(VkPipeline h) const noexcept {try{auto& p=*impl;std::lock_guard<std::mutex> lock(p.mutex);if(!p.writer || p.faulted)return {};auto found=p.writer->pipelines.find(h);return found==p.writer->pipelines.end()?writer_state::PipelineRef{}:found->second;}catch(...){impl->faulted=true;return {};}}
+void SourceHistory::removePipeline(VkPipeline h) noexcept {H_BEGIN p.selectedPipelines.erase(h);if(p.writer)p.writer->pipelines.erase(h);H_END}
 void SourceHistory::begin(VkCommandBuffer cb,VkCommandBufferLevel level,VkCommandBufferUsageFlags flags,uint32_t family,uint32_t eye,bool known) noexcept {H_BEGIN
     auto previous=p.commands.find(cb);if(previous!=p.commands.end())p.invalidateWriters(previous->second.id,CapturedWriterUnavailable::resetBeforeSubmit);
-    p.commands.erase(cb);if(!cb || p.commands.size()>=p.limits.commands || p.recordingHigh==UINT64_MAX){++p.overflow;return;}Recording c;c.id=++p.recordingHigh;c.level=level;c.flags=flags;c.family=family;c.eye=eye<2?eye:2;c.known=known;if(!known)c.gaps|=flag(Gap::unknownResource);if(level!=VK_COMMAND_BUFFER_LEVEL_PRIMARY)c.gaps|=flag(Gap::secondary);p.commands[cb]=std::move(c);
+    p.commands.erase(cb);if(!cb || p.commands.size()>=p.limits.commands || p.recordingHigh==UINT64_MAX){++p.overflow;return;}Recording c;c.id=++p.recordingHigh;c.level=level;c.flags=flags;c.family=family;c.eye=eye<2?eye:2;c.known=known;if(!known)c.gaps|=flag(Gap::unknownResource);if(level!=VK_COMMAND_BUFFER_LEVEL_PRIMARY)c.gaps|=flag(Gap::secondary);if(p.writer && !p.faulted)c.writerState=std::make_unique<writer_state::Recording>();p.commands[cb]=std::move(c);
 H_END}
 void SourceHistory::reset(VkCommandBuffer cb) noexcept {H_BEGIN auto old=p.commands.find(cb);if(old!=p.commands.end())p.invalidateWriters(old->second.id,CapturedWriterUnavailable::resetBeforeSubmit);p.commands.erase(cb);H_END}
-void SourceHistory::bind(VkCommandBuffer cb,std::shared_ptr<const frame::Pipeline> original,VkPipeline selected,bool substituted) noexcept {H_BEGIN
+void SourceHistory::bind(VkCommandBuffer cb,std::shared_ptr<const frame::Pipeline> original,VkPipeline selected,bool substituted,VkPipeline originalHandle) noexcept {H_BEGIN
     auto c=p.command(cb);if(!c)return;c->original=std::move(original);c->substituted=substituted;c->selected=0;if(!c->original)c->gaps|=flag(Gap::unknownPipeline);
+    c->originalHandle=originalHandle;if(c->writerState){if(p.faulted){c->writerState->invalidate();c->originalHandle=VK_NULL_HANDLE;}else{auto found=p.writer->pipelines.find(originalHandle);c->writerState->bind(found==p.writer->pipelines.end()?writer_state::PipelineRef{}:found->second,c->ordinal);}}
     if(selected){auto old=p.selectedPipelines.find(selected);if(old!=p.selectedPipelines.end())c->selected=old->second;else if(p.selectedPipelines.size()<p.limits.pipelines)c->selected=p.selectedPipelines[selected]=++p.pipelineHigh;else ++p.overflow;}
+H_END}
+void SourceHistory::pushConstants(VkCommandBuffer cb,VkPipelineLayout layout,VkShaderStageFlags stages,uint32_t offset,uint32_t size,const void* values,bool chainComplete) noexcept {H_BEGIN
+    if(!p.writer || p.faulted)return;
+    auto c=p.command(cb);if(c && c->writerState)c->writerState->push(p.writer->layouts.snapshot(layout),stages,offset,size,values,c->ordinal,chainComplete);
+H_END}
+#ifdef VK_KHR_maintenance6
+void SourceHistory::pushConstants2(VkCommandBuffer cb,const VkPushConstantsInfoKHR& info) noexcept {pushConstants(cb,info.layout,info.stageFlags,info.offset,info.size,info.pValues,info.sType==VK_STRUCTURE_TYPE_PUSH_CONSTANTS_INFO_KHR && !info.pNext);}
+#endif
+void SourceHistory::viewport(VkCommandBuffer cb,uint32_t first,uint32_t count,const VkViewport* values,bool withCount,bool chainComplete) noexcept {H_BEGIN
+    if(!p.writer || p.faulted)return;
+    auto c=p.command(cb);if(c && c->writerState)c->writerState->viewport(first,count,values,c->ordinal,withCount,chainComplete);
+H_END}
+void SourceHistory::scissor(VkCommandBuffer cb,uint32_t first,uint32_t count,const VkRect2D* values,bool withCount,bool chainComplete) noexcept {H_BEGIN
+    if(!p.writer || p.faulted)return;
+    auto c=p.command(cb);if(c && c->writerState)c->writerState->scissor(first,count,values,c->ordinal,withCount,chainComplete);
 H_END}
 void SourceHistory::beginRendering(VkCommandBuffer cb,const VkRenderingInfo& i) noexcept {H_BEGIN
     auto c=p.command(cb);if(!c)return;c->active.reset();c->colors.clear();c->renderingScope=p.limits.consumerWindows?c->ordinal:0;if(i.pNext || i.flags)c->gaps|=flag(Gap::extension);const auto attachment=i.pDepthAttachment?i.pDepthAttachment:i.pStencilAttachment;
@@ -405,8 +461,9 @@ void SourceHistory::beginRendering(VkCommandBuffer cb,const VkRenderingInfo& i) 
     if(!c->active && !c->colors.empty() && c->colors.front().image.known)c->active=c->colors.front();
 H_END}
 void SourceHistory::endRendering(VkCommandBuffer cb) noexcept {H_BEGIN auto c=p.command(cb);if(!c)return;if(c->active){auto e=p.event(*c,"end_rendering",c->active->image);if(e){e->view=c->active->id;e->range=c->active->range;}}c->active.reset();c->colors.clear();c->renderingScope=0;H_END}
-void SourceHistory::draw(VkCommandBuffer cb,uint32_t kind) noexcept {H_BEGIN
-    auto c=p.command(cb);if(!c)return;if(kind>=6)c->gaps|=flag(Gap::generated);if(!c->active)return;auto e=p.event(*c,"draw",c->active->image);if(!e)return;e->view=c->active->id;e->range=c->active->range;e->drawKind=kind;e->renderingScope=c->renderingScope;e->drawColorCount=uint32_t(std::min(c->colors.size(),size_t(8)));for(uint32_t k=0;k<e->drawColorCount;++k){e->drawColorImages[k]=c->colors[k].image.id;e->drawColorViews[k]=c->colors[k].id;}e->original=kind>=6?nullptr:c->original;e->selected=kind>=6?0:c->selected;e->substituted=c->substituted;c->gaps|=flag(Gap::unknownState);if(!e->original)c->gaps|=flag(Gap::unknownPipeline);
+void SourceHistory::draw(VkCommandBuffer cb,uint32_t kind,const writer_state::DrawArguments& arguments) noexcept {H_BEGIN
+    auto c=p.command(cb);if(!c)return;if(kind>=6)c->gaps|=flag(Gap::generated);if((kind>=6 || p.faulted) && c->writerState){c->writerState->invalidate();c->originalHandle=VK_NULL_HANDLE;}if(!c->active)return;auto e=p.event(*c,"draw",c->active->image);if(!e)return;e->view=c->active->id;e->range=c->active->range;e->drawKind=kind;e->renderingScope=c->renderingScope;e->drawColorCount=uint32_t(std::min(c->colors.size(),size_t(8)));for(uint32_t k=0;k<e->drawColorCount;++k){e->drawColorImages[k]=c->colors[k].image.id;e->drawColorViews[k]=c->colors[k].id;}e->original=kind>=6?nullptr:c->original;e->selected=kind>=6?0:c->selected;e->substituted=c->substituted;c->gaps|=flag(Gap::unknownState);if(!e->original)c->gaps|=flag(Gap::unknownPipeline);
+    if(c->writerState){e->writerState=std::make_unique<WriterDraw>();++p.budget->writerDraws;e->writerState->originalHandle=c->originalHandle;const bool matching=(kind==0 && arguments.kind==writer_state::DrawArguments::Kind::direct) || (kind==1 && arguments.kind==writer_state::DrawArguments::Kind::indexed);e->writerState->state=c->writerState->draw(c->ordinal,matching?arguments:writer_state::DrawArguments::unknown(kind));}
 H_END}
 void SourceHistory::clearDepthStencil(VkCommandBuffer cb,VkImage image,VkImageLayout layout,const VkClearDepthStencilValue* clear,uint32_t n,const VkImageSubresourceRange* ranges) noexcept {H_BEGIN
     auto c=p.command(cb);if(!c)return;auto source=p.image(image);if(!source.known)c->gaps|=flag(Gap::unknownResource);if(!source.candidate)return;if(!clear || (n && !ranges)){c->gaps|=flag(Gap::missingRoute);return;}if(n>64){c->truncated=true;++p.overflow;}
@@ -464,7 +521,7 @@ void SourceHistory::barrier(VkCommandBuffer cb,const VkDependencyInfo& i) noexce
     auto c=p.command(cb);if(!c)return;if(i.pNext)c->gaps|=flag(Gap::extension);if(i.imageMemoryBarrierCount && !i.pImageMemoryBarriers){c->gaps|=flag(Gap::missingRoute);return;}if(i.imageMemoryBarrierCount>64){c->truncated=true;++p.overflow;}
     for(uint32_t k=0;k<std::min(i.imageMemoryBarrierCount,64u);++k){const auto& b=i.pImageMemoryBarriers[k];auto source=p.image(b.image);if(p.limits.consumerWindows && !source.known)c->gaps|=flag(Gap::unknownResource);if(!source.candidate && !p.limits.consumerWindows)continue;if(p.limits.consumerWindows && !p.admitted(source)){p.exclude(*c,"barrier");continue;}auto e=p.event(*c,"barrier",source);if(!e)break;e->range=b.subresourceRange;e->layout=b.oldLayout;e->destinationLayout=b.newLayout;e->srcStage=b.srcStageMask;e->dstStage=b.dstStageMask;e->srcAccess=b.srcAccessMask;e->dstAccess=b.dstAccessMask;if(b.pNext)c->gaps|=flag(Gap::extension);}
 H_END}
-void SourceHistory::unknown(VkCommandBuffer cb,Gap gap) noexcept {H_BEGIN auto c=p.command(cb);if(!c)return;c->gaps|=flag(gap);auto e=p.event(*c,"unknown",c->active?c->active->image:Image{});if(e)e->drawKind=uint32_t(gap);H_END}
+void SourceHistory::unknown(VkCommandBuffer cb,Gap gap) noexcept {H_BEGIN auto c=p.command(cb);if(!c)return;c->gaps|=flag(gap);if(c->writerState){c->writerState->invalidate();c->originalHandle=VK_NULL_HANDLE;}auto e=p.event(*c,"unknown",c->active?c->active->image:Image{});if(e)e->drawKind=uint32_t(gap);H_END}
 bool SourceHistory::capture(const HistoryCopyRef& ref) noexcept {H_BEGIN
     if(!ref || ref.observerSession!=p.session)return false;
     for(const auto& old:p.requested)if(same_history_copy(old,ref))return true;
@@ -515,6 +572,7 @@ void eventJson(Json& j,const Event& e){
         <<",\"selected_pipeline_metadata_known\":"<<(!e.substituted && e.original?"true":"false")<<",\"selected_pipeline_lifetime_known\":false,\"resolve_present\":"<<(e.resolve?"true":"false")
         <<",\"src_stage\":"<<e.srcStage<<",\"dst_stage\":"<<e.dstStage<<",\"src_access\":"<<e.srcAccess<<",\"dst_access\":"<<e.dstAccess;
     if(!std::strcmp(e.kind,"draw") && e.renderingScope){j<<",\"rendering_scope_ordinal\":"<<e.renderingScope<<",\"draw_color_images\":[";for(uint32_t k=0;k<e.drawColorCount;++k){if(k)j<<",";j<<e.drawColorImages[k];}j<<"],\"draw_color_views\":[";for(uint32_t k=0;k<e.drawColorCount;++k){if(k)j<<",";j<<e.drawColorViews[k];}j<<"],\"declared_color_membership_only\":true,\"actual_gpu_write_proven\":false";}
+    if(e.writerState){const auto state=writer_state::json(e.writerState->state);if(state.empty())j.overflow=true;else j<<",\"writer_state_original_pipeline_handle\":"<<rawHandle(e.writerState->originalHandle)<<",\"writer_state\":"<<state;}
     if(!std::strcmp(e.kind,"declared_color_attachment")){j<<",\"attachment_index\":"<<e.attachmentIndex<<",\"associated_image\":"<<e.associated.id<<",\"associated_view\":"<<e.associatedView<<",\"destination_view\":"<<e.destinationView<<",\"null_attachment\":"<<(e.nullAttachment?"true":"false")<<",\"declared_attachment_use\":true,\"actual_gpu_write_proven\":false,\"clear_color_bits\":["<<e.clearColor[0]<<","<<e.clearColor[1]<<","<<e.clearColor[2]<<","<<e.clearColor[3]<<"]";}
     if(!std::strcmp(e.kind,"blit_image")){j<<",\"filter\":"<<uint32_t(e.filter)<<",\"blit_source_offsets\":[";for(unsigned k=0;k<2;++k){if(k)j<<",";j<<"["<<e.blitSource[k].x<<","<<e.blitSource[k].y<<","<<e.blitSource[k].z<<"]";}j<<"],\"blit_destination_offsets\":[";for(unsigned k=0;k<2;++k){if(k)j<<",";j<<"["<<e.blitDestination[k].x<<","<<e.blitDestination[k].y<<","<<e.blitDestination[k].z<<"]";}j<<"]";}
     if(!std::strcmp(e.kind,"blit_image") || e.resolve)j<<",\"destination_aspects\":"<<e.destinationRange.aspectMask<<",\"destination_base_mip\":"<<e.destinationRange.baseMipLevel<<",\"destination_mip_count\":"<<e.destinationRange.levelCount<<",\"destination_base_layer\":"<<e.destinationRange.baseArrayLayer<<",\"destination_layer_count\":"<<e.destinationRange.layerCount;
@@ -569,6 +627,8 @@ std::string SourceHistory::report() const {try{auto& p=*impl;std::lock_guard<std
     j<<"],\"candidate_images_truncated\":"<<(totalCandidates>64?"true":"false")
         <<",\"limits\":{\"events_per_report\":"<<p.limits.eventsPerReport<<",\"occurrences_per_report\":"<<p.limits.occurrencesPerReport<<",\"events_per_recording\":"<<p.limits.eventsPerRecording<<",\"live_events\":"<<p.limits.liveEvents<<",\"snapshot_references\":"<<p.limits.snapshotReferences<<",\"occurrences\":"<<p.limits.occurrences<<",\"reports\":"<<p.limits.reports<<",\"serialized_bytes\":"<<p.limits.serializedBytes<<"}";
     if(p.limits.consumerWindows){
+        if(p.writer){size_t recordings=0;for(const auto& command:p.commands)if(command.second.writerState)++recordings;
+            j<<",\"sampled_writer_state\":{\"enabled\":true,\"push_window_bytes\":32,\"layout_lifetimes_limit\":8192,\"live_layout_lifetimes\":"<<p.writer->layouts.liveCount()<<",\"layout_budget_exceeded\":"<<(p.writer->layouts.budgetExceeded()?"true":"false")<<",\"layout_generation_exhausted\":"<<(p.writer->layouts.generationExhausted()?"true":"false")<<",\"layout_catalog_faulted\":"<<(p.writer->layouts.faulted()?"true":"false")<<",\"ranges_per_layout_limit\":32,\"pipeline_registry_limit\":"<<p.limits.pipelines<<",\"pipeline_registry_entries\":"<<p.writer->pipelines.size()<<",\"recordings_with_state\":"<<recordings<<",\"recording_state_payload_bytes\":"<<recordings*sizeof(writer_state::Recording)<<",\"draw_state_payload_bytes\":"<<p.budget->writerDraws.load()*sizeof(WriterDraw)<<",\"state_payload_excludes_allocator_and_shared_catalog\":true,\"layout_create_calls\":"<<p.writer->layoutCalls<<",\"pipeline_before_calls\":"<<p.writer->pipelineCalls<<",\"catalog_refused\":"<<p.writer->refused<<",\"export_uses_live_state\":false,\"sampled_resource_identified\":false,\"effective_coverage_known\":false}";}
         size_t activeWriters=0;for(const auto& w:p.writerPrefixes)if(!w.expired())++activeWriters;
         j<<",\"captured_writer_limits\":{\"live_tickets\":4,\"effective_events_per_prefix\":"<<p.writerLimit()<<",\"occurrences_per_prefix\":4,\"serialized_bytes_per_prefix\":131072,\"active_tickets\":"<<activeWriters<<",\"reservations\":"<<p.writerReservations<<",\"refused\":"<<p.writerRefused<<",\"retention\":\"immutable_cpu_values\"}";
         j<<",\"consumer_admission\":{\"scope\":\"configured_depth_candidates_declared_directed_or_accepted_capture_live_endpoints\",\"outside_scope_complete\":false,\"event_absence_means_unused\":false,\"additional_live_endpoints\":"<<p.admittedEndpoints.size()<<",\"additional_endpoint_limit\":64,\"excluded_event_attempts\":"<<p.excludedEvents<<",\"excluded_by_kind\":{";

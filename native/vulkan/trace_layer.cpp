@@ -62,6 +62,18 @@ using PFN_vkCmdExecuteGeneratedCommandsEXT = void (VKAPI_PTR *)(
     VkCommandBuffer, VkBool32, const VkGeneratedCommandsInfoEXT*);
 #endif
 
+#ifdef VK_KHR_maintenance6
+#ifndef VK_VERSION_1_4
+// The promoted command has the same KHR ABI in distribution headers that
+// predate Vulkan 1.4. Keep separate downstream pointers for both spellings.
+using VkPushConstantsInfo = VkPushConstantsInfoKHR;
+using PFN_vkCmdPushConstants2 = PFN_vkCmdPushConstants2KHR;
+#endif
+#define D4_PUSH2_FUNCTIONS(X) X(CmdPushConstants2) X(CmdPushConstants2KHR)
+#else
+#define D4_PUSH2_FUNCTIONS(X)
+#endif
+
 namespace {
 std::string quoted(const char* value) {
     std::ostringstream out;
@@ -213,7 +225,8 @@ struct Commands {
     X(CreateGraphicsPipelines) X(CreateComputePipelines) X(DestroyPipeline) \
     X(QueueSubmit) X(QueueSubmit2) X(QueueBindSparse) X(QueuePresentKHR) X(QueueWaitIdle) \
     X(EndCommandBuffer) X(DeviceWaitIdle) X(CreatePipelineLayout) X(DestroyPipelineLayout) \
-    X(CmdPushConstants) X(CmdSetViewport) X(CmdSetViewportWithCount) X(CmdSetScissor) X(CmdSetStencilReference) \
+    X(CmdPushConstants) D4_PUSH2_FUNCTIONS(X) X(CmdSetViewport) X(CmdSetViewportWithCount) X(CmdSetViewportWithCountEXT) \
+    X(CmdSetScissor) X(CmdSetScissorWithCount) X(CmdSetScissorWithCountEXT) X(CmdBindShadersEXT) X(CmdSetStencilReference) \
     X(CreateBuffer) X(DestroyBuffer) X(GetBufferDeviceAddress) \
     X(AllocateMemory) X(FreeMemory) X(BindBufferMemory) X(BindBufferMemory2) X(MapMemory) X(UnmapMemory) X(FlushMappedMemoryRanges) X(InvalidateMappedMemoryRanges) D4_MEMORY2_FUNCTIONS(X) \
     X(CreateDescriptorSetLayout) X(DestroyDescriptorSetLayout) X(GetDescriptorSetLayoutSizeEXT) X(GetDescriptorSetLayoutBindingOffsetEXT) X(GetDescriptorEXT) \
@@ -252,7 +265,7 @@ struct Device {
     std::atomic<uint64_t> depthSubmission{0};
     d4vr::frame::Tracker frame;
     std::unique_ptr<d4vr::history::SourceHistory> sourceHistory;
-    bool sourceConsumerHistory=false;
+    bool sourceConsumerHistory=false,sampledWriterState=false;
     std::atomic<uint64_t> blitRecordReports{0},blitSubmitReports{0};
     std::mutex historyReportMutex;uint64_t historyReports=0,historyRequest=0;
     std::unique_ptr<d4vr::eye::Control> eye;
@@ -307,8 +320,9 @@ template<class T> std::shared_ptr<Device> deviceFor(T handle) {
     std::lock_guard<std::mutex> lock(stateMutex);
     auto found = devices.find(key(handle)); return found == devices.end() ? nullptr : found->second;
 }
-void count(const std::shared_ptr<Device>& d, VkCommandBuffer command, Counter c) {
-    D4_HISTORY(d,if(c<=IndexedIndirectCount)d->sourceHistory->draw(command,c);else if(c==GeneratedEXT || c==GeneratedNV)d->sourceHistory->unknown(command,d4vr::history::Gap::generated));
+void count(const std::shared_ptr<Device>& d, VkCommandBuffer command, Counter c,
+           const d4vr::writer_state::DrawArguments& arguments={}) {
+    D4_HISTORY(d,if(c<=IndexedIndirectCount)d->sourceHistory->draw(command,c,arguments);else if(c==GeneratedEXT || c==GeneratedNV)d->sourceHistory->unknown(command,d4vr::history::Gap::generated));
     std::lock_guard<std::mutex> lock(stateMutex);
     auto found = d->commands.find(command);
     if (found != d->commands.end()) {
@@ -795,10 +809,13 @@ VKAPI_ATTR VkResult VKAPI_CALL d4CreateDevice(VkPhysicalDevice physical, const V
         auto number=[](const char* name,uint32_t fallback){auto v=std::getenv(name);if(!v)return fallback;char* end=nullptr;auto n=std::strtoul(v,&end,10);if(!*v || *end || !n || n>4096)throw std::invalid_argument("History footprint");return uint32_t(n);};
         auto stamp=uint64_t(std::chrono::steady_clock::now().time_since_epoch().count())^uint64_t(getpid());if(!stamp)stamp=1;
         d4vr::history::Limits historyLimits;historyLimits.consumerWindows=enabled("D4VR_SOURCE_CONSUMER_HISTORY");
+        historyLimits.sampledWriterState=historyLimits.consumerWindows && enabled("D4VR_SAMPLED_WRITER_STATE");
         if(historyLimits.consumerWindows)historyLimits.reports=3;
         d->sourceHistory=std::make_unique<d4vr::history::SourceHistory>(VkExtent2D{number("D4VR_SOURCE_HISTORY_WIDTH",1707),number("D4VR_SOURCE_HISTORY_HEIGHT",960)},VkFormat(number("D4VR_SOURCE_HISTORY_FORMAT",129)),stamp,historyLimits);
         d->sourceConsumerHistory=historyLimits.consumerWindows;
+        d->sampledWriterState=historyLimits.sampledWriterState;
         d->frame.pipelineCatalogOnly=true;
+        if(d->sampledWriterState)logFile.write("\"event\":\"sampled_writer_state_enabled\",\"cpu_observation_only\":true,\"observed_fragment_push_bytes\":32,\"effective_coverage_proven\":false");
     }catch(...){logFile.write("\"event\":\"source_history_unavailable\"");}
     d->frame.hasSwapchain = std::find(d->extensions.begin(), d->extensions.end(), VK_KHR_SWAPCHAIN_EXTENSION_NAME) != d->extensions.end();
     // Observation mode never activates the strict reader, even if conflicting
@@ -1107,10 +1124,10 @@ D4_COMMAND(CmdExecuteGeneratedCommandsEXT, GeneratedEXT, (VkCommandBuffer comman
 D4_COMMAND(CmdExecuteGeneratedCommandsNV, GeneratedNV, (VkCommandBuffer command, VkBool32 p, const VkGeneratedCommandsInfoNV* info), (command, p, info))
 #undef D4_COMMAND
 VKAPI_ATTR void VKAPI_CALL d4CmdDraw(VkCommandBuffer command,uint32_t a,uint32_t b,uint32_t c,uint32_t e) {
-    auto d=deviceFor(command);count(d,command,Draw);D4_REPLAY(d,command,draw(a,b,c,e));d->CmdDraw(command,a,b,c,e);
+    auto d=deviceFor(command);count(d,command,Draw,d4vr::writer_state::DrawArguments::direct(a,b,c,e));D4_REPLAY(d,command,draw(a,b,c,e));d->CmdDraw(command,a,b,c,e);
 }
 VKAPI_ATTR void VKAPI_CALL d4CmdDrawIndexed(VkCommandBuffer command,uint32_t a,uint32_t b,uint32_t c,int32_t e,uint32_t f) {
-    auto d=deviceFor(command);count(d,command,Indexed);D4_REPLAY(d,command,drawIndexed(a,b,c,e,f));d->CmdDrawIndexed(command,a,b,c,e,f);
+    auto d=deviceFor(command);count(d,command,Indexed,d4vr::writer_state::DrawArguments::indexed(a,b,c,e,f));D4_REPLAY(d,command,drawIndexed(a,b,c,e,f));d->CmdDrawIndexed(command,a,b,c,e,f);
 }
 template<class F> void frameCommand(const std::shared_ptr<Device>& d, VkCommandBuffer command, F fn) {
     if (!d->frame.enabled) return;
@@ -1262,13 +1279,23 @@ VKAPI_ATTR void VKAPI_CALL d4CmdBindPipeline(VkCommandBuffer command, VkPipeline
             }
         }
     }catch(...){logFile.write("\"event\":\"presentation_error\",\"reason\":\"pipeline_selection_failed\"");}
-    if(d->sourceHistory && point==VK_PIPELINE_BIND_POINT_GRAPHICS){std::shared_ptr<const d4vr::frame::Pipeline> metadata;{std::lock_guard<std::mutex> lock(stateMutex);metadata=d->frame.pipelineSnapshot(original);}D4_HISTORY(d,d->sourceHistory->bind(command,metadata,pipeline,pipeline!=original));}
+    if(d->sourceHistory && point==VK_PIPELINE_BIND_POINT_GRAPHICS){std::shared_ptr<const d4vr::frame::Pipeline> metadata;{std::lock_guard<std::mutex> lock(stateMutex);metadata=d->frame.pipelineSnapshot(original);}D4_HISTORY(d,d->sourceHistory->bind(command,metadata,pipeline,pipeline!=original,original));}
     if(point==VK_PIPELINE_BIND_POINT_GRAPHICS) { D4_REPLAY(d,command,bindPipeline(pipeline)); }
     D4_POC(d,d->poc->unsupported(command));d->CmdBindPipeline(command, point, pipeline);
 }
 VKAPI_ATTR void VKAPI_CALL d4CmdPushConstants(VkCommandBuffer command,VkPipelineLayout layout,VkShaderStageFlags stages,uint32_t offset,uint32_t size,const void* data) {
-    auto d=deviceFor(command);D4_REPLAY(d,command,push(layout,stages,offset,size,data));d->CmdPushConstants(command,layout,stages,offset,size,data);
+    auto d=deviceFor(command);D4_HISTORY(d,d->sourceHistory->pushConstants(command,layout,stages,offset,size,data));D4_REPLAY(d,command,push(layout,stages,offset,size,data));d->CmdPushConstants(command,layout,stages,offset,size,data);
 }
+#ifdef VK_KHR_maintenance6
+VKAPI_ATTR void VKAPI_CALL d4CmdPushConstants2KHR(VkCommandBuffer command,const VkPushConstantsInfoKHR* info) {
+    auto d=deviceFor(command);D4_HISTORY(d,if(info)d->sourceHistory->pushConstants2(command,*info);else if(d->sampledWriterState)d->sourceHistory->unknown(command,d4vr::history::Gap::unknownState));
+    D4_POC(d,d->poc->unsupported(command));d->CmdPushConstants2KHR(command,info);
+}
+VKAPI_ATTR void VKAPI_CALL d4CmdPushConstants2(VkCommandBuffer command,const VkPushConstantsInfo* info) {
+    auto d=deviceFor(command);D4_HISTORY(d,if(info)d->sourceHistory->pushConstants2(command,*reinterpret_cast<const VkPushConstantsInfoKHR*>(info));else if(d->sampledWriterState)d->sourceHistory->unknown(command,d4vr::history::Gap::unknownState));
+    D4_POC(d,d->poc->unsupported(command));d->CmdPushConstants2(command,info);
+}
+#endif
 void observeViewports(Device& d,uint32_t count,const VkViewport* values){
     if(!d.viewDiagnostic || !values)return;
     std::lock_guard<std::mutex> lock(stateMutex);
@@ -1278,24 +1305,37 @@ void observeViewports(Device& d,uint32_t count,const VkViewport* values){
         if(d.observedViewports.size()<32)d.observedViewports.push_back(v);else ++d.viewportOverBudget;}
 }
 VKAPI_ATTR void VKAPI_CALL d4CmdSetViewport(VkCommandBuffer command,uint32_t first,uint32_t count,const VkViewport* values) {
-    auto d=deviceFor(command);D4_REPLAY(d,command,viewport(first,count,values));d->CmdSetViewport(command,first,count,values);observeViewports(*d,count,values);
+    auto d=deviceFor(command);D4_HISTORY(d,d->sourceHistory->viewport(command,first,count,values));D4_REPLAY(d,command,viewport(first,count,values));d->CmdSetViewport(command,first,count,values);observeViewports(*d,count,values);
 }
 VKAPI_ATTR void VKAPI_CALL d4CmdSetViewportWithCount(VkCommandBuffer command,uint32_t count,const VkViewport* values){
-    auto d=deviceFor(command);D4_POC(d,d->poc->unsupported(command));d->CmdSetViewportWithCount(command,count,values);observeViewports(*d,count,values);
+    auto d=deviceFor(command);D4_HISTORY(d,d->sourceHistory->viewport(command,0,count,values,true));D4_POC(d,d->poc->unsupported(command));d->CmdSetViewportWithCount(command,count,values);observeViewports(*d,count,values);
+}
+VKAPI_ATTR void VKAPI_CALL d4CmdSetViewportWithCountEXT(VkCommandBuffer command,uint32_t count,const VkViewport* values){
+    auto d=deviceFor(command);D4_HISTORY(d,d->sourceHistory->viewport(command,0,count,values,true));D4_POC(d,d->poc->unsupported(command));d->CmdSetViewportWithCountEXT(command,count,values);observeViewports(*d,count,values);
 }
 VKAPI_ATTR void VKAPI_CALL d4CmdSetScissor(VkCommandBuffer command,uint32_t first,uint32_t count,const VkRect2D* values) {
-    auto d=deviceFor(command);D4_REPLAY(d,command,scissor(first,count,values));d->CmdSetScissor(command,first,count,values);
+    auto d=deviceFor(command);D4_HISTORY(d,d->sourceHistory->scissor(command,first,count,values));D4_REPLAY(d,command,scissor(first,count,values));d->CmdSetScissor(command,first,count,values);
+}
+VKAPI_ATTR void VKAPI_CALL d4CmdSetScissorWithCount(VkCommandBuffer command,uint32_t count,const VkRect2D* values){
+    auto d=deviceFor(command);D4_HISTORY(d,d->sourceHistory->scissor(command,0,count,values,true));D4_POC(d,d->poc->unsupported(command));d->CmdSetScissorWithCount(command,count,values);
+}
+VKAPI_ATTR void VKAPI_CALL d4CmdSetScissorWithCountEXT(VkCommandBuffer command,uint32_t count,const VkRect2D* values){
+    auto d=deviceFor(command);D4_HISTORY(d,d->sourceHistory->scissor(command,0,count,values,true));D4_POC(d,d->poc->unsupported(command));d->CmdSetScissorWithCountEXT(command,count,values);
+}
+VKAPI_ATTR void VKAPI_CALL d4CmdBindShadersEXT(VkCommandBuffer command,uint32_t count,const VkShaderStageFlagBits* stages,const VkShaderEXT* shaders){
+    auto d=deviceFor(command);D4_HISTORY(d,if(d->sampledWriterState)d->sourceHistory->unknown(command,d4vr::history::Gap::unknownState));D4_POC(d,d->poc->unsupported(command));d->CmdBindShadersEXT(command,count,stages,shaders);
 }
 VKAPI_ATTR void VKAPI_CALL d4CmdSetStencilReference(VkCommandBuffer command,VkStencilFaceFlags faces,uint32_t value) {
     auto d=deviceFor(command);D4_REPLAY(d,command,stencilReference(faces,value));d->CmdSetStencilReference(command,faces,value);
 }
 VKAPI_ATTR VkResult VKAPI_CALL d4CreatePipelineLayout(VkDevice device,const VkPipelineLayoutCreateInfo* info,const VkAllocationCallbacks* allocator,VkPipelineLayout* layout) {
     auto d=deviceFor(device);auto r=d->CreatePipelineLayout(device,info,allocator,layout);
+    if(r==VK_SUCCESS && layout && info){D4_HISTORY(d,d->sourceHistory->pipelineLayout(*layout,*info));}
     if(r==VK_SUCCESS) { D4_POC(d,d->poc->layout(*layout,*info)); }
     if(r==VK_SUCCESS && d->frame.enabled){std::lock_guard<std::mutex> lock(stateMutex);try{d->frame.pipelineLayout(*layout,*info);}catch(...){d->frame.resourceFailure();}}return r;
 }
 VKAPI_ATTR void VKAPI_CALL d4DestroyPipelineLayout(VkDevice device,VkPipelineLayout layout,const VkAllocationCallbacks* allocator) {
-    auto d=deviceFor(device);D4_POC(d,d->poc->removeLayout(layout));d->DestroyPipelineLayout(device,layout,allocator);
+    auto d=deviceFor(device);D4_HISTORY(d,d->sourceHistory->removeLayout(layout));D4_POC(d,d->poc->removeLayout(layout));d->DestroyPipelineLayout(device,layout,allocator);
     if(d->frame.enabled){std::lock_guard<std::mutex> lock(stateMutex);d->frame.removePipelineLayout(layout);}
 }
 VKAPI_ATTR VkResult VKAPI_CALL d4EndCommandBuffer(VkCommandBuffer command) {
@@ -1458,6 +1498,13 @@ VKAPI_ATTR void VKAPI_CALL d4GetShaderModuleCreateInfoIdentifierEXT(VkDevice dev
 }
 VKAPI_ATTR VkResult VKAPI_CALL d4CreateGraphicsPipelines(VkDevice device, VkPipelineCache cache, uint32_t n, const VkGraphicsPipelineCreateInfo* info, const VkAllocationCallbacks* allocator, VkPipeline* pipelines) {
     auto d = deviceFor(device);
+    // Snapshot original declarations while this API owns their pointers and
+    // layout/library lifetimes. Never reconstruct them at draw or export.
+    std::vector<d4vr::writer_state::PipelineRef> writerDeclarations;
+    if(d->sampledWriterState && info)try{
+        writerDeclarations.reserve(std::min(n,4096u));
+        for(uint32_t i=0;i<std::min(n,4096u);++i)writerDeclarations.push_back(d->sourceHistory->pipelineBefore(info[i]));
+    }catch(...){if(d->sourceHistory)d->sourceHistory->fault();}
     std::unique_ptr<d4vr::eye::GraphicsEdits> edits;
     if (d->eye) try { edits = d->eye->graphics(n,info); }
     catch (const std::exception& error) { logFile.write("\"event\":\"eye_control_error\",\"device\":" + std::to_string(d->id) + ",\"reason\":" + quoted(error.what())); }
@@ -1479,6 +1526,9 @@ VKAPI_ATTR VkResult VKAPI_CALL d4CreateGraphicsPipelines(VkDevice device, VkPipe
             + ",\"result\":" + std::to_string(result) + ",\"control\":" + d->eye->json());
     }
     // Some creations can succeed even when the batch returns a failure code.
+    if(d->sampledWriterState && pipelines)for(uint32_t i=0;i<n;++i)if(pipelines[i]){
+        D4_HISTORY(d,d->sourceHistory->graphicsPipeline(pipelines[i],i<writerDeclarations.size()?writerDeclarations[i]:d4vr::writer_state::PipelineRef{}));
+    }
     if (d->frame.enabled || d->frame.pipelineCatalogOnly) { std::lock_guard<std::mutex> lock(stateMutex); try{for (uint32_t i = 0; i < n; ++i) if (pipelines[i]) d->frame.graphicsPipeline(pipelines[i], info[i]);}catch(...){if(d->sourceHistory)d->sourceHistory->fault();if(d->frame.enabled)d->frame.resourceFailure();} } return result;
 }
 VKAPI_ATTR VkResult VKAPI_CALL d4CreateComputePipelines(VkDevice device, VkPipelineCache cache, uint32_t n, const VkComputePipelineCreateInfo* info, const VkAllocationCallbacks* allocator, VkPipeline* pipelines) {
@@ -1661,7 +1711,6 @@ PFN_vkVoidFunction intercepted(const char* name) {
     D4_MATCH_ALIAS(CmdEndRenderPass2) D4_MATCH_ALIAS(CmdEndRendering)
     D4_MATCH_ALIAS(GetBufferDeviceAddress) D4_MATCH_ALIAS(BindBufferMemory2)
     D4_MATCH_ALIAS(CmdBlitImage2) D4_MATCH_ALIAS(CmdCopyImage2) D4_MATCH_ALIAS(CmdCopyImageToBuffer2) D4_MATCH_ALIAS(CmdCopyBufferToImage2) D4_MATCH_ALIAS(CmdPipelineBarrier2)
-    if(std::strcmp(name,"vkCmdSetViewportWithCountEXT")==0)return reinterpret_cast<PFN_vkVoidFunction>(d4CmdSetViewportWithCount);
 #undef D4_MATCH_ALIAS
 #ifdef VK_KHR_map_memory2
     if(std::strcmp(name,"vkMapMemory2")==0)return reinterpret_cast<PFN_vkVoidFunction>(d4MapMemory2KHR);

@@ -286,6 +286,8 @@ void check(const std::shared_ptr<Device>& d,VkDevice device,VkCommandBuffer comm
 }
 } // namespace history_forwarding
 
+#include "sampled_writer_forwarding.hpp"
+
 int main() try {
     // Control files must not follow links or read a pipe/special file. The
     // observer shares this bounded counter parser with frame metadata.
@@ -508,6 +510,7 @@ int main() try {
     d->sourceConsumerHistory=false;
     require(descriptorQueries==descriptorsBefore+3 && transferForwards==transfersBefore+9 && swapchainForwards==9 && consumerDispatches==6,"Consumer hooks did not forward exactly once");
     std::cout << "{\"source_consumer_forwarding_passed\":true,\"modes\":3,\"descriptor_queries\":3,\"blits\":9,\"swapchain_calls\":9,\"uncovered_dispatches\":6,\"observer_gpu_calls\":0}\n";
+    sampled_state_forwarding::check(d,handle,primary);
     d4DestroyDevice(handle,nullptr);
     std::cout << "Vulkan forwarding, DGC, aliases, secondary/reused command buffers, errors and reset lifetime: passed\n";
     return 0;

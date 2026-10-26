@@ -10,12 +10,23 @@ répond pas à cet objectif.
 
 ## État du projet
 
+Le [relevé par dessin](docs/SAMPLED_WRITER_STATE.md) conserve maintenant les
+push constants et les déclarations viewport/scissor dans les préfixes des images
+livrées. Quatre contrôles en fenêtre préservent les pixels originaux et comparent
+seize états aux vrais appels de leur application, sans erreur Khronos.
+Un [nouvel essai Diablo](docs/proofs/diablo-sampled-writer-state-v1.json) sauve
+six paires successives et les 28 octets push de onze dessins du writer ciblé.
+Un flag de pipeline non modélisé maintient leur compatibilité de layout et leurs
+viewport/scissor inconnus : le rectangle ne peut pas encore leur être attribué.
+Le jeu est sorti normalement, les originaux restent identiques ; les découpes
+persistent et aucune image de Diablo n’a atteint le Quest.
+
 Le [contrôle ciblé de la passe couleur](docs/SAMPLED_WRITER_CONTROL.md) utilise
 ses deux modules originaux inchangés sur des textures possédées. Dix-huit cas
 GPU en natif et dans le runtime Steam comparent exactement 265 420 800 octets,
 sans erreur de synchronisation Khronos. Ils distinguent l’image choisie, le
 décalage UV, le sampler et la couverture viewport/scissor. Les valeurs réelles
-de ces entrées dans Diablo restent à observer ; les découpes ne sont pas réparées.
+de sélection et de couverture dans Diablo restent à établir ; les découpes ne sont pas réparées.
 
 Les [préfixes attachés aux captures](docs/CAPTURED_WRITERS.md) suivent maintenant
 les opérations du jeu sur ses véritables images sources. Un nouvel essai relie
