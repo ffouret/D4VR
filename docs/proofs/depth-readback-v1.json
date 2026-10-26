@@ -1,0 +1,306 @@
+{
+  "schema_version": 1,
+  "synthetic_attachments": true,
+  "game_rendered": false,
+  "actual_wsi": true,
+  "xr_submission": false,
+  "portable": {
+    "depth_ownership_passed": true,
+    "recorded": 8,
+    "device_wide_scope_refusals": true,
+    "immutable_provenance": true,
+    "d24_padding_cleared": true,
+    "unsubmitted_and_failed_resources_retained": true
+  },
+  "wsi_cases": [
+    {
+      "environment": "wsi-baseline-native",
+      "present_calls": 64,
+      "depth_exports": 0,
+      "depth_bytes": 0,
+      "exact_original_color_bytes": 0,
+      "depth_clear_only_reference": true,
+      "validation_errors": 0
+    },
+    {
+      "environment": "wsi-read-native",
+      "present_calls": 64,
+      "depth_exports": 4,
+      "depth_bytes": 1048576,
+      "exact_original_color_bytes": 1048576,
+      "depth_clear_only_reference": true,
+      "validation_errors": 0
+    },
+    {
+      "environment": "wsi-baseline-runtime",
+      "present_calls": 64,
+      "depth_exports": 0,
+      "depth_bytes": 0,
+      "exact_original_color_bytes": 0,
+      "depth_clear_only_reference": true,
+      "validation_errors": 0
+    },
+    {
+      "environment": "wsi-read-runtime",
+      "present_calls": 64,
+      "depth_exports": 4,
+      "depth_bytes": 1048576,
+      "exact_original_color_bytes": 1048576,
+      "depth_clear_only_reference": true,
+      "validation_errors": 0
+    }
+  ],
+  "cases": [
+    {
+      "environment": "direct-native",
+      "gpu": {
+        "depth_gpu_passed": true,
+        "synthetic_attachments": true,
+        "cases": 6,
+        "depth_texels": 18432,
+        "exact_depth_bytes": 73728,
+        "unchanged_color_bytes": 73728,
+        "unchanged_stencil_bytes": 9216,
+        "held_producer_fences": 2,
+        "cross_queue_overwrites": 2,
+        "original_submit_camera_preserved": true,
+        "game_rendered": false
+      },
+      "layer_exports": [],
+      "validation_errors": 0,
+      "pre_forwarding_refusals_verified": false
+    },
+    {
+      "environment": "layer-native",
+      "gpu": {
+        "depth_gpu_passed": true,
+        "synthetic_attachments": true,
+        "cases": 6,
+        "depth_texels": 18432,
+        "exact_depth_bytes": 73728,
+        "unchanged_color_bytes": 73728,
+        "unchanged_stencil_bytes": 9216,
+        "held_producer_fences": 2,
+        "cross_queue_overwrites": 2,
+        "original_submit_camera_preserved": true,
+        "game_rendered": false
+      },
+      "layer_exports": [
+        {
+          "request": 1,
+          "copy": 1,
+          "recording": 1,
+          "rendering_ordinal": 1,
+          "submission": 1,
+          "image_generation": 1,
+          "view_generation": 2,
+          "format": 129
+        },
+        {
+          "request": 2,
+          "copy": 2,
+          "recording": 2,
+          "rendering_ordinal": 1,
+          "submission": 3,
+          "image_generation": 5,
+          "view_generation": 6,
+          "format": 129
+        },
+        {
+          "request": 3,
+          "copy": 3,
+          "recording": 4,
+          "rendering_ordinal": 1,
+          "submission": 6,
+          "image_generation": 9,
+          "view_generation": 10,
+          "format": 129
+        },
+        {
+          "request": 4,
+          "copy": 4,
+          "recording": 5,
+          "rendering_ordinal": 1,
+          "submission": 8,
+          "image_generation": 13,
+          "view_generation": 14,
+          "format": 126
+        },
+        {
+          "request": 5,
+          "copy": 5,
+          "recording": 6,
+          "rendering_ordinal": 1,
+          "submission": 10,
+          "image_generation": 17,
+          "view_generation": 18,
+          "format": 126
+        },
+        {
+          "request": 6,
+          "copy": 6,
+          "recording": 8,
+          "rendering_ordinal": 1,
+          "submission": 13,
+          "image_generation": 21,
+          "view_generation": 22,
+          "format": 126
+        }
+      ],
+      "validation_errors": 0,
+      "pre_forwarding_refusals_verified": true
+    },
+    {
+      "environment": "direct-runtime",
+      "gpu": {
+        "depth_gpu_passed": true,
+        "synthetic_attachments": true,
+        "cases": 6,
+        "depth_texels": 18432,
+        "exact_depth_bytes": 73728,
+        "unchanged_color_bytes": 73728,
+        "unchanged_stencil_bytes": 9216,
+        "held_producer_fences": 2,
+        "cross_queue_overwrites": 2,
+        "original_submit_camera_preserved": true,
+        "game_rendered": false
+      },
+      "layer_exports": [],
+      "validation_errors": 0,
+      "pre_forwarding_refusals_verified": false
+    },
+    {
+      "environment": "layer-runtime",
+      "gpu": {
+        "depth_gpu_passed": true,
+        "synthetic_attachments": true,
+        "cases": 6,
+        "depth_texels": 18432,
+        "exact_depth_bytes": 73728,
+        "unchanged_color_bytes": 73728,
+        "unchanged_stencil_bytes": 9216,
+        "held_producer_fences": 2,
+        "cross_queue_overwrites": 2,
+        "original_submit_camera_preserved": true,
+        "game_rendered": false
+      },
+      "layer_exports": [
+        {
+          "request": 1,
+          "copy": 1,
+          "recording": 1,
+          "rendering_ordinal": 1,
+          "submission": 1,
+          "image_generation": 1,
+          "view_generation": 2,
+          "format": 129
+        },
+        {
+          "request": 2,
+          "copy": 2,
+          "recording": 2,
+          "rendering_ordinal": 1,
+          "submission": 3,
+          "image_generation": 5,
+          "view_generation": 6,
+          "format": 129
+        },
+        {
+          "request": 3,
+          "copy": 3,
+          "recording": 4,
+          "rendering_ordinal": 1,
+          "submission": 6,
+          "image_generation": 9,
+          "view_generation": 10,
+          "format": 129
+        },
+        {
+          "request": 4,
+          "copy": 4,
+          "recording": 5,
+          "rendering_ordinal": 1,
+          "submission": 8,
+          "image_generation": 13,
+          "view_generation": 14,
+          "format": 126
+        },
+        {
+          "request": 5,
+          "copy": 5,
+          "recording": 6,
+          "rendering_ordinal": 1,
+          "submission": 10,
+          "image_generation": 17,
+          "view_generation": 18,
+          "format": 126
+        },
+        {
+          "request": 6,
+          "copy": 6,
+          "recording": 8,
+          "rendering_ordinal": 1,
+          "submission": 13,
+          "image_generation": 21,
+          "view_generation": 22,
+          "format": 126
+        }
+      ],
+      "validation_errors": 0,
+      "pre_forwarding_refusals_verified": true
+    }
+  ],
+  "validation_errors": 0,
+  "fixture_sha256": "76a2f0aff5c5664dfd30559c4bf79b24bb456d0a37e29db12544bccce2d5d315",
+  "unit_sha256": "d22bfe7337a40cdd0f56721a9a470c5612d1302a101d1ee7a7f0fb1ad75007dc",
+  "wsi_fixture_sha256": "874569a1e098bac26178c073f8fb703c29d1ee21b1796ef7218296f56e8b5753",
+  "layer_sha256": "2f8d8edf714886e93c3c63489ff48cdcfb23f8b915f02aa1fdd14f1ec92af02c",
+  "source_sha256": {
+    "native/vulkan/depth_readback.hpp": "fd04b563829a07315b185016cff34632e6d0fe82d40f7fef841e1b146bf0ed52",
+    "native/vulkan/depth_readback.cpp": "fcec01edc770904e6ab4ecacdd00310d6bda0d950c3a682a368ce918cedd7651",
+    "native/vulkan/trace_layer.cpp": "054addbb1a470b2d69ed9915725f0b4398910027f148ece00b623205d308b13f",
+    "native/tests/depth_readback_tests.cpp": "d01ec86565548c1316a608ea93f82594f053adc70fdf6bb09edfc4da9ce6a364",
+    "native/tests/depth_readback_vulkan.cpp": "a64fd8917328ac77c0dc82ab34cf78f324f7b7065d651c5f2db4dc8d4e2b8060",
+    "tools/depth_readback_validate.py": "0538771accf3f23fdb30678f95dd0d2f6e2957d0c5ccc7a821eee48dd580711e",
+    "native/tests/present_layer_vulkan.cpp": "79aa42f86707e9a72d9ddfd21663f2bd65b5b01cdf9842acfba3d33b56771add"
+  },
+  "milestone": "finite_original_attachment_depth_readback",
+  "game_bundle_authorized": false,
+  "game_or_headset_launched": false,
+  "latest_actual_game_evidence": "fixed-view-hold-v1.json",
+  "diablo_wide_coverage_fixed": false,
+  "diablo_images_sent_to_quest": false,
+  "limits": {
+    "copies_per_device_lifetime": 8,
+    "coherent_allocation_bytes": 134217728,
+    "copies_per_request": 4,
+    "one_pending_request": true,
+    "buffer_reuse": false,
+    "device_wide_all_commands_submission_contract": true,
+    "hidden_or_external_dispatch_certified": false,
+    "original_camera_observation_is_not_whole_depth_scene": true
+  },
+  "regression": {
+    "held_wsi_cases": 8,
+    "default_wsi_cases": 4,
+    "negative_controls": 2,
+    "validation_errors": 0,
+    "forwarding_passed": true,
+    "python_tests": 201,
+    "source_sha256": {
+      "native/core/fixed_view_hold.hpp": "bf01e4562a8ed11c96a1d1a449ebd509576d85ccc88a0350fec2fedeb3798018",
+      "native/vulkan/diagnostic_capture.cpp": "ae6a290d31e0727f76f332a5446f274611fa9809efa0ac3f38d4fb8b4a0c30a6",
+      "native/vulkan/diagnostic_capture.hpp": "a0a14952af79376e67ad0782fdb2c044dc17f6420cce6bbad54c22d12b41405a",
+      "native/vulkan/trace_layer.cpp": "054addbb1a470b2d69ed9915725f0b4398910027f148ece00b623205d308b13f",
+      "native/tests/present_layer_vulkan.cpp": "79aa42f86707e9a72d9ddfd21663f2bd65b5b01cdf9842acfba3d33b56771add",
+      "native/tests/fixed_view_hold_tests.cpp": "ab1722f97ae61db6fbbb44a8559d9b37331f7a4a4e17f448086f8f18f6f26089",
+      "tools/pose_layer_validate.py": "ba759b3010e36f0efee2bdd6c061263929d5aaf7f55557fe0b5c4060f3589785",
+      "tools/fixed_view_validate.py": "c2d3100ffceb4e929eac42fe4565fd7ae5db2aafeb1c2fce24523f3aa327bed9"
+    }
+  },
+  "pending": [
+    "Inspect actual game submit scopes and eligible attachment metadata without inserting reads.",
+    "Select actual depth pass and verify initialized regions before a bounded game experiment.",
+    "Correlate game depth and final color without inventing a common scene instant."
+  ]
+}

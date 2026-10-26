@@ -42,6 +42,7 @@ int main(int argc,char** argv)try{
     bool calibrated=poseCapture && std::getenv("D4VR_POSE_FIXTURE_CALIBRATED");
     bool heldView=poseCapture && std::getenv("D4VR_POSE_FIXTURE_MONOSCOPIC");
     bool cooperative=std::getenv("D4VR_COOPERATIVE_XR_DIAGNOSTIC");
+    bool depthFixture=std::getenv("D4VR_DEPTH_LAYER_FIXTURE");
     bool foreignProducer=(poseCapture || cooperative) && std::getenv("D4VR_POSE_FIXTURE_FOREIGN");
     if(poseCapture)text(directory/"pose.request","invalid diagnostic input\n");
     Window window;Fixture f(true,false,false,false,false,"D4VR presentation selection fixture",cameraUpdates,{"VK_KHR_surface","VK_KHR_xlib_surface"},{VK_KHR_SWAPCHAIN_EXTENSION_NAME},{},cameraUpdates?5:1,cooperative);
@@ -66,6 +67,10 @@ int main(int argc,char** argv)try{
     VkMemoryAllocateInfo mai{VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};mai.allocationSize=mr.size;mai.memoryTypeIndex=f.type(mr.memoryTypeBits,VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     VkDeviceMemory memory{};check(vkAllocateMemory(f.device,&mai,nullptr,&memory));check(vkBindImageMemory(f.device,source,memory,0));
     VkImageViewCreateInfo vi{VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};vi.image=source;vi.viewType=VK_IMAGE_VIEW_TYPE_2D;vi.format=fmt->format;vi.subresourceRange={VK_IMAGE_ASPECT_COLOR_BIT,0,1,0,1};VkImageView view{};check(vkCreateImageView(f.device,&vi,nullptr,&view));
+    VkImage depthImage{};VkImageView depthView{};VkDeviceMemory depthMemory{};
+    if(depthFixture){auto depthInfo=ici;depthInfo.format=VK_FORMAT_D24_UNORM_S8_UINT;depthInfo.usage=VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT|VK_IMAGE_USAGE_TRANSFER_SRC_BIT;check(vkCreateImage(f.device,&depthInfo,nullptr,&depthImage));
+        VkMemoryRequirements requirements{};vkGetImageMemoryRequirements(f.device,depthImage,&requirements);auto allocation=mai;allocation.allocationSize=requirements.size;allocation.memoryTypeIndex=f.type(requirements.memoryTypeBits,VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);check(vkAllocateMemory(f.device,&allocation,nullptr,&depthMemory));check(vkBindImageMemory(f.device,depthImage,depthMemory,0));
+        auto depthInfoView=vi;depthInfoView.image=depthImage;depthInfoView.format=depthInfo.format;depthInfoView.subresourceRange.aspectMask=VK_IMAGE_ASPECT_DEPTH_BIT|VK_IMAGE_ASPECT_STENCIL_BIT;check(vkCreateImageView(f.device,&depthInfoView,nullptr,&depthView));}
     auto vertex=f.shader(argv[1]),fragment=f.shader(argv[2]);VkPushConstantRange push{VK_SHADER_STAGE_VERTEX_BIT,0,sizeof(Item)};
     VkPipelineLayoutCreateInfo li{VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};li.pushConstantRangeCount=1;li.pPushConstantRanges=&push;VkPipelineLayout layout{};check(vkCreatePipelineLayout(f.device,&li,nullptr,&layout));
     VkPipelineShaderStageCreateInfo stages[2]{};for(auto& s:stages){s.sType=VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;s.pName="main";}
@@ -76,8 +81,11 @@ int main(int argc,char** argv)try{
     VkPipelineMultisampleStateCreateInfo ms{VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO};ms.rasterizationSamples=VK_SAMPLE_COUNT_1_BIT;
     VkPipelineColorBlendAttachmentState color{};color.colorWriteMask=15;VkPipelineColorBlendStateCreateInfo blend{VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO};blend.attachmentCount=1;blend.pAttachments=&color;
     VkPipelineRenderingCreateInfo rendering{VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO};rendering.colorAttachmentCount=1;rendering.pColorAttachmentFormats=&ici.format;
+    VkPipelineDepthStencilStateCreateInfo depthState{VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO};
+    if(depthFixture)rendering.depthAttachmentFormat=rendering.stencilAttachmentFormat=VK_FORMAT_D24_UNORM_S8_UINT;
     VkGraphicsPipelineCreateInfo gp{VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO};gp.pNext=&rendering;gp.stageCount=2;gp.pStages=stages;gp.pVertexInputState=&input;gp.pInputAssemblyState=&assembly;
     gp.pViewportState=&viewport;gp.pRasterizationState=&raster;gp.pMultisampleState=&ms;gp.pColorBlendState=&blend;gp.layout=layout;
+    if(depthFixture)gp.pDepthStencilState=&depthState;
     VkPipeline pipeline{};check(vkCreateGraphicsPipelines(f.device,VK_NULL_HANDLE,1,&gp,nullptr,&pipeline));
     VkCommandPoolCreateInfo pi{VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};pi.queueFamilyIndex=f.family;pi.flags=VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;VkCommandPool pool{};check(vkCreateCommandPool(f.device,&pi,nullptr,&pool));
     VkCommandBufferAllocateInfo ai{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};ai.commandPool=pool;ai.commandBufferCount=1;ai.level=VK_COMMAND_BUFFER_LEVEL_PRIMARY;VkCommandBuffer command{};check(vkAllocateCommandBuffers(f.device,&ai,&command));
@@ -88,6 +96,7 @@ int main(int argc,char** argv)try{
     text(directory/"eye.selection","2\n");
     bool cancelPose=(poseCapture || cooperative) && std::getenv("D4VR_POSE_FIXTURE_CANCEL");unsigned frameCount=64;if((poseCapture || cooperative) && (std::getenv("D4VR_POSE_FIXTURE_SHORT") || cancelPose))frameCount=8;
     for(unsigned frame=0;frame<frameCount;++frame){
+        if(depthFixture && (frame==4 || frame==36))text(directory/"depth.request","D4VR_DEPTH_1 "+std::to_string(frame==4?1:2)+" "+std::to_string(extent.width)+" "+std::to_string(extent.height)+" 129 2\n");
         if(heldView && frame==60)text(directory/"pose.stop","1\n");
         if(cancelPose && frame==6)text(directory/"pose.stop","1\n");
         if(heldView && frame==2 && std::getenv("D4VR_DIAGNOSTIC_VIEW_HOLD")){
@@ -121,6 +130,9 @@ int main(int argc,char** argv)try{
         transition(source,frame?VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:VK_IMAGE_LAYOUT_UNDEFINED,VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,frame?VK_ACCESS_TRANSFER_READ_BIT:0,VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,frame?VK_PIPELINE_STAGE_TRANSFER_BIT:VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
         VkRenderingAttachmentInfo att{VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO};att.imageView=view;att.imageLayout=VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;att.loadOp=VK_ATTACHMENT_LOAD_OP_CLEAR;att.storeOp=VK_ATTACHMENT_STORE_OP_STORE;att.clearValue.color.float32[3]=1;
         VkRenderingInfo info{VK_STRUCTURE_TYPE_RENDERING_INFO};info.renderArea={{0,0},extent};info.layerCount=1;info.colorAttachmentCount=1;info.pColorAttachments=&att;
+        VkRenderingAttachmentInfo depthAttachment{VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO};
+        if(depthFixture){VkImageMemoryBarrier barrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};barrier.image=depthImage;barrier.oldLayout=VK_IMAGE_LAYOUT_UNDEFINED;barrier.newLayout=VK_IMAGE_LAYOUT_GENERAL;barrier.dstAccessMask=VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT|VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;barrier.srcQueueFamilyIndex=barrier.dstQueueFamilyIndex=VK_QUEUE_FAMILY_IGNORED;barrier.subresourceRange={VK_IMAGE_ASPECT_DEPTH_BIT|VK_IMAGE_ASPECT_STENCIL_BIT,0,1,0,1};vkCmdPipelineBarrier(command,VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT|VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,0,0,nullptr,0,nullptr,1,&barrier);
+            depthAttachment.imageView=depthView;depthAttachment.imageLayout=VK_IMAGE_LAYOUT_GENERAL;depthAttachment.loadOp=VK_ATTACHMENT_LOAD_OP_CLEAR;depthAttachment.storeOp=VK_ATTACHMENT_STORE_OP_STORE;depthAttachment.clearValue.depthStencil={float(frame%4)/4,17};info.pDepthAttachment=info.pStencilAttachment=&depthAttachment;}
         vkCmdBeginRendering(command,&info);vkCmdBindPipeline(command,VK_PIPELINE_BIND_POINT_GRAPHICS,pipeline);
         for(const auto& item:std::array<Item,2>{{{{-.35f,0,2,.3f},{0,1,0,1}},{{.6f,.3f,4,.4f},{1,0,0,1}}}}){vkCmdPushConstants(command,layout,VK_SHADER_STAGE_VERTEX_BIT,0,sizeof(item),&item);vkCmdDraw(command,3,1,0,0);}
         vkCmdEndRendering(command);transition(source,VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,VK_ACCESS_TRANSFER_READ_BIT,VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,VK_PIPELINE_STAGE_TRANSFER_BIT);
@@ -131,7 +143,7 @@ int main(int argc,char** argv)try{
         if(save){VkBufferMemoryBarrier reuse{VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER};reuse.buffer=golden.handle;reuse.size=VK_WHOLE_SIZE;reuse.srcAccessMask=VK_ACCESS_TRANSFER_WRITE_BIT|VK_ACCESS_HOST_READ_BIT;reuse.dstAccessMask=VK_ACCESS_TRANSFER_WRITE_BIT;reuse.srcQueueFamilyIndex=reuse.dstQueueFamilyIndex=VK_QUEUE_FAMILY_IGNORED;vkCmdPipelineBarrier(command,VK_PIPELINE_STAGE_TRANSFER_BIT|VK_PIPELINE_STAGE_HOST_BIT,VK_PIPELINE_STAGE_TRANSFER_BIT,0,0,nullptr,1,&reuse,0,nullptr);
             VkBufferImageCopy copy{};copy.imageSubresource={VK_IMAGE_ASPECT_COLOR_BIT,0,0,1};copy.imageExtent=ici.extent;vkCmdCopyImageToBuffer(command,source,VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,golden.handle,1,&copy);
             VkMemoryBarrier host{VK_STRUCTURE_TYPE_MEMORY_BARRIER};host.srcAccessMask=VK_ACCESS_TRANSFER_WRITE_BIT;host.dstAccessMask=VK_ACCESS_HOST_READ_BIT;vkCmdPipelineBarrier(command,VK_PIPELINE_STAGE_TRANSFER_BIT,VK_PIPELINE_STAGE_HOST_BIT,0,1,&host,0,nullptr,0,nullptr);}
-        check(vkEndCommandBuffer(command));VkPipelineStageFlags wait=VK_PIPELINE_STAGE_TRANSFER_BIT;VkSubmitInfo submit{VK_STRUCTURE_TYPE_SUBMIT_INFO};submit.waitSemaphoreCount=1;submit.pWaitSemaphores=&acquired;submit.pWaitDstStageMask=&wait;submit.commandBufferCount=1;submit.pCommandBuffers=&command;submit.signalSemaphoreCount=1;submit.pSignalSemaphores=&finished[index];
+        check(vkEndCommandBuffer(command));VkPipelineStageFlags wait=depthFixture?VK_PIPELINE_STAGE_ALL_COMMANDS_BIT:VK_PIPELINE_STAGE_TRANSFER_BIT;VkSubmitInfo submit{VK_STRUCTURE_TYPE_SUBMIT_INFO};submit.waitSemaphoreCount=1;submit.pWaitSemaphores=&acquired;submit.pWaitDstStageMask=&wait;submit.commandBufferCount=1;submit.pCommandBuffers=&command;submit.signalSemaphoreCount=1;submit.pSignalSemaphores=&finished[index];
         std::array<VkSemaphore,2> waits{acquired,serial};std::array<VkPipelineStageFlags,2> stages{VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,VK_PIPELINE_STAGE_ALL_COMMANDS_BIT};std::array<uint64_t,2> values{0,frame};uint64_t zero=0;VkTimelineSemaphoreSubmitInfo timeline{VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO};
         if(foreignProducer){timeline.waitSemaphoreValueCount=2;timeline.pWaitSemaphoreValues=values.data();timeline.signalSemaphoreValueCount=1;timeline.pSignalSemaphoreValues=&zero;submit.pNext=&timeline;submit.waitSemaphoreCount=2;submit.pWaitSemaphores=waits.data();submit.pWaitDstStageMask=stages.data();}
         auto producerQueue=foreignProducer && (cooperative?(frame>=2 && frame<12):(frame==6 || frame==7))?readerQueues[1]:f.queue;
@@ -146,6 +158,7 @@ int main(int argc,char** argv)try{
     for(auto s:finished)vkDestroySemaphore(f.device,s,nullptr);
     if(serial)vkDestroySemaphore(f.device,serial,nullptr);
     vkDestroySemaphore(f.device,acquired,nullptr);vkDestroyFence(f.device,fence,nullptr);vkUnmapMemory(f.device,golden.memory);vkDestroyBuffer(f.device,golden.handle,nullptr);vkFreeMemory(f.device,golden.memory,nullptr);
+    if(depthFixture){vkDestroyImageView(f.device,depthView,nullptr);vkDestroyImage(f.device,depthImage,nullptr);vkFreeMemory(f.device,depthMemory,nullptr);}
     vkDestroyImageView(f.device,view,nullptr);vkDestroyImage(f.device,source,nullptr);vkFreeMemory(f.device,memory,nullptr);vkDestroySwapchainKHR(f.device,chain,nullptr);vkDestroyDevice(f.device,nullptr);vkDestroySurfaceKHR(f.instance,surface,nullptr);vkDestroyInstance(f.instance,nullptr);
     std::cout<<"{\"presentation_layer_fixture_passed\":true,\"frames\":"<<frameCount<<",\"game_stereo_submitted\":false}\n";
     return 0;

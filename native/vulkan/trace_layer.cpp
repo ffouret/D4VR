@@ -25,6 +25,7 @@
 #include "present_capture.hpp"
 #include "boundary_updates.hpp"
 #include "diagnostic_capture.hpp"
+#include "depth_readback.hpp"
 #include "../core/diagnostic_pose.hpp"
 #include "../core/frame_order.hpp"
 #ifdef D4VR_LAYER_REPLAY_POC
@@ -226,6 +227,9 @@ struct Device {
 #undef D4_FIELD
     std::unordered_map<VkCommandBuffer, Commands> commands;
     std::unordered_map<VkCommandPool,VkCommandPoolCreateFlags> commandPools;
+    std::unordered_map<VkCommandPool,uint32_t> depthPoolFamilies;
+    std::unique_ptr<d4vr::depth::Readback> depthReadback;
+    std::atomic<uint64_t> depthSubmission{0};
     d4vr::frame::Tracker frame;
     std::unique_ptr<d4vr::eye::Control> eye;
     // Declaration order also keeps packets alive until private graphs die.
@@ -370,6 +374,46 @@ uint64_t captureRequest(const char* name,uint64_t fallback=0){
 bool writePrivate(const std::string& path,const void* bytes,size_t size){
     int fd=open(path.c_str(),O_WRONLY|O_CREAT|O_EXCL|O_CLOEXEC|O_NOFOLLOW,0600);if(fd<0)return false;
     size_t offset=0;while(offset<size){auto n=write(fd,static_cast<const uint8_t*>(bytes)+offset,size-offset);if(n<=0)break;offset+=size_t(n);}close(fd);return offset==size;
+}
+void depthRequest(Device& d){
+    if(!d.depthReadback || d.depthReadback->stats().recorded>=8)return;
+    auto directory=std::getenv("D4VR_TRACE_DIR");if(!directory)return;
+    auto path=std::string(directory)+"/depth.request";int fd=open(path.c_str(),O_RDONLY|O_CLOEXEC|O_NOFOLLOW|O_NONBLOCK);if(fd<0)return;
+    struct stat st{};if(fstat(fd,&st)!=0 || !S_ISREG(st.st_mode) || st.st_size<=0 || st.st_size>128){close(fd);return;}
+    char bytes[129]{};auto n=read(fd,bytes,sizeof(bytes));close(fd);if(n<=0 || n>128)return;
+    auto request=d4vr::depth::decode_request(std::string(bytes,size_t(n)));if(request)d.depthReadback->arm(*request);
+}
+void writeDepth(Device& d){
+    if(!d.depthReadback)return;
+    auto directory=std::getenv("D4VR_TRACE_DIR");if(!directory)return;
+    for(const auto& s:d.depthReadback->ready()){
+        auto base=std::string(directory)+"/depth-"+std::to_string(getpid())+"-"+std::to_string(d.id)+"-"+std::to_string(s.copy);
+        bool raw=writePrivate(base+".bin",s.words.data(),s.words.size()*sizeof(uint32_t));
+        std::string json="{\"schema_version\":1,\"request\":"+std::to_string(s.request)+",\"copy\":"+std::to_string(s.copy)
+            +",\"image_generation\":"+std::to_string(s.imageGeneration)+",\"view_generation\":"+std::to_string(s.viewGeneration)
+            +",\"recording\":"+std::to_string(s.recording)+",\"rendering_ordinal\":"+std::to_string(s.renderingOrdinal)
+            +",\"submission\":"+std::to_string(s.submission)+",\"queue_family\":"+std::to_string(s.queueFamily)+",\"eye\":"+std::to_string(s.eye)
+            +",\"format\":"+std::to_string(s.format)+",\"width\":"+std::to_string(s.extent.width)+",\"height\":"+std::to_string(s.extent.height)
+            +",\"depth_load_op\":"+std::to_string(s.loadOp)+",\"clear_depth_bits\":"+std::to_string(s.clearDepthBits)
+            +",\"word_encoding\":"+quoted(s.format==VK_FORMAT_D24_UNORM_S8_UINT?"native_uint32_low24_unorm":"native_binary32")
+            +",\"raw_complete\":"+(raw?"true":"false")+",\"submit_camera\":"+observationJson(s.submitCamera)
+            +",\"whole_scene_verified\":false,\"common_scene_time_known\":false,\"xr_pose_known\":false}\n";
+        bool meta=writePrivate(base+".json",json.data(),json.size());logFile.write("\"event\":\"depth_export\",\"copy\":"+std::to_string(s.copy)+",\"complete\":"+(raw && meta?"true":"false"));
+    }
+}
+template<class T>bool depthPreflight(Device& d,VkQueue queue,uint32_t n,const T* submits,const std::vector<VkCommandBuffer>& commands){
+    if(!d.depthReadback)return true;
+    uint32_t family=VK_QUEUE_FAMILY_IGNORED;{std::lock_guard<std::mutex> lock(stateMutex);auto q=d.queues.find(queue);if(q!=d.queues.end())family=q->second.first;}
+    if(family!=VK_QUEUE_FAMILY_IGNORED && d4vr::depth::submission_scopes(n,submits) && d.depthReadback->preflight(commands,family))return true;
+    logFile.write("\"event\":\"depth_submit_refused\",\"reason\":\"unsupported_device_wide_submission_contract\"");return false;
+}
+void depthSubmitted(Device& d,VkQueue q,const std::vector<VkCommandBuffer>& commands,const d4vr::CameraPair* camera){
+    if(!d.depthReadback)return;
+    auto serial=++d.depthSubmission;uint32_t family=VK_QUEUE_FAMILY_IGNORED;
+    for(auto command:commands){uint32_t eye=2;{std::lock_guard<std::mutex> lock(stateMutex);auto queue=d.queues.find(q);if(queue!=d.queues.end())family=queue->second.first;
+        auto c=d.commands.find(command);if(c!=d.commands.end())eye=c->second.selectedEye;}
+        d.depthReadback->submitted(q,{command},family,serial,eye,camera);
+    }
 }
 void writePresentation(const Device& d,const d4vr::present::Snapshot& s){
     const auto directory=std::getenv("D4VR_SEQUENTIAL_CAPTURE_DIR");if(!directory)return;
@@ -594,6 +638,13 @@ VKAPI_ATTR VkResult VKAPI_CALL d4CreateDevice(VkPhysicalDevice physical, const V
     const char* frameEnabled = std::getenv("D4VR_FRAME_TRACE");
     d->frame.enabled = frameEnabled && std::strcmp(frameEnabled, "1") == 0;
     d->frame.hasSwapchain = std::find(d->extensions.begin(), d->extensions.end(), VK_KHR_SWAPCHAIN_EXTENSION_NAME) != d->extensions.end();
+    if(auto option=std::getenv("D4VR_DEPTH_READBACK_DIAGNOSTIC");option && !std::strcmp(option,"1"))try{
+        if(!std::getenv("D4VR_TRACE_DIR") || d->cooperativeDiagnostic || std::getenv("D4VR_TRACE_XR_BINDING") || std::getenv("D4VR_LAYER_REPLAY_POC"))throw std::invalid_argument("Depth readback requires private output and no XR/replay mode");
+        VkPhysicalDeviceMemoryProperties memory{};auto getMemory=reinterpret_cast<PFN_vkGetPhysicalDeviceMemoryProperties>(instance->get(instance->handle,"vkGetPhysicalDeviceMemoryProperties"));
+        if(!getMemory)throw std::runtime_error("Depth memory properties unavailable");
+        getMemory(physical,&memory);
+        d->depthReadback=std::make_unique<d4vr::depth::Readback>(*result,get,memory);
+    }catch(const std::exception& e){logFile.write("\"event\":\"depth_init_refused\",\"reason\":"+quoted(e.what()));d->DestroyDevice(*result,allocator);*result=VK_NULL_HANDLE;return VK_ERROR_INITIALIZATION_FAILED;}
     { std::lock_guard<std::mutex> lock(stateMutex); d->id = nextDevice++; d->frame.deviceId = d->id; devices[key(*result)] = d; }
     VkPhysicalDeviceProperties properties{};
     auto getProperties = reinterpret_cast<PFN_vkGetPhysicalDeviceProperties>(instance->get(instance->handle, "vkGetPhysicalDeviceProperties"));
@@ -751,6 +802,7 @@ VKAPI_ATTR void VKAPI_CALL d4GetDeviceQueue2(VkDevice handle, const VkDeviceQueu
 }
 VKAPI_ATTR void VKAPI_CALL d4DestroyDevice(VkDevice handle, const VkAllocationCallbacks* allocator) {
     auto d = deviceFor(handle);
+    if(d->depthReadback){d->DeviceWaitIdle(handle);try{writeDepth(*d);}catch(const std::exception& e){logFile.write("\"event\":\"depth_error\",\"reason\":"+quoted(e.what()));}d->depthReadback.reset();}
     D4_COOP(d,d->DeviceWaitIdle(handle);try{d->cooperativeCapture->shutdown();}catch(const std::exception& e){logFile.write("\"event\":\"cooperative_xr_error\",\"reason\":"+quoted(e.what()));}d->DeviceWaitIdle(handle));
     if(d->poseCapture){d->DeviceWaitIdle(handle);try{d->poseCapture->shutdown();}catch(const std::exception& e){logFile.write("\"event\":\"pose_capture_error\",\"reason\":"+quoted(e.what()));}d->DeviceWaitIdle(handle);}
     std::string record;
@@ -774,7 +826,7 @@ VKAPI_ATTR void VKAPI_CALL d4DestroyDevice(VkDevice handle, const VkAllocationCa
 }
 VKAPI_ATTR VkResult VKAPI_CALL d4CreateCommandPool(VkDevice device,const VkCommandPoolCreateInfo* info,const VkAllocationCallbacks* allocator,VkCommandPool* pool){
     auto d=deviceFor(device);auto r=d->CreateCommandPool(device,info,allocator,pool);
-    if(r==VK_SUCCESS && d->presentation){std::lock_guard<std::mutex> lock(stateMutex);if(d->commandPools.size()<4096)d->commandPools[*pool]=info->flags;}
+    if(r==VK_SUCCESS && (d->presentation || d->depthReadback)){std::lock_guard<std::mutex> lock(stateMutex);if(d->commandPools.size()<4096){d->commandPools[*pool]=info->flags;if(d->depthReadback && !info->pNext)d->depthPoolFamilies[*pool]=info->queueFamilyIndex;}}
     return r;
 }
 VKAPI_ATTR VkResult VKAPI_CALL d4AllocateCommandBuffers(VkDevice handle, const VkCommandBufferAllocateInfo* info, VkCommandBuffer* buffers) {
@@ -792,6 +844,7 @@ VKAPI_ATTR void VKAPI_CALL d4FreeCommandBuffers(VkDevice handle, VkCommandPool p
     { std::lock_guard<std::mutex> lock(stateMutex); for (uint32_t i = 0; i < n; ++i) {
         D4_POC(d,d->poc->reset(buffers[i]));
         if(d->presentation)d->presentation->reset(buffers[i]);
+        if(d->depthReadback)d->depthReadback->reset(buffers[i]);
         auto it = d->commands.find(buffers[i]); if (it != d->commands.end()) { d->frame.reset(it->second.frame); d->commands.erase(it); }
     } }
     d->FreeCommandBuffers(handle, pool, n, buffers);
@@ -803,6 +856,11 @@ VKAPI_ATTR VkResult VKAPI_CALL d4BeginCommandBuffer(VkCommandBuffer command, con
     auto eye=(d->poseDiagnostic || d->cooperativeDiagnostic)?d->poseEye.load(std::memory_order_acquire):d->presentation?captureRequest("eye.selection",2):2;
     if (result == VK_SUCCESS) { std::lock_guard<std::mutex> lock(stateMutex); auto it = d->commands.find(command); if (it != d->commands.end()) {reset(*d, it->second);it->second.flags=info->flags;it->second.selectedEye=eye<2?uint32_t(eye):2;} }
     if(result==VK_SUCCESS && d->presentation)d->presentation->reset(command);
+    if(result==VK_SUCCESS && d->depthReadback){
+        depthRequest(*d);uint32_t family=VK_QUEUE_FAMILY_IGNORED;bool protectedPool=true;VkCommandBufferLevel level=VK_COMMAND_BUFFER_LEVEL_SECONDARY;
+        {std::lock_guard<std::mutex> lock(stateMutex);auto c=d->commands.find(command);if(c!=d->commands.end()){level=c->second.level;auto pool=d->commandPools.find(c->second.pool);auto f=d->depthPoolFamilies.find(c->second.pool);if(pool!=d->commandPools.end() && f!=d->depthPoolFamilies.end()){family=f->second;protectedPool=info->pNext || bool(pool->second&VK_COMMAND_POOL_CREATE_PROTECTED_BIT);}}}
+        d->depthReadback->begin(command,level,info->flags,protectedPool,family);
+    }
     if(result==VK_SUCCESS) { D4_POC(d,try { d->poc->begin(command,*info); } catch(const std::exception& e) { d->poc->reset(command);logFile.write("\"event\":\"poc_error\",\"reason\":"+quoted(e.what())); }); }
     return result;
 }
@@ -811,16 +869,17 @@ VKAPI_ATTR VkResult VKAPI_CALL d4ResetCommandBuffer(VkCommandBuffer command, VkC
     if (result == VK_SUCCESS) { std::lock_guard<std::mutex> lock(stateMutex); auto it = d->commands.find(command); if (it != d->commands.end()) reset(*d, it->second); }
     if(result==VK_SUCCESS) { D4_POC(d,d->poc->reset(command)); }
     if(result==VK_SUCCESS && d->presentation)d->presentation->reset(command);
+    if(result==VK_SUCCESS && d->depthReadback)d->depthReadback->reset(command);
     return result;
 }
 VKAPI_ATTR VkResult VKAPI_CALL d4ResetCommandPool(VkDevice handle, VkCommandPool pool, VkCommandPoolResetFlags flags) {
     auto d = deviceFor(handle); auto result = d->ResetCommandPool(handle, pool, flags);
-    if (result == VK_SUCCESS) { std::lock_guard<std::mutex> lock(stateMutex); for (auto& pair : d->commands) if (pair.second.pool == pool) { D4_POC(d,d->poc->reset(pair.first));if(d->presentation)d->presentation->reset(pair.first); reset(*d, pair.second); } }
+    if (result == VK_SUCCESS) { std::lock_guard<std::mutex> lock(stateMutex); for (auto& pair : d->commands) if (pair.second.pool == pool) { D4_POC(d,d->poc->reset(pair.first));if(d->presentation)d->presentation->reset(pair.first);if(d->depthReadback)d->depthReadback->reset(pair.first); reset(*d, pair.second); } }
     return result;
 }
 VKAPI_ATTR void VKAPI_CALL d4DestroyCommandPool(VkDevice handle, VkCommandPool pool, const VkAllocationCallbacks* allocator) {
     auto d = deviceFor(handle);
-    { std::lock_guard<std::mutex> lock(stateMutex);d->commandPools.erase(pool); for (auto it = d->commands.begin(); it != d->commands.end();) { if (it->second.pool == pool) { D4_POC(d,d->poc->reset(it->first));if(d->presentation)d->presentation->reset(it->first); d->frame.reset(it->second.frame); it = d->commands.erase(it); } else ++it; } }
+    { std::lock_guard<std::mutex> lock(stateMutex);d->commandPools.erase(pool);d->depthPoolFamilies.erase(pool); for (auto it = d->commands.begin(); it != d->commands.end();) { if (it->second.pool == pool) { D4_POC(d,d->poc->reset(it->first));if(d->presentation)d->presentation->reset(it->first);if(d->depthReadback)d->depthReadback->reset(it->first); d->frame.reset(it->second.frame); it = d->commands.erase(it); } else ++it; } }
     d->DestroyCommandPool(handle, pool, allocator);
 }
 VKAPI_ATTR void VKAPI_CALL d4CmdExecuteCommands(VkCommandBuffer command, uint32_t n, const VkCommandBuffer* secondary) {
@@ -957,11 +1016,13 @@ VKAPI_ATTR void VKAPI_CALL d4CmdBeginRenderPass2(VkCommandBuffer command, const 
 VKAPI_ATTR void VKAPI_CALL d4CmdBeginRendering(VkCommandBuffer command, const VkRenderingInfo* info) {
     auto d = deviceFor(command); count(d, command, DynamicRendering);
     frameCommand(d, command, [&](auto& t, auto& c) { t.begin(c, *info); });
+    if(d->depthReadback)d->depthReadback->beginRendering(command,*info);
     D4_POC(d,if(d->poc->recording(command)) { d->poc->beginRendering(command,*info);return; }); d->CmdBeginRendering(command, info);
 }
 VKAPI_ATTR void VKAPI_CALL d4CmdEndRendering(VkCommandBuffer command) {
     auto d = deviceFor(command); frameCommand(d, command, [](auto& t, auto& c) { t.end(c); });
     D4_POC(d,if(d->poc->recording(command)) { d->poc->endRendering(command);return; }); d->CmdEndRendering(command);
+    if(d->depthReadback)try{d->depthReadback->endRendering(command);}catch(const std::exception& e){d->depthReadback->cancel();logFile.write("\"event\":\"depth_error\",\"reason\":"+quoted(e.what()));}
 }
 VKAPI_ATTR void VKAPI_CALL d4CmdEndRenderPass(VkCommandBuffer command) {
     auto d = deviceFor(command); frameCommand(d, command, [](auto& t, auto& c) { t.end(c); }); d->CmdEndRenderPass(command);
@@ -1021,6 +1082,7 @@ VKAPI_ATTR VkResult VKAPI_CALL d4EndCommandBuffer(VkCommandBuffer command) {
 }
 VKAPI_ATTR VkResult VKAPI_CALL d4DeviceWaitIdle(VkDevice device) {
     auto d=deviceFor(device);D4_COOP(d,{std::lock_guard<std::mutex> lock(d->cameraMutex);if(!d->cooperativeCapture->allowsQueue(d->poseQueue))return VK_ERROR_UNKNOWN;});auto r=d->DeviceWaitIdle(device);
+    if(r==VK_SUCCESS && d->depthReadback)try{writeDepth(*d);}catch(const std::exception& e){logFile.write("\"event\":\"depth_error\",\"reason\":"+quoted(e.what()));}
     if(r==VK_SUCCESS) { D4_POC(d,
         const char* directory=std::getenv("D4VR_POC_OUTPUT");
         if(directory && *directory)for(auto& snapshot:d->poc->completed()) {
@@ -1038,12 +1100,14 @@ VKAPI_ATTR VkResult VKAPI_CALL d4CreateImage(VkDevice device, const VkImageCreat
     auto d = deviceFor(device); auto result = d->CreateImage(device, info, allocator, image);
     if(result==VK_SUCCESS) { D4_POC(d,d->poc->image(*image,*info)); }
     if(result==VK_SUCCESS && d->presentation)try{d->presentation->image(*image,*info);}catch(...){}
+    if(result==VK_SUCCESS && d->depthReadback)d->depthReadback->image(*image,*info);
     if (result == VK_SUCCESS && d->frame.enabled) { std::lock_guard<std::mutex> lock(stateMutex); d->frame.image(*image, *info); } return result;
 }
 VKAPI_ATTR void VKAPI_CALL d4DestroyImage(VkDevice device, VkImage image, const VkAllocationCallbacks* allocator) {
     auto d = deviceFor(device); if (d->frame.enabled) { std::lock_guard<std::mutex> lock(stateMutex); d->frame.removeImage(image); } d->DestroyImage(device, image, allocator);
     D4_POC(d,d->poc->removeImage(image));
     if(d->presentation)d->presentation->removeImage(image);
+    if(d->depthReadback)d->depthReadback->removeImage(image);
 }
 VKAPI_ATTR VkResult VKAPI_CALL d4CreateSwapchainKHR(VkDevice device,const VkSwapchainCreateInfoKHR* info,const VkAllocationCallbacks* allocator,VkSwapchainKHR* chain){
     auto d=deviceFor(device);auto r=d->CreateSwapchainKHR(device,info,allocator,chain);
@@ -1088,11 +1152,13 @@ VKAPI_ATTR void VKAPI_CALL d4CmdBlitImage2(VkCommandBuffer command,const VkBlitI
 VKAPI_ATTR VkResult VKAPI_CALL d4CreateImageView(VkDevice device, const VkImageViewCreateInfo* info, const VkAllocationCallbacks* allocator, VkImageView* view) {
     auto d = deviceFor(device); auto result = d->CreateImageView(device, info, allocator, view);
     if(result==VK_SUCCESS) { D4_POC(d,d->poc->view(*view,*info)); }
+    if(result==VK_SUCCESS && d->depthReadback)d->depthReadback->view(*view,*info);
     if (result == VK_SUCCESS && d->frame.enabled) { std::lock_guard<std::mutex> lock(stateMutex); d->frame.view(*view, *info); } return result;
 }
 VKAPI_ATTR void VKAPI_CALL d4DestroyImageView(VkDevice device, VkImageView view, const VkAllocationCallbacks* allocator) {
     auto d = deviceFor(device); if (d->frame.enabled) { std::lock_guard<std::mutex> lock(stateMutex); d->frame.removeView(view); } d->DestroyImageView(device, view, allocator);
     D4_POC(d,d->poc->removeView(view));
+    if(d->depthReadback)d->depthReadback->removeView(view);
 }
 VKAPI_ATTR VkResult VKAPI_CALL d4CreateShaderModule(VkDevice device, const VkShaderModuleCreateInfo* info, const VkAllocationCallbacks* allocator, VkShaderModule* module) {
     auto d = deviceFor(device); auto result = d->CreateShaderModule(device, info, allocator, module);
@@ -1155,14 +1221,17 @@ VKAPI_ATTR void VKAPI_CALL d4DestroyPipeline(VkDevice device, VkPipeline pipelin
 }
 VKAPI_ATTR VkResult VKAPI_CALL d4QueueSubmit(VkQueue queue, uint32_t n, const VkSubmitInfo* submits, VkFence fence) {
     auto d = deviceFor(queue); Counts counts{}; uint64_t buffers = 0;
+    if(d->depthReadback && !d4vr::depth::submission_scopes(n,submits)){logFile.write("\"event\":\"depth_submit_refused\",\"reason\":\"device_wide_stage_scopes\"");return VK_ERROR_VALIDATION_FAILED_EXT;}
     std::unique_lock<std::mutex> cameraLock(d->cameraMutex,std::defer_lock);bool tracked=cameraQueue(d,queue);if(tracked || d->poseDiagnostic || d->cooperativeDiagnostic){cameraLock.lock();if(!poseBefore(*d,queue))return VK_ERROR_UNKNOWN;if(tracked && !cameraBefore(*d,queue))return VK_ERROR_UNKNOWN;}
     std::vector<VkCommandBuffer> frames;
     maybeAttach(d, queue);
     { std::lock_guard<std::mutex> lock(stateMutex); for (uint32_t i = 0; i < n; ++i) for (uint32_t j = 0; j < submits[i].commandBufferCount; ++j) { ++buffers; collect(*d, submits[i].pCommandBuffers[j], counts); } }
-    if (d->frame.enabled || d->presentation) for (uint32_t i = 0; i < n; ++i) for (uint32_t j = 0; j < submits[i].commandBufferCount && frames.size() < 256; ++j) frames.push_back(submits[i].pCommandBuffers[j]);
+    if (d->frame.enabled || d->presentation || d->depthReadback) for (uint32_t i = 0; i < n; ++i) for (uint32_t j = 0; j < submits[i].commandBufferCount && frames.size() < 256; ++j) frames.push_back(submits[i].pCommandBuffers[j]);
+    if(!depthPreflight(*d,queue,n,submits,frames))return VK_ERROR_VALIDATION_FAILED_EXT;
     auto ticket = frameSubmission(d, queue, frames, buffers);
     const auto camera=submissionCamera(d,queue,tracked);
     auto result = d->QueueSubmit(queue, n, submits, fence);
+    if(result==VK_SUCCESS)depthSubmitted(*d,queue,frames,camera?&*camera:nullptr);
     if(tracked && result==VK_SUCCESS)cameraAfter(*d,queue);
     if(result==VK_SUCCESS && d->presentation){
         uint32_t family=VK_QUEUE_FAMILY_IGNORED,mask=0;uint64_t draws=0,serial=0;
@@ -1177,14 +1246,17 @@ VKAPI_ATTR VkResult VKAPI_CALL d4QueueSubmit(VkQueue queue, uint32_t n, const Vk
 }
 VKAPI_ATTR VkResult VKAPI_CALL d4QueueSubmit2(VkQueue queue, uint32_t n, const VkSubmitInfo2* submits, VkFence fence) {
     auto d = deviceFor(queue); Counts counts{}; uint64_t buffers = 0;
+    if(d->depthReadback && !d4vr::depth::submission_scopes(n,submits)){logFile.write("\"event\":\"depth_submit_refused\",\"reason\":\"device_wide_stage_scopes\"");return VK_ERROR_VALIDATION_FAILED_EXT;}
     std::unique_lock<std::mutex> cameraLock(d->cameraMutex,std::defer_lock);bool tracked=cameraQueue(d,queue);if(tracked || d->poseDiagnostic || d->cooperativeDiagnostic){cameraLock.lock();if(!poseBefore(*d,queue))return VK_ERROR_UNKNOWN;if(tracked && !cameraBefore(*d,queue))return VK_ERROR_UNKNOWN;}
     std::vector<VkCommandBuffer> frames;
     maybeAttach(d, queue);
     { std::lock_guard<std::mutex> lock(stateMutex); for (uint32_t i = 0; i < n; ++i) for (uint32_t j = 0; j < submits[i].commandBufferInfoCount; ++j) { ++buffers; collect(*d, submits[i].pCommandBufferInfos[j].commandBuffer, counts); } }
-    if (d->frame.enabled || d->presentation) for (uint32_t i = 0; i < n; ++i) for (uint32_t j = 0; j < submits[i].commandBufferInfoCount && frames.size() < 256; ++j) frames.push_back(submits[i].pCommandBufferInfos[j].commandBuffer);
+    if (d->frame.enabled || d->presentation || d->depthReadback) for (uint32_t i = 0; i < n; ++i) for (uint32_t j = 0; j < submits[i].commandBufferInfoCount && frames.size() < 256; ++j) frames.push_back(submits[i].pCommandBufferInfos[j].commandBuffer);
+    if(!depthPreflight(*d,queue,n,submits,frames))return VK_ERROR_VALIDATION_FAILED_EXT;
     auto ticket = frameSubmission(d, queue, frames, buffers);
     const auto camera=submissionCamera(d,queue,tracked);
     auto result = d->QueueSubmit2(queue, n, submits, fence);
+    if(result==VK_SUCCESS)depthSubmitted(*d,queue,frames,camera?&*camera:nullptr);
     if(tracked && result==VK_SUCCESS)cameraAfter(*d,queue);
     if(result==VK_SUCCESS && d->presentation){
         uint32_t family=VK_QUEUE_FAMILY_IGNORED,mask=0;uint64_t draws=0,serial=0;
@@ -1198,7 +1270,7 @@ VKAPI_ATTR VkResult VKAPI_CALL d4QueueSubmit2(VkQueue queue, uint32_t n, const V
     submitted(d, counts, buffers, result); finishFrame(d, ticket, result); return result;
 }
 VKAPI_ATTR VkResult VKAPI_CALL d4QueueBindSparse(VkQueue queue,uint32_t count,const VkBindSparseInfo* info,VkFence fence){
-    auto d=deviceFor(queue);std::unique_lock<std::mutex> lock(d->cameraMutex,std::defer_lock);bool tracked=cameraQueue(d,queue);if(tracked || d->poseDiagnostic || d->cooperativeDiagnostic){lock.lock();if(!poseBefore(*d,queue))return VK_ERROR_UNKNOWN;if(tracked && !cameraBefore(*d,queue))return VK_ERROR_UNKNOWN;}
+    auto d=deviceFor(queue);if(d->depthReadback){logFile.write("\"event\":\"depth_submit_refused\",\"reason\":\"sparse_outside_contract\"");return VK_ERROR_VALIDATION_FAILED_EXT;}std::unique_lock<std::mutex> lock(d->cameraMutex,std::defer_lock);bool tracked=cameraQueue(d,queue);if(tracked || d->poseDiagnostic || d->cooperativeDiagnostic){lock.lock();if(!poseBefore(*d,queue))return VK_ERROR_UNKNOWN;if(tracked && !cameraBefore(*d,queue))return VK_ERROR_UNKNOWN;}
     auto result=d->QueueBindSparse(queue,count,info,fence);if(tracked && result==VK_SUCCESS)cameraAfter(*d,queue);return result;
 }
 VKAPI_ATTR VkResult VKAPI_CALL d4QueueWaitIdle(VkQueue queue){
@@ -1234,6 +1306,7 @@ VKAPI_ATTR VkResult VKAPI_CALL d4QueuePresentKHR(VkQueue queue, const VkPresentI
     }
     if (!record.empty()) logFile.write(record);
     writeFrames(ready);
+    if(d->depthReadback)try{writeDepth(*d);}catch(const std::exception& e){logFile.write("\"event\":\"depth_error\",\"reason\":"+quoted(e.what()));}
     if(d->presentation)try{
 #ifdef D4VR_COOPERATIVE_XR
         if(d->cooperativeDiagnostic){

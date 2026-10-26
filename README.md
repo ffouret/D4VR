@@ -10,6 +10,13 @@ répond pas à cet objectif.
 
 ## État du projet
 
+La [lecture bornée de profondeur](docs/DEPTH_READBACK.md) est maintenant raccordée
+à la couche Vulkan. Les références D24/D32 et les essais en fenêtre passent,
+avec couleur et stencil d’origine préservés et zéro erreur de synchronisation.
+Cette sonde doit aider à distinguer la géométrie absente d’un défaut dans les
+traitements suivants. Elle **n’a pas encore été activée dans Diablo** : ses
+conditions de synchronisation et le choix de la passe doivent y être vérifiés.
+
 Le [maintien explicite d’une vue diagnostique](docs/FIXED_VIEW_HOLD.md) corrige
 une erreur du protocole précédent : cinq secondes entre les demandes ne
 maintenaient pas la projection modifiée. Le nouveau pilote conserve la vue
