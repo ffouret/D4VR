@@ -92,14 +92,69 @@ explicitly retain `game_bundle_authorized=false`, `game_executed=false`,
 `xr_submission=false` and `coverage_repaired=false`. They are not selected by
 the general bundle builder or installed in Diablo.
 
-No game, headset or OpenXR runtime was launched in this step. The most recent
-game evidence remains the source-history session: partial successive views,
-with holes at 91.67°. Initialization, complete coverage, common scene time,
-temporal history and the physical SteamVR queue contract remain unproved.
-The next experiment needs explicit fixed-view admission and a controlled
-comparison of the two targeted candidates, preserving the original source
-history and image identities. A matching expression alone is not enough to
-infer the cause of missing pixels.
+The owned-controls step above launched no game or headset. A subsequent targeted
+game experiment is described below. Initialization, complete coverage, common
+scene time, temporal history and the physical SteamVR queue contract remain
+unproved. A matching expression alone does not establish missing-pixel causality.
+
+## Explicit admission and actual Diablo experiment
+
+`tools/post_depth_admission.py` creates a separate private diagnostic bundle:
+the 5,377 baseline entries remain byte-identical and exactly two frozen candidates
+are added. The policy is `fixed_monoscopic_no_xr`. It checks pinned original
+identities, mandatory SHA256 values, both certificates and current source hashes,
+closed suffix/effect contracts, and a deterministic reconstruction of each
+candidate from its original/helper snapshots. The read-only launch gate checks
+the evidence chain, all 5,379 entries and the pinned runtime again.
+
+The new bundle explicitly has `gpu_fixture_passed=false` and
+`combined_bundle_gpu_validated=false`. Evidence for the unchanged baseline and
+the owned suffix controls is kept separately. The generic bundle validator
+refuses this bundle; the private launcher uses the distinct admission gate.
+Thirteen CPU orchestration/tampering controls mock compiler operations and forbid
+actual subprocesses. They include an uninstrumented original retagged as a
+candidate, absent hashes, altered snapshots, source/certificate mismatches and
+broken baseline/target links. These units are not SPIR-V or GPU evidence.
+
+[Actual game proof](proofs/diablo-post-depth-v1.json): one new Diablo session,
+without a headset or OpenXR, produced three D24 readouts and six successive
+monoscopic color pairs at reference/wide/return mappings. The script took
+18.204 host seconds. Holds span 5,414 / 5,398 / 5,429 host milliseconds; depth
+retains the warm-pair packet and color has a later, distinct revision.
+Normal UI exit completed, the launcher returned zero, all owned processes exited,
+and checked originals plus 262 exports match before and after.
+The bounded producer-status reports all precede the readouts, so no final
+failure/fence/lease counters are claimed. Three complete export events and their
+matching raw readouts are observed; the game was not relaunched for final counters.
+
+The same-session joins pass 253 CPU checks. Each retained source prefix has
+289 draw commands: 270 with a selected private variant and 19 without. The
+targeted bias/clamp contents account for 38/10 substituted draws per prefix,
+114/30 across three disjoint prefixes. Content joins use live FNV1a64 plus size
+against SHA256-verified local candidates; this is not a new cryptographic hash
+of a live module. Pipeline metadata describes application stages before private
+specialization. Selection does not establish a helper branch's actual execution
+or the contribution of a draw to the final image. Prefixes remain incomplete,
+with 38 aggregate overflows and unknown effective write state.
+
+The wide image still has large cutouts. Of 140 diagnostic patch candidates,
+136 pass optical-depth/return thresholds, 29 pass color/return thresholds and
+27 pass both. A predefined central region inside the original-view footprint
+has median raw-D24 difference 0.494 and p95 39.34 against the inverse-optically
+mapped reference, while its luma MAE is 10.17. Depth is raw and nonlinear;
+this is a useful local correspondence, not a proof of initialized or complete
+terrain under missing color. Saturated D24 words number 334,333 at wide view and
+zero at reference/return; saturation alone is not a culling or initialization
+proof. The older baseline session has different time/lighting and is explicitly
+not a pixel-exact causal reference for these new candidates.
+Color and depth have different acceptance criteria; their counts do not directly
+measure a difference in scene coverage.
+
+The next targeted question is how the observed depth and its destination are
+consumed by color/screen passes, particularly around the central rectangular
+color boundary. Outer coverage and upstream visibility remain separate open
+questions. No Diablo image has been sent to Quest and this remains a partial,
+successive diagnostic rather than immersive continuous VR.
 
 ## Reproduction
 

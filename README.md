@@ -14,9 +14,12 @@ L’analyse des quatre shaders sans variante a isolé deux calculs de profondeur
 appliqués après la projection. Le [nouveau contrôle géométrique](docs/POST_PROJECTION_DEPTH.md)
 préserve ces calculs et corrige leurs unités de clip : 144 références GPU passent
 en natif et dans le runtime Steam, sans erreur Khronos. Deux candidats privés
-sont construits et validés, mais ne sont pas admis dans le bundle du jeu.
-Cette étape n’a lancé ni Diablo ni le casque et ne prouve aucune réparation
-des trous au champ élargi.
+sont désormais admis dans un diagnostic monoscopique distinct. Un
+[nouvel essai réel](docs/proofs/diablo-post-depth-v1.json) observe leur sélection
+sur 144 dessins retenus ; les originaux restent identiques et le jeu est fermé.
+Dans une région ciblée, la profondeur suit la projection tandis que la couleur
+reste différente. Les grandes découpes persistent au champ élargi : la couverture
+n’est pas réparée et aucune image de Diablo n’a atteint le Quest.
 
 Le [suivi de la source de profondeur](docs/SOURCE_HISTORY.md) relie maintenant les
 lectures aux utilisations exactes de leur image, dans la même session. Un

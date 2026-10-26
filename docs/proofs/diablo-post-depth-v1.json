@@ -1,0 +1,143 @@
+{
+  "schema_version": 1,
+  "actual_game": "Diablo IV",
+  "capture_mode": "fixed_monoscopic_successive_targeted_post_depth",
+  "headset_used": false,
+  "openxr_used": false,
+  "native_layer_reused": true,
+  "layer_sha256": "3ad2fd9baaf2b18798c9916c35d875a18607bd3318d4b5d7e657794ad50be85c",
+  "new_native_layer_built": false,
+  "baseline_entries_preserved_exactly": 5377,
+  "targeted_candidates_added": 2,
+  "bundle_entries": 5379,
+  "admission_policy": "fixed_monoscopic_no_xr",
+  "admission_source_sha256": "26dbc7d05670fd56b50b48a6c6f7c9d741bf39e38c0cb5864e47936e4cc06dd9",
+  "admission_receipt_sha256": "de0d1c1e8d70664a7dd0d0d0100815e4c4209eae884bab31aaf99123256bc995",
+  "baseline_and_owned_suffix_gpu_evidence_separate": true,
+  "combined_bundle_gpu_validated": false,
+  "generic_bundle_validator_refused": true,
+  "candidate_deterministic_reconstruction_checked": true,
+  "portable_admission_cpu_tests": 13,
+  "portable_python_tests_total": 254,
+  "depth_exports": 3,
+  "depth_format": "D24 raw low24 words",
+  "depth_dimensions": [
+    1707,
+    960
+  ],
+  "total_depth_bytes": 19664640,
+  "successive_color_pairs": 6,
+  "request_script_host_seconds": 18.20431780400031,
+  "measured_hold_host_ms": [
+    5414,
+    5398,
+    5429
+  ],
+  "measured_hold_present_intervals": [
+    780,
+    778,
+    783
+  ],
+  "depth_packet_revisions": [
+    2,
+    4,
+    6
+  ],
+  "color_measurement_packet_revisions": [
+    3,
+    5,
+    7
+  ],
+  "same_session_independent_cpu_checks": 253,
+  "exact_five_field_bridges": 3,
+  "counter_equality_used_as_identity": false,
+  "application_pipelines_per_prefix": 38,
+  "substituted_pipelines_per_prefix": 31,
+  "unsubstituted_pipelines_per_prefix": 7,
+  "draw_commands_per_prefix": [
+    289,
+    289,
+    289
+  ],
+  "substituted_draw_commands_per_prefix": [
+    270,
+    270,
+    270
+  ],
+  "unsubstituted_draw_commands_per_prefix": [
+    19,
+    19,
+    19
+  ],
+  "targeted_selected_draws": {
+    "bias": 114,
+    "clamp": 30
+  },
+  "all_targeted_draws_recording_eye": 0,
+  "live_content_join": "FNV1a64 plus byte count against SHA256-verified local candidate bytes; not a new cryptographic live-module hash",
+  "pipeline_metadata_scope": "Application stages before private specialization, possibly already overridden; selected private pipeline identity is separate.",
+  "source_history": {
+    "all_prefixes_incomplete": true,
+    "aggregate_overflow": 38,
+    "faulted": false,
+    "effective_depth_write_state_known": false
+  },
+  "image_analysis": {
+    "patch_candidates": 140,
+    "depth_optics_and_return_accepted": 136,
+    "color_optics_and_return_accepted": 29,
+    "both_accepted": 27,
+    "thresholds_are_diagnostic_not_ground_truth": true,
+    "central_region_inside_original_view": {
+      "median_inverse_optical_raw_d24_difference": 0.4938214924186468,
+      "p95_inverse_optical_raw_d24_difference": 39.33614928154261,
+      "luma_mae": 10.173256213890122
+    },
+    "wide_saturated_d24_words": 334333,
+    "reference_saturated_d24_words": 0,
+    "return_saturated_d24_words": 0,
+    "reference_return_common_nonzero_words": 1604832,
+    "reference_return_exact_nonzero_words": 1596589,
+    "large_wide_cutouts_still_visible": true,
+    "source_depth_linearized": false
+  },
+  "copy_producer_observed": {
+    "complete_export_events": 3,
+    "matching_raw_readouts_complete": true,
+    "final_producer_status_counters": null,
+    "status_note": "All retained status reports precede the captures; no final zero-failure/fence/lease counter claim. Stop files were written; no relaunch for absent counters."
+  },
+  "normal_ui_exit": true,
+  "launcher_exit_code": 0,
+  "all_owned_processes_exited": true,
+  "original_audit_unchanged": true,
+  "named_exports_checked": 262,
+  "game_khronos_validation_used": false,
+  "original_game_pixel_equality_claimed": false,
+  "device_destroy_or_final_leases_observed": false,
+  "intersession_pixel_causality_claimed": false,
+  "claims": {
+    "coverage_repaired": false,
+    "candidate_branch_execution_verified": false,
+    "last_gpu_writer_known": false,
+    "initialized_pixels_verified": false,
+    "whole_scene_verified": false,
+    "common_scene_time_known": false,
+    "xr_pose_known": false,
+    "game_image_sent_to_quest": false,
+    "continuous_immersive_vr": false
+  },
+  "source_sha256": {
+    "tools/post_depth_admission.py": "26dbc7d05670fd56b50b48a6c6f7c9d741bf39e38c0cb5864e47936e4cc06dd9",
+    "tools/post_depth_candidate.py": "0ba04ffd190ebc8edc34615081db02ed01408d2789288ffd8a11a5e7ed4143d8",
+    "tools/projection_depth_suffix.py": "d343bf756dcdd5ef0ded3e6044199f1ea6a9916156da5b7d93d2b0ad814f894e"
+  },
+  "limits": [
+    "Variant selection is observed; branch execution and contribution to pixels are not established.",
+    "Partial CPU prefixes and a CLEAR declaration do not prove GPU ordering or initialized pixels.",
+    "Current depth/color comparisons are successive and local; depth agreement does not establish all-pass terrain completeness.",
+    "Older baseline time/lighting differs; no exact causal comparison between sessions.",
+    "Different color/depth acceptance criteria are not a direct measure of missing coverage.",
+    "Outer cutouts, color/screen dependencies, physical SteamVR, temporal support and native Windows D3D12/VR remain unresolved."
+  ]
+}
