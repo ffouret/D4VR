@@ -58,7 +58,7 @@ inline bool successiveProjection(const ProjectionRequest& r,const ProjectionFram
         || !f.eyes[0].image || !f.eyes[1].image || f.eyes[0].image==f.eyes[1].image)return false;
     const auto& evidence=*f.successive;const auto& a=r.pose->sample();const auto& b=evidence.pose.sample();
     if(a.session!=b.session || a.request!=b.request || a.displayTime!=b.displayTime || a.viewFlags!=b.viewFlags
-        || a.gameViewInLocal!=b.gameViewInLocal || a.nearZ!=b.nearZ || a.farZ!=b.farZ
+        || a.gameViewInLocal!=b.gameViewInLocal || a.nearZ!=b.nearZ || a.farZ!=b.farZ || a.depthPolicy!=b.depthPolicy
         || a.request!=r.sequence || a.displayTime!=r.displayTime)return false;
     for(unsigned i=0;i<2;++i)if(a.views[i].position!=b.views[i].position || a.views[i].orientation!=b.views[i].orientation || a.views[i].fov!=b.views[i].fov)return false;
     auto expected=r.pose->withPacketSequence(evidence.pose.packetSequence());
@@ -98,6 +98,7 @@ struct ProjectionSource {
     // Explicit placement/scale from game VIEW units to the initial head
     // anchor's meters. Identity preserves the original private-scene behavior.
     alignas(16) Matrix4 anchorFromGameView=identity();
+    ProjectionDepthPolicy depthPolicy=ProjectionDepthPolicy::optical;
     ProjectionMode mode=ProjectionMode::coherent;
     uint64_t maxPresentGap=8;
 };

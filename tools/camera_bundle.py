@@ -55,6 +55,13 @@ def build(args) -> dict:
         if projection_only:valid=valid and proof.get('telemetry_disabled_and_buffers_preserved') is True and proof.get('telemetry_samples')==0
     if not valid or (not args.stereo and proof.get("gpu_fixture_passed") is not True):
         raise ValueError("GPU diagnostic fixture did not pass")
+    depth_proof=None
+    if getattr(args,'source_depth_calibration',False):
+        if not args.stereo or not projection_only:raise ValueError('Source-depth calibration requires projection-only stereo')
+        calibrated=subprocess.run(command[:-1]+['--depth-calibration'],check=True,capture_output=True,text=True,timeout=60)
+        depth_proof=json.loads(calibrated.stdout.splitlines()[-1])
+        if not depth_proof.get('calibration_gpu_passed') or depth_proof.get('independent_reference_cases',0)<48 or depth_proof.get('maximum_reference_depth_error',1)>2e-6:raise ValueError('Source-depth GPU calibration failed')
+        probe.write_json(validation/'source-depth-gpu.json',depth_proof)
     (validation / "gpu-result.json").write_text(json.dumps(proof, indent=2) + "\n", encoding="utf-8")
     inventory = json.loads(args.inventory.read_text(encoding="utf-8"))
     identities = {s["file"]: s["sha256"] for s in inventory["shaders"]}
@@ -103,6 +110,7 @@ def build(args) -> dict:
     if projection_only:
         manifest.update(projection_only_helper=True,helper_no_telemetry=True,uniform_bindings=[0],matrix_byte_offsets=[1152],
                         stereo_telemetry=False,maximum_stereo_samples=0,selection_requires_input_matrix_chain=False)
+    if depth_proof:manifest.update(source_depth_packet_version=2,source_depth_gpu_validation=depth_proof)
     probe.write_json(args.output / "bundle.json", manifest)
     return {k: v for k, v in manifest.items() if k != "entries"} | {"validated_shaders": len(entries)}
 
@@ -112,6 +120,7 @@ def main():
     for option in ("shaders", "inventory", "candidates", "helper", "tools", "proton-path", "gpu-fixture",
                    "fixture-vertex", "fixture-fragment", "output"):
         parser.add_argument("--" + option, type=Path, required=True)
+    parser.add_argument("--source-depth-calibration",action="store_true",help="Require the explicit metric source-depth GPU certificate")
     modes = parser.add_mutually_exclusive_group()
     modes.add_argument("--geometry", action="store_true", help="Build the visible vertex displacement test")
     modes.add_argument("--stereo", action="store_true", help="Build the controlled per-eye geometry helper")

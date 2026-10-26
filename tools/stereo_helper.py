@@ -7,12 +7,15 @@ New compiler opcodes fail closed until their effects are reviewed explicitly.
 from __future__ import annotations
 import hashlib
 
+# OpLogicalOr/OpLogicalNot/OpFOrdLessThan are result-only Boolean
+# operations reviewed for the explicit source-depth branch. No pointer or
+# external-store permission is added.
 # Explicit memory-effect policy, not a range of presumed harmless opcodes.
 STRUCTURAL = {3,4,5,6,10,11,14,15,17,19,20,21,22,23,28,30,32,33,39,
               41,42,43,44,50,52,54,55,56,57,59,61,62,65,71,72,
               245,247,248,249,250,253}
-VALUE_OPS = {80,120,124,127,129,131,133,136,148,167,170,171,172,
-             176,178,186,188,190,199}
+VALUE_OPS = {80,120,124,127,129,131,133,136,148,166,167,168,170,171,172,
+             176,178,184,186,188,190,199}
 TYPED = {12,41,42,43,44,50,52,54,55,57,59,61,65,245} | VALUE_OPS
 MARKER = 'D4VR_HELPER_NO_TELEMETRY_1'
 PROJECTION_MARKER = 'D4VR_HELPER_PROJECTION_ONLY_1'

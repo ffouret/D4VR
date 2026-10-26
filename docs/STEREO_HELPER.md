@@ -97,3 +97,10 @@ L'audit complet du code exact du jeu, ses spécialisations, descripteurs/alias,
 Il faut ensuite raccorder les passes admissibles et leurs traitements suivants,
 les poses prédites et la soumission SteamVR. Le backend D3D12 natif Windows
 reste à implémenter. **Diablo n'est toujours pas rendu en VR.**
+## Source-scaled optical depth profile
+
+The later [view calibration profile](VIEW_CALIBRATION.md) adds explicit packet
+version 2 without changing the 176-byte binding/layout. It uses optical X/Y and
+each original pass's scaled depth; version 1 keeps the behavior documented
+below. The private helper/bundle must be rebuilt to accept version 2. Its real
+Diablo diagnostic is successive and partial, and its wide-FOV coverage fails.

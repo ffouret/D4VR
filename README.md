@@ -10,6 +10,15 @@ répond pas à cet objectif.
 
 ## État du projet
 
+La [calibration de projection et de profondeur](docs/VIEW_CALIBRATION.md) a
+maintenant été essayée dans **Diablo IV réel**, sans casque : six paires GPU
+successives conservent les paquets caméra de leur production. Les 26 zones de
+terrain acceptées se décalent en sens opposés pour les yeux, reviennent à leur
+place et réagissent au déplacement vertical. La profondeur propre aux passes
+sélectionnées est conservée à l'échelle choisie. En revanche, un champ de vision
+fortement élargi laisse des trous visibles : la couverture immersive reste à
+corriger. Aucune image de Diablo n'a encore été envoyée au Quest.
+
 Le [raccordement coopératif de la couche Vulkan à OpenXR](docs/COOPERATIVE_LAYER_XR.md)
 transmet maintenant les images du producteur GPU au présentateur, avec poses
 issues de `xrLocateViews`, sans répéter les commandes de l'application. Les
@@ -17,8 +26,12 @@ issues de `xrLocateViews`, sans répéter les commandes de l'application. Les
 simulé** : 7 864 320 octets d'images arrivées dans XR correspondent exactement
 aux vues originales retenues. Les arrêts et les accès de queue refusés sont
 vérifiés, avec 11 contrôles de non-régression. Ce nouveau chemin n'a pas été
-lancé dans Diablo ou SteamVR physique ; la projection du jeu reste à calibrer,
-et les deux vues restent successives et partielles.
+lancé avec XR dans Diablo ou SteamVR physique. Les nouveaux contrôles à
+profondeur conservée passent aussi avec ce runtime simulé ; les deux vues
+restent successives et partielles, avec une échelle et une ancre provisoires.
+
+Les preuves ci-dessous conservent les étapes antérieures et leurs limites au
+moment de chaque essai.
 
 Le [cinquième essai réel de vues successives](docs/SEQUENTIAL_CAPTURE.md#cinquième-essai-réel--plafond-de-pipelines-élargi-et-vérifié)
 étend le décalage géométrique observé dans **Diablo IV, en 2560 × 1440** : les

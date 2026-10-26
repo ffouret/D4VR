@@ -273,7 +273,7 @@ struct Presenter {
         double distance=0;for(unsigned k=0;k<3;++k)distance+=(center[k]-initial[k])*(center[k]-initial[k]);movement=std::max(movement,std::sqrt(distance));
         auto a=views[0].pose.position,b=views[1].pose.position;separation=std::sqrt((a.x-b.x)*(a.x-b.x)+(a.y-b.y)*(a.y-b.y)+(a.z-b.z)*(a.z-b.z));
         ProjectionRequest request;request.sequence=++requests;request.queueFamily=binding.family;request.displayTime=displayTime;
-        PoseSample sample;sample.session=sessionIdentity;sample.request=request.sequence;sample.displayTime=displayTime;sample.viewFlags=viewFlags;sample.gameViewInLocal=multiply(anchor,source.anchorFromGameView);
+        PoseSample sample;sample.session=sessionIdentity;sample.request=request.sequence;sample.displayTime=displayTime;sample.viewFlags=viewFlags;sample.gameViewInLocal=multiply(anchor,source.anchorFromGameView);sample.depthPolicy=source.depthPolicy;
         for(unsigned eye=0;eye<2;++eye) {
             auto& v=views[eye];sample.views[eye].orientation={v.pose.orientation.x,v.pose.orientation.y,v.pose.orientation.z,v.pose.orientation.w};
             sample.views[eye].position={v.pose.position.x,v.pose.position.y,v.pose.position.z};sample.views[eye].fov={v.fov.angleLeft,v.fov.angleRight,v.fov.angleDown,v.fov.angleUp};

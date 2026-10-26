@@ -32,13 +32,14 @@ def validate(a):
         for control in ('normal','short','foreign','cancel'):
             short=control in ('short','cancel');name=('' if control=='normal' else control+'-')+('steam-runtime' if runtime else 'native');directory=(a.output/name).resolve();directory.mkdir(mode=0o700)
             variables={'VK_INSTANCE_LAYERS':vulkan_trace.LAYER+':VK_LAYER_KHRONOS_validation','VK_ADD_LAYER_PATH':str(a.layer.resolve())+':'+str(a.validation_layer.resolve()),'VK_LAYER_ENABLES':'VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT','VK_LAYER_VALIDATE_SYNC':'1','VK_LOADER_DEBUG':'layer','D4VR_TRACE_DIR':str(directory),'D4VR_SEQUENTIAL_CAPTURE_DIR':str(directory),'D4VR_GPU_CAMERA_UPDATES':'1','D4VR_POSE_CAPTURE_DIAGNOSTIC':'1'}
+            if getattr(a,'calibrated',False):variables['D4VR_POSE_FIXTURE_CALIBRATED']='1'
             if short:variables['D4VR_POSE_FIXTURE_SHORT']='1'
             if control=='foreign':variables['D4VR_POSE_FIXTURE_FOREIGN']='1'
             if control=='cancel':variables['D4VR_POSE_FIXTURE_CANCEL']='1'
             for eye,side in enumerate(('left','right')):
                 file=directory/(side+'.bin');file.write_bytes(eye_control.encode(eye,separation=.128));file.chmod(0o600);variables['D4VR_PAIR_'+side.upper()+'_FILE']=str(file)
             command=paired_capture.host_command()+['/usr/bin/env']
-            for key in ('VK_LAYER_PATH','VK_INSTANCE_LAYERS','VK_ADD_LAYER_PATH','D4VR_TRACE_XR_BINDING','D4VR_LAYER_REPLAY_POC','D4VR_FRAME_TRACE','D4VR_EYE_STATE_FILE','D4VR_PAIR_LEFT_FILE','D4VR_PAIR_RIGHT_FILE','D4VR_SEQUENTIAL_CAPTURE_DIR','D4VR_GPU_CAPTURE_DRY_RUN','D4VR_GPU_CAMERA_UPDATES','D4VR_XR_LOADER','D4VR_TRACE_DIR','D4VR_POSE_CAPTURE_DIAGNOSTIC','D4VR_POSE_FIXTURE_SHORT','D4VR_POSE_FIXTURE_FOREIGN','D4VR_POSE_FIXTURE_CANCEL'):command+=['-u',key]
+            for key in ('VK_LAYER_PATH','VK_INSTANCE_LAYERS','VK_ADD_LAYER_PATH','D4VR_TRACE_XR_BINDING','D4VR_LAYER_REPLAY_POC','D4VR_FRAME_TRACE','D4VR_EYE_STATE_FILE','D4VR_PAIR_LEFT_FILE','D4VR_PAIR_RIGHT_FILE','D4VR_SEQUENTIAL_CAPTURE_DIR','D4VR_GPU_CAPTURE_DRY_RUN','D4VR_GPU_CAMERA_UPDATES','D4VR_XR_LOADER','D4VR_TRACE_DIR','D4VR_POSE_CAPTURE_DIAGNOSTIC','D4VR_POSE_FIXTURE_SHORT','D4VR_POSE_FIXTURE_FOREIGN','D4VR_POSE_FIXTURE_CANCEL','D4VR_POSE_FIXTURE_CALIBRATED','D4VR_METRIC_SOURCE_DEPTH_SCALE'):command+=['-u',key]
             command+=[k+'='+v for k,v in variables.items()]
             if runtime:command+=[str(a.runtime.resolve()),'--batch','--']
             command+=[str(a.fixture.resolve()),*map(str,shaders),str(directory)]
@@ -69,7 +70,8 @@ def validate(a):
                 for eye,item in enumerate(d['eyes']):
                     camera=item['camera_provenance'];copy=camera['copy_submit'];draw=camera['selected_draw_interval']
                     if item['eye']!=eye or copy['status']!='uniform' or draw['status']!='uniform' or copy['packet_abi_bytes_hex']!=draw['packet_abi_bytes_hex'] or copy['packet_sequence']!=d['request']+1 or copy['packet_eye']!=eye or not camera['same_diagnostic_packet']:raise ValueError('Uniform original packet absent')
-                    values=eye_control.FORMAT.unpack(bytes.fromhex(copy['packet_abi_bytes_hex']));expected_x=(.064 if eye==0 else -.064)-(0 if d['request']==1 else .125)
+                    values=eye_control.FORMAT.unpack(bytes.fromhex(copy['packet_abi_bytes_hex']));expected_x=((.064 if eye==0 else -.064)-(0 if d['request']==1 else .125))*(.1 if getattr(a,'calibrated',False) else 1)
+                    if getattr(a,'calibrated',False) and (values[1]!=2 or values[3]!=5 or abs(values[-1]-.1)>1e-6):raise ValueError('Metric source-depth policy lost')
                     if abs(values[11]-expected_x)>1e-6:raise ValueError('Requested game-view translation was not queued')
                     image=raw[eye*size:(eye+1)*size];reference=(directory/('source-frame-'+str(item['present']-1)+'.pixels')).read_bytes()
                     if image!=reference:raise ValueError('Actual GPU consumer differs from original rendered pixels')
@@ -100,5 +102,6 @@ if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__)
     for key in ('fixture','compiler','layer','validation-layer','unit','forwarding','output'):p.add_argument('--'+key,type=Path,required=True)
     p.add_argument('--runtime',type=Path)
+    p.add_argument('--calibrated',action='store_true')
     try:print(json.dumps(validate(p.parse_args()),indent=2))
     except (OSError,ValueError,subprocess.SubprocessError) as e:raise SystemExit(str(e))

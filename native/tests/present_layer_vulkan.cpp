@@ -39,6 +39,7 @@ int main(int argc,char** argv)try{
     auto directory=std::filesystem::path(argv[3]);if(!std::filesystem::is_directory(directory))throw std::invalid_argument("Private directory missing");
     auto updateOption=std::getenv("D4VR_GPU_CAMERA_UPDATES");bool cameraUpdates=updateOption && !std::strcmp(updateOption,"1");
     auto poseOption=std::getenv("D4VR_POSE_CAPTURE_DIAGNOSTIC");bool poseCapture=poseOption && !std::strcmp(poseOption,"1");
+    bool calibrated=poseCapture && std::getenv("D4VR_POSE_FIXTURE_CALIBRATED");
     bool cooperative=std::getenv("D4VR_COOPERATIVE_XR_DIAGNOSTIC");
     bool foreignProducer=(poseCapture || cooperative) && std::getenv("D4VR_POSE_FIXTURE_FOREIGN");
     if(poseCapture)text(directory/"pose.request","invalid diagnostic input\n");
@@ -90,6 +91,7 @@ int main(int argc,char** argv)try{
         if(poseCapture && (frame==4 || frame==36)){
             d4vr::PoseSample sample;sample.session=801;sample.request=frame==4?1:2;sample.displayTime=int64_t(sample.request)*10000000;sample.viewFlags=3;
             for(unsigned eye=0;eye<2;++eye){sample.views[eye].position={(frame==4?0.f:.125f)+(eye?.064f:-.064f),0,0};sample.views[eye].fov={-.5f,.5f,-.3f,.3f};}
+            if(calibrated){sample.depthPolicy=d4vr::ProjectionDepthPolicy::sourceScaled;sample.gameViewInLocal[0]=sample.gameViewInLocal[5]=sample.gameViewInLocal[10]=.1;for(auto& v:sample.views){for(auto& p:v.position)p*=.1f;v.fov={float(std::atan(-1/1.784022)),float(std::atan(1/1.784022)),float(std::atan(-1/3.171595)),float(std::atan(1/3.171595))};}}
             auto sampleText=d4vr::encode_diagnostic_pose(d4vr::PoseRequest(sample,uint32_t(sample.request)));text(directory/("pose-input-"+std::to_string(sample.request)+".txt"),sampleText);text(directory/"pose.request",sampleText);
         }
         if(cameraUpdates && ((!poseCapture && (frame==12 || frame==40 || frame==52)) || (poseCapture && frame==12))){

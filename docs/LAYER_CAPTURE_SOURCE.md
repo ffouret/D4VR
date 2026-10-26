@@ -2,7 +2,7 @@
 
 The regular `VK_LAYER_D4VR_trace` now instantiates `CaptureProjection` in an **opt-in diagnostic** submit/present cycle. An external diagnostic pose request updates the existing GPU camera buffers, selects original-render eyes, associates completed Capture leases and reads their actual image pixels through an owned GPU consumer. It does not replay application commands or call OpenXR.
 
-This layer integration is verified with real X11 WSI and the Vulkan loader, using owned tagged geometry. **The new binary has not been run in Diablo.** The last actual game evidence remains `diablo-camera-updates-v1.json`. A connected headset is not required for this new diagnostic; it does not submit anything to SteamVR/Quest or provide continuous immersive game stereo.
+This layer integration was initially verified with real X11 WSI and the Vulkan loader, using owned tagged geometry. The later [view/depth calibration trial](VIEW_CALIBRATION.md) runs this driver in real Diablo, retaining six actual successive pairs and exposing wide-FOV coverage failures. A connected headset is not required; this diagnostic does not submit anything to SteamVR/Quest or provide continuous immersive game stereo.
 
 ## Explicit input and limits
 
@@ -43,3 +43,11 @@ Final numeric evidence is `docs/proofs/layer-pose-capture-v1.json`. Game shaders
 [COOPERATIVE_LAYER_XR.md](COOPERATIVE_LAYER_XR.md) describes the new separate runtime-pose/consumer integration and its simulated-runtime proof. The external diagnostic input/readback driver described here still exists unchanged in scope. Neither proof establishes a calibrated game or a physical SteamVR queue contract. Both preserve immutable original poses and explicit successive/partial receipts.
 
 Before a real game/HMD trial, validate the game-to-XR scale/anchor, optical FOV and clip/depth conventions. The earlier real Diablo translation proof preserved the game's projection, whereas PoseRequest derives an optical projection. This WSI fixture deliberately retains its own projection in its vertex shader and establishes view-transform feeding, pixel transport and ownership, not a calibrated Diablo projection. A first new game test must keep that distinction explicit. No physical SteamVR validation issue is resolved by this WSI result.
+## Later optical/source-depth diagnostic
+
+[VIEW_CALIBRATION.md](VIEW_CALIBRATION.md) describes the optional version-2
+external pose codec and packet policy. This same driver has now exported six
+actual Diablo pairs with their original camera observations, including a
+visible wide-FOV coverage failure. It still makes no OpenXR calls and does not
+establish whole-scene or simultaneous-eye coherence. Version-1 input remains
+compatible with the original controls below.

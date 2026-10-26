@@ -36,7 +36,7 @@ int main()try {
         f.successive->eyes[i]={21+i,31+i,41+i,{observation,observation}};}
     auto diagnostic=[&](const auto& request,const auto& images){return successiveProjection(request,images,{64,48},VK_FORMAT_B8G8R8A8_UNORM,8);};
     require(diagnostic(r,f) && !valid(r,f));
-    for(unsigned control=0;control<14;++control){auto q=r;auto bad=f;
+    for(unsigned control=0;control<15;++control){auto q=r;auto bad=f;
         switch(control){
         case 0:bad.successive.reset();break;
         case 1:bad.successive->eyes[1].present=41;break;
@@ -52,6 +52,7 @@ int main()try {
         case 11:{auto other=sample;other.views[0].position[0]=.01f;bad.successive->pose=d4vr::PoseRequest(other,81);break;}
         case 12:bad.eyes[1].displayTime++;break;
         case 13:bad.queueFamily++;break;
+        case 14:{auto other=sample;other.depthPolicy=d4vr::ProjectionDepthPolicy::sourceScaled;bad.successive->pose=d4vr::PoseRequest(other,81);break;}
         }require(!diagnostic(q,bad));
     }
     std::cout<<"Projection images: matching pose/time/scene, eye identity, queue, extent and format: passed\n";

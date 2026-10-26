@@ -32,10 +32,11 @@ def validate(a):
         for control,extra in controls.items():
             name=control+('-steam-runtime' if runtime else '-native');directory=(a.output/name).resolve();directory.mkdir(mode=0o700)
             variables={'VK_INSTANCE_LAYERS':vulkan_trace.LAYER+':VK_LAYER_KHRONOS_validation','VK_ADD_LAYER_PATH':str(a.layer.resolve())+':'+str(a.validation_layer.resolve()),'VK_LAYER_ENABLES':'VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT','VK_LAYER_VALIDATE_SYNC':'1','VK_LOADER_DEBUG':'layer','D4VR_TRACE_DIR':str(directory),'D4VR_SEQUENTIAL_CAPTURE_DIR':str(directory),'D4VR_GPU_CAMERA_UPDATES':'1','D4VR_COOPERATIVE_XR_DIAGNOSTIC':'1','D4VR_XR_LOADER':str(a.mock.resolve()),'D4VR_MOCK_XR_LAYER_OUTPUT':str(directory),'D4VR_MOCK_XR_CHECK_UPLOAD':'1',**extra}
+            if getattr(a,'calibrated',False):variables['D4VR_METRIC_SOURCE_DEPTH_SCALE']='0.1'
             for eye,side in enumerate(('left','right')):
                 path=directory/(side+'.bin');path.write_bytes(eye_control.encode(eye,separation=.128));path.chmod(0o600);variables['D4VR_PAIR_'+side.upper()+'_FILE']=str(path)
             command=paired_capture.host_command()+['/usr/bin/env']
-            unset=('VK_LAYER_PATH','VK_INSTANCE_LAYERS','VK_ADD_LAYER_PATH','D4VR_TRACE_XR_BINDING','D4VR_LAYER_REPLAY_POC','D4VR_FRAME_TRACE','D4VR_EYE_STATE_FILE','D4VR_POSE_CAPTURE_DIAGNOSTIC','D4VR_GPU_CAPTURE_DRY_RUN','D4VR_POSE_FIXTURE_SHORT','D4VR_POSE_FIXTURE_FOREIGN','D4VR_POSE_FIXTURE_CANCEL','D4VR_MOCK_XR_TIMEOUT','D4VR_MOCK_XR_STOP_SOURCE','D4VR_MOCK_XR_DENY_THREAD','D4VR_MOCK_XR_OTHER_QUEUE','D4VR_MOCK_XR_EXTERNAL_REFERENCE','D4VR_MOCK_XR_FAIL_SESSION','D4VR_MOCK_XR_FAIL_ACQUIRE','D4VR_MOCK_XR_UNTRACKED','D4VR_MOCK_XR_HIDDEN','D4VR_MOCK_XR_STOP','D4VR_MOCK_XR_STOP_IMAGES','D4VR_MOCK_XR_SPACE_CHANGE')
+            unset=('VK_LAYER_PATH','VK_INSTANCE_LAYERS','VK_ADD_LAYER_PATH','D4VR_TRACE_XR_BINDING','D4VR_LAYER_REPLAY_POC','D4VR_FRAME_TRACE','D4VR_EYE_STATE_FILE','D4VR_POSE_CAPTURE_DIAGNOSTIC','D4VR_GPU_CAPTURE_DRY_RUN','D4VR_POSE_FIXTURE_SHORT','D4VR_POSE_FIXTURE_FOREIGN','D4VR_POSE_FIXTURE_CANCEL','D4VR_MOCK_XR_TIMEOUT','D4VR_MOCK_XR_STOP_SOURCE','D4VR_MOCK_XR_DENY_THREAD','D4VR_MOCK_XR_OTHER_QUEUE','D4VR_MOCK_XR_EXTERNAL_REFERENCE','D4VR_MOCK_XR_FAIL_SESSION','D4VR_MOCK_XR_FAIL_ACQUIRE','D4VR_MOCK_XR_UNTRACKED','D4VR_MOCK_XR_HIDDEN','D4VR_MOCK_XR_STOP','D4VR_MOCK_XR_STOP_IMAGES','D4VR_MOCK_XR_SPACE_CHANGE','D4VR_METRIC_SOURCE_DEPTH_SCALE')
             for key in unset:command+=['-u',key]
             command += [k+'='+v for k,v in variables.items()]
             if runtime:command += [str(a.runtime.resolve()),'--batch','--']
@@ -63,12 +64,12 @@ def validate(a):
                 if d['mode']!='successive_diagnostic' or d['whole_scene_verified'] is not False or d['common_scene_time_known'] is not False or d['display_time']!=request*10000000 or d['packet_sequence']!=request+1:raise ValueError('Provenance promotion')
                 fields=d['diagnostic_sample'].split();f32=lambda value:struct.unpack('<f',struct.pack('<f',value))[0]
                 expected=[0,0,0,1,0,0,0,-f32(.8),f32(.8),-f32(.8),f32(.8)]
-                if fields[0]!='D4VR_DIAGNOSTIC_POSE_1' or list(map(int,fields[1:5]))!=[d['session'],request,d['display_time'],15]:raise ValueError('Original runtime identity/flags changed')
+                if fields[0]!=('D4VR_DIAGNOSTIC_POSE_2' if getattr(a,'calibrated',False) else 'D4VR_DIAGNOSTIC_POSE_1') or list(map(int,fields[1:5]))!=[d['session'],request,d['display_time'],15]:raise ValueError('Original runtime identity/flags changed')
                 for eye in (0,1):
                     view=list(map(float,fields[5+eye*11:16+eye*11]));expected[4]=f32(f32((request-1)*.025)+f32(.032 if eye else -.032))
                     if view!=expected:raise ValueError('Original runtime view/FOV changed')
-                identity=[1.0 if i//4==i%4 else 0.0 for i in range(16)]
-                if list(map(float,fields[27:43]))!=identity or list(map(float,fields[43:]))!=[.1,100.0]:raise ValueError('Original anchor/clip changed')
+                identity=[(0.1 if i<12 and getattr(a,'calibrated',False) else 1.0) if i//4==i%4 else 0.0 for i in range(16)]
+                if list(map(float,fields[27:43]))!=identity or list(map(float,fields[43:]))!=([.1,100.0,1] if getattr(a,'calibrated',False) else [.1,100.0]):raise ValueError('Original anchor/clip changed')
                 delivered=[(directory/f'xr-request-{request}-eye-{eye}.pixels').exists() for eye in (0,1)]
                 if delivered==[False,False] and control in ('short','stop-file'):continue
                 if delivered!=[True,True]:raise ValueError('Recorded receipt without complete runtime submission')
@@ -99,6 +100,6 @@ def validate(a):
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__)
     for key in ('fixture','compiler','layer','validation-layer','mock','output'):p.add_argument('--'+key,type=Path,required=True)
-    p.add_argument('--runtime',type=Path);p.add_argument('--only')
+    p.add_argument('--calibrated',action='store_true');p.add_argument('--runtime',type=Path);p.add_argument('--only')
     try:print(json.dumps(validate(p.parse_args()),indent=2))
     except (OSError,ValueError,subprocess.SubprocessError) as e:raise SystemExit(str(e))

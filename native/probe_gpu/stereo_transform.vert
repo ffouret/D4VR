@@ -75,7 +75,9 @@ void d4vr_stereo(uint vertex_id, vec4 p0, vec4 p1, vec4 p2, vec4 p3,
         uvec4 header = state.header;
         eye = state.identity.x; sequence = header.z;
         vec4 gate = state.source_gate;
-        bool valid = header.x == 0x44345652u && header.y == 1u && header.w <= 3u && (header.w & 1u) != 0u
+        bool source_depth = header.y == 2u && header.w <= 7u && (header.w & 6u) == 4u && gate.w >= 0.000001 && gate.w <= 1000.0;
+        bool version = (header.y == 1u && header.w <= 3u) || source_depth;
+        bool valid = header.x == 0x44345652u && version && (header.w & 1u) != 0u
             && sequence > 0u && sequence <= 0xffffffu && eye < 2u
             && gate.x > 0.0 && gate.y > 0.0 && gate.z > 0.0 && gate.z <= 0.001;
         bool matched = valid && abs(p0.x - gate.x) <= gate.z && abs(p1.y - gate.y) <= gate.z
@@ -83,7 +85,7 @@ void d4vr_stereo(uint vertex_id, vec4 p0, vec4 p1, vec4 p2, vec4 p3,
             && abs(p0.x) >= 0.000001 && abs(p1.y) >= 0.000001
             && abs(p0.y) + abs(p0.w) + abs(p1.x) + abs(p1.w)
              + abs(p2.x) + abs(p2.y) + abs(p3.x) + abs(p3.y) <= 0.000001
-            && abs(p2.w) >= 0.000001;
+            && abs(p2.w) >= 0.000001 && (!source_depth || (p2.z < -1.0 && p2.w < 0.0));
         if (matched) {
             vec4 view = vec4((before.x + p0.z * before.w) / p0.x,
                              (before.y + p1.z * before.w) / p1.y,
@@ -92,9 +94,13 @@ void d4vr_stereo(uint vertex_id, vec4 p0, vec4 p1, vec4 p2, vec4 p3,
                                  dot(state.eye_from_game_view[2], view), dot(state.eye_from_game_view[3], view));
             if ((header.w & 2u) != 0u)
                 clip_position = vec4(dot(p0,eye_view),dot(p1,eye_view),dot(p2,eye_view),dot(p3,eye_view));
-            else
+            else {
                 clip_position = vec4(dot(state.eye_projection[0], eye_view), dot(state.eye_projection[1], eye_view),
                                       dot(state.eye_projection[2], eye_view), dot(state.eye_projection[3], eye_view));
+                // Optical XY in meters; each pass retains its own forward
+                // depth coefficients, with the near coefficient scaled too.
+                if (source_depth) {clip_position.z = p2.z * eye_view.z + p2.w * gate.w * eye_view.w; clip_position.w = -eye_view.z;}
+            }
             applied = true;
         }
     }

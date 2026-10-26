@@ -10,7 +10,7 @@ namespace d4vr::present {
 class CooperativeCapture {
 public:
     CooperativeCapture(const xr::BorrowedBinding&,Capture&,eye::BoundaryUpdates&,VkExtent2D,VkFormat,
-        std::mutex&,std::atomic<uint32_t>&,std::function<void(const xr::ProjectionRequest&,const xr::ProjectionFrame&)>);
+        std::mutex&,std::atomic<uint32_t>&,std::function<void(const xr::ProjectionRequest&,const xr::ProjectionFrame&)>,double sourceDepthMetersPerViewUnit=0);
     ~CooperativeCapture(); // shutdown() first, exclusive access to all queues.
     // The following methods require the camera mutex, and queue operations
     // additionally require external synchronization of the current queue.

@@ -9,5 +9,7 @@ void main(){
     vec2 corners[3]=vec2[3](vec2(-.8,-.8),vec2(.8,-.8),vec2(0,.8));
     vec4 p=vec4(corners[gl_VertexIndex]*item.position.w+item.position.xy,-item.position.z,1);
     if(eye_address!=0ul){Eye e=Eye(eye_address);p=vec4(dot(e.view[0],p),dot(e.view[1],p),dot(e.view[2],p),dot(e.view[3],p));}
-    gl_Position=vec4(1.784022*p.x,3.171595*p.y,-1.001001*p.z-.1001001,-p.z);tint=item.color;
+    gl_Position=vec4(1.784022*p.x,3.171595*p.y,-1.001001*p.z-.1001001,-p.z);
+    if(eye_address!=0ul){Eye e=Eye(eye_address);if(e.header.y==2u && (e.header.w&5u)==5u){gl_Position.x=dot(e.projection[0],p);gl_Position.y=dot(e.projection[1],p);gl_Position.z=-1.001001*p.z-.1001001*e.gate.w*p.w;gl_Position.w=-p.z;}}
+    tint=item.color;
 }

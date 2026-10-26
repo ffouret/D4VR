@@ -11,9 +11,11 @@ struct CooperativeCapture::Impl {
     bool entered=false,stopped=false,fault=false,active=false,started=false;std::thread::id owner;
     uint64_t scopes=0,requests=0,pairs=0,finishes=0,rejected=0,deferred=0,denied=0;std::string xrReport="null";
     Impl(const xr::BorrowedBinding& b,Capture& c,eye::BoundaryUpdates& u,VkExtent2D e,VkFormat fmt,std::mutex& m,std::atomic<uint32_t>& a,
-        std::function<void(const xr::ProjectionRequest&,const xr::ProjectionFrame&)> fn)
+        std::function<void(const xr::ProjectionRequest&,const xr::ProjectionFrame&)> fn,double sourceScale)
         :binding(b),capture(c),updates(u),mutex(m),eye(a),bridge(c,u,b.queue,b.family,e,fmt,64),receipt(std::move(fn)){
         auto raw=bridge.source();source=raw;
+        if(!std::isfinite(sourceScale) || sourceScale<0 || sourceScale>1000)throw std::invalid_argument("Cooperative metric scale unavailable");
+        if(sourceScale>0){source.anchorFromGameView[0]=source.anchorFromGameView[5]=source.anchorFromGameView[10]=sourceScale;uniform_view_scale(source.anchorFromGameView);source.depthPolicy=ProjectionDepthPolicy::sourceScaled;}
         source.request=[this,fn=raw.request](const auto& r){std::lock_guard<std::mutex> lock(mutex);if(requests>=8 || stopped || active)throw std::runtime_error("Cooperative request budget/state");fn(r);++requests;active=true;publish();};
         source.poll=[this,fn=raw.poll](const auto& r){std::lock_guard<std::mutex> lock(mutex);return fn(r);};
         source.record=[this,fn=raw.record](const auto& r,auto cb,auto& frame){std::lock_guard<std::mutex> lock(mutex);bool result=fn(r,cb,frame);if(result && receipt)receipt(r,frame);return result;};
@@ -30,7 +32,7 @@ struct CooperativeCapture::Impl {
     };
 };
 CooperativeCapture::CooperativeCapture(const xr::BorrowedBinding& b,Capture& c,eye::BoundaryUpdates& u,VkExtent2D e,VkFormat fmt,std::mutex& m,std::atomic<uint32_t>& a,
-    std::function<void(const xr::ProjectionRequest&,const xr::ProjectionFrame&)> fn):impl(std::make_unique<Impl>(b,c,u,e,fmt,m,a,std::move(fn))){}
+    std::function<void(const xr::ProjectionRequest&,const xr::ProjectionFrame&)> fn,double sourceScale):impl(std::make_unique<Impl>(b,c,u,e,fmt,m,a,std::move(fn),sourceScale)){}
 CooperativeCapture::~CooperativeCapture()=default;
 bool CooperativeCapture::allowsQueue(VkQueue q,bool presentation){auto& p=*impl;
     if(p.entered && (presentation || (q==p.binding.queue && p.owner!=std::this_thread::get_id()) || (p.owner==std::this_thread::get_id() && q!=p.binding.queue))){++p.denied;p.fault=p.stopped=true;p.publish();return false;}return true;}

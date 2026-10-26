@@ -8,6 +8,7 @@
 namespace {
 void require(bool condition, const char* message) { if (!condition) throw std::runtime_error(message); }
 struct Handle { void* dispatch; };
+unsigned viewportCalls=0;const VkViewport* expectedViewports=nullptr;
 uint32_t drawCalls = 0, dgcCalls = 0, submitCalls = 0, idleCalls = 0;
 VkResult submitResult = VK_SUCCESS;
 VkCommandBuffer expectedCommand{};
@@ -71,6 +72,7 @@ VKAPI_ATTR void VKAPI_CALL generated(VkCommandBuffer command, VkBool32 preproces
     require(command == expectedCommand && preprocessed == VK_TRUE && info == expectedGenerated, "DGC arguments changed"); ++dgcCalls;
 }
 VKAPI_ATTR void VKAPI_CALL execute(VkCommandBuffer, uint32_t, const VkCommandBuffer*) {}
+VKAPI_ATTR void VKAPI_CALL viewportCount(VkCommandBuffer c,uint32_t n,const VkViewport* p){require(c==expectedCommand && n==1 && p==expectedViewports,"Viewport count forwarding changed");++viewportCalls;}
 VKAPI_ATTR VkResult VKAPI_CALL waitQueue(VkQueue queue) {require(queue==expectedQueue,"Queue idle arguments changed");++idleCalls;return submitResult;}
 VKAPI_ATTR VkResult VKAPI_CALL submit2(VkQueue, uint32_t n, const VkSubmitInfo2* info, VkFence fence) {
     require(n == 1 && info == expectedSubmit && fence == VK_NULL_HANDLE, "Submit2 arguments changed"); ++submitCalls; return submitResult;
@@ -165,7 +167,7 @@ int main() try {
     require(!d4GetDeviceProcAddr(handle, "vkQueueSubmit2"), "Unavailable core alias advertised");
     require(d4GetDeviceProcAddr(handle, "vkQueueSubmit2KHR") == reinterpret_cast<PFN_vkVoidFunction>(d4QueueSubmit2), "KHR alias missing");
     require(d4QueueWaitIdle(queue)==VK_SUCCESS && idleCalls==1,"Queue idle forwarding failed");submitResult=VK_ERROR_DEVICE_LOST;require(d4QueueWaitIdle(queue)==VK_ERROR_DEVICE_LOST && idleCalls==2,"Queue idle error changed");submitResult=VK_SUCCESS;
-    expectedCommand = secondary;
+    expectedCommand = secondary;VkViewport viewport{0,1440,2560,-1440,0,1};expectedViewports=&viewport;d->viewDiagnostic=true;d->CmdSetViewportWithCount=viewportCount;d4CmdSetViewportWithCount(secondary,1,&viewport);d4CmdSetViewportWithCount(secondary,1,&viewport);require(viewportCalls==2 && d->observedViewports.size()==1 && d->observedViewports[0].height==-1440,"Viewport observation duplicated/changed original call");
     d4CmdDraw(secondary, 3, 2, 1, 7);
     int generatedInfo = 0; expectedGenerated = reinterpret_cast<const VkGeneratedCommandsInfoEXT*>(&generatedInfo);
     d4CmdExecuteGeneratedCommandsEXT(secondary, VK_TRUE, expectedGenerated);

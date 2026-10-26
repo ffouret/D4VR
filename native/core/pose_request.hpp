@@ -12,7 +12,8 @@ struct PoseSample {
     uint64_t viewFlags=0;
     std::array<PoseView,2> views{};
     alignas(16) Matrix4 gameViewInLocal=identity();
-    double nearZ=.1,farZ=100;
+    double nearZ=.1,farZ=100; // optical depth only; sourceScaled uses each original pass.
+    ProjectionDepthPolicy depthPolicy=ProjectionDepthPolicy::optical;
 };
 inline Matrix4 pose_matrix(const PoseView& p){
     for(float v:p.position)if(!std::isfinite(v))throw std::invalid_argument("Nonfinite XR position");
@@ -35,10 +36,12 @@ class PoseRequest {
         if(!s.session || !s.request || s.displayTime<=0 || (s.viewFlags&3)!=3)throw std::invalid_argument("XR request identity/tracking unavailable");
         finite(s.gameViewInLocal);inverse(s.gameViewInLocal);
         for(unsigned i=0;i<4;++i)if(std::abs(s.gameViewInLocal[12+i]-(i==3?1.:0.))>1e-9)throw std::invalid_argument("XR game anchor is not affine");
+        if(s.depthPolicy!=ProjectionDepthPolicy::optical && s.depthPolicy!=ProjectionDepthPolicy::sourceScaled)throw std::invalid_argument("Unknown projection depth policy");
+        double sourceScale=s.depthPolicy==ProjectionDepthPolicy::sourceScaled?uniform_view_scale(s.gameViewInLocal):0;
         std::array<EyeState,2> packets;
         for(unsigned eye=0;eye<2;++eye){const auto& v=s.views[eye];for(float angle:v.fov)if(!std::isfinite(angle) || std::abs(angle)>=1.5707963267948966)throw std::invalid_argument("XR optical angle unavailable");
             auto projection=perspective(std::tan(v.fov[0]),std::tan(v.fov[1]),std::tan(v.fov[2]),std::tan(v.fov[3]),s.nearZ,s.farZ);
-            packets[eye]=make_eye_state(eye,sequence,multiply(inverse(pose_matrix(v)),s.gameViewInLocal),projection);
+            packets[eye]=make_eye_state(eye,sequence,multiply(inverse(pose_matrix(v)),s.gameViewInLocal),projection,true,1.784022,3.171595,.00001,false,sourceScale);
         }return CameraPair(packets);
     }
 public:
