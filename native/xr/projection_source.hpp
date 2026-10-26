@@ -1,6 +1,7 @@
 #pragma once
 #include "../core/eye_state.hpp"
 #include "../core/pose_request.hpp"
+#include "../core/blit_provenance.hpp"
 #include <vulkan/vulkan.h>
 #include <array>
 #include <functional>
@@ -18,6 +19,7 @@ struct ProjectionEye {
     uint32_t eye=2,poseSequence=0;
     int64_t displayTime=0;
     uint64_t sceneSequence=0;
+    SourceBlitObservation sourceBlit{};
 };
 // Diagnostic receipts for two DIFFERENT game presentations. These retain the
 // requested pose and the observed packets, but make no whole-scene/time claim.
@@ -25,6 +27,7 @@ struct ProjectionEye {
 struct SuccessiveEye {
     uint64_t lease=0,captureSequence=0,present=0;
     FrameCamera camera{};
+    SourceBlitObservation sourceBlit{};
 };
 struct SuccessiveProjection {
     PoseRequest pose;

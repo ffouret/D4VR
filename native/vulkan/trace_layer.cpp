@@ -2,6 +2,7 @@
 // control specializes only explicitly tagged overrides with an immutable packet.
 #include <vulkan/vk_layer.h>
 #include <algorithm>
+#include <type_traits>
 #include <array>
 #include <atomic>
 #include <chrono>
@@ -252,6 +253,7 @@ struct Device {
     d4vr::frame::Tracker frame;
     std::unique_ptr<d4vr::history::SourceHistory> sourceHistory;
     bool sourceConsumerHistory=false;
+    std::atomic<uint64_t> blitRecordReports{0},blitSubmitReports{0};
     std::mutex historyReportMutex;uint64_t historyReports=0,historyRequest=0;
     std::unique_ptr<d4vr::eye::Control> eye;
     // Declaration order also keeps packets alive until private graphs die.
@@ -517,6 +519,27 @@ void depthSubmitted(Device& d,VkQueue q,const std::vector<VkCommandBuffer>& comm
         d.depthReadback->submitted(q,{command},family,serial,eye,camera);
     }
 }
+template<class T> uint64_t diagnosticHandle(T value){if constexpr(std::is_pointer_v<T>)return uint64_t(reinterpret_cast<uintptr_t>(value));else return uint64_t(value);}
+std::string sourceBlitJson(const d4vr::SourceBlitObservation& b){
+    auto boolean=[](bool v){return v?"true":"false";};
+    auto layers=[](const VkImageSubresourceLayers& r){return "["+std::to_string(r.aspectMask)+","+std::to_string(r.mipLevel)+","+std::to_string(r.baseArrayLayer)+","+std::to_string(r.layerCount)+"]";};
+    auto offsets=[](const VkOffset3D* r){return "[["+std::to_string(r[0].x)+","+std::to_string(r[0].y)+","+std::to_string(r[0].z)+"],["+std::to_string(r[1].x)+","+std::to_string(r[1].y)+","+std::to_string(r[1].z)+"]]";};
+    const auto& r=b.original;
+    return std::string("{\"status\":")+quoted(d4vr::source_blit_status_name(b.status))+",\"identity_known\":"+boolean(b.identityKnown)+",\"region_known\":"+boolean(b.regionKnown)
+        +",\"original_submit_succeeded\":"+boolean(b.originalSubmitSucceeded)+",\"history_submission_known\":"+boolean(b.historySubmissionKnown)+",\"capture_submission_known\":"+boolean(b.captureSubmissionKnown)
+        +",\"gpu_complete\":"+boolean(b.gpuComplete)+",\"bridge_known\":"+boolean(b.bridgeKnown())+",\"history_submission\":"+std::to_string(b.historySubmission)+",\"capture_submission\":"+std::to_string(b.captureSubmission)
+        +",\"original\":{\"observer_session\":"+std::to_string(r.observerSession)+",\"source_image\":"+std::to_string(r.sourceImage)+",\"destination_image\":"+std::to_string(r.destinationImage)+",\"recording\":"+std::to_string(r.recording)+",\"ordinal\":"+std::to_string(r.ordinal)+",\"event_retained\":"+boolean(r.eventRetained)+"}"
+        +",\"source_image_handle\":"+std::to_string(diagnosticHandle(b.sourceImage))+",\"destination_image_handle\":"+std::to_string(diagnosticHandle(b.destinationImage))
+        +",\"source_layout\":"+std::to_string(b.sourceLayout)+",\"destination_layout\":"+std::to_string(b.destinationLayout)+",\"filter\":"+std::to_string(b.filter)
+        +",\"source_subresource\":"+layers(b.region.srcSubresource)+",\"destination_subresource\":"+layers(b.region.dstSubresource)
+        +",\"source_offsets\":"+offsets(b.region.srcOffsets)+",\"destination_offsets\":"+offsets(b.region.dstOffsets)+"}";
+}
+void blitSubmissionReports(Device& d,uint64_t historySubmission) noexcept {
+    try{if(!d.presentation || !d.sourceConsumerHistory || !historySubmission)return;
+    for(const auto& value:d.presentation->sourceBlits())if(value.second.historySubmission==historySubmission && d.blitSubmitReports.fetch_add(1)<32)
+        logFile.write("\"event\":\"presentation_blit_submitted\",\"device\":"+std::to_string(d.id)+",\"sequence\":"+std::to_string(value.first)+",\"source_blit\":"+sourceBlitJson(value.second));
+    }catch(...){/* Secondary diagnostic reporting cannot change an original submit result. */}
+}
 void writePresentation(const Device& d,const d4vr::present::Snapshot& s){
     const auto directory=std::getenv("D4VR_SEQUENTIAL_CAPTURE_DIR");if(!directory)return;
     auto base=std::string(directory)+"/image-"+std::to_string(getpid())+"-"+std::to_string(d.id)+"-"+std::to_string(s.sequence);
@@ -525,7 +548,7 @@ void writePresentation(const Device& d,const d4vr::present::Snapshot& s){
         <<",\"format\":"<<s.format<<",\"bytes\":"<<s.bytes.size()<<",\"selected_draw_commands\":"<<s.selectedDraws<<",\"selected_eye_mask\":"<<s.selectedMask
         <<",\"single_eye_interval\":"<<((s.selectedDraws && s.selectedMask==(1u<<s.eye))?"true":"false")
         <<",\"pipeline_registry_at_export\":"<<pairsJson(d)
-        <<",\"camera_provenance\":"<<frameCameraJson(s.camera)
+        <<",\"camera_provenance\":"<<frameCameraJson(s.camera)<<",\"source_blit\":"<<sourceBlitJson(s.sourceBlit)
         <<",\"scope\":\"original_presentation_blit\",\"all_world_draws_verified\":false,\"same_instant_pair\":false,\"game_stereo_submitted\":false}\n";
     auto text=json.str();if(writePrivate(base+".json",text.data(),text.size()))logFile.write("\"event\":\"presentation_capture\",\"sequence\":"+std::to_string(s.sequence)+",\"eye\":"+std::to_string(s.eye));
 }
@@ -545,7 +568,7 @@ void writePosePair(Device& d,d4vr::present::DiagnosticPixels pixels){
     if(!writePrivate(base+".pixels",pixels.bytes.data(),pixels.bytes.size()))throw std::runtime_error("Diagnostic pair pixels export failed");
     std::string json="{\"schema_version\":1,\"mode\":\"successive_diagnostic\",\"input_origin\":\"external_diagnostic_sample\",\"actual_xr_pose_source\":false,\"xr_submission\":false,\"whole_scene_verified\":false,\"common_scene_time_known\":false,\"session\":"+std::to_string(sample.session)+",\"request\":"+std::to_string(sample.request)+",\"display_time\":"+std::to_string(sample.displayTime)
         +",\"diagnostic_sample\":"+quoted(d4vr::encode_diagnostic_pose(*pixels.request.pose).c_str())+",\"packet_sequence\":"+std::to_string(pixels.frame.successive->pose.packetSequence())+",\"width\":"+std::to_string(pixels.frame.extent.width)+",\"height\":"+std::to_string(pixels.frame.extent.height)+",\"format\":"+std::to_string(pixels.frame.format)+",\"bytes\":"+std::to_string(pixels.bytes.size())+",\"eyes\":[";
-    for(unsigned i=0;i<2;++i){const auto& e=pixels.frame.successive->eyes[i];if(i)json+=",";json+="{\"eye\":"+std::to_string(i)+",\"lease\":"+std::to_string(e.lease)+",\"capture_sequence\":"+std::to_string(e.captureSequence)+",\"present\":"+std::to_string(e.present)+",\"camera_provenance\":"+frameCameraJson(e.camera)+"}";}
+    for(unsigned i=0;i<2;++i){const auto& e=pixels.frame.successive->eyes[i];if(i)json+=",";json+="{\"eye\":"+std::to_string(i)+",\"lease\":"+std::to_string(e.lease)+",\"capture_sequence\":"+std::to_string(e.captureSequence)+",\"present\":"+std::to_string(e.present)+",\"camera_provenance\":"+frameCameraJson(e.camera)+",\"source_blit\":"+sourceBlitJson(e.sourceBlit)+"}";}
     json+="],\"preceding_fixed_view\":"+(pixels.precedingHold?fixedViewJson(*pixels.precedingHold):"null")+",\"observed_viewports\":"+viewportsJson(d)+"}\n";if(!writePrivate(base+".json",json.data(),json.size()))throw std::runtime_error("Diagnostic pair receipt export failed");
     logFile.write("\"event\":\"pose_capture_pair\",\"session\":"+std::to_string(sample.session)+",\"request\":"+std::to_string(sample.request)+",\"xr_submission\":false");
 }
@@ -581,7 +604,7 @@ void ensureCooperativeCapture(Device& d,VkQueue queue,const VkPresentInfoKHR& in
     d.cooperativeCapture=std::make_unique<d4vr::present::CooperativeCapture>(binding,*d.presentation,*d.cameraUpdates,chain->extent,chain->format,d.cameraMutex,d.poseEye,[&d](const auto& request,const auto& frame){
         auto directory=std::getenv("D4VR_SEQUENTIAL_CAPTURE_DIR");const auto& sample=request.pose->sample();
         std::string json="{\"mode\":\"successive_diagnostic\",\"pose_origin\":\"xrLocateViews\",\"whole_scene_verified\":false,\"common_scene_time_known\":false,\"session\":"+std::to_string(sample.session)+",\"request\":"+std::to_string(sample.request)+",\"display_time\":"+std::to_string(sample.displayTime)+",\"diagnostic_sample\":"+quoted(d4vr::encode_diagnostic_pose(*request.pose).c_str())+",\"packet_sequence\":"+std::to_string(frame.successive->pose.packetSequence())+",\"eyes\":[";
-        for(unsigned i=0;i<2;++i){const auto& e=frame.successive->eyes[i];if(i)json+=",";json+="{\"eye\":"+std::to_string(i)+",\"lease\":"+std::to_string(e.lease)+",\"capture_sequence\":"+std::to_string(e.captureSequence)+",\"present\":"+std::to_string(e.present)+",\"camera_provenance\":"+frameCameraJson(e.camera)+"}";}
+        for(unsigned i=0;i<2;++i){const auto& e=frame.successive->eyes[i];if(i)json+=",";json+="{\"eye\":"+std::to_string(i)+",\"lease\":"+std::to_string(e.lease)+",\"capture_sequence\":"+std::to_string(e.captureSequence)+",\"present\":"+std::to_string(e.present)+",\"camera_provenance\":"+frameCameraJson(e.camera)+",\"source_blit\":"+sourceBlitJson(e.sourceBlit)+"}";}
         json+="]}\n";auto path=std::string(directory)+"/xr-pair-"+std::to_string(sample.request)+".json";
         if(!writePrivate(path,json.data(),json.size()))throw std::runtime_error("Cooperative receipt export failed");
     },sourceScale);d.poseQueue=queue;
@@ -1319,7 +1342,7 @@ VKAPI_ATTR VkResult VKAPI_CALL d4GetSwapchainImagesKHR(VkDevice device,VkSwapcha
     if(r==VK_SUCCESS && d->presentation && images)try{d->presentation->swapchainImages(chain,*count,images);}catch(...){}
     return r;
 }
-void captureBlit(const std::shared_ptr<Device>& d,VkCommandBuffer command,VkImage source,VkImageLayout src,VkImage destination,VkImageLayout dst,uint32_t count,const VkImageBlit* regions,VkFilter filter){
+void captureBlit(const std::shared_ptr<Device>& d,VkCommandBuffer command,VkImage source,VkImageLayout src,VkImage destination,VkImageLayout dst,uint32_t count,const VkImageBlit* regions,VkFilter filter,const d4vr::HistoryBlitRef& sourceHistory={}){
     if(!d->presentation)return;
     if(d->fixedViewHold && !d->poseCopyActive.load(std::memory_order_acquire))return;
     if(d->gpuCaptureDryRun && d->presentation->stats().leasesIssued>=128)return;
@@ -1329,21 +1352,24 @@ void captureBlit(const std::shared_ptr<Device>& d,VkCommandBuffer command,VkImag
         if(c!=d->commands.end()){if(d->poseDiagnostic || d->cooperativeDiagnostic)eye=c->second.selectedEye;auto pool=d->commandPools.find(c->second.pool);allowed=c->second.level==VK_COMMAND_BUFFER_LEVEL_PRIMARY
             && c->second.flags==VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT && pool!=d->commandPools.end() && !(pool->second&VK_COMMAND_POOL_CREATE_PROTECTED_BIT);}}
     if(eye>1)return;
-    try{if(d->presentation->record(sequence,uint32_t(eye),command,allowed,source,src,destination,dst,count,regions,filter) && !d->gpuCaptureDryRun && !d->poseDiagnostic && !d->cooperativeDiagnostic)
-        logFile.write("\"event\":\"presentation_recorded\",\"sequence\":"+std::to_string(sequence)+",\"eye\":"+std::to_string(eye));
+    try{if(d->presentation->record(sequence,uint32_t(eye),command,allowed,source,src,destination,dst,count,regions,filter,sourceHistory)){
+        if(d->sourceConsumerHistory && d->blitRecordReports.fetch_add(1)<32)for(const auto& b:d->presentation->sourceBlits())if(b.first==sequence)
+            logFile.write("\"event\":\"presentation_blit_recorded\",\"device\":"+std::to_string(d->id)+",\"sequence\":"+std::to_string(sequence)+",\"eye\":"+std::to_string(eye)+",\"command\":"+std::to_string(diagnosticHandle(command))+",\"source_blit\":"+sourceBlitJson(b.second));
+        if(!d->gpuCaptureDryRun && !d->poseDiagnostic && !d->cooperativeDiagnostic)logFile.write("\"event\":\"presentation_recorded\",\"sequence\":"+std::to_string(sequence)+",\"eye\":"+std::to_string(eye));}
     }catch(const std::exception& e){logFile.write("\"event\":\"presentation_error\",\"reason\":"+quoted(e.what()));}
 }
 VKAPI_ATTR void VKAPI_CALL d4CmdBlitImage(VkCommandBuffer command,VkImage source,VkImageLayout src,VkImage destination,VkImageLayout dst,uint32_t count,const VkImageBlit* regions,VkFilter filter){
-    auto d=deviceFor(command);D4_POC(d,d->poc->unsupported(command));captureBlit(d,command,source,src,destination,dst,count,regions,filter);
-    D4_AUDIT(d,d->depthAudit->transfers().blit(command,source,src,destination,dst,count,regions,filter));D4_HISTORY(d,if(d->sourceConsumerHistory)d->sourceHistory->blit(command,source,src,destination,dst,count,regions,filter);else d->sourceHistory->unknown(command,d4vr::history::Gap::missingRoute));
+    auto d=deviceFor(command);D4_POC(d,d->poc->unsupported(command));d4vr::HistoryBlitRef sourceHistory;
+    D4_AUDIT(d,d->depthAudit->transfers().blit(command,source,src,destination,dst,count,regions,filter));D4_HISTORY(d,if(d->sourceConsumerHistory)sourceHistory=d->sourceHistory->blit(command,source,src,destination,dst,count,regions,filter);else d->sourceHistory->unknown(command,d4vr::history::Gap::missingRoute));
+    captureBlit(d,command,source,src,destination,dst,count,regions,filter,sourceHistory);
     d->CmdBlitImage(command,source,src,destination,dst,count,regions,filter);
 }
 VKAPI_ATTR void VKAPI_CALL d4CmdBlitImage2(VkCommandBuffer command,const VkBlitImageInfo2* info){
-    auto d=deviceFor(command);D4_POC(d,d->poc->unsupported(command));
-    D4_AUDIT(d,d->depthAudit->transfers().blit2(command,info));D4_HISTORY(d,if(d->sourceConsumerHistory)d->sourceHistory->blit(command,*info);else d->sourceHistory->unknown(command,d4vr::history::Gap::missingRoute));
+    auto d=deviceFor(command);D4_POC(d,d->poc->unsupported(command));d4vr::HistoryBlitRef sourceHistory;
+    D4_AUDIT(d,d->depthAudit->transfers().blit2(command,info));D4_HISTORY(d,if(d->sourceConsumerHistory)sourceHistory=d->sourceHistory->blit(command,*info);else d->sourceHistory->unknown(command,d4vr::history::Gap::missingRoute));
     if(!info->pNext && info->regionCount==1 && info->pRegions && !info->pRegions[0].pNext){const auto& r=info->pRegions[0];VkImageBlit region{};
         region.srcSubresource=r.srcSubresource;region.dstSubresource=r.dstSubresource;std::copy(r.srcOffsets,r.srcOffsets+2,region.srcOffsets);std::copy(r.dstOffsets,r.dstOffsets+2,region.dstOffsets);
-        captureBlit(d,command,info->srcImage,info->srcImageLayout,info->dstImage,info->dstImageLayout,1,&region,info->filter);}
+        captureBlit(d,command,info->srcImage,info->srcImageLayout,info->dstImage,info->dstImageLayout,1,&region,info->filter,sourceHistory);}
     d->CmdBlitImage2(command,info);
 }
 VKAPI_ATTR VkResult VKAPI_CALL d4CreateSemaphore(VkDevice device,const VkSemaphoreCreateInfo* info,const VkAllocationCallbacks* allocator,VkSemaphore* out){auto d=deviceFor(device);auto result=d->CreateSemaphore(device,info,allocator,out);if(result==VK_SUCCESS){D4_HISTORY(d,d->sourceHistory->semaphore(*out,*info));}return result;}
@@ -1477,7 +1503,8 @@ VKAPI_ATTR VkResult VKAPI_CALL d4QueueSubmit(VkQueue queue, uint32_t n, const Vk
             if(buffers>frames.size())mask|=4;
             for(auto c:frames)collectSelected(*d,c,mask,draws);
             d->selectedIntervalMask|=mask;d->selectedIntervalDraws+=draws;d->cameraInterval.submitted(mask,draws,serial,camera?&*camera:nullptr);}
-        d->presentation->submitted(queue,frames,family,serial,camera?&*camera:nullptr);
+        d->presentation->submitted(queue,frames,family,serial,camera?&*camera:nullptr,historyTicket.sequence);
+        blitSubmissionReports(*d,historyTicket.sequence);
     }
     if(result==VK_SUCCESS) { D4_POC(d,for(uint32_t i=0;i<n;++i)for(uint32_t j=0;j<submits[i].commandBufferCount;++j)d->poc->submitted(submits[i].pCommandBuffers[j])); }
     submitted(d, counts, buffers, result); finishFrame(d, ticket, result); return result;
@@ -1507,7 +1534,8 @@ VKAPI_ATTR VkResult VKAPI_CALL d4QueueSubmit2(VkQueue queue, uint32_t n, const V
             if(buffers>frames.size())mask|=4;
             for(auto c:frames)collectSelected(*d,c,mask,draws);
             d->selectedIntervalMask|=mask;d->selectedIntervalDraws+=draws;d->cameraInterval.submitted(mask,draws,serial,camera?&*camera:nullptr);}
-        d->presentation->submitted(queue,frames,family,serial,camera?&*camera:nullptr);
+        d->presentation->submitted(queue,frames,family,serial,camera?&*camera:nullptr,historyTicket.sequence);
+        blitSubmissionReports(*d,historyTicket.sequence);
     }
     if(result==VK_SUCCESS) { D4_POC(d,for(uint32_t i=0;i<n;++i)for(uint32_t j=0;j<submits[i].commandBufferInfoCount;++j)d->poc->submitted(submits[i].pCommandBufferInfos[j].commandBuffer)); }
     submitted(d, counts, buffers, result); finishFrame(d, ticket, result); return result;

@@ -24,6 +24,16 @@ acquires a reused handle's new image. Unmodeled creation chains keep metadata
 incomplete even when the lifetime is known. Aliasing and complete visibility
 remain unknown.
 
+## Targeted recording admission
+
+Consumer recording now allocates events only for configured depth candidates
+and up to64 additional live endpoints reached by declared association or
+directed transfer. Unrelated live command recordings cannot fill its event
+pool before the target is observed. Excluded attempts are separate counters,
+not unused resources; unknown routes remain command gaps. See
+[the pressure controls and actual capture bridge](COLOR_BLIT_PROVENANCE.md).
+The default legacy source-prefix mode is unchanged.
+
 ## Descriptor queries
 
 descriptorImageQueryBefore freezes the typed view, layout, chain completeness
@@ -91,10 +101,12 @@ results. Successful repeated enumeration preserves identities. Destruction
 removes only lifetimes owned by that chain, not an unrelated CreateImage
 lifetime. Metadata comes from the actual swapchain creation parameters.
 
-The color capture receipt has not gained a resource identity bridge:
-presentation_receipt_resource_bridge_known remains false. A WSI endpoint in a
-blit observation must not be presented as an exact association to a particular
-exported color receipt without that additional bridge.
+SourceHistory itself does not certify an exported color receipt:
+presentation_receipt_resource_bridge_known remains false in its windows.
+The separate [capture value bridge](COLOR_BLIT_PROVENANCE.md) now carries the
+actual original BLIT identity through a delivered snapshot or lease. A WSI endpoint in a
+blit observation alone still cannot identify a particular exported receipt;
+that requires its separately preserved record/submission/fence provenance.
 
 ## Forward CPU windows and bounds
 

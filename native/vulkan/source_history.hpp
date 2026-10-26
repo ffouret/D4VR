@@ -62,6 +62,8 @@ public:
     void clearDepthStencil(VkCommandBuffer,VkImage,VkImageLayout,const VkClearDepthStencilValue*,uint32_t,const VkImageSubresourceRange*) noexcept;
     void clearAttachments(VkCommandBuffer,uint32_t,const VkClearAttachment*,uint32_t,const VkClearRect*) noexcept;
     HistoryCopyRef sourceCopy(VkCommandBuffer,const VkCopyImageInfo2&) noexcept;
+    // Hook labels freeze independently of the observer's narrow admission and
+    // event budgets. A known reference does not certify a retained event.
     HistoryBlitRef blit(VkCommandBuffer,VkImage,VkImageLayout,VkImage,VkImageLayout,uint32_t,const VkImageBlit*,VkFilter) noexcept;
     HistoryBlitRef blit(VkCommandBuffer,const VkBlitImageInfo2&) noexcept;
     void barrier(VkCommandBuffer,const VkDependencyInfo&) noexcept;

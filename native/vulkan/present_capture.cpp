@@ -92,7 +92,7 @@ void Capture::swapchainImages(VkSwapchainKHR h,uint32_t count,const VkImage* ima
     auto& p=*impl;std::lock_guard<std::mutex> lock(p.mutex);auto c=p.chains.find(h);
     if(c!=p.chains.end() && count && count<=16 && images)c->second.images.assign(images,images+count);
 }
-bool Capture::record(uint64_t sequence,uint32_t eye,VkCommandBuffer command,bool primaryOneTime,VkImage source,VkImageLayout srcLayout,VkImage destination,VkImageLayout dstLayout,uint32_t count,const VkImageBlit* regions,VkFilter filter){
+bool Capture::record(uint64_t sequence,uint32_t eye,VkCommandBuffer command,bool primaryOneTime,VkImage source,VkImageLayout srcLayout,VkImage destination,VkImageLayout dstLayout,uint32_t count,const VkImageBlit* regions,VkFilter filter,const HistoryBlitRef& sourceBlit){
     auto& p=*impl;std::lock_guard<std::mutex> lock(p.mutex);
     if(!sequence || eye>1 || !primaryOneTime || !command || count!=1 || !regions || srcLayout!=VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL || dstLayout!=VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
         || (filter!=VK_FILTER_LINEAR && filter!=VK_FILTER_NEAREST)
@@ -144,6 +144,9 @@ bool Capture::record(uint64_t sequence,uint32_t eye,VkCommandBuffer command,bool
     }
     auto& c=*selected;c.command=command;c.chain=chain;c.index=index;c.snapshot={};c.snapshot.sequence=sequence;c.snapshot.eye=eye;
     c.snapshot.format=target.format;c.snapshot.extent=target.extent;c.queued=c.seenPresent=c.exported=c.presentAccepted=c.issued=c.retiring=false;
+    auto& observation=c.snapshot.sourceBlit;observation.original=sourceBlit;observation.sourceImage=source;observation.destinationImage=destination;
+    observation.region=region;observation.sourceLayout=srcLayout;observation.destinationLayout=dstLayout;observation.filter=filter;
+    observation.identityKnown=bool(sourceBlit);observation.regionKnown=true;observation.status=SourceBlitStatus::recorded;
     c.markerResult=c.retireResult=VK_NOT_READY;c.queue=VK_NULL_HANDLE;c.family=VK_QUEUE_FAMILY_IGNORED;
     if(p.mode==CaptureMode::gpuStream){c.lease=++p.leaseHigh;p.sequenceHigh=sequence;}
     VkImageMemoryBarrier barrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};barrier.dstAccessMask=VK_ACCESS_TRANSFER_WRITE_BIT;barrier.oldLayout=VK_IMAGE_LAYOUT_UNDEFINED;barrier.newLayout=VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
@@ -163,9 +166,18 @@ bool Capture::record(uint64_t sequence,uint32_t eye,VkCommandBuffer command,bool
     return true;
 }
 void Capture::reset(VkCommandBuffer command){auto& p=*impl;std::lock_guard<std::mutex> lock(p.mutex);for(auto& c:p.copies)if(c->command==command)c->command=VK_NULL_HANDLE;}
-void Capture::submitted(VkQueue queue,const std::vector<VkCommandBuffer>& commands,uint32_t queueFamily,uint64_t submission,const CameraPair* camera){
+void Capture::submitted(VkQueue queue,const std::vector<VkCommandBuffer>& commands,uint32_t queueFamily,uint64_t submission,const CameraPair* camera,uint64_t historySubmission){
     auto& p=*impl;std::lock_guard<std::mutex> lock(p.mutex);
-    for(auto& c:p.copies)if(c->command && !c->queued && std::find(commands.begin(),commands.end(),c->command)!=commands.end()){
+    for(auto& c:p.copies)if(c->command){
+        auto occurrences=std::count(commands.begin(),commands.end(),c->command);if(!occurrences)continue;
+        auto& observation=c->snapshot.sourceBlit;
+        // The capture contract already requires a primary ONE_TIME recording.
+        // Refuse a unique provenance claim if the original occurrence is
+        // duplicated or submitted again; this does not legitimize resubmission.
+        if(c->queued){observation.status=SourceBlitStatus::ambiguous;observation.gpuComplete=false;continue;}
+        observation.originalSubmitSucceeded=true;observation.captureSubmission=submission;observation.captureSubmissionKnown=submission!=0;
+        observation.historySubmission=historySubmission;observation.historySubmissionKnown=historySubmission!=0;
+        observation.status=occurrences==1?SourceBlitStatus::submitted:SourceBlitStatus::ambiguous;
         c->queued=true;c->queue=queue;c->family=queueFamily;c->snapshot.camera.copySubmit=camera_observation(camera,c->snapshot.eye,submission);c->markerResult=p.QueueSubmit(queue,0,nullptr,c->fence);
     }
 }
@@ -175,6 +187,7 @@ std::vector<Snapshot> Capture::presented(const VkPresentInfoKHR& info,VkResult r
     for(auto& c:p.copies){
         p.match(*c,info,result,present,mask,draws,camera);
         if(c->exported || !c->seenPresent || c->markerResult!=VK_SUCCESS || p.GetFenceStatus(p.device,c->fence)!=VK_SUCCESS)continue;
+        if(c->snapshot.sourceBlit.status==SourceBlitStatus::submitted){c->snapshot.sourceBlit.gpuComplete=true;c->snapshot.sourceBlit.status=SourceBlitStatus::producerComplete;}
         auto size=size_t(c->snapshot.extent.width)*c->snapshot.extent.height*4;
         c->snapshot.bytes.assign(static_cast<const uint8_t*>(c->mapped),static_cast<const uint8_t*>(c->mapped)+size);
         out.push_back(std::move(c->snapshot));c->exported=true;
@@ -187,8 +200,9 @@ std::vector<GpuFrame> Capture::presentedGpu(const VkPresentInfoKHR& info,VkResul
     for(auto& c:p.copies) {
         p.match(*c,info,result,present,mask,draws,camera);
         if(c->issued || !p.eligible(*c) || c->markerResult!=VK_SUCCESS || p.GetFenceStatus(p.device,c->fence)!=VK_SUCCESS)continue;
+        if(c->snapshot.sourceBlit.status==SourceBlitStatus::submitted){c->snapshot.sourceBlit.gpuComplete=true;c->snapshot.sourceBlit.status=SourceBlitStatus::producerComplete;}
         const auto& s=c->snapshot;c->issued=true;++p.counters.leasesIssued;
-        out.push_back({c->lease,s.sequence,s.present,s.selectedDraws,s.eye,s.selectedMask,c->family,s.format,s.extent,c->image,c->queue,s.camera});
+        out.push_back({c->lease,s.sequence,s.present,s.selectedDraws,s.eye,s.selectedMask,c->family,s.format,s.extent,c->image,c->queue,s.camera,s.sourceBlit});
     }
     return out;
 }
@@ -200,6 +214,11 @@ bool Capture::retire(uint64_t lease,VkQueue queue) {
         return c->retireResult==VK_SUCCESS;
     }
     return false;
+}
+std::vector<std::pair<uint64_t,SourceBlitObservation>> Capture::sourceBlits() const {
+    auto& p=*impl;std::lock_guard<std::mutex> lock(p.mutex);std::vector<std::pair<uint64_t,SourceBlitObservation>> out;out.reserve(p.copies.size());
+    for(const auto& c:p.copies)out.emplace_back(c->snapshot.sequence,c->snapshot.sourceBlit);
+    return out;
 }
 StreamStats Capture::stats() const {
     auto& p=*impl;std::lock_guard<std::mutex> lock(p.mutex);auto out=p.counters;out.reservedBytes=p.reserved;out.slots=uint32_t(p.copies.size());

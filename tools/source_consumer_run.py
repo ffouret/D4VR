@@ -110,7 +110,10 @@ def validate(a):
                'native/vulkan/depth_copy_readback.hpp', 'native/vulkan/depth_copy_readback.cpp',
                'tools/source_history_validate.py', 'tools/held_depth_validate.py',
                'native/tests/source_consumer_fixture.hpp',
-               'tools/source_consumer_run.py', 'native/tests/vulkan_trace_tests.cpp']
+               'tools/source_consumer_run.py', 'native/tests/vulkan_trace_tests.cpp',
+               'native/core/blit_provenance.hpp', 'native/vulkan/present_capture.hpp',
+               'native/vulkan/present_capture.cpp', 'native/vulkan/capture_projection.cpp',
+               'native/xr/projection_source.hpp', 'native/tests/present_stream_tests.cpp']
     proof = {'schema_version': 1, 'owned_geometry': True, 'actual_wsi_loader': True,
              'observation_only': True, 'gpu_execution_order_known': False,
              'extra_gpu_commands_or_submissions_from_observer': 0, 'game_rendered': False,

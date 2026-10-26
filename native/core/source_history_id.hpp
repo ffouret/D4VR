@@ -28,6 +28,9 @@ inline bool same_image_use_ref(const ImageUseRef& a,const ImageUseRef& b) noexce
 }
 struct HistoryBlitRef {
     uint64_t observerSession=0,sourceImage=0,destinationImage=0,recording=0,ordinal=0;
-    explicit operator bool() const noexcept {return observerSession && recording && ordinal;}
+    // Hook identity is independent of admission and bounded event retention.
+    // True only for the exact original single region retained at this hook.
+    bool eventRetained=false;
+    explicit operator bool() const noexcept {return observerSession && sourceImage && destinationImage && recording && ordinal;}
 };
 }

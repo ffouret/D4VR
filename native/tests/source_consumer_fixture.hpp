@@ -2,11 +2,11 @@
 // CPU descriptor-query controls owned by the application fixture. No sampled
 // shader, descriptor binding, additional draw, dispatch or queue work is added.
 struct SourceConsumerFixture {
-    Fixture& f;HeldDepthFixture& depth;std::ofstream output;
+    Fixture& f;HeldDepthFixture& depth;std::ofstream output,blits;
     VkImageView destination{},twin{};size_t descriptorSize=0;uint64_t calls=0;
     PFN_vkGetDescriptorEXT getDescriptor{};
     SourceConsumerFixture(Fixture& fixture,HeldDepthFixture& d,const std::filesystem::path& directory)
-        :f(fixture),depth(d),output(directory/"consumer-descriptor-fixture.jsonl"){
+        :f(fixture),depth(d),output(directory/"consumer-descriptor-fixture.jsonl"),blits(directory/"blit-fixture.jsonl"){
         VkPhysicalDeviceDescriptorBufferPropertiesEXT descriptors{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_PROPERTIES_EXT};
         VkPhysicalDeviceProperties2 properties{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2};properties.pNext=&descriptors;
         vkGetPhysicalDeviceProperties2(f.physical,&properties);descriptorSize=descriptors.sampledImageDescriptorSize;
@@ -26,6 +26,14 @@ struct SourceConsumerFixture {
         for(auto byte:bytes){hex+=digits[byte>>4];hex+=digits[byte&15];}
         output<<"{\"ordinal\":"<<++calls<<",\"label\":\""<<label<<"\",\"frame\":"<<frame<<",\"image\":"<<HeldDepthFixture::handle(image)<<",\"view\":"<<HeldDepthFixture::handle(view)<<",\"descriptor_type\":"<<uint32_t(info.type)<<",\"layout\":"<<uint32_t(input.imageLayout)<<",\"size\":"<<bytes.size()<<",\"bytes_hex\":\""<<hex<<"\",\"descriptor_bound\":false,\"shader_read_verified\":false}\n";
         output.flush();if(!output)throw std::runtime_error("Owned descriptor reference write failed");
+    }
+    void originalBlit(unsigned frame,VkCommandBuffer command,VkImage source,VkImage destination,const VkImageBlit& region,VkResult result){
+        auto layers=[&](const VkImageSubresourceLayers& r){blits<<"["<<r.aspectMask<<","<<r.mipLevel<<","<<r.baseArrayLayer<<","<<r.layerCount<<"]";};
+        auto offsets=[&](const VkOffset3D* r){blits<<"[["<<r[0].x<<","<<r[0].y<<","<<r[0].z<<"],["<<r[1].x<<","<<r[1].y<<","<<r[1].z<<"]]";};
+        blits<<"{\"frame\":"<<frame<<",\"command\":"<<HeldDepthFixture::handle(command)<<",\"source_image_handle\":"<<HeldDepthFixture::handle(source)<<",\"destination_image_handle\":"<<HeldDepthFixture::handle(destination)
+            <<",\"source_layout\":"<<VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL<<",\"destination_layout\":"<<VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL<<",\"filter\":"<<VK_FILTER_LINEAR<<",\"source_subresource\":";
+        layers(region.srcSubresource);blits<<",\"destination_subresource\":";layers(region.dstSubresource);blits<<",\"source_offsets\":";offsets(region.srcOffsets);blits<<",\"destination_offsets\":";offsets(region.dstOffsets);
+        blits<<",\"original_submit_result\":"<<int(result)<<"}\n";blits.flush();if(!blits)throw std::runtime_error("Owned BLIT reference write failed");
     }
     void beforeFrame(unsigned frame){if(frame==32 && twin){vkDestroyImageView(f.device,twin,nullptr);twin=VK_NULL_HANDLE;}}
     void afterHistoryFrame(unsigned frame){

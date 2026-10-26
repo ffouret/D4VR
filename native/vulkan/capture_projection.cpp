@@ -73,8 +73,8 @@ bool CaptureProjection::record(const xr::ProjectionRequest& r,VkCommandBuffer,xr
     if(poll(r)!=xr::ProjectionAvailability::ready)return false;
     out={};out.extent=extent;out.format=format;out.queueFamily=family;
     out.successive.emplace(xr::SuccessiveProjection{ticket->pose,{}});
-    for(unsigned i=0;i<2;++i){const auto& f=*frames[i];out.eyes[i]={f.image,i,r.sequence,r.displayTime,0};
-        out.successive->eyes[i]={f.lease,f.sequence,f.present,f.camera};}
+    for(unsigned i=0;i<2;++i){const auto& f=*frames[i];out.eyes[i]={f.image,i,r.sequence,r.displayTime,0,f.sourceBlit};
+        out.successive->eyes[i]={f.lease,f.sequence,f.present,f.camera,f.sourceBlit};}
     // No draws/copies or receipt promotion: presenter consumes the actual
     // producer images with the same-queue dependency and selected packet proof.
     return xr::successiveProjection(r,out,extent,format,gap);

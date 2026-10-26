@@ -193,6 +193,7 @@ int main(int argc,char** argv)try{
         const auto color=history.imageRef(in.color),screen=history.imageRef(in.screen);
         check(forward.observerSession==ref.observerSession && forward.recording==ref.recording && forward.ordinal>ref.ordinal);
         check(forward.sourceImage==color.image && forward.destinationImage==screen.image);
+        check(unlinked && !unlinked.eventRetained && forward.eventRetained && reverse.eventRetained);
         check(reverse.sourceImage==screen.image && reverse.destinationImage==color.image && reverse.ordinal>forward.ordinal);
         const auto q=history.descriptorImageQueryBefore(in.destinationView,VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,VK_IMAGE_LAYOUT_GENERAL,true,4);
         const std::array<uint8_t,4> bytes{{0x11,0x22,0x33,0x44}};history.descriptorImageQueryAfter(q,bytes.size(),bytes.data());
@@ -290,7 +291,7 @@ int main(int argc,char** argv)try{
         const auto q=history.descriptorImageQueryBefore(in.sourceView,VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,VK_IMAGE_LAYOUT_GENERAL,false,4);
         const std::array<uint8_t,4> bytes{{9,8,7,6}};history.descriptorImageQueryAfter(q,bytes.size(),bytes.data());
         const auto submit=in.before(history);history.after(submit,VK_SUCCESS);const auto before=JsonParser(history.report()).parse();const auto& frozen=window(before);
-        check(frozen.at("closed").b());bool foundUnknown=false;for(const auto* event:events(frozen))foundUnknown|=event->at("kind").s()=="unknown";check(foundUnknown);
+        check(frozen.at("closed").b());bool foundUnknown=false;for(const auto& occurrence:array(frozen.at("occurrences")))for(const auto& command:array(occurrence.at("commands")))for(const auto& gap:array(command.at("gaps")))foundUnknown|=gap.s()=="write_route_missing";check(foundUnknown);
         queryIsNotBinding(query(frozen,q.query));check(!query(frozen,q.query).at("input_chain_complete").b());
         const std::array<uint8_t,4> changed{{1,1,1,1}};auto foreign=q;++foreign.observerSession;
         history.descriptorImageQueryAfter(q,changed.size(),changed.data());history.descriptorImageQueryAfter(foreign,changed.size(),changed.data());
@@ -321,6 +322,101 @@ int main(int argc,char** argv)try{
     }
     {Limits limits;limits.consumerWindows=true;limits.serializedBytes=512;SourceHistory history({4,4},VK_FORMAT_D32_SFLOAT,8111,limits);Inputs in;in.setup(history);in.capture(history);in.drawColor(history);const auto submit=in.before(history);history.after(submit,VK_SUCCESS);
         const auto raw=history.report();check(raw.size()<=512);const auto report=save(saved,"serialization_bound_valid_envelope",history);check(report.at("serialization_truncated").b() && array(report.at("reports")).empty());
+    }
+    // Unrelated live recordings used to pin the complete event-node budget
+    // even after journal eviction. They now allocate no event nodes. The same
+    // small budget must still retain three selected targets, their declared
+    // colors, directed transfers and immutable query receipts.
+    {Limits limits;limits.consumerWindows=true;limits.liveEvents=256;limits.snapshotReferences=1024;limits.occurrences=4;limits.eventsPerRecording=64;
+        limits.eventsPerReport=16;limits.consumerEventsPerReport=20;limits.consumerOccurrencesPerReport=3;limits.reports=3;
+        SourceHistory history({4,4},VK_FORMAT_D32_SFLOAT,8112,limits);Inputs in;in.setup(history);
+        auto depthInfo=in.image;depthInfo.extent={8,8,1};auto colorInfo=depthInfo;colorInfo.format=VK_FORMAT_R8G8B8A8_UNORM;
+        const auto unrelatedDepth=handle<VkImage>(101),unrelatedColor=handle<VkImage>(102),unrelatedScreen=handle<VkImage>(103);
+        const auto depthView=handle<VkImageView>(111),colorView=handle<VkImageView>(112);
+        history.image(unrelatedDepth,depthInfo);history.image(unrelatedColor,colorInfo);history.image(unrelatedScreen,colorInfo);
+        auto view=in.view;view.image=unrelatedDepth;history.view(depthView,view);view.image=unrelatedColor;view.format=colorInfo.format;view.subresourceRange.aspectMask=VK_IMAGE_ASPECT_COLOR_BIT;history.view(colorView,view);
+        auto depth=in.depthAttachment;depth.imageView=depthView;auto color=in.attachment;color.imageView=colorView;
+        auto rendering=in.rendering;rendering.renderArea.extent={8,8};rendering.pDepthAttachment=&depth;rendering.pColorAttachments=&color;
+        VkImageMemoryBarrier2 barrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2};barrier.image=unrelatedDepth;barrier.subresourceRange={VK_IMAGE_ASPECT_DEPTH_BIT,0,1,0,1};
+        VkDependencyInfo dependency{VK_STRUCTURE_TYPE_DEPENDENCY_INFO};dependency.imageMemoryBarrierCount=1;dependency.pImageMemoryBarriers=&barrier;
+        auto noiseCopy=in.copy;noiseCopy.srcImage=unrelatedDepth;noiseCopy.dstImage=unrelatedDepth;
+        VkImageBlit noiseRegion{};noiseRegion.srcSubresource=noiseRegion.dstSubresource={VK_IMAGE_ASPECT_COLOR_BIT,0,0,1};noiseRegion.srcOffsets[1]=noiseRegion.dstOffsets[1]={8,8,1};
+        for(unsigned index=0;index<64;++index){const auto cb=handle<VkCommandBuffer>(1000+index);history.begin(cb,VK_COMMAND_BUFFER_LEVEL_PRIMARY,0,0,0);
+            for(unsigned scope=0;scope<10;++scope){history.beginRendering(cb,rendering);history.draw(cb,0);history.endRendering(cb);history.barrier(cb,dependency);
+                check(!history.sourceCopy(cb,noiseCopy));const auto blit=history.blit(cb,unrelatedColor,VK_IMAGE_LAYOUT_GENERAL,unrelatedScreen,VK_IMAGE_LAYOUT_GENERAL,1,&noiseRegion,VK_FILTER_NEAREST);
+                check(blit && !blit.eventRetained);history.unknown(cb,Gap::missingRoute);}
+            VkCommandBufferSubmitInfo command{VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO};command.commandBuffer=cb;VkSubmitInfo2 submit{VK_STRUCTURE_TYPE_SUBMIT_INFO_2};submit.commandBufferInfoCount=1;submit.pCommandBufferInfos=&command;
+            const auto original=history.before(in.queue,0,0,1,&submit,2000+index);history.after(original,VK_SUCCESS);
+        }
+        const auto noise=JsonParser(history.report()).parse();check(noise.at("live_event_nodes").u()==0 && noise.at("overflow").u()==0);
+        check(noise.at("consumer_admission").at("additional_live_endpoints").u()==0 && noise.at("consumer_admission").at("excluded_event_attempts").u()==3200);
+        const std::array<uint8_t,4> bytes{{1,2,3,4}};std::vector<DescriptorImageQuery> receipts;
+        for(const auto v:{in.sourceView,in.destinationView}){const auto q=history.descriptorImageQueryBefore(v,VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,VK_IMAGE_LAYOUT_GENERAL,true,4);check(q);history.descriptorImageQueryAfter(q,4,bytes.data());receipts.push_back(q);}
+        std::vector<d4vr::HistoryCopyRef> targets;HistorySubmission first;
+        for(unsigned frame=0;frame<9;++frame){in.begin(history);const auto ref=history.sourceCopy(in.command,in.copy);check(ref);if(frame%3==0){check(history.capture(ref));targets.push_back(ref);}
+            in.drawColor(history);const auto transfer=in.blit(history,in.color,in.screen);check(transfer && transfer.eventRetained);
+            const auto original=in.before(history,3000+frame);if(frame==0)first=original;else history.after(original,frame==4?VK_ERROR_DEVICE_LOST:VK_SUCCESS);if(frame==1)history.after(first,VK_SUCCESS);
+        }
+        const auto report=save(saved,"narrow_admission_unrelated_live_recordings_three_targets",history);check(array(report.at("reports")).size()==3 && report.at("overflow").u()==0 && report.at("live_event_nodes").u()<=256);
+        check(report.at("evicted_occurrences").u()>0 && !report.at("consumer_admission").at("outside_scope_complete").b() && !report.at("consumer_admission").at("event_absence_means_unused").b());
+        for(unsigned index=0;index<3;++index){const auto& r=oneReport(report,index);const auto& w=window(report,index);check(r.at("target_copy").at("recording").u()==targets[index].recording);
+            check(w.at("observed_occurrences").u()==3 && !w.at("truncated").b() && w.at("closed").b());check(array(w.at("descriptor_image_queries")).size()==2);
+            bool colorFound=false,blitFound=false;for(const auto* event:events(w)){check(event->at("image").u()!=history.imageRef(unrelatedDepth).image && event->at("image").u()!=history.imageRef(unrelatedColor).image);
+                if(event->at("kind").s()=="declared_color_attachment")colorFound|=event->at("associated_image").u()==targets[index].destinationImage;
+                if(event->at("kind").s()=="blit_image")blitFound|=event->at("destination_image").u()==history.imageRef(in.screen).image;
+            }check(colorFound && blitFound);for(const auto q:receipts){const auto& receipt=query(w,q.query);check(receipt.at("bytes_hex").s()=="01020304" && receipt.at("before_observed_submission").u()==64);}
+        }
+        bool failedFrozen=false;for(const auto& occurrence:array(window(report,1).at("occurrences")))failedFrozen|=occurrence.at("result").i()==VK_ERROR_DEVICE_LOST;check(failedFrozen);
+    }
+    // Reverse transfer retention does not admit its upstream source. Removing
+    // an admitted lifetime and reusing its handle cannot transfer admission.
+    {Limits limits;limits.consumerWindows=true;SourceHistory history({4,4},VK_FORMAT_D32_SFLOAT,8113,limits);Inputs in;in.setup(history);
+        auto info=in.image;info.format=VK_FORMAT_R8G8B8A8_UNORM;const auto upstream=handle<VkImage>(91),unlinked=handle<VkImage>(92);history.image(upstream,info);history.image(unlinked,info);
+        const auto firstExcluded=in.blit(history,upstream,unlinked);check(firstExcluded && !firstExcluded.eventRetained && firstExcluded.ordinal==1);
+        history.unknown(in.command,Gap::missingRoute);
+        std::array<VkImageMemoryBarrier2,2> barriers{};for(auto& barrier:barriers){barrier.sType=VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;barrier.subresourceRange={VK_IMAGE_ASPECT_DEPTH_BIT,0,1,0,1};}barriers[0].image=upstream;barriers[1].image=in.source;
+        VkDependencyInfo dependency{VK_STRUCTURE_TYPE_DEPENDENCY_INFO};dependency.imageMemoryBarrierCount=2;dependency.pImageMemoryBarriers=barriers.data();history.barrier(in.command,dependency);
+        const auto target=in.capture(history);check(target.ordinal==4);in.drawColor(history);const auto oldColor=history.imageRef(in.color);const auto old=in.blit(history,in.color,in.screen);check(old.eventRetained && old.ordinal==9 && old.recording==target.recording);
+        const auto reverse=in.blit(history,upstream,in.color);const auto excluded=in.blit(history,upstream,unlinked);check(reverse && reverse.eventRetained && excluded && !excluded.eventRetained);
+        history.removeImage(in.color);history.image(in.color,info);auto view=in.view;view.image=in.color;view.format=info.format;view.subresourceRange.aspectMask=VK_IMAGE_ASPECT_COLOR_BIT;history.view(in.colorView,view);
+        const auto newColor=history.imageRef(in.color);check(newColor.image!=oldColor.image);const auto reused=in.blit(history,in.color,unlinked);check(reused && !reused.eventRetained && reused.sourceImage==newColor.image);
+        in.drawColor(history);const auto admitted=in.blit(history,in.color,unlinked);check(admitted.eventRetained);
+        const auto original=in.before(history);history.after(original,VK_SUCCESS);const auto report=save(saved,"narrow_admission_reverse_and_reused_lifetimes",history);
+        bool oldFrozen=false,newFrozen=false,reverseFrozen=false;for(const auto* event:events(window(report))){check(event->at("ordinal").u()!=excluded.ordinal && event->at("ordinal").u()!=reused.ordinal);
+            if(event->at("ordinal").u()==old.ordinal){check(event->at("image").u()==oldColor.image);oldFrozen=true;}
+            if(event->at("ordinal").u()==admitted.ordinal){check(event->at("image").u()==newColor.image);newFrozen=true;}
+            if(event->at("ordinal").u()==reverse.ordinal){check(event->at("image").u()==history.imageRef(upstream).image && event->at("destination_image").u()==oldColor.image);reverseFrozen=true;}
+        }check(oldFrozen && newFrozen && reverseFrozen);bool mixedBarrierRetained=false;
+        for(const auto* event:events(oneReport(report))){mixedBarrierRetained|=event->at("kind").s()=="barrier" && event->at("image").u()==target.sourceImage && event->at("ordinal").u()==3;}check(mixedBarrierRetained);
+    }
+    // Labels still identify the original hook when a known eligible event is
+    // refused by the event budget. Unknown endpoints never become valid refs.
+    {Limits limits;limits.consumerWindows=true;limits.liveEvents=8;limits.reports=1;SourceHistory history({4,4},VK_FORMAT_D32_SFLOAT,8114,limits);Inputs in;in.setup(history);const auto target=in.capture(history);in.drawColor(history);
+        for(unsigned k=0;k<3;++k)check(in.blit(history,in.color,in.screen).eventRetained);
+        const auto missing=in.blit(history,in.color,in.screen);check(missing && !missing.eventRetained && missing.recording==target.recording && missing.ordinal>target.ordinal);
+        const auto unknownSource=in.blit(history,handle<VkImage>(999),in.screen);const auto unknownDestination=in.blit(history,in.color,handle<VkImage>(999));
+        check(!unknownSource && unknownSource.sourceImage==0 && unknownSource.destinationImage==history.imageRef(in.screen).image && !unknownSource.eventRetained);
+        check(!unknownDestination && unknownDestination.sourceImage==history.imageRef(in.color).image && unknownDestination.destinationImage==0 && !unknownDestination.eventRetained);
+        const auto original=in.before(history);history.after(original,VK_ERROR_OUT_OF_HOST_MEMORY);const auto report=save(saved,"narrow_admission_bounded_blit_identity_unknown_endpoints",history);
+        check(report.at("live_event_nodes").u()==8 && report.at("consumer_admission").at("overflow_causes").at("live_event_limit").u()==3);
+        check(window(report).at("truncated").b() && !report.at("consumer_admission").at("event_absence_means_unused").b());
+        for(const auto* event:events(window(report)))check(event->at("ordinal").u()!=missing.ordinal);
+    }
+    {Limits limits;limits.consumerWindows=true;limits.eventsPerRecording=1;limits.liveEvents=128;limits.reports=1;SourceHistory history({4,4},VK_FORMAT_D32_SFLOAT,8116,limits);Inputs in;in.setup(history);const auto target=in.capture(history);in.drawColor(history);
+        const auto missing=in.blit(history,in.color,in.screen);check(missing && !missing.eventRetained && missing.recording==target.recording && missing.ordinal==6);
+        const auto original=in.before(history);history.after(original,VK_SUCCESS);const auto report=save(saved,"narrow_admission_recording_bound_blit_identity",history);
+        check(report.at("live_event_nodes").u()==1 && report.at("consumer_admission").at("overflow_causes").at("recording_event_limit").u()==5 && report.at("consumer_admission").at("overflow_causes").at("live_event_limit").u()==0);
+    }
+    // Additional endpoints are live lifetime labels with a fixed cap. Removing
+    // one releases admission capacity; no handle generation inherits its slot.
+    {Limits limits;limits.consumerWindows=true;SourceHistory history({4,4},VK_FORMAT_D32_SFLOAT,8115,limits);Inputs in;in.setup(history);auto info=in.image;info.format=VK_FORMAT_R8G8B8A8_UNORM;
+        for(unsigned k=0;k<70;++k){const auto image=handle<VkImage>(200+k);const auto v=handle<VkImageView>(300+k);history.image(image,info);auto view=in.view;view.image=image;view.format=info.format;view.subresourceRange.aspectMask=VK_IMAGE_ASPECT_COLOR_BIT;history.view(v,view);
+            auto color=in.attachment;color.imageView=v;auto rendering=in.rendering;rendering.pColorAttachments=&color;history.beginRendering(in.command,rendering);history.endRendering(in.command);}
+        const auto excluded=in.blit(history,handle<VkImage>(269),in.screen);check(excluded && !excluded.eventRetained);
+        const auto full=JsonParser(history.report()).parse();check(full.at("consumer_admission").at("additional_live_endpoints").u()==64 && full.at("consumer_admission").at("overflow_causes").at("additional_endpoint_limit").u()==6);
+        history.removeImage(handle<VkImage>(200));auto color=in.attachment;color.imageView=handle<VkImageView>(369);auto rendering=in.rendering;rendering.pColorAttachments=&color;history.beginRendering(in.command,rendering);history.endRendering(in.command);
+        const auto admitted=in.blit(history,handle<VkImage>(269),in.screen);check(admitted && admitted.eventRetained);history.image(handle<VkImage>(200),info);check(!in.blit(history,handle<VkImage>(200),in.color).eventRetained);
+        const auto report=save(saved,"narrow_admission_endpoint_bound_and_removal",history);check(report.at("consumer_admission").at("additional_live_endpoints").u()==64);
     }
     if(argc>1){std::ofstream out(argv[1]);out<<"{\"cases\":[";for(size_t n=0;n<saved.size();++n){if(n)out<<',';out<<"{\"name\":\""<<saved[n].first<<"\",\"report\":"<<saved[n].second<<'}';}out<<"]}\n";check(bool(out));}
     std::cout<<"{\"source_consumer_observation_passed\":true,\"cases\":"<<saved.size()<<",\"assertions\":"<<assertions<<",\"gpu_dispatch_waits_or_rejections\":0}\n";return 0;

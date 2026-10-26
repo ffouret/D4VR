@@ -4,8 +4,10 @@
 #include <vulkan/vulkan.h>
 #include <functional>
 #include <memory>
+#include <utility>
 #include <vector>
 #include "../core/camera_provenance.hpp"
+#include "../core/blit_provenance.hpp"
 namespace d4vr::present {
 struct Snapshot {
     uint64_t sequence=0,present=0,selectedDraws=0;
@@ -13,6 +15,7 @@ struct Snapshot {
     VkFormat format{};VkExtent2D extent{};
     std::vector<uint8_t> bytes;
     FrameCamera camera{};
+    SourceBlitObservation sourceBlit{};
 };
 enum class CaptureMode { cpuSnapshots, gpuStream };
 struct GpuFrame {
@@ -20,6 +23,7 @@ struct GpuFrame {
     uint32_t eye=2,selectedMask=0,queueFamily=VK_QUEUE_FAMILY_IGNORED;
     VkFormat format{};VkExtent2D extent{};VkImage image{};VkQueue queue{};
     FrameCamera camera{};
+    SourceBlitObservation sourceBlit{};
     // Private owned image in TRANSFER_SRC_OPTIMAL. No XR pose/time or common
     // scene instant is inferred from the eye selection or present identifier.
 };
@@ -37,15 +41,19 @@ public:
     void image(VkImage,const VkImageCreateInfo&);void removeImage(VkImage);
     void swapchain(VkSwapchainKHR,const VkSwapchainCreateInfoKHR&);void removeSwapchain(VkSwapchainKHR);
     void swapchainImages(VkSwapchainKHR,uint32_t,const VkImage*);
-    bool record(uint64_t sequence,uint32_t eye,VkCommandBuffer,bool primaryOneTime,VkImage,VkImageLayout,VkImage,VkImageLayout,uint32_t,const VkImageBlit*,VkFilter);
+    // Optional original observer labels are frozen with the actual arguments.
+    // No live resource/command lookup is performed at submit or receipt time.
+    bool record(uint64_t sequence,uint32_t eye,VkCommandBuffer,bool primaryOneTime,VkImage,VkImageLayout,VkImage,VkImageLayout,uint32_t,const VkImageBlit*,VkFilter,const HistoryBlitRef& sourceBlit={});
     void reset(VkCommandBuffer); // Removes lookup, retains inserted resources.
     // Call only AFTER successful original submission, while the application's
     // external queue synchronization is still held. Adds an empty fence marker.
     // Optional packet is a validated snapshot taken BEFORE the original submit,
     // while its update/read dependencies are protected. Store it only AFTER
     // that submit succeeds. Submission identity is preserved; no late retagging.
+    // historySubmission is the original SourceHistory BEFORE occurrence's CPU
+    // counter. It is independent of submission; zero leaves that link unknown.
     void submitted(VkQueue,const std::vector<VkCommandBuffer>&,uint32_t queueFamily=VK_QUEUE_FAMILY_IGNORED,
-        uint64_t submission=0,const CameraPair* camera=nullptr);
+        uint64_t submission=0,const CameraPair* camera=nullptr,uint64_t historySubmission=0);
     // GPU mode: no mapped readback. At most four slots / 256 MiB, with
     // backpressure instead of waiting. A slot is recycled only after reset of
     // the producer CB, producer completion and consumer retirement completion.
@@ -60,6 +68,9 @@ public:
     // retired image.
     // Consumer commands must be one-time and retired, never resubmitted.
     bool retire(uint64_t lease,VkQueue);
+    // Bounded CPU-only value snapshots (at most four), with no fence polling.
+    // Recorded/submitted observations are not producer completion receipts.
+    std::vector<std::pair<uint64_t,SourceBlitObservation>> sourceBlits() const;
     StreamStats stats() const;
     std::vector<Snapshot> presented(const VkPresentInfoKHR&,VkResult,uint64_t present,uint32_t selectedMask,uint64_t selectedDraws,const CameraInterval* camera=nullptr);
 };
