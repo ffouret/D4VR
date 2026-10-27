@@ -1,0 +1,263 @@
+{
+  "schema_version": 1,
+  "status": "completed_owned_control",
+  "scope": "owned_typed_write_to_selected_slot_at_query_return",
+  "owned_control_passed": true,
+  "implementation": {
+    "model": "Python_bounded_caller_owned_snapshots",
+    "live_layer_observer_implemented": false,
+    "input_facts_attested": false,
+    "model_reads_addresses_or_mapped_memory": false,
+    "source_identity_from_opaque_bytes": false,
+    "application_calls_changed_waited_or_rejected": false
+  },
+  "false_facets": {
+    "current_contents_at_draw_known": false,
+    "descriptor_unchanged_until_execution": false,
+    "descriptor_dynamically_accessed": false,
+    "sampled_resource_GPU_read_proven": false
+  },
+  "limits": {
+    "live_tickets_including_held_receipts": 4,
+    "selected_slots_per_ticket": 3,
+    "writes_per_ticket": 8,
+    "serialized_receipt_bytes": 16384,
+    "snapshot_bytes": 16384,
+    "snapshot_nodes": 4096,
+    "snapshot_depth": 12,
+    "allocations_per_snapshot": 8,
+    "maps_per_snapshot": 8,
+    "buffers_per_snapshot": 8,
+    "layouts_per_snapshot": 3,
+    "bindings_per_layout": 32,
+    "mutable_types_per_binding": 8,
+    "returned_output_bytes": 256,
+    "held_receipts_share_quota_pin": true,
+    "receipt_eviction_or_current_lookup": false
+  },
+  "owned_contract": {
+    "unchanged_original_vertex_and_fragment_in_all_cases": true,
+    "new_shader_or_game_bundle_constructed": false,
+    "textures": 2,
+    "texture_extent": [
+      8,
+      8
+    ],
+    "texture_format": 37,
+    "nearest_samplers": [
+      "clamp_to_edge",
+      "repeat"
+    ],
+    "descriptor_backend": "descriptor_buffer",
+    "output_extent": [
+      2560,
+      1440
+    ],
+    "output_format": 44,
+    "UBO_bytes": 1280,
+    "push_constant_bytes": 28,
+    "owned_live_buffers_in_snapshots": 5,
+    "selected_nonempty_sets": [
+      0,
+      1,
+      3
+    ],
+    "case_local_CPU_ordinals_only": true,
+    "bootstrap_facts_are_live_observer_proof": false,
+    "groundtruth_given_to_model": false,
+    "hidden_copy_source": "last_scratch_B_query_output",
+    "opaque_encoding_canonicality_assumed": false,
+    "slot_hex_captured_before_submit": true
+  },
+  "cases": [
+    "direct_A_clamp",
+    "direct_B_clamp",
+    "scratch_B_clamp",
+    "identical_hook_A_clamp",
+    "identical_hook_overwrite_B_clamp",
+    "direct_B_repeat"
+  ],
+  "CPU_preflight": {
+    "model_unit_tests": 30,
+    "auditor_unit_tests": 12,
+    "independent_model_adversaries": 33,
+    "independent_additional_checks": 21,
+    "all_passed": true,
+    "independent_complete_synthetic_dataset_cases": 6,
+    "independent_synthetic_pixel_coordinates": "Fraction",
+    "held_receipt_quota": 4,
+    "new_reservations_refused_while_four_copies_held": 80,
+    "deepcopy_quota_fixed_before_physical": true,
+    "six_alias_lifetime_contradictions_fixed_before_physical": true,
+    "argument_generation_copy_integrity_joins_fixed_before_physical": true,
+    "process_creation_forbidden_in_independent_review": true,
+    "independent_review_GPU_calls": 0,
+    "independent_review_public_source_edits": 0,
+    "portable_full_suite_tests_at_freeze": 495,
+    "strict_Linux_binary_compiled": true,
+    "strict_Windows_object_compiled": true,
+    "Windows_object_executed": false,
+    "corrections_were_preflight_not_application_or_GPU_repairs": true
+  },
+  "physical": {
+    "environments": [
+      "native",
+      "steam-runtime"
+    ],
+    "first_attempt_passed": true,
+    "fixture_processes": 2,
+    "parent_runner_exit_code": 0,
+    "parent_runner_elapsed_host_seconds": 20.19870807699772,
+    "GPU_retry_or_code_fix_required": false,
+    "counts_both_environments": {
+      "submissions": 14,
+      "draws": 12,
+      "readbacks": 12,
+      "image_uploads": 4,
+      "case_window_queries": 24,
+      "outside_window_preparation_queries": 10
+    },
+    "readbacks": 12,
+    "RGBA_bytes_compared": 176947200,
+    "all_RGBA_bytes_exact_against_CPU_reference": true,
+    "mismatched_RGBA_bytes": 0,
+    "native_runtime_exact": {
+      "corresponding_file_pairs": 6,
+      "all_bytes_equal": true,
+      "bytes_compared_once": 88473600
+    },
+    "sealed_complete_receipts": 12,
+    "placed_queries_at_return": 22,
+    "unknown_scratch_image_queries_at_return": 2,
+    "identical_selected_hook_windows": true,
+    "identical_window_different_BA_bytes_per_environment": 3628800,
+    "BA_mismatch_count_is_byte_positions_counted_once_per_pair": true,
+    "direct_B_scratch_copy_B_hidden_overwrite_B_readouts_exact": true,
+    "clamp_repeat_pixel_witness_discriminates": true,
+    "all_four_stronger_facets_false_for_queries_and_receipts": true,
+    "validation": {
+      "Khronos_errors": 0,
+      "warnings_total": 8,
+      "native_warnings": 3,
+      "steam_runtime_warnings": 5,
+      "warnings_are_loader_messages": true,
+      "synchronization_validation_enabled": true,
+      "counters_include_teardown": true
+    },
+    "repeat_clamp_BA_byte_differences_per_environment": 864000,
+    "identical_window_different_B_bytes_per_environment": 3628800,
+    "identical_window_different_alpha_bytes_per_environment": 0
+  },
+  "integrity": {
+    "preflight_source_sha256": {
+      "tools/descriptor_write_placement.py": "edfe0e44e6b115fef01296ed4f8f813041ab9fd5b71689838c2d74f230f5ea0f",
+      "tests/test_descriptor_write_placement.py": "0296b38a3df4f199e62049208cc00c384fae5208fabf3aa1010a9776924e4688",
+      "tools/descriptor_placement_validate.py": "4c97acc793e4812125dd7399be57b70fc0b2551d430c2c32fb7ac3ef44037618",
+      "tests/test_descriptor_placement_validate.py": "a2eadff38fef62a681550a2ddcf72af488dfd5da0fe594fe65eea0c21930025c",
+      "native/tests/descriptor_placement_gpu.cpp": "ea254ee46162a89fb141013eec041f6eb96581a05cc91a7c56a2a307791313ca"
+    },
+    "preflight_sources_unchanged_before_after_review": true,
+    "private_module_identities_published": false,
+    "physical_source_sha256": {
+      "native/CMakeLists.txt": "beb7d612c9ebab4bc6284b7515619808be9033e066e6c35d18414164f3687d93",
+      "native/tests/descriptor_placement_gpu.cpp": "ea254ee46162a89fb141013eec041f6eb96581a05cc91a7c56a2a307791313ca",
+      "native/tests/sampled_writer_gpu.cpp": "4ad16048bff2be4290e93f8adbd4e7e42d3daebd9b04118bff66249af3892640",
+      "native/tests/sampled_writer_hash.hpp": "f6b59c3568c23d6f3198a8d952fbdcf8a4da85db945d311a0b369d15ae266f9e",
+      "tools/descriptor_write_placement.py": "edfe0e44e6b115fef01296ed4f8f813041ab9fd5b71689838c2d74f230f5ea0f",
+      "tests/test_descriptor_write_placement.py": "0296b38a3df4f199e62049208cc00c384fae5208fabf3aa1010a9776924e4688",
+      "tools/descriptor_placement_validate.py": "4c97acc793e4812125dd7399be57b70fc0b2551d430c2c32fb7ac3ef44037618",
+      "tests/test_descriptor_placement_validate.py": "a2eadff38fef62a681550a2ddcf72af488dfd5da0fe594fe65eea0c21930025c",
+      "tools/sampled_writer_validate.py": "f2414d310ef86f5c2e62b0158e676caa9129e5342c526a2e08a86b899b8419b7"
+    },
+    "final_source_sha256": {
+      "native/CMakeLists.txt": "beb7d612c9ebab4bc6284b7515619808be9033e066e6c35d18414164f3687d93",
+      "native/tests/descriptor_placement_gpu.cpp": "ea254ee46162a89fb141013eec041f6eb96581a05cc91a7c56a2a307791313ca",
+      "native/tests/sampled_writer_gpu.cpp": "4ad16048bff2be4290e93f8adbd4e7e42d3daebd9b04118bff66249af3892640",
+      "native/tests/sampled_writer_hash.hpp": "f6b59c3568c23d6f3198a8d952fbdcf8a4da85db945d311a0b369d15ae266f9e",
+      "tools/descriptor_write_placement.py": "edfe0e44e6b115fef01296ed4f8f813041ab9fd5b71689838c2d74f230f5ea0f",
+      "tests/test_descriptor_write_placement.py": "0296b38a3df4f199e62049208cc00c384fae5208fabf3aa1010a9776924e4688",
+      "tools/descriptor_placement_validate.py": "4c97acc793e4812125dd7399be57b70fc0b2551d430c2c32fb7ac3ef44037618",
+      "tests/test_descriptor_placement_validate.py": "a2eadff38fef62a681550a2ddcf72af488dfd5da0fe594fe65eea0c21930025c",
+      "tools/sampled_writer_validate.py": "f2414d310ef86f5c2e62b0158e676caa9129e5342c526a2e08a86b899b8419b7"
+    },
+    "physical_and_final_source_pins_identical": true,
+    "source_pin_count": 9,
+    "fixture_binary_sha256": "442e70e565ff17d9fd9fa195dc29701cef18393ad6ae1900f8489c60efb54f52",
+    "SPIRV_validator_binary_sha256": "20c5998a46f02310f56bf11be238c34d374bb50104b7ccf85bb909f9da883ff9"
+  },
+  "evidence_sha256": {
+    "descriptor-placement-build-20261027-1/proof.json": "922d4bed0cdfbc54009cb3ff4660a3a751760d8ea4082d65e0d4afd129a6f7db",
+    "descriptor-placement-independent-20261027-1/draft-probe-edfe0e44e6b1.json": "6351b662bc63670e79db1f100bde0c6ac0eb94735decd7fa4921dcd09906c018",
+    "descriptor-placement-independent-20261027-1/final-review-4c97acc793e4.json": "289645955cdd9b95d24c3dccd0f3fbc0152449bbeac09bd6880a27eb8ce5b25c",
+    "descriptor-placement-model-cpu-20261027-1/proof.json": "e3c2955ae78e1b4102cbdf16b62e78e0d718da0321f6d20471808fe269fe49fd",
+    "descriptor-placement-validation-20261027-1/proof.json": "63a6b19d0f633903a55cba37bb6e57624b2b9b3d8605547675611cc8ce50aab0",
+    "descriptor-placement-source-freeze-20261027-1.json": "df1897372704dba0d394260307c39612adb48288ebf1f63bc92c96355bc8bd6a",
+    "descriptor-placement-parent-run-20261027-1.json": "54ac9b69685c477ca4398d958d98b55544c6fe55bb6993a69a6129fa2e38f2cd",
+    "descriptor-placement-python-frozen-20261027-1.log": "565ca056ab50baecce07eaf2f6ec9efae917bcce04d5d822068b7d9bab893d66",
+    "descriptor-placement-author-actual-review-20261027-1/proof.json": "654aa0a8ecab4d5e3795a51829246bf2c5609dc7911cd0ed65a3902153545cea",
+    "descriptor-placement-independent-actual-20261027-1/proof.json": "e673d1657c79e17d7a1b1ca0d1f027730cfe0d3784b5cc046beb4e1841b9ea2e"
+  },
+  "still_unestablished": {
+    "live_application_descriptor_write_observer": true,
+    "later_CPU_copy_or_store_coverage": true,
+    "descriptor_current_contents_at_draw": true,
+    "GPU_dynamic_descriptor_access": true,
+    "game_sampled_resource_identity": true,
+    "numeric_game_UV_decode": true,
+    "game_rectangle_cause": true,
+    "game_effective_coverage": true,
+    "translated_D3D12_copy_path": true
+  },
+  "game_rendered": false,
+  "new_game_run": false,
+  "game_sampled_resource_identified": false,
+  "coverage_repaired": false,
+  "new_headset_trial": false,
+  "XR_submission": false,
+  "author_actual_CPU_corroboration": {
+    "passed": true,
+    "reviewer_role": "native_fixture_author_reviewing_own_control_with_parent_auditor",
+    "independent_game_argument_or_pixel_reference": false,
+    "physical_files_rehashed_unchanged": 82,
+    "original_modules_and_nine_sources_unchanged": true,
+    "saved_author_environment_audits_replayed_exact": 2,
+    "in_memory_metadata_and_copy_integrity_falsifications_refused": 14,
+    "new_processes": 0,
+    "GPU_calls_or_UI_actions": 0,
+    "physical_outputs_or_saved_author_audits_modified": false
+  },
+  "independent_actual_CPU_review": {
+    "passed": true,
+    "readbacks_checked": 12,
+    "BGRA_bytes_checked": 176947200,
+    "all_RGBA_bytes_exact_against_independent_CPU_reference": true,
+    "pixel_errors": 0,
+    "pixel_reference": "pre_frozen_Fraction_pixel_centers_explicit_RGBA_texels_and_BGRA_output",
+    "pre_frozen_oracle_sha256": "7a44f370a20bec8282f93ed869ac1327cb605a376090d805e1992b4de077d738",
+    "author_pixel_texture_or_reference_functions_called": false,
+    "frozen_placement_math_model_reused_for_metadata": true,
+    "physical_files_rehashed_before_after": 82,
+    "source_pins_rehashed_before_after": 9,
+    "original_modules_rehashed_before_after": 2,
+    "all_physical_inputs_sources_and_modules_unchanged": true,
+    "saved_author_environment_audit_dictionaries_reconstructed_exact": 2,
+    "saved_author_audit_sha256": {
+      "native": "acec5c0d4db65520a29ce0353cac6bc558e583f165557ff81788036b80ec2c6e",
+      "steam-runtime": "a97dea26f8882e4910e2dde78428374aadcc1fb204e1be3cacff12791a5f78b2"
+    },
+    "native_runtime_corresponding_file_pairs": 6,
+    "native_runtime_bytes_compared_once": 88473600,
+    "native_runtime_all_bytes_equal": true,
+    "in_memory_one_byte_corruptions_refused": 4,
+    "corruption_channels": [
+      "B",
+      "G",
+      "R",
+      "A"
+    ],
+    "new_processes": 0,
+    "GPU_calls": 0,
+    "UI_actions": 0,
+    "physical_outputs_or_saved_author_audits_modified": false
+  }
+}
