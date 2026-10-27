@@ -122,7 +122,20 @@ Phase readPhaseFile(const char* path) noexcept {
     (void)path;return {PhaseStatus::ioError,0,0};
 #endif
 }
-Observer::Observer(bool enabled,Limits limits) noexcept:enabled_(enabled),limits_(limits){
+DebugUtilsFacet inspectDebugUtils(const VkInstanceCreateInfo* info) noexcept {
+    DebugUtilsFacet facet{};
+    if(!info||info->sType!=VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO)return facet;
+    facet.inspected=true;facet.extensionCount=info->enabledExtensionCount;
+    facet.namesComplete=facet.extensionCount<=256&&(!facet.extensionCount||info->ppEnabledExtensionNames);
+    if(facet.namesComplete)for(uint32_t n=0;n<facet.extensionCount;++n){const auto name=info->ppEnabledExtensionNames[n];
+        if(!name||strnlen(name,256)>=256){facet.namesComplete=false;break;}
+        if(!std::strcmp(name,VK_EXT_DEBUG_UTILS_EXTENSION_NAME))++facet.nameOccurrences;
+    }
+    if(facet.nameOccurrences>1)facet.namesComplete=false;
+    facet.enabledNamePresent=facet.namesComplete&&facet.nameOccurrences==1;
+    return facet;
+}
+Observer::Observer(bool enabled,Limits limits,bool callOwner) noexcept:enabled_(enabled),callOwner_(enabled&&callOwner),limits_(limits){
     limits_.events=std::min(limits_.events,maxEvents);limits_.outputBytes=std::min(limits_.outputBytes,maxOutput);
     limits_.eventsPerCase=std::min(limits_.eventsPerCase,std::size_t(32));stats_.enabled=enabled;
 }
@@ -183,7 +196,10 @@ void Observer::forward(PFN_vkGetDescriptorEXT next,VkDevice device,const VkDescr
                     local.device=raw(device);local.outputPointer=raw(output);local.dataSize=size;
                     local.infoPresent=info!=nullptr;
                     if(info){local.infoSType=uint32_t(info->sType);local.descriptorType=uint32_t(info->type);local.chainPresent=info->pNext!=nullptr;}
-                    local.input=capture(info);events_[index]=local;
+                    local.input=capture(info);
+                    if(callOwner_&&local.input.known&&local.descriptorType==VK_DESCRIPTOR_TYPE_SAMPLER)
+                        local.samplerIdentity=samplerIdentity(local.device,identity,local.input.sampler);
+                    events_[index]=local;
                 }
             }
         }
@@ -212,18 +228,140 @@ void Observer::forward(PFN_vkGetDescriptorEXT next,VkDevice device,const VkDescr
         }
     }catch(...){fault();}
 }
+
+SamplerIdentity Observer::samplerIdentity(uint64_t device,DeviceIdentity identity,uint64_t sampler) const noexcept {
+    SamplerIdentity result{};
+    if(!identity.known||!identity.deviceGeneration||!sampler)return result;
+    for(std::size_t n=0;n<samplerCount_;++n){const auto& v=samplers_[n];
+        if(v.created&&!v.destroyPending&&!v.destroyed&&v.device==device&&v.sampler==sampler&&
+           v.identity.deviceGeneration==identity.deviceGeneration&&v.identity.parentInstanceGeneration==identity.parentInstanceGeneration){
+            if(result.known)return {};
+            result={v.generation,true};
+        }
+    }
+    return result;
+}
+std::size_t Observer::ownerBefore(OwnerRecord& record) noexcept {
+    // Caller holds mutex_. A dropped row is still counted and never changes dispatch.
+    increment(ownerSeen_);
+    if(transition_==UINT64_MAX){ownerGap_=true;increment(ownerDropped_);return maxOwnerRecords;}
+    record.operationOrdinal=++transition_;
+    if(faulted_){ownerGap_=true;increment(ownerDropped_);return maxOwnerRecords;}
+    if(record.before.status!=PhaseStatus::known){increment(ownerUnknownPhase_);return maxOwnerRecords;}
+    if(record.before.caseOrdinal!=8){
+        if(record.before.caseOrdinal==0)increment(ownerBootstrap_);else increment(ownerUnselected_);
+        return maxOwnerRecords;
+    }
+    bool create=!std::strcmp(record.kind,"create_sampler"),name=!std::strcmp(record.kind,"object_name");
+    std::size_t perDevice=0;
+    for(std::size_t n=0;n<ownerCount_;++n)if(!std::strcmp(owners_[n].kind,record.kind)&&
+        owners_[n].identity.deviceGeneration==record.identity.deviceGeneration&&owners_[n].device==record.device)++perDevice;
+    if(ownerCount_==maxOwnerRecords||(create&&(samplerCount_==maxSamplers||perDevice>=16))||
+       (name&&(nameCount_==maxNames||perDevice>=8))){ownerGap_=true;increment(ownerDropped_);return maxOwnerRecords;}
+    if(create){
+        if(samplerGeneration_==UINT64_MAX){ownerGap_=true;increment(ownerDropped_);return maxOwnerRecords;}
+        record.samplerIdentity.generation=++samplerGeneration_;
+        auto& occurrence=samplers_[samplerCount_++];occurrence.device=record.device;occurrence.identity=record.identity;
+        occurrence.generation=record.samplerIdentity.generation;occurrence.createOrdinal=record.operationOrdinal;
+    }else{
+        record.samplerIdentity=samplerIdentity(record.device,record.identity,record.sampler);
+        if(!name&&record.samplerIdentity.known)for(auto& v:samplers_)if(v.generation==record.samplerIdentity.generation){v.destroyPending=true;v.destroyOrdinal=record.operationOrdinal;}
+    }
+    if(name)++nameCount_;
+    auto index=ownerCount_++;owners_[index]=record;return index;
+}
+void Observer::ownerAfter(std::size_t index,int32_t result,uint64_t createdSampler) noexcept {
+    // Caller holds mutex_. Exact token row, never the current sampler/slot.
+    increment(ownerReturns_);uint64_t returned=0;
+    if(transition_==UINT64_MAX)ownerGap_=true;else returned=++transition_;
+    if(index>=ownerCount_)return;
+    auto& row=owners_[index];
+    if(row.returned){ownerGap_=true;return;}
+    row.returned=true;row.returnOrdinal=returned;row.result=result;
+    if(!std::strcmp(row.kind,"create_sampler")){
+        if(result==VK_SUCCESS){row.sampler=createdSampler;row.samplerIdentity.known=createdSampler&&row.identity.known;}
+        for(auto& v:samplers_)if(v.generation==row.samplerIdentity.generation){v.createReturn=returned;
+            if(result==VK_SUCCESS&&createdSampler){v.created=true;v.sampler=createdSampler;}}
+    }else if(!std::strcmp(row.kind,"destroy_sampler")&&row.samplerIdentity.known){
+        for(auto& v:samplers_)if(v.generation==row.samplerIdentity.generation){v.destroyed=true;v.destroyPending=false;v.destroyReturn=returned;}
+    }
+}
+VkResult Observer::createSampler(PFN_vkCreateSampler next,VkDevice device,const VkSamplerCreateInfo* info,
+    const VkAllocationCallbacks* allocator,VkSampler* output,DeviceIdentity identity,PhaseProvider provider,void* context){
+    if(!callOwner_)return next(device,info,allocator,output);
+    std::size_t index=maxOwnerRecords;
+    try{bool observe=false;{std::lock_guard<std::mutex> lock(mutex_);observe=!faulted_;}
+        auto before=checkedPhase(observe&&provider?provider(context):Phase{});std::lock_guard<std::mutex> lock(mutex_);OwnerRecord row{};row.before=before;row.kind="create_sampler";row.device=raw(device);row.identity=identity;
+        row.infoPointer=raw(info);row.allocatorPointer=raw(allocator);row.outputPointer=raw(output);index=ownerBefore(row);
+        if(index<maxOwnerRecords){auto& saved=owners_[index];saved.infoPresent=info!=nullptr;
+            if(info){saved.infoSType=uint32_t(info->sType);saved.chainPresent=info->pNext!=nullptr;
+                if(info->sType==VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO&&!info->pNext){saved.flags=info->flags;saved.samplerInfoCaptured=true;
+                    saved.samplerInfo={uint32_t(info->magFilter),uint32_t(info->minFilter),uint32_t(info->mipmapMode),
+                        uint32_t(info->addressModeU),uint32_t(info->addressModeV),uint32_t(info->addressModeW),0,uint32_t(info->anisotropyEnable),0,
+                        uint32_t(info->compareEnable),uint32_t(info->compareOp),0,0,uint32_t(info->borderColor),uint32_t(info->unnormalizedCoordinates)};
+                    std::memcpy(&saved.samplerInfo[6],&info->mipLodBias,4);std::memcpy(&saved.samplerInfo[8],&info->maxAnisotropy,4);
+                    std::memcpy(&saved.samplerInfo[11],&info->minLod,4);std::memcpy(&saved.samplerInfo[12],&info->maxLod,4);
+                }
+            }
+        }
+    }catch(...){fault();}
+    auto result=next(device,info,allocator,output);uint64_t created=0;if(index<maxOwnerRecords&&result==VK_SUCCESS&&output)created=raw(*output);
+    try{auto after=checkedPhase(index<maxOwnerRecords&&provider?provider(context):Phase{});std::lock_guard<std::mutex> lock(mutex_);
+        if(index<ownerCount_)owners_[index].after=after;
+        ownerAfter(index,int32_t(result),created);}catch(...){fault();}return result;
+}
+void Observer::destroySampler(PFN_vkDestroySampler next,VkDevice device,VkSampler sampler,const VkAllocationCallbacks* allocator,DeviceIdentity identity,PhaseProvider provider,void* context){
+    if(!callOwner_){next(device,sampler,allocator);return;}
+    std::size_t index=maxOwnerRecords;
+    try{bool observe=false;{std::lock_guard<std::mutex> lock(mutex_);observe=!faulted_;}
+        auto before=checkedPhase(observe&&provider?provider(context):Phase{});std::lock_guard<std::mutex> lock(mutex_);OwnerRecord row{};row.before=before;row.kind="destroy_sampler";row.hasResult=false;
+        row.device=raw(device);row.identity=identity;row.sampler=raw(sampler);row.allocatorPointer=raw(allocator);index=ownerBefore(row);
+    }catch(...){fault();}
+    next(device,sampler,allocator);
+    try{auto after=checkedPhase(index<maxOwnerRecords&&provider?provider(context):Phase{});std::lock_guard<std::mutex> lock(mutex_);
+        if(index<ownerCount_)owners_[index].after=after;
+        ownerAfter(index,0);}catch(...){fault();}
+}
+VkResult Observer::objectName(PFN_vkSetDebugUtilsObjectNameEXT next,VkDevice device,const VkDebugUtilsObjectNameInfoEXT* info,
+    PhaseProvider provider,void* context,DeviceIdentity identity){
+    if(!callOwner_)return next(device,info);
+    std::size_t index=maxOwnerRecords;
+    try{bool observe=false;{std::lock_guard<std::mutex> lock(mutex_);observe=!faulted_;}
+        auto before=checkedPhase(observe&&provider?provider(context):Phase{});std::lock_guard<std::mutex> lock(mutex_);
+        OwnerRecord row{};row.before=before;row.kind="object_name";row.device=raw(device);row.identity=identity;row.infoPointer=raw(info);
+        // Read no typed payload when faulted or when the row cannot be retained.
+        index=ownerBefore(row);
+        if(index<maxOwnerRecords){auto& saved=owners_[index];saved.before=before;saved.infoPresent=info!=nullptr;
+            if(info){saved.infoSType=uint32_t(info->sType);saved.chainPresent=info->pNext!=nullptr;
+                if(info->sType==VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT&&!info->pNext){
+                    saved.objectType=uint32_t(info->objectType);saved.sampler=info->objectHandle;saved.namePointer=raw(info->pObjectName);
+                    if(info->objectType==VK_OBJECT_TYPE_SAMPLER){saved.samplerIdentity=samplerIdentity(saved.device,identity,saved.sampler);
+                        if(info->pObjectName){auto length=strnlen(info->pObjectName,saved.name.size());
+                            if(length<saved.name.size()){saved.nameBytes=uint32_t(length+1);std::memcpy(saved.name.data(),info->pObjectName,length+1);saved.nameKnown=true;}}
+                    }
+                }
+            }
+        }
+    }catch(...){fault();}
+    auto result=next(device,info);
+    try{auto after=checkedPhase(index<maxOwnerRecords&&provider?provider(context):Phase{});std::lock_guard<std::mutex> lock(mutex_);
+        if(index<ownerCount_)owners_[index].after=after;
+        ownerAfter(index,int32_t(result));
+    }catch(...){fault();}return result;
+}
 Stats Observer::stats() const {std::lock_guard<std::mutex> lock(mutex_);return stats_;}
 std::string Observer::jsonl(const std::string& runId,uint64_t activeInstances,uint64_t activeDevices,
     bool transportAttached,bool transportOverflow,bool transportChainMismatch,const ScopeIdentity* scope) const {
     if(!runIdValid(runId))return {};
     std::lock_guard<std::mutex> lock(mutex_);std::ostringstream out;
-    auto common=[&](const char* event){out<<"{\"schema_version\":"<<(scope?2:1)<<",\"event\":\""<<event<<"\",\"run_id\":\""<<runId<<'"';
+    auto common=[&](const char* event){out<<"{\"schema_version\":"<<(callOwner_?3:(scope?2:1))<<",\"event\":\""<<event<<"\",\"run_id\":\""<<runId<<'"';
         if(scope)out<<",\"scope_slot\":"<<scope->slot<<",\"host_pid\":"<<scope->hostPid<<",\"process_start_cookie\":"<<scope->processStartCookie<<",\"dso_epoch\":"<<scope->dsoEpoch;
     };
     common("observer_header");
     if(scope){out<<",\"scope_claimed\":"<<(scope->claimed?"true":"false")<<",\"build_id_known\":"<<(scope->buildIdKnown?"true":"false")<<",\"build_id\":";quoted(out,scope->buildId.data());
         out<<",\"build_id_is_binary_attestation\":false,\"scope_slots\":8,\"global_event_limit\":256,\"global_events_per_case_limit\":32,\"lifecycle_limit\":"<<maxLifecycle;
     }
+    if(callOwner_)out<<",\"purpose\":\"original_nonce_call_owner\",\"owner_limits\":{\"sampler_occurrences\":32,\"sampler_creates_per_device\":16,\"name_records\":32,\"names_per_device\":8,\"owner_records\":96,\"name_bytes_including_nul\":64,\"selected_case_ordinal\":8,\"instance_extension_names\":256,\"extension_name_bytes\":256}";
     out<<",\"scope\":\"owned_translated_original_get_descriptor\",\"enabled\":"<<(enabled_?"true":"false")
        <<",\"phase_source\":\"file\",\"transport_scope\":\""<<(transportAttached?"owned_single_loader_chain":"core_CPU_only")
        <<"\",\"route_capacity\":"<<(transportAttached?32:0)<<",\"limits\":{\"events\":"<<limits_.events<<",\"events_per_case\":"<<limits_.eventsPerCase
@@ -238,8 +376,36 @@ std::string Observer::jsonl(const std::string& runId,uint64_t activeInstances,ui
            <<",\"chain_present\":"<<(e.chainPresent?"true":"false")<<",\"application\":{\"captured\":"<<(e.applicationCaptured?"true":"false")<<",\"api_version\":"<<e.apiVersion<<",\"name\":";
         quoted(out,e.applicationName.data());out<<",\"name_truncated\":"<<(e.applicationNameTruncated?"true":"false")<<",\"engine_name\":";quoted(out,e.engineName.data());out<<",\"engine_name_truncated\":"<<(e.engineNameTruncated?"true":"false")<<"},\"count_only\":"<<(e.countOnly?"true":"false")
            <<",\"input_capacity\":"<<e.inputCapacity<<",\"returned_count\":"<<e.returnedCount<<",\"physical_devices\":[";
-        for(uint32_t n=0;n<e.physicalCount;++n){out<<(n?",":"")<<e.physicalDevices[n];}out<<']';falseFacets(out);out<<"}\n";
+        for(uint32_t n=0;n<e.physicalCount;++n){out<<(n?",":"")<<e.physicalDevices[n];}out<<']';
+        if(callOwner_){const auto& f=e.debugUtils;out<<",\"instance_debug_utils\":{\"inspected\":"<<(f.inspected?"true":"false")
+            <<",\"names_complete\":"<<(f.namesComplete?"true":"false")<<",\"extension_count\":"<<f.extensionCount
+            <<",\"name_occurrences\":"<<f.nameOccurrences<<",\"enabled_name_present\":"<<(f.enabledNamePresent?"true":"false")
+            <<",\"enabled_on_success\":"<<(f.inspected&&f.namesComplete&&f.enabledNamePresent&&e.returned&&e.result==VK_SUCCESS?"true":"false")<<'}';}
+        falseFacets(out);out<<"}\n";
         if(!e.returned)lifecycleComplete=false;
+    }
+    std::size_t pendingOwners=0;bool ownerPhasesComplete=true;
+    if(callOwner_)for(std::size_t n=0;n<ownerCount_;++n){const auto& e=owners_[n];common("original_call_owner");
+        out<<",\"kind\":\""<<e.kind<<"\",\"operation_ordinal\":"<<e.operationOrdinal<<",\"return_ordinal\":"<<e.returnOrdinal
+           <<",\"device\":"<<e.device<<",\"device_generation\":"<<e.identity.deviceGeneration<<",\"parent_instance_generation\":"<<e.identity.parentInstanceGeneration
+           <<",\"device_lifetime_known\":"<<(e.identity.known?"true":"false")<<",\"sampler\":"<<e.sampler<<",\"sampler_generation\":"<<e.samplerIdentity.generation
+           <<",\"sampler_lifetime_known\":"<<(e.samplerIdentity.known?"true":"false")<<",\"info_pointer\":"<<e.infoPointer
+           <<",\"allocator_pointer\":"<<e.allocatorPointer<<",\"output_pointer\":"<<e.outputPointer
+           <<",\"info_present\":"<<(e.infoPresent?"true":"false")<<",\"info_sType\":"<<e.infoSType<<",\"chain_present\":"<<(e.chainPresent?"true":"false")
+           <<",\"original_returned\":"<<(e.returned?"true":"false")<<",\"return_kind\":\""<<(e.hasResult?"VkResult":"void")<<"\",\"result\":";
+        if(e.returned&&e.hasResult)out<<e.result;else out<<"null";
+        out<<",\"create_info_captured\":"<<(e.samplerInfoCaptured?"true":"false")<<",\"create_info\":";
+        if(e.samplerInfoCaptured){const auto& a=e.samplerInfo;out<<"{\"sType\":"<<e.infoSType<<",\"pNext\":null,\"flags\":"<<e.flags
+            <<",\"mag_filter\":"<<a[0]<<",\"min_filter\":"<<a[1]<<",\"mipmap_mode\":"<<a[2]<<",\"address_modes\":["<<a[3]<<','<<a[4]<<','<<a[5]
+            <<"],\"mip_lod_bias_bits\":"<<a[6]<<",\"anisotropy_enable\":"<<a[7]<<",\"max_anisotropy_bits\":"<<a[8]
+            <<",\"compare_enable\":"<<a[9]<<",\"compare_op\":"<<a[10]<<",\"min_lod_bits\":"<<a[11]<<",\"max_lod_bits\":"<<a[12]
+            <<",\"border_color\":"<<a[13]<<",\"unnormalized_coordinates\":"<<a[14]<<'}';}else out<<"null";
+        out<<",\"object_type\":"<<e.objectType<<",\"name_pointer\":"<<e.namePointer<<",\"name_known\":"<<(e.nameKnown?"true":"false")<<",\"name_bytes_including_nul\":"<<e.nameBytes<<",\"name_hex\":\"";
+        if(e.nameKnown)for(uint32_t b=0;b<e.nameBytes;++b){auto c=uint8_t(e.name[b]);out<<"0123456789abcdef"[c>>4]<<"0123456789abcdef"[c&15];}
+        out<<"\",\"phase_before\":";phaseJson(out,e.before);out<<",\"phase_after\":";phaseJson(out,e.after);
+        out<<",\"phase_unchanged\":"<<(same(e.before,e.after)?"true":"false");falseFacets(out);out<<"}\n";
+        if(!e.returned)++pendingOwners;
+        if(!same(e.before,e.after))ownerPhasesComplete=false;
     }
     std::array<std::size_t,maxEvents> order{};
     for(std::size_t i=0;i<stats_.eventsRetained;++i)order[i]=i;
@@ -247,6 +413,7 @@ std::string Observer::jsonl(const std::string& runId,uint64_t activeInstances,ui
     for(std::size_t i=0;i<stats_.eventsRetained;++i){const auto& e=events_[order[i]];common("get_descriptor");
         if(scope)out<<",\"operation_ordinal\":"<<e.operationOrdinal<<",\"return_ordinal\":"<<e.returnOrdinal<<",\"device_generation\":"<<e.identity.deviceGeneration
             <<",\"parent_instance_generation\":"<<e.identity.parentInstanceGeneration<<",\"device_lifetime_known\":"<<(e.identity.known?"true":"false");
+        if(callOwner_)out<<",\"sampler_generation\":"<<e.samplerIdentity.generation<<",\"sampler_lifetime_known\":"<<(e.samplerIdentity.known?"true":"false");
         out<<",\"ordinal\":"<<e.ordinal<<",\"device\":"<<e.device<<",\"descriptor_type\":"<<e.descriptorType
            <<",\"info_sType\":"<<e.infoSType<<",\"info_present\":"<<(e.infoPresent?"true":"false")
            <<",\"chain_present\":"<<(e.chainPresent?"true":"false")<<",\"data_size\":"<<e.dataSize
@@ -271,9 +438,16 @@ std::string Observer::jsonl(const std::string& runId,uint64_t activeInstances,ui
         }
         if(!q.identity.known||!q.identity.deviceGeneration||!q.identity.parentInstanceGeneration||!q.returned||!created||!destroyed||!parent)queryLifetimes=false;
     }
+    std::size_t activeSamplers=0;
+    if(callOwner_)for(std::size_t n=0;n<samplerCount_;++n)if(samplers_[n].created&&!samplers_[n].destroyed)++activeSamplers;
     common("observer_footer");
     if(scope)out<<",\"lifecycle_calls_seen\":"<<lifecycleSeen_<<",\"lifecycle_retained\":"<<lifecycleCount_<<",\"lifecycle_dropped\":"<<lifecycleDropped_<<",\"transition_count\":"<<transition_;
 
+    if(callOwner_)out<<",\"owner_calls_seen\":"<<ownerSeen_<<",\"owner_original_returns\":"<<ownerReturns_
+        <<",\"owner_ignored_bootstrap\":"<<ownerBootstrap_<<",\"owner_ignored_unselected\":"<<ownerUnselected_<<",\"owner_unknown_phase\":"<<ownerUnknownPhase_
+        <<",\"owner_records_retained\":"<<ownerCount_<<",\"owner_records_dropped\":"<<ownerDropped_
+        <<",\"sampler_occurrences\":"<<samplerCount_<<",\"name_records\":"<<nameCount_
+        <<",\"active_sampler_occurrences\":"<<activeSamplers<<",\"pending_owner_records\":"<<pendingOwners<<",\"owner_gap\":"<<(ownerGap_?"true":"false");
     out<<",\"calls_seen\":"<<stats_.callsSeen<<",\"original_returns\":"<<stats_.originalReturns
        <<",\"events_retained\":"<<stats_.eventsRetained<<",\"dropped_events\":"<<stats_.droppedEvents
        <<",\"skipped_bootstrap_queries\":"<<stats_.skippedBootstrap<<",\"unknown_phase_queries\":"<<stats_.unknownPhase
@@ -284,7 +458,7 @@ std::string Observer::jsonl(const std::string& runId,uint64_t activeInstances,ui
     auto counts=[&](const char* name,const auto& values){out<<",\""<<name<<"\":[";for(std::size_t i=0;i<values.size();++i)out<<(i?",":"")<<values[i];out<<']';};
     counts("calls_by_case",stats_.callsByCase);counts("returns_by_case",stats_.returnsByCase);
     counts("events_by_case",stats_.eventsByCase);counts("dropped_by_case",stats_.droppedByCase);
-    const bool complete=enabled_&&!faulted_&&!stats_.droppedEvents&&!stats_.unknownPhase&&!stats_.phaseUnavailable&&!stats_.phaseChanged&&
+    const bool complete=(!callOwner_||(!ownerGap_&&ownerPhasesComplete&&!ownerUnknownPhase_&&!pendingOwners&&!activeSamplers&&ownerSeen_==ownerReturns_))&&enabled_&&!faulted_&&!stats_.droppedEvents&&!stats_.unknownPhase&&!stats_.phaseUnavailable&&!stats_.phaseChanged&&
         stats_.callsSeen==stats_.originalReturns&&!activeInstances&&!activeDevices&&!transportOverflow&&!transportChainMismatch&&(!scope||(scope->claimed&&lifecycleComplete&&queryLifetimes&&!lifecycleDropped_));
     out<<",\"transport_overflow\":"<<(transportOverflow?"true":"false")
        <<",\"transport_chain_mismatch\":"<<(transportChainMismatch?"true":"false")

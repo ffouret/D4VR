@@ -12,11 +12,12 @@ using namespace d4vr::query_observer;
 template<class T> void* key(T h){return h?*reinterpret_cast<void**>(h):nullptr;}
 template<class T> uint64_t raw(T value){uint64_t n=0;static_assert(sizeof(value)<=sizeof(n),"handle");std::memcpy(&n,&value,sizeof(value));return n;}
 bool enabled(){const auto p=std::getenv("D4VR_DESCRIPTOR_QUERY_OBSERVER");return p&&std::strcmp(p,"1")==0;}
+bool callOwner(){const auto p=std::getenv("D4VR_ORIGINAL_CALL_OWNER");return enabled()&&p&&std::strcmp(p,"1")==0;}
 struct Instance {void* route=nullptr;VkInstance handle{};PFN_vkGetInstanceProcAddr get{};PFN_GetPhysicalDeviceProcAddr physical{};uint64_t generation=0;};
 struct Device {void* route=nullptr;PFN_vkGetDeviceProcAddr get{};PFN_vkGetDescriptorEXT descriptor{};PFN_vkDestroyDevice destroy{};VkDevice handle{};DeviceIdentity identity{};};
 struct Physical {VkPhysicalDevice handle{};Instance instance{};};
 struct Runtime {
-    Observer observer{enabled(),{32,maxOutput,4}};
+    Observer observer{enabled(),{32,maxOutput,4},callOwner()};
     ScopedTransport transport{std::getenv("D4VR_QUERY_OBSERVER_DIRECTORY"),std::getenv("D4VR_TRANSLATED_RUN_ID")};
     std::mutex mutex,outputMutex;
     std::array<Instance,32> instances{};
@@ -78,6 +79,7 @@ VKAPI_ATTR VkResult VKAPI_CALL createInstance(const VkInstanceCreateInfo* info,c
         if(app.sType==VK_STRUCTURE_TYPE_APPLICATION_INFO&&!app.pNext){life.applicationCaptured=true;life.apiVersion=app.apiVersion;
             if(app.pApplicationName){life.applicationNameTruncated=strnlen(app.pApplicationName,65)>64;std::memcpy(life.applicationName.data(),app.pApplicationName,strnlen(app.pApplicationName,64));}
             if(app.pEngineName){life.engineNameTruncated=strnlen(app.pEngineName,65)>64;std::memcpy(life.engineName.data(),app.pEngineName,strnlen(app.pEngineName,64));}}}
+    if(r.observer.callOwnerEnabled()&&!r.observer.stats().faulted)life.debugUtils=inspectDebugUtils(info);
     auto token=r.observer.lifecycleBefore(life);link->u.pLayerInfo=next->pNext;
     auto status=original(info,alloc,result);life.result=int32_t(status);
     if(status==VK_SUCCESS&&result&&*result){life.rawInstance=raw(*result);auto createDev=reinterpret_cast<PFN_vkCreateDevice>(get(*result,"vkCreateDevice"));std::lock_guard<std::mutex> lock(r.mutex);
@@ -153,11 +155,39 @@ VKAPI_ATTR void VKAPI_CALL getDescriptor(VkDevice device,const VkDescriptorGetIn
         auto original=get?reinterpret_cast<PFN_vkGetDescriptorEXT>(get(device,"vkGetDescriptorEXT")):nullptr;if(original)original(device,info,size,output);return;}
     r.observer.forward(d.descriptor,device,info,size,output,phase,&r,d.identity);
 }
+// These extra callbacks are published only for the separately enabled owner purpose.
+PFN_vkVoidFunction ownerOriginal(VkDevice device,const char* name,Device& d){
+    d=deviceFor(device);auto& r=runtime();auto get=d.get;
+    if(!get){std::lock_guard<std::mutex> lock(r.mutex);get=r.fallbackDevice;r.observer.fault();}
+    return get?get(device,name):nullptr;
+}
+VKAPI_ATTR VkResult VKAPI_CALL createSampler(VkDevice device,const VkSamplerCreateInfo* info,const VkAllocationCallbacks* alloc,VkSampler* output){
+    auto& r=runtime();
+    if(r.forked()){auto fn=r.fallbackDevice?reinterpret_cast<PFN_vkCreateSampler>(r.fallbackDevice(device,"vkCreateSampler")):nullptr;return fn?fn(device,info,alloc,output):VK_ERROR_INITIALIZATION_FAILED;}
+    Device d{};auto fn=reinterpret_cast<PFN_vkCreateSampler>(ownerOriginal(device,"vkCreateSampler",d));
+    if(!fn){r.observer.fault();return VK_ERROR_INITIALIZATION_FAILED;}
+    return r.observer.createSampler(fn,device,info,alloc,output,d.identity,phase,&r);
+}
+VKAPI_ATTR void VKAPI_CALL destroySampler(VkDevice device,VkSampler sampler,const VkAllocationCallbacks* alloc){
+    auto& r=runtime();
+    if(r.forked()){auto fn=r.fallbackDevice?reinterpret_cast<PFN_vkDestroySampler>(r.fallbackDevice(device,"vkDestroySampler")):nullptr;if(fn)fn(device,sampler,alloc);return;}
+    Device d{};auto fn=reinterpret_cast<PFN_vkDestroySampler>(ownerOriginal(device,"vkDestroySampler",d));
+    if(!fn){r.observer.fault();return;}
+    r.observer.destroySampler(fn,device,sampler,alloc,d.identity,phase,&r);
+}
+VKAPI_ATTR VkResult VKAPI_CALL objectName(VkDevice device,const VkDebugUtilsObjectNameInfoEXT* info){
+    auto& r=runtime();
+    if(r.forked()){auto fn=r.fallbackDevice?reinterpret_cast<PFN_vkSetDebugUtilsObjectNameEXT>(r.fallbackDevice(device,"vkSetDebugUtilsObjectNameEXT")):nullptr;return fn?fn(device,info):VK_ERROR_INITIALIZATION_FAILED;}
+    Device d{};auto fn=reinterpret_cast<PFN_vkSetDebugUtilsObjectNameEXT>(ownerOriginal(device,"vkSetDebugUtilsObjectNameEXT",d));
+    if(!fn){r.observer.fault();return VK_ERROR_INITIALIZATION_FAILED;}
+    return r.observer.objectName(fn,device,info,phase,&r,d.identity);
+}
 PFN_vkVoidFunction hook(const char* name){
     if(!name)return nullptr;
 #define MATCH(name_,function_) if(std::strcmp(name,"vk" name_)==0)return reinterpret_cast<PFN_vkVoidFunction>(function_)
     MATCH("CreateInstance",createInstance);MATCH("DestroyInstance",destroyInstance);MATCH("EnumeratePhysicalDevices",enumeratePhysical);
     MATCH("CreateDevice",createDevice);MATCH("DestroyDevice",destroyDevice);MATCH("GetDescriptorEXT",getDescriptor);
+    if(runtime().observer.callOwnerEnabled()){MATCH("CreateSampler",createSampler);MATCH("DestroySampler",destroySampler);MATCH("SetDebugUtilsObjectNameEXT",objectName);}
     MATCH("GetInstanceProcAddr",instanceProc);MATCH("GetDeviceProcAddr",deviceProc);
 #undef MATCH
     return nullptr;
