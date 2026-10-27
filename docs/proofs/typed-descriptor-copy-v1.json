@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "purpose": "finite_original_typed_D3D12_copy_history_CPU_model_final",
+  "created_utc": "2026-10-27T09:07:45.188433+00:00",
+  "source_pins": {
+    "tools/typed_descriptor_copy.py": {
+      "bytes": 28627,
+      "sha256": "7987ec83978a2909d023e93d66dde66a473154fef5a1767df8b036c5964c1953"
+    },
+    "tests/test_typed_descriptor_copy.py": {
+      "bytes": 29881,
+      "sha256": "c0a56ba84bf4f0065de768339437f47ad31ae7d68e2e2fbf0681dfe6ef8fed51"
+    },
+    "docs/TYPED_DESCRIPTOR_COPY.md": {
+      "bytes": 5729,
+      "sha256": "5009f35728a9239a51762c60672469fdc4d20f1a91aeb1a4228458f091bcd142"
+    }
+  },
+  "reviews": {
+    "typed-copy-model-author-20261027-1/proof.json": {
+      "sha256": "069f5e8d6e345b9c76f34a9a329edeecbf7b4b6abd51f013b2ec98abd69b5e64",
+      "bytes": 5630
+    },
+    "typed-copy-independent-cpu-20261027-1/proof.json": {
+      "sha256": "804372c1c06deb784a47d7b3024d24ed16ae103581706326bc9a1439dc0e2969",
+      "bytes": 2282
+    },
+    "typed-copy-model-independent-review-20261027-1/proof.json": {
+      "sha256": "8941bc7a1e7dc3d558e86e9264e95e43f29b9ee9c9736e2da240420dbe804e0a",
+      "bytes": 5824
+    },
+    "typed-descriptor-copy-contract-review-20261027-1/contract.json": {
+      "sha256": "9d32bb2febe6c30efabc1c9abf6100a87f24f350454cbfecec4bb93987013c13",
+      "bytes": 14632
+    }
+  },
+  "new_independent_unit_tests": 37,
+  "total_Python_tests": 774,
+  "author_private_controls": 40,
+  "reviewer_private_controls": 47,
+  "counts_overlap_not_additive": true,
+  "positive_seed_is_synthetic_owned_facts_not_application_attestation": true,
+  "old_sources_and_renderer_HLSL_DXIL_pins_unchanged": true,
+  "new_native_observer_runtime_transport_or_game_bundle": false,
+  "new_Wine_Vulkan_GPU_UI_game_or_headset": false,
+  "descriptor_payload_or_mapped_memory_access": false,
+  "independent_controls_two_false_positives_fixed_before_freeze": [
+    "nonmonotone_creation_generations",
+    "raw_reuse_during_pending_Release"
+  ],
+  "bounds": {
+    "shared_live_tickets": 4,
+    "per_ticket_slots": 3,
+    "per_ticket_mutations": 8,
+    "per_ticket_complete_ASCII_JSON_bytes": 16384,
+    "total_retained_records_from_ticket_caps": 32,
+    "total_serialized_bytes_from_ticket_caps": 65536,
+    "total_CPU_heap_bound": false
+  },
+  "source_at_ENTRY_and_original_void_semantics": true,
+  "always_false": [
+    "input_facts_attested",
+    "opaque_descriptor_decoded",
+    "actual_source_contents_at_copy_proven",
+    "current_contents_at_draw_known",
+    "unchanged_since_copy_proven",
+    "sampled_resource_GPU_read_proven",
+    "generic_PE_to_Unix_resource_mapping",
+    "renderer_owner_known",
+    "exclusive_phase_attribution_proven",
+    "global_API_absence_proven",
+    "old_process_or_backing_gate_repaired"
+  ],
+  "next": "new_typed_receipt_producer_and_same_run_bind_Close_Execute_fence_readback_joins_before_new_two_case_owned_pixels",
+  "private_final_authority_sha256": "47bc45625f11898ceb9f02acc29e0aa94a26659ee583a8c90cbb54efee53fbad"
+}
