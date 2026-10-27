@@ -1,0 +1,156 @@
+{
+  "schema_version": 1,
+  "proof_status": "complete_technical_admission_preparation_only",
+  "scope": "One closed fragment-content UV mapping added to an unchanged dedicated baseline; no game execution result included.",
+  "preparation_snapshot": {
+    "recorded_utc": "2026-10-26T23:39:03.607175+00:00",
+    "phase": "technical_admission_prepared_not_launched",
+    "preparation_record_sha256": "48895717a0a67712b561f82863be3ba5afe1b6247e7dc54c898985ee3b87f346",
+    "policy": "fixed_monoscopic_no_xr",
+    "purpose": "targeted_sampled_uv_fixed_monoscopic_diagnostic",
+    "game_version": "3.2.3.73883",
+    "parent_prepared_real_private_bundle": true,
+    "dedicated_integrity_gate_completed_during_preparation": true,
+    "baseline_entries": 5379,
+    "added_candidates": 1,
+    "total_entries": 5380,
+    "prepared_manifest_sha256": "7c9a543cff86f08d751e09fc7b52ce0f9fa04aa11f5e358d9dd695e0d9c986ac",
+    "prepared_admission_sha256": "47dcf059aad382fd62ac5e0e1b9a40af702d89444d695b72dc444026832b1569",
+    "baseline_manifest_sha256": "ab9968cd1110d5a4d3432af261613cca0ec7608488199a6e73dde318750837cc",
+    "baseline_admission_sha256": "de0d1c1e8d70664a7dd0d0d0100815e4c4209eae884bab31aaf99123256bc995",
+    "baseline_files_archived_without_rewriting": 5391,
+    "baseline_override_payloads_unchanged": 5379,
+    "baseline_evidence_payloads_unchanged": 10,
+    "baseline_root_manifest_and_receipt_bytes_unchanged": true,
+    "new_UV_evidence_snapshots": 12,
+    "base_admission_revalidated_by_original_dedicated_gate": true,
+    "generic_bundle_validator_unchanged_and_refuses_prepared_bundle": true,
+    "generic_validator_read_only_error": "A validated GPU observer bundle is required",
+    "generic_selector_extended": false,
+    "combined_bundle_gpu_validated": false,
+    "game_bundle_gpu_validated": false
+  },
+  "target_contract": {
+    "stage": "fragment",
+    "scope": "all_uses_of_original_fragment_content",
+    "added_content_mappings": 1,
+    "all_uses_of_matching_original_content_may_change": true,
+    "single_old_numeric_pipeline_selected": false,
+    "deterministic_original_candidate_reconstruction_required": true,
+    "changed_original_store_VALUE_components": [
+      "R",
+      "G"
+    ],
+    "preserved_original_store_VALUE_components": [
+      "B",
+      "A"
+    ],
+    "older_all_original_stores_preserved_certificate_reused": false,
+    "original_sample_coordinate_indices_six_loads_and_unique_sample_preserved": true,
+    "context_vertex_original_fragment_candidate_stage_entry_FNV_size_SHA_crosschecked": true
+  },
+  "admission_guards": {
+    "explicit_complete_lowercase_SHA256_inputs": 11,
+    "full_SPIRV_policy_and_validator_receipts_revalidated_on_actual_preparation": true,
+    "immutable_snapshot_write_census": "four Output stores; no non-Output external writes admitted",
+    "current_constructor_and_dependency_fingerprints_required": true,
+    "source_and_dependencies_captured_before_preflight_and_rechecked_before_receipt": true,
+    "live_and_copied_baseline_payloads_and_all_input_pins_rechecked_at_integrity_gate": true,
+    "existing_target_collision_rejected": true,
+    "original_retagged_as_diagnostic_rejected": true,
+    "stale_source_dependency_certificate_or_base_rejected": true,
+    "missing_partial_None_SHA_or_unsupported_policy_rejected": true,
+    "symlink_and_canonicalized_protected_output_paths_rejected": true,
+    "protected_parent_traversal_refusals_tested": 4
+  },
+  "CPU_controls": {
+    "portable_proof_sha256": "39066f2be6334fe08ba104a57bba0ce6e26220998ff3fefe8f9afd5579ad0a62",
+    "tests_by_module": {
+      "test_sampled_uv_admission": 21,
+      "test_sampled_uv_probe": 13,
+      "test_sampled_uv_validate": 17,
+      "test_post_depth_admission": 13
+    },
+    "portable_tests_passed": 64,
+    "portable_failures": 0,
+    "portable_errors": 0,
+    "portable_external_processes_forbidden": true,
+    "portable_owned_reconstruction_real": true,
+    "portable_full_validator_GPU_and_legacy_admission_mocked": true,
+    "portable_fixture_baseline_entries": 2,
+    "independent_review_sha256": "72f378a03373ccbef82f9492e76859f4bd0aa81b1aa3f28bac2eb1363e82603d",
+    "actual_unchanged_baseline_entries_revalidated": 5379,
+    "independent_refusals": 32,
+    "independent_candidate_rebuilt_in_memory": true,
+    "independent_preflight_created_bundle": false,
+    "independent_prepare_called": false,
+    "independent_Popen_and_publication_forbidden": true,
+    "independent_Policy_validation_used_already_pinned_receipts_without_new_validator_process": true,
+    "independent_review_is_not_fresh_module_validation_or_GPU_certificate": true
+  },
+  "source_sha256": {
+    "tools/sampled_uv_admission.py": "dcf855049b7978785ee541663434ef31b68edd967df9c5f9094eda3251fbf8db",
+    "tests/test_sampled_uv_admission.py": "362f79f50cb17609ac6eedad9a8bf12943a4563e5690115cb03ce3803b97f871"
+  },
+  "separate_owned_GPU_evidence": {
+    "public_proof": "sampled-uv-diagnostic-v1.json",
+    "physical_readbacks": 48,
+    "total_readback_bytes": 707788800,
+    "validation_errors": 0,
+    "final_aggregate_sha256": "e8bee2751fe5024d744a3c1c8b06e75f155a4425031f9e667d31791010f68095",
+    "independent_actual_pixel_audit_sha256": "749e88a6595bd566ac3061252e24c5b819caa7438bed3a233a75500553060579",
+    "candidate_report_sha256": "99c4deac2afce719777f0cddcf1396e98f851306a9ae62197ffceb92da0b1493",
+    "physical_before_and_final_sources_distinguished": true,
+    "only_reviewed_post_physical_changes": {
+      "tools/sampled_uv_validate.py": {
+        "physical_before": "4e4e13aedfcd3a5eae4bd8b6249e34ffac9baadfe43ea4f6947cd11f703b6f20",
+        "final": "9673219b158d5aacfa62f3c5912a5f8ccc95d50387868a770bcc19196071b2e5"
+      },
+      "tests/test_sampled_uv_validate.py": {
+        "physical_before": "a0959244bb2cfc55a798413be5c0fd173ad61feedeedc274e339d38b1c321f55",
+        "final": "bc2f8b131c84595b7408e65e177242f7a0ce6096044257fcd17f5fd3f1f03d59"
+      }
+    },
+    "post_physical_change_scope": "Repair aggregate-only hash collection from nested tuples to JSON arrays; all individual physical byte audits had already passed. Numeric oracle, fixture, constructor and candidate unchanged.",
+    "original_per_environment_audits_unchanged": true,
+    "GPU_repeated_for_admission_or_comparator_repair": false,
+    "separate_base_and_UV_evidence_is_combined_game_GPU_certificate": false
+  },
+  "limits": [
+    "Preparation and integrity admission only. Later game execution belongs in a separate proof.",
+    "Fixed monoscopic no-XR policy, without a depth-variant or stereo A/B permission.",
+    "Only finite interior codes1..254 may yield conservative intervals after additional pixel-provenance/output/downstream gates; codes0/255 are unavailable.",
+    "NaN/Inf and universal interpolation behavior remain uncertified; floor-or-ceil UNORM and the fixed finite-case arithmetic budget remain applicable.",
+    "Original reads and B/A dependencies are retained in source; hardware transactions and sampled game-resource identity are not established.",
+    "Schema4 output declarations do not prove attachment binding, downstream transforms, initialization, final GPU writer, shading-rate effects, or coverage.",
+    "No exact original/candidate game pixel causality across separate times or sessions."
+  ],
+  "game_execution_evidence_included": false,
+  "game_numeric_UV_decoding_admitted_by_this_proof": false,
+  "game_sampled_image_identified": false,
+  "game_pixel_cause_proven": false,
+  "coverage_repaired": false,
+  "XR_or_headset_evidence_included": false,
+  "continuous_immersive_rendering_established": false,
+  "private_module_identity_and_path_disclosure": "Original/candidate shader filenames, SPIR-V SHA/FNV values, paths and raw game values omitted.",
+  "actual_prepared_bundle_independent_review": {
+    "proof_sha256": "667148017d9932618a219d093183b94e20a4a3674821ebc2950ac6880bddcd0f",
+    "dedicated_validate_admission_returned_exact_prepared_manifest": true,
+    "prepared_tree_files_rehashed_unchanged": 10795,
+    "copied_baseline_tree_files": 5391,
+    "all_baseline_override_bytes_equal_original_base": true,
+    "full_copied_baseline_tree_identical": true,
+    "all_original_base_evidence_preserved_at_top_paths": true,
+    "exact_new_target_absent_from_base": true,
+    "original_candidate_reconstruction_exact_in_memory": true,
+    "module_validation_scope": "Policy.validate reused already pinned original/candidate validation receipts. All byte, stage/FNV, source, ledger and dedicated admission checks were real; no validator process was rerun.",
+    "parent_preparation_actual_module_validation_is_separate": true,
+    "external_processes_and_publication_forbidden": true,
+    "prepare_called": false,
+    "actual_processes_launched": 0,
+    "GPU_calls": 0,
+    "UI_actions": 0,
+    "sources_bundle_originals_or_old_evidence_edited": 0,
+    "game_execution_or_last_writer_certified": false
+  }
+}
