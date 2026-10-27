@@ -1,0 +1,147 @@
+{
+  "schema_version": 1,
+  "purpose": "supplied_original_typed_copy_bind_CPU_relation_certificate",
+  "scope": "New bounded supplied-argument relation and genuine frozen wrapper/CABI CPU mock fixtures only. No actual vendor/COM, graphics driver, GPU or game execution.",
+  "source_inputs": {
+    "native/tests/typed_copy_bind_fixture.cpp": {
+      "bytes": 28745,
+      "sha256": "fb6ab986f7668c5e89bf0b8b1b430a77aebe4c7bc2a94a713387135626261e59"
+    },
+    "native/translator_bind_diagnostic/CMakeLists.txt": {
+      "bytes": 1163,
+      "sha256": "084195d36f8a84276e826e35bd587a94c4d4a889f9eab9a014c0b7ed549dc59f"
+    },
+    "tools/typed_copy_bind_validate.py": {
+      "bytes": 40815,
+      "sha256": "ef7bfaf2621035098802b13cdb018709892dbc3fdff4e8eb6b50c2a4cc2c249c"
+    },
+    "tests/test_typed_copy_bind_validate.py": {
+      "bytes": 32664,
+      "sha256": "11db422544166a7cad45fda009a28039206cd05ee380041ca40771c36419e1ef"
+    },
+    "docs/TYPED_COPY_BIND_RELATION.md": {
+      "bytes": 7878,
+      "sha256": "af023f82419cb0b5f4c21320595c6f53b6826ff7b98950aa469f019ff761a292"
+    },
+    ".github/workflows/checks.yml": {
+      "bytes": 17860,
+      "sha256": "2b3703b6e88985b2cba6e00801144b6f863e02d853fb9bfc1a0e0370290b0863"
+    }
+  },
+  "local_validation": {
+    "Python_tests": 903,
+    "new_independent_Python_tests": 43,
+    "new_CTest_names": [
+      "typed_copy_bind_originals_cpu",
+      "typed_copy_bind_fault_forwarding_cpu",
+      "typed_copy_bind_native_wire"
+    ],
+    "new_CTest_passed": 3,
+    "healthy_and_faulted_fixture_each": {
+      "cases": 2,
+      "native_assertions": 207,
+      "mock_delegate_calls": 54,
+      "APP_journal_edges": 108,
+      "APP_API_occurrences": 52,
+      "observer_control_occurrences": 2,
+      "cached_selected_getters": 4
+    },
+    "native_metadata_callbacks": "frozen real wrapper bridge and getter CABI2; original delegates are CPU mocks",
+    "source_mutation_prefix_lengths": [
+      3,
+      7
+    ],
+    "source_wire_exact_bytes": [
+      7724,
+      9968
+    ],
+    "full_compact_joint_report_bytes": 62446,
+    "Map_checksum_bytes_per_case": 32,
+    "Map_checksum_scope": "ordinary scripted CPU bytes; hash consistency only, not readback/pixel origin",
+    "Windows_local": "mock-POD object compile only by fixture author; no Windows execution locally",
+    "local_ASan_UBSan_pass_claimed": false,
+    "Python_models_sanitized": false
+  },
+  "supplied_argument_relation_known": true,
+  "legacy_getter_audit": "Exactly one audit_getter_wire call per original wire; two full unchanged results retained under getter_audit. Source/app clocks and generations have explicit separate namespaces and matched-original order relations, never numeric equality/conversion.",
+  "semantics": [
+    "Same supplied original object/getter and typed-call occurrence mapping, exact received UTF8 SHA, heap/root0 arithmetic, actual last selected binding at Close, late copy after Close before seal/Execute, queue/fence/event/completion/Map/checksum references.",
+    "Retained source getters/publications and earlier typed prefix remain immutable across the two positive cuts. Ambiguous raw reuse, getters or callbacks refuse this finite relation.",
+    "Schedule labels are not an A/B pixel oracle. A consistent different mathematical origin may still be a valid historical argument relation.",
+    "Mock resource heap properties/initial-state/Layout and full D3D legality are not certified; frozen guard may fault a legal unselected ROW_MAJOR buffer. The future actual translator path needs separately reviewed admission, preserving originals."
+  ],
+  "bounds": {
+    "outer_input_UTF8_bytes": 262144,
+    "outer_nodes": 8192,
+    "outer_depth": 16,
+    "ordinary_string_UTF8_bytes": 256,
+    "wire_text_bytes_each": 16384,
+    "source_wire_count": 2,
+    "child_nodes_each": 4096,
+    "child_depth_each": 24,
+    "APP_edges": 384,
+    "APP_occurrences": 192,
+    "full_report_ASCII_JSON_bytes": 1048576,
+    "no_truncation": true,
+    "process_memory_bound_claimed": false,
+    "source_retention_quotas_unchanged": true
+  },
+  "reviews": {
+    "author_model": {
+      "bytes": 11410,
+      "sha256": "80b736aefa10d5ef2595aec2114f519d7a64b258e27d0b07cd5825391d650e37"
+    },
+    "independent_CPU": {
+      "bytes": 18316,
+      "sha256": "479598f2f220f4970c281d797aa3c8268a301e1f5e7ce67925ca235d5ee262a2"
+    },
+    "fixture_author": {
+      "bytes": 23173,
+      "sha256": "85a6407bd9c117180dfb01c764e0d9ef7b3019999649f7bda3cf6324ec72d24c"
+    },
+    "fixture_parser_review": {
+      "bytes": 11499,
+      "sha256": "81986b9886751c0b474440bbe1460e6fa896abb4df445b4d30669022075b67d2"
+    }
+  },
+  "review_counts_non_additive": {
+    "author_checks": 27,
+    "independent_tests": 43,
+    "Stage_literal_checks": 104,
+    "Stage_memory_mutations_refused": 11,
+    "Blit_parser_mutations_refused": 25,
+    "Blit_positive_controls": 3,
+    "fixture_literal_checks": 93
+  },
+  "independence_limits": "Stage authored historical parsers; Blit authored this fixture and older core/model/wrapper bridge. Neither claims independent certification of own components. No second OS or GPU instrument.",
+  "always_false": [
+    "input_facts_attested",
+    "source_runtime_relation_known",
+    "public_device_create_result_known",
+    "actual_source_contents_at_copy_proven",
+    "current_contents_at_draw_known",
+    "unchanged_since_copy_proven",
+    "sampled_resource_GPU_read_proven",
+    "renderer_owner_known",
+    "backing_known",
+    "global_API_absence_proven",
+    "bind_runtime_proven",
+    "generic_PE_to_Unix_resource_mapping",
+    "exclusive_phase_attribution_proven",
+    "old_process_or_backing_gate_repaired",
+    "loaded_binary_source_equivalence_proven"
+  ],
+  "preflight_ledger": [
+    "Initial native positive220-assertion checkpoint is retained separately; final207-assertion fixture defers metadata-success assertions until full original workload and cleanup. Fault metadata never suppresses original mock calls.",
+    "Raw-reuse ambiguity and getter-after-typed counterexamples were refused before freeze. Unselected root0 override was also exercised; first mutable import returned true but its exact loaded hash was not pinned. The later archived6c36 source already refuses and is never presented as the old positive. Additive correction retains that distinction."
+  ],
+  "performed": {
+    "new_vendor_build": false,
+    "new_vendor_patch_applied": false,
+    "Wine_Vulkan_GPU_game_headset": false,
+    "old_renderers_shaders_or_game_helpers_changed": false,
+    "old_certificates_rewritten": false,
+    "private_complete_source_intake_only": true
+  },
+  "CI": "New CPU targets are configured for Linux normal/native ASan+UBSan and Windows normal; actual CI outcome is recorded separately after publication."
+}

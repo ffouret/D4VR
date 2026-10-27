@@ -169,6 +169,21 @@ jobs:
           cmake -S native/translator_getter_diagnostic -B work/typed-getter-ci
           cmake --build work/typed-getter-ci --config Release
           ctest --test-dir work/typed-getter-ci -C Release --output-on-failure
+      - name: Check original getter bind relations without vendor or GPU on Linux
+        if: runner.os == 'Linux'
+        run: |
+          cmake -S native/translator_bind_diagnostic -B work/typed-bind-ci
+          cmake --build work/typed-bind-ci --parallel 2
+          ctest --test-dir work/typed-bind-ci --output-on-failure
+          cmake -S native/translator_bind_diagnostic -B work/typed-bind-sanitized-ci -DCMAKE_BUILD_TYPE=Debug "-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer"
+          cmake --build work/typed-bind-sanitized-ci --parallel 2
+          ctest --test-dir work/typed-bind-sanitized-ci --output-on-failure
+      - name: Check original getter bind relations without vendor or GPU on Windows
+        if: runner.os == 'Windows'
+        run: |
+          cmake -S native/translator_bind_diagnostic -B work/typed-bind-ci
+          cmake --build work/typed-bind-ci --config Release
+          ctest --test-dir work/typed-bind-ci -C Release --output-on-failure
       - name: Upload Windows probe without vendor or test libraries
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v4
