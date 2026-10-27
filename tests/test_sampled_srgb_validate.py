@@ -273,9 +273,12 @@ class RunnerTests(unittest.TestCase):
     def test_commands_two_environments_and_cleared_layer(self):
         with tempfile.TemporaryDirectory() as tmp:
             a=self.args(Path(tmp));modules=[dict(path=str(getattr(a,n))) for n in ('vertex','fragment','candidate')]
+            alias_parent=Path(tmp)/'runtime-alias';alias_parent.mkdir()
+            a.runtime=alias_parent/'..'/a.runtime.name
+            resolved_runtime=str(a.runtime.resolve())
             with patch.object(s.base,'host_command',return_value=[]),patch.dict(s.os.environ,{'D4VR_TEST':'unsafe'}):
                 native=s.launch_command(a,modules,'native');runtime=s.launch_command(a,modules,'steam-runtime')
-            self.assertIn('D4VR_TEST',native);self.assertNotIn(str(a.runtime),native);self.assertIn(str(a.runtime),runtime)
+            self.assertIn('D4VR_TEST',native);self.assertNotIn(resolved_runtime,native);self.assertIn(resolved_runtime,runtime)
             self.assertIn('VK_LAYER_VALIDATE_SYNC=1',native);self.assertEqual(runtime.count('--batch'),1)
     def test_mocked_runner_freezes_before_and_after_each_execution(self):
         import sampled_uv_probe

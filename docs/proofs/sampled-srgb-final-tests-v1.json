@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "scope": "post_physical_test_only_path_portability_fix",
+  "physical_proof": "sampled-srgb-control-v1.json",
+  "physical_public_proof_sha256": "6ef8a2b25dbfacf46fedafa21c6c2360da6c664e378d9d008e6e26fda1714cc1",
+  "physical_private_proof_sha256": "09d804aa6faa4cd68bb397d06d63f8dd15a593d0ef23e9c4a8341d18772eecf4",
+  "CI186": {
+    "run_id": 40428488029,
+    "Windows_job_id": 121940107507,
+    "conclusion": "failure",
+    "failed_test": "test_commands_two_environments_and_cleared_layer",
+    "cause": "Test compared Windows short temporary path to the already-resolved long runtime path; production command was correct.",
+    "Linux_job_conclusion": "cancelled_after_matrix_failure",
+    "failure_log_sha256": "3bd47d5d312683039868e0fc7707e4a69e32ef5ff92ed1e7829e6bbe7a00cc78"
+  },
+  "change": {
+    "file": "tests/test_sampled_srgb_validate.py",
+    "physical_sha256": "4412dd2571c278bafaf68992274fd8958e53893a0fca96067d6fb17cf76ed836",
+    "final_sha256": "4ba506434086224bbcd729a50ed22ea7ef8408e30759b0f329fe2abb9359b912",
+    "description": "Resolve the expected runtime path, with a portable runtime-alias/../runtime operand in the existing test. No new test count or production change."
+  },
+  "unchanged_physical_source_count": 16,
+  "production_oracle_fixture_acceptance_policy_and_GPU_outputs_unchanged": true,
+  "original_physical_and_independent_certificates_unchanged": true,
+  "new_GPU_runs": 0,
+  "local_CPU_tests": {
+    "targeted": 29,
+    "full": 453,
+    "passed": true,
+    "full_log_sha256": "dfd935a542731f6bee40e947dfbd70da621d0d6356d086db35fb4276ccfa3813"
+  },
+  "game_or_headset_launched": false,
+  "new_game_bundle": false
+}

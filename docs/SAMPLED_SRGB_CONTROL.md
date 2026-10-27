@@ -57,6 +57,10 @@ In the input-rectangle case, complete diagnostic R/G planes were byte-identical 
 
 A separate CPU review checked every physical readout using a 70-digit Decimal/Fraction reference without calling the author's pixel or transfer functions. It reused the strict metadata parser with additional independent format checks, reconstructed the candidate byte-for-byte, and rehashed 361 physical files before and after. It also reconstructed both saved environment audits exactly from those independent measurements. Four additional single-channel corruptions made only in memory were refused. This review launched no process, GPU query or UI action and changed no physical output or saved author audit.
 
+## Test portability after the physical run
+
+The first CI run (186) found one Windows test assertion comparing an unresolved short temporary path with the runner’s resolved long path. The runner already resolved paths correctly. Only that assertion’s setup and expected path changed, with an explicit `runtime-alias/../runtime` operand to exercise normalization on Linux as well. No oracle, fixture, acceptance policy, physical output or original certificate changed, and no GPU run was repeated. The [post-physical test ledger](proofs/sampled-srgb-final-tests-v1.json) records both test hashes separately from the original physical source pins.
+
 ## Limits
 
 This fixture owns every resource and placement. It observes no game image view, descriptor placement, UBO contents or GPU read. Even a successful SRGB model comparison would not establish that a candidate last wrote a game pixel, that downstream operations preserve its channels, or that game coordinates are finite. Numerical game UV decoding, game coverage, rectangle cause, XR submission and a rendering repair remain unestablished. No new game run is required for this owned control.
