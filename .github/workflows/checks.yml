@@ -184,6 +184,21 @@ jobs:
           cmake -S native/translator_bind_diagnostic -B work/typed-bind-ci
           cmake --build work/typed-bind-ci --config Release
           ctest --test-dir work/typed-bind-ci -C Release --output-on-failure
+      - name: Check private source admission and ownership controls without vendor or GPU on Linux
+        if: runner.os == 'Linux'
+        run: |
+          cmake -S native/translator_private_diagnostic -B work/private-source-control-ci
+          cmake --build work/private-source-control-ci --parallel 2
+          ctest --test-dir work/private-source-control-ci --output-on-failure
+          cmake -S native/translator_private_diagnostic -B work/private-source-control-sanitized-ci -DCMAKE_BUILD_TYPE=Debug "-DCMAKE_C_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer" "-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer"
+          cmake --build work/private-source-control-sanitized-ci --parallel 2
+          ctest --test-dir work/private-source-control-sanitized-ci --output-on-failure
+      - name: Check private source admission and ownership controls without vendor or GPU on Windows
+        if: runner.os == 'Windows'
+        run: |
+          cmake -S native/translator_private_diagnostic -B work/private-source-control-ci
+          cmake --build work/private-source-control-ci --config Release
+          ctest --test-dir work/private-source-control-ci -C Release --output-on-failure
       - name: Upload Windows probe without vendor or test libraries
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v4

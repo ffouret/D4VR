@@ -1,0 +1,179 @@
+{
+  "schema_version": 1,
+  "purpose": "private_source_admission_and_control_CPU_certificate",
+  "scope": "New additive C ABI composition and source-style C wrappers with CPU mock original delegates. No actual vendor DLL build, translator execution, Wine, Vulkan, GPU, game or headset.",
+  "source_inputs": {
+    "native/translator_private_diagnostic/CMakeLists.txt": {
+      "bytes": 2852,
+      "sha256": "a948b1365b9425e08c9c865211be8ec9aa8020e57a2b1e6cb5b78c1301a90930"
+    },
+    "native/translator_private_diagnostic/typed_copy_private_source_adapter_v1.h": {
+      "bytes": 3428,
+      "sha256": "af73cff4b5151c13a30f41c0bb5bdb2fc7956b4f0d1d3006286be2c9d3866e81"
+    },
+    "native/translator_private_diagnostic/typed_copy_private_source_adapter_v1.cpp": {
+      "bytes": 14773,
+      "sha256": "6043c8f54c84daab2efdfc4b3b5422818605ee54c06cb40a9715755f4a155648"
+    },
+    "native/translator_private_diagnostic/typed_copy_private_source_control_v1.h": {
+      "bytes": 2375,
+      "sha256": "d386d809ca14cbc94db47bdd7d10dd850318e7ed3acf82492f8a073b9d6e38f8"
+    },
+    "native/translator_private_diagnostic/typed_copy_private_source_control_v1.cpp": {
+      "bytes": 7560,
+      "sha256": "0f2c6d0ba03ba019c5958c97bf5f88478101a5e88e776d2c51a4af3b2e8c2d8d"
+    },
+    "native/translator_private_diagnostic/typed_copy_private_source_wrappers_v1.inc": {
+      "bytes": 21221,
+      "sha256": "2dd804644b4e354035827f575ce2739cc10042e5f2d7538bf71e7e35a68cccc3"
+    },
+    "native/tests/typed_copy_private_source_control_tests.cpp": {
+      "bytes": 23651,
+      "sha256": "e1e23701060e35e3f2abda50ab78b60a2c367b500add62e545efed58521a096f"
+    },
+    "native/tests/typed_copy_private_source_integration_tests.c": {
+      "bytes": 23321,
+      "sha256": "48c554c5db5ee6a78d13828111ad051cd030c8935b670fceaf45645296ad1223"
+    },
+    "tools/private_translator_control_validate.py": {
+      "bytes": 6365,
+      "sha256": "fc064cab5f525605530f5f7fbf50917ed166313228be284d68b6c9e4bd8c194d"
+    },
+    "tests/test_private_translator_control_validate.py": {
+      "bytes": 10615,
+      "sha256": "2ac40d44afc5b43637159de0f65f5163dc7ac527b2fc96ba190f4fdda8a88b4f"
+    },
+    "docs/PRIVATE_TRANSLATOR_CONTROL.md": {
+      "bytes": 9181,
+      "sha256": "f4af51563383b7d6ddff23258960b96d5721a7a3568e78cae3fb15b100abb7b5"
+    },
+    ".github/workflows/checks.yml": {
+      "bytes": 19080,
+      "sha256": "bf187a6ff9fe0e4b9bd3be1c577e209002bc33d2b9f1207d22170dd80fdbe330"
+    }
+  },
+  "local_validation": {
+    "Python_tests": 924,
+    "new_independent_Python_tests": 21,
+    "new_CTest_controls": 19,
+    "independent_native": {
+      "cases": 35,
+      "assertions": 1520,
+      "simulated_original_returns": 244,
+      "saved_new_receipts": 7,
+      "known_histories": 4,
+      "diagnostics": 3
+    },
+    "wrapper_normal": {
+      "cases": 5,
+      "assertions": 209,
+      "mock_original_calls": 44,
+      "saved_new_receipts": 2,
+      "historical_prefix_mutations": [
+        3,
+        7
+      ],
+      "complete_wire_bytes": [
+        9121,
+        11365
+      ]
+    },
+    "wrapper_modes": "normal plus fourteen selected modes and a separate default-off build; all pass",
+    "parent_literal_checks": 88,
+    "Windows_local": "Selected C/C++ and SDK-POD objects compile only; complete generated Device15 ABI is not established",
+    "local_sanitizer_pass_claimed": false,
+    "Python_models_sanitized": false
+  },
+  "semantics": [
+    "Unarmed creation is classified before observer IID/description/output reads. Legal ROW_MAJOR buffers retain their original fields and original dispatch.",
+    "One selected admission consumes its role and freezes its parent occurrence, then commits one original ENTRY before delegation. Original HRESULT/output definedness and void returns are preserved.",
+    "No mutex spans an original delegate. Unknown/fault/quota metadata never rejects, replaces or retries the original call.",
+    "One source/core control context, no public reset/teardown; six app controls accept only ABI/nonce/enabled, roles/sequences, opaque tokens and byte output capacity.",
+    "Each Retain issues a distinct checked ownership alias sharing the same payload pin; each Drop retires one alias once. Detached byte copies are outside retained-ticket quotas.",
+    "New outer purpose/schema nests the complete frozen getter wire. Its frozen auditor is invoked once per receipt, and its entire result remains under getter_audit. Healthy outer creation counters are causally bounded by original source and ignored-call counters. Inner fault/gap propagates outward, never conversely assumed.",
+    "Mock API argument lineage remains separate from descriptor contents, loaded code, backing, rendering and GPU reads."
+  ],
+  "bounds": {
+    "payload_pins": 4,
+    "ownership_aliases_total": 32,
+    "ownership_aliases_per_payload": 8,
+    "pending_admission_and_original_shared": 32,
+    "outer_receipt_UTF8_bytes": 16384,
+    "selected_objects": 5,
+    "mutations": 8,
+    "getters": 8,
+    "publications": 2,
+    "pure_wire_nodes": 4096,
+    "pure_wire_depth": 24,
+    "complete_audit_ASCII_JSON_bytes": 1048576,
+    "detached_batch_samples": 64,
+    "batch_input_bytes": 1048576,
+    "batch_complete_audit_bytes": 4194304,
+    "CPU_process_memory_bound_claimed": false
+  },
+  "reviews": {
+    "new_adapter_control_author": {
+      "bytes": 10065,
+      "sha256": "adba593ee462cb54ec294d4c4771c9bff885b186a06e35aba4ad40d28c0b411a"
+    },
+    "independent_native_and_parser": {
+      "bytes": 24055,
+      "sha256": "87b6f7df4764a6e47424b0e15fec179a293b7142e70cb3a6dc01f64721faa492"
+    },
+    "new_wrapper_integration_author": {
+      "bytes": 26428,
+      "sha256": "70862da51142e278d64980694261fb2d8434c6445a7511aa2f5718f73f05f4c4"
+    },
+    "parent_preflight": {
+      "bytes": 10797,
+      "sha256": "70619843162d9e326e4dc18c46734ed4139b23e61444e6e0db5ba3ea69aba401"
+    },
+    "parent_literal_rejoin": {
+      "bytes": 464,
+      "sha256": "3c9a4bbe07918cfc30cf777fa59fe07074fe0a0ab98b2e18918aafe7cb6aaf2e"
+    }
+  },
+  "counts_non_additive": {
+    "adapter_control_author_cases": 6,
+    "adapter_control_author_assertions": 1123,
+    "adapter_control_author_simulated_originals": 49,
+    "independent_native_cases": 35,
+    "independent_native_assertions": 1520,
+    "independent_memory_falsifications_refused": 23,
+    "parent_literal_checks": 88
+  },
+  "independence_limits": "Stage authored historical parsers; Blit authored the new wrappers and older core/model/bridge. Independent causal tests cover the new adapter/control and literal parent rejoin uses no parser/model helper. These are not third-party certification or a second runtime/OS instrument.",
+  "development_ledger": [
+    "Before freeze, a pinned parser checkpoint a3b04c534573f32ae96a597f2a97a2f1a4fa92ea1bac0c16d55cb2f56b151e10 accepted contradictory unselected UINT64_MAX while the real CPU wrapper wire had source_calls16/ignored2. Exact raw counterexample and checkpoint are retained. Final fc064cab refuses it; immutable inputs and older certificates are not rewritten.",
+    "Finalization-script read/count mistakes in the wrapper author proof are retained separately; no native source or native input changed to repair that script."
+  ],
+  "always_false": [
+    "input_facts_attested",
+    "opaque_descriptor_decoded",
+    "actual_source_contents_at_copy_proven",
+    "current_contents_at_draw_known",
+    "unchanged_since_copy_proven",
+    "sampled_resource_GPU_read_proven",
+    "generic_PE_to_Unix_resource_mapping",
+    "renderer_owner_known",
+    "exclusive_phase_attribution_proven",
+    "global_API_absence_proven",
+    "old_process_or_backing_gate_repaired",
+    "public_device_create_result_known",
+    "source_runtime_relation_known",
+    "same_run_bind_provenance_known",
+    "getter_to_bind_relation_known",
+    "backing_known",
+    "loaded_binary_source_equivalence_proven"
+  ],
+  "performed": {
+    "new_CPU_source_controls": true,
+    "new_vendor_patch_applied": false,
+    "new_vendor_build": false,
+    "Wine_Vulkan_GPU_game_headset": false,
+    "old_frozen_sources_models_renderers_shaders_helpers_changed": false,
+    "old_certificates_rewritten": false
+  },
+  "next_requirement": "Separately reviewed actual private source insertion, full generated Device15 ABI, default-off complete build/toolchain/dependency recipe and compatible private d3d12/core exports before any vendor build or runtime experiment.",
+  "CI": "New 19 CPU controls are configured for Linux normal and native ASan/UBSan, Windows normal. Actual CI outcome will be recorded separately after publication."
+}
