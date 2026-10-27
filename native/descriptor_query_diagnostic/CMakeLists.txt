@@ -27,6 +27,11 @@ add_test(NAME descriptor_query_original_forwarding COMMAND d4vr_descriptor_query
 add_executable(d4vr_translated_owner_gate_tests ../tests/translated_owner_scope.cpp)
 target_compile_definitions(d4vr_translated_owner_gate_tests PRIVATE D4VR_OWNER_GATE_CPU_TEST)
 add_test(NAME translated_owner_gate_protocol COMMAND d4vr_translated_owner_gate_tests self-test)
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    # No private pins in CI: run only pure parsing/hash/budget self-controls.
+    add_executable(d4vr_exact_backing_control ../tests/exact_backing_control.cpp)
+    add_test(NAME exact_backing_metadata_cpu COMMAND d4vr_exact_backing_control --self-test)
+endif()
 if(WIN32)
     # Compile the owned D3D12 probe only. DXIL is supplied at runtime by its
     # separate builder; CI never starts the executable or needs a graphics driver.
