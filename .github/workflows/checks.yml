@@ -124,6 +124,21 @@ jobs:
           cmake -S native -B work/stereo-targets-ci -DD4VR_BUILD_STEREO_TARGET_TESTS=ON "-DD4VR_VULKAN_INCLUDE_DIR=${{ github.workspace }}/work/vulkan-headers/include"
           cmake --build work/stereo-targets-ci --config Release --target d4vr_sampled_writer_state_tests d4vr_source_writer_state_tests d4vr_source_history_tests d4vr_source_consumer_tests d4vr_captured_writer_tests d4vr_held_depth_mode_tests d4vr_depth_copy_tests d4vr_depth_transfer_tests d4vr_depth_audit_tests d4vr_depth_readback_tests d4vr_capture_projection d4vr_cooperative_capture d4vr_diagnostic_capture d4vr_diagnostic_pose_tests d4vr_fixed_view_hold_tests d4vr_view_calibration_tests d4vr_stereo_targets_tests d4vr_graphics_replay_tests d4vr_frame_trace_tests d4vr_camera_provenance_tests d4vr_pose_mailbox_tests d4vr_pipeline_recipe_tests d4vr_library_variants_tests d4vr_present_stream_tests d4vr_eye_updates_tests d4vr_projection_source_tests d4vr_dynamic_states_tests d4vr_replay_specialization_tests
           ctest --test-dir work/stereo-targets-ci -C Release -R "sampled_writer_state|source_writer_state|source_history_observation|source_consumer_observation|captured_writer_prefix|held_depth_mode_validation|depth_copy_ownership|depth_transfer_observation|depth_audit_observation|depth_readback_ownership|stereo_target_ownership|graphics_state_replay|vulkan_frame_metadata|camera_provenance_validation|pose_mailbox_validation|diagnostic_pose_validation|fixed_view_hold_validation|view_calibration_validation|pipeline_recipe_ownership|library_variant_ownership|presentation_gpu_lease_ownership|eye_update_queue_ownership|projection_image_coherence|gpl_dynamic_state_ownership|replay_specialization_ownership" --output-on-failure
+      - name: Check bounded original descriptor queries without a GPU on Linux
+        if: runner.os == 'Linux'
+        run: |
+          cmake -S native/descriptor_query_diagnostic -B work/descriptor-query-ci
+          cmake --build work/descriptor-query-ci --parallel 2
+          ctest --test-dir work/descriptor-query-ci --output-on-failure
+          cmake -S native/descriptor_query_diagnostic -B work/descriptor-query-sanitized-ci -DCMAKE_BUILD_TYPE=Debug "-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer"
+          cmake --build work/descriptor-query-sanitized-ci --parallel 2
+          ctest --test-dir work/descriptor-query-sanitized-ci --output-on-failure
+      - name: Check bounded original descriptor queries without a GPU on Windows
+        if: runner.os == 'Windows'
+        run: |
+          cmake -S native/descriptor_query_diagnostic -B work/descriptor-query-ci "-DD4VR_VULKAN_INCLUDE_DIR=${{ github.workspace }}/work/vulkan-headers/include"
+          cmake --build work/descriptor-query-ci --config Release
+          ctest --test-dir work/descriptor-query-ci -C Release --output-on-failure
       - name: Upload Windows probe without vendor or test libraries
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v4
