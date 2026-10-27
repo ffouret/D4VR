@@ -1,0 +1,183 @@
+{
+  "schema_version": 1,
+  "purpose": "supplied_SOURCE_emitted_writer_CPU_model_and_mock_callbacks",
+  "status": "reviewed_CPU_only_not_an_original_translator_capture",
+  "created_utc": "2026-10-27T22:33:06.545827+00:00",
+  "sources": [
+    {
+      "path": "tools/source_emitted_writer_validate.py",
+      "bytes": 69924,
+      "sha256": "799f755337940adc66056e265a005eebd7c3d8082480b2b8e91f76ac58a92ae7"
+    },
+    {
+      "path": "tools/source_emitted_writer_native_wire.py",
+      "bytes": 6481,
+      "sha256": "7f7da0daacb4369b4ea4443de1fcfff45d35cf3dc0447ed17557c237f020c09c"
+    },
+    {
+      "path": "tests/test_source_emitted_writer_validate.py",
+      "bytes": 42708,
+      "sha256": "2e8fa76de11f7cd5078f5b7bdcd2a46c6149f3613dcb74d5d07109976440fc0a"
+    },
+    {
+      "path": "native/tests/source_emitted_writer_fixture.cpp",
+      "bytes": 41524,
+      "sha256": "120a3e594b0e01752879429ccdb681bff0a24361388828b62c1fd4a6fbda405a"
+    },
+    {
+      "path": "native/source_emitted_writer_diagnostic/CMakeLists.txt",
+      "bytes": 822,
+      "sha256": "ebf1662e675e6dceb8d8a9ecd877b9683ae460988bff8fcc687946924b63aebd"
+    },
+    {
+      "path": "docs/SOURCE_EMITTED_WRITER_RELATION.md",
+      "bytes": 5872,
+      "sha256": "f7d29de8079ae878b672071613e7fd3ea38b7cfb440644a2a6b1cd2fa5172f90"
+    },
+    {
+      "path": "docs/schemas/source-emitted-writer-v1.json",
+      "bytes": 65824,
+      "sha256": "187c4cd067a66f7844dd184e330df0a86de13dae8c618af972bcb91881d4ddfd"
+    },
+    {
+      "path": ".github/workflows/checks.yml",
+      "bytes": 22477,
+      "sha256": "281d4ab6700aafec7bf614b3be26ed473f88a98627628db72191466de10641c6"
+    }
+  ],
+  "dependencies": [
+    {
+      "path": "native/tests/sampled_writer_hash.hpp",
+      "bytes": 2830,
+      "sha256": "f6b59c3568c23d6f3198a8d952fbdcf8a4da85db945d311a0b369d15ae266f9e"
+    }
+  ],
+  "profile": {
+    "positive": "historical_declared_COM_mutable_table_only",
+    "internal_and_deferred": "unknown/null, never retag to later public B",
+    "input_API": "analyze(bytes|str)",
+    "type_table_count": 51,
+    "callback_projection_kinds": 48,
+    "stronger_claims_always_false": 17
+  },
+  "precode_order": {
+    "exact_schema_frozen_in_workspace_before_code": true,
+    "new_implementation_paths_observed_absent_at_freeze": true,
+    "remote_commit_before_code": false,
+    "remote_publication": "schema and implementation committed together; no claim of remote precode publication",
+    "publication_schema_provenance_path_normalized_only": true,
+    "semantic_grammar_equals_private_precode_final3": true,
+    "private_precode_schema_sha256": "1b0c441a2645af165dc7c767ccde2f1748d42482415658521e14cd932f5ddfe1"
+  },
+  "local_validation": {
+    "new_independent_python_tests": 44,
+    "new_independent_python_test_failures": 0,
+    "new_independent_python_test_errors": 0,
+    "full_existing_Python_suite_repeated_locally": false,
+    "new_CTest_controls": 2,
+    "new_CTest_failures": 0,
+    "native_assertions_each_invocation": 163,
+    "native_mock_closures_each_invocation": 333,
+    "native_mock_workload_closures_all_three_modes": 285,
+    "tagged_mock_return_scenarios": 24,
+    "scenario_primary_and_cleanup_calls": 48,
+    "emitted_original_mock_occurrences_per_pair": 95,
+    "on_calls_per_independent_capture": [
+      47,
+      48
+    ],
+    "on_transitions_per_capture": [
+      94,
+      96
+    ],
+    "on_mutations_per_capture": [
+      3,
+      4
+    ],
+    "retained_CPP2_wire_texts_consumed": 6,
+    "positive_supplied_histories": 2,
+    "diagnostic_unknown_supplied_histories": 4,
+    "author_pure_controls": 134,
+    "counts_overlap_do_not_add": true,
+    "local_CXX_profile": "Existing private Zig clang-driver, Linux musl, C++17, strict warnings; no local sanitizer retry",
+    "normal_GNU_and_MSVC_and_Linux_native_sanitizers": "pending separate CI at proof creation",
+    "Python_sanitized": false
+  },
+  "causal_ledger": {
+    "prior_false_positives_corrected_before_freeze": 15,
+    "array_prefix_classifications_corrected_to_ValueError": 11,
+    "already_negative_receiver_controls_preserved": 6,
+    "all_raw_checkpoints_and_inquiries_retained_privately": true,
+    "older_certificates_or_originals_rewritten": false,
+    "native_candidate1_void_return_synthesis_and_unfenced_builder_checkpoint_preserved": true,
+    "CPP2_captures_actual_tagged_mock_return_before_JSON": true
+  },
+  "bounds": {
+    "input_UTF8_bytes": 65536,
+    "nodes": 4096,
+    "depth": 20,
+    "string_UTF8_bytes": 256,
+    "calls": 64,
+    "edges_or_observer_marks": 128,
+    "tickets": 1,
+    "retained_command_epochs": 1,
+    "resources": 2,
+    "heaps": 2,
+    "slots": 3,
+    "getters": 8,
+    "typed_mutations": 8,
+    "pending": 32,
+    "complete_output_UTF8_bytes": 262144,
+    "total_CPU_memory_bound": false
+  },
+  "explicit_limits": [
+    "All facts supplied; positive calculations do not attest a source callback or a game writer.",
+    "The C++ harness uses owned World closures and projected argument traces, not vendor C prototypes or a real SOURCE capture service.",
+    "Within-process raw trace equality and a separate owned-role semantic digest do not prove cross-process raw wire equality.",
+    "Metadata exceptions inside the explicit observation boundary are tested; caller construction, original exceptions and arbitrary allocations outside it are not covered.",
+    "Resource mip extent is declared only; effective sampled LOD, shader binding use, native binding, texels, GPU reads, current contents, renderer ownership, backing and VR stay unproven.",
+    "The earlier hypothetical internal positive was superseded before code; the pinned equal-color DXGI28 source profile takes the image-copy route.",
+    "The old descriptor model and all previous renderers, shaders, private DLLs, game helpers and historical proofs remain unchanged."
+  ],
+  "new_source_capture_producer_implemented": false,
+  "new_vendor_build_performed": false,
+  "new_Wine_GPU_game_or_headset_run": false,
+  "private_review_evidence": {
+    "precode": {
+      "name": "work/source-emitted-writer-schema-independent-review-20261027-1/proof.json",
+      "bytes": 37176,
+      "sha256": "7029ca0d0826b868f556549737ac19069a4f6f88189603293b7aa8ab46729774"
+    },
+    "model_author": {
+      "name": "work/source-emitted-writer-author-20261027-1/proof.json",
+      "bytes": 15467,
+      "sha256": "1b41c40d366d03082f4e4d41ec4f34ed37650c35af950b9f36c803acd79639bf"
+    },
+    "model_independent": {
+      "name": "work/source-emitted-writer-independent-20261027-1/proof.json",
+      "bytes": 5010,
+      "sha256": "8756c300395fbdc8141aaa6e5c3e907df0315d5340a6ffb6c767be8cf5b6f935"
+    },
+    "harness_author": {
+      "name": "work/source-emitted-writer-fixture-author-20261027-1/candidate2/proof.json",
+      "bytes": 8108,
+      "sha256": "4fd5d80ac65dc2d63c98597bfb7e3f75146c02b297e8d683f7206d512154d5fe"
+    },
+    "harness_independent": {
+      "name": "work/source-emitted-writer-native-independent-review-20261027-1/proof.json",
+      "bytes": 5684,
+      "sha256": "c3b653de24232984836e4e7704893b0fd38fdfe83fcade35a9e6b69f412aca48"
+    },
+    "parent_AST": {
+      "name": "work/source-emitted-writer-parent-integration-20261027-1/parent-model-literal-review.json",
+      "bytes": 545,
+      "sha256": "4e438898deee41ffe2ddfa2d229674f4f8da426e8f48698e7d9eca432b181a47"
+    },
+    "precode_freeze": {
+      "name": "work/source-emitted-writer-schema-20261027-1/parent-precode-freeze.json",
+      "bytes": 1975,
+      "sha256": "d557ad0f4216c143b9f21ffd29a6db2bc290a38140bdd60492844a85c31e5c32"
+    }
+  },
+  "CI_status_at_creation": "not_yet_submitted; old CI220/1014 is historical, not this component"
+}
