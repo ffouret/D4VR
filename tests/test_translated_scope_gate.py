@@ -278,7 +278,8 @@ class ScopeGateTests(unittest.TestCase):
     def test_regular_only_rejects_directory_and_fifo_without_wait(self):
         with tempfile.TemporaryDirectory() as tmp:
             directory=Path(tmp)/'gate';directory.mkdir(mode=0o700);(directory/'ready-1.json').mkdir()
-            with self.assertRaises(ValueError):gate.read_gate_file(directory,'ready-1.json',gate.READY_LIMIT)
+            # Windows may reject the directory at os.open before the regular-file guard.
+            with self.assertRaises((ValueError,OSError)):gate.read_gate_file(directory,'ready-1.json',gate.READY_LIMIT)
             if os.name=='posix':
                 os.mkfifo(directory/'go-1.json')
                 with self.assertRaises(ValueError):gate.read_gate_file(directory,'go-1.json',gate.GO_LIMIT)

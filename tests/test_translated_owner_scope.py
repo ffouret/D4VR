@@ -25,6 +25,15 @@ FROZEN={
  'native/tests/sampled_writer_hash.hpp':'f6b59c3568c23d6f3198a8d952fbdcf8a4da85db945d311a0b369d15ae266f9e',
 }
 
+def borrowed_source_text_digest(relative,data):
+    """LF text comparison for this source-only allowlist, never artifact pins."""
+    if relative not in FROZEN or type(data) is not bytes:
+        raise ValueError('Only the three borrowed UTF-8 source texts')
+    text=data.decode('utf-8').replace('\r\n','\n')
+    if '\r' in text or '\0' in text:
+        raise ValueError('Source text contains a lone CR or binary NUL')
+    return hashlib.sha256(text.encode('utf-8')).hexdigest()
+
 def reference(case):
     """Exact owned point/clamp BGRA for pixel centers and finite 1/8 offsets."""
     if case not in CASES:raise ValueError('Exact two-case oracle name')
@@ -81,10 +90,25 @@ class OracleTests(unittest.TestCase):
             with self.assertRaises(ValueError):compare_readback(CASES[0],data)
         with self.assertRaises(ValueError):reference('simple_A_clamp')
     def test_frozen_borrowed_sources_and_safe_CPU_compile_boundary(self):
-        for rel,sha in FROZEN.items():self.assertEqual(hashlib.sha256((ROOT/rel).read_bytes()).hexdigest(),sha)
+        # Git may check these texts out with CRLF on Windows. Physical receipts
+        # continue to pin raw files; this test compares only source text at LF.
+        for rel,sha in FROZEN.items():self.assertEqual(borrowed_source_text_digest(rel,(ROOT/rel).read_bytes()),sha)
         source=SOURCE.read_text();self.assertIn('#define wmain frozen_translated_descriptor_copy_main',source)
         prefix=source.split('#include "translated_descriptor_copy.cpp"')[0]
         self.assertIn('#ifndef D4VR_OWNER_GATE_CPU_TEST',prefix)
+    def test_checkout_CRLF_matches_only_source_text_not_binary_artifacts(self):
+        for rel,expected in FROZEN.items():
+            lf=(ROOT/rel).read_bytes().decode('utf-8').replace('\r\n','\n').encode('utf-8')
+            crlf=lf.replace(b'\n',b'\r\n')
+            self.assertEqual(borrowed_source_text_digest(rel,lf),expected)
+            self.assertEqual(borrowed_source_text_digest(rel,crlf),expected)
+            self.assertNotEqual(borrowed_source_text_digest(rel,lf+b' '),expected)
+            if rel.endswith('translated_descriptor_copy.cpp'):
+                self.assertEqual(hashlib.sha256(crlf).hexdigest(),'8252c5261f6f453ba0208b70de5449663129f49a7bfe0ff21fc5c583ebb4c93e')
+        for rel,data in (('owned.ps.dxil',b'DXBC\r\n'),('owned.spv',b'\x03\x02\x23\x07\r\n'),('capture.bgra',b'\r\n')):
+            with self.assertRaises(ValueError):borrowed_source_text_digest(rel,data)
+        with self.assertRaises(ValueError):borrowed_source_text_digest(next(iter(FROZEN)),b'text\r')
+        with self.assertRaises(ValueError):borrowed_source_text_digest(next(iter(FROZEN)),b'\0')
 
 class NativeGateTests(unittest.TestCase):
     @classmethod

@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "purpose": "Post-preparation test-only Windows portability ledger",
+  "physical_authority": {
+    "private_sha256": "9770d5be376817ec61f00f740c41693b92062c0ee8e929ecc3f624bdfd4ca6b0",
+    "public_proof": "translated-owner-witness-v1.json",
+    "original_input_count": 22,
+    "original_inputs_are_historical": true
+  },
+  "ci196": {
+    "commit": "5f62ae5ec4c46d85e05f8e662e3867f1a288945c",
+    "run_id": 40455491911,
+    "status": "failure",
+    "Windows": {
+      "tests": 658,
+      "skips": 2,
+      "assertion_failures": 1,
+      "errors": 1
+    },
+    "Linux": {
+      "Python_tests": 658,
+      "Python_status": "pass",
+      "job_status": "matrix_cancelled"
+    }
+  },
+  "test_only_changes": [
+    {
+      "path": "tests/test_translated_scope_gate.py",
+      "physical_input_sha256": "e60352d588d60aa94e6503f500403f0c47b9e42f767df6e5567ab0a39de91b21",
+      "final_sha256": "943584f05e534f978102cc78ebb5205127290ddbd904a07b000a166a2f08fcf0",
+      "change": "Accept ValueError or native OSError when opening an owned directory. The existing FIFO expectation remains ValueError; production read code is unchanged."
+    },
+    {
+      "path": "tests/test_translated_owner_scope.py",
+      "physical_input_sha256": "7faee0f18afcbf1f54af48d823ec43e02a74a66b6fcebd58826f8b8490d59cf4",
+      "final_sha256": "61e0d6c95ae2706cc560d5f6846c9a277112b27103440272648fee4572350760",
+      "change": "Compare the explicit three-file owned UTF-8 source allowlist at canonical LF under CRLF checkout; reject lone CR/NUL and nonallowlisted binary artifacts. Physical raw byte pins stay historical."
+    }
+  ],
+  "CRLF_reproduction": {
+    "LF_fixture_source_sha256": "d0b8c1d15e143dd866a294cbceefd9f3d2b8dfb768a325de0cce43745ddd0cf4",
+    "CRLF_fixture_source_sha256": "8252c5261f6f453ba0208b70de5449663129f49a7bfe0ff21fc5c583ebb4c93e",
+    "equals_CI196_observed_hash": true
+  },
+  "local_final_tests": {
+    "Python_tests": 659,
+    "passed": true,
+    "new_CRLF_boundary_test_added": true,
+    "gate_tests": 31,
+    "witness_tests": 28,
+    "fixture_and_oracle_tests": 14,
+    "counts_are_subsets": true,
+    "platform": "Linux"
+  },
+  "remaining_20_physical_source_inputs_unchanged": true,
+  "production_sources_changed": false,
+  "fixture_or_observer_binary_changed": false,
+  "raw_preparations_or_certificates_rewritten": false,
+  "new_GPU_or_Wine_run": false,
+  "CI_after_correction": "separate_result_not_yet_claimed",
+  "translated_owner_positive_control_passed": false,
+  "new_game_or_headset": false
+}
