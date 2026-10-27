@@ -214,6 +214,21 @@ jobs:
           cmake -S native/translator_runtime_diagnostic -B work/private-runtime-cpu-ci
           cmake --build work/private-runtime-cpu-ci --config Release
           ctest --test-dir work/private-runtime-cpu-ci -C Release --output-on-failure
+      - name: Check new owned APP metadata protocol on Linux without a driver
+        if: runner.os == 'Linux'
+        run: |
+          cmake -S native/translator_runtime_owned_diagnostic -B work/private-runtime-owned-cpu-ci
+          cmake --build work/private-runtime-owned-cpu-ci --parallel 2
+          ctest --test-dir work/private-runtime-owned-cpu-ci --output-on-failure
+          cmake -S native/translator_runtime_owned_diagnostic -B work/private-runtime-owned-cpu-sanitized-ci -DCMAKE_BUILD_TYPE=Debug "-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer"
+          cmake --build work/private-runtime-owned-cpu-sanitized-ci --parallel 2
+          ctest --test-dir work/private-runtime-owned-cpu-sanitized-ci --output-on-failure
+      - name: Check new owned APP metadata protocol on Windows without a driver
+        if: runner.os == 'Windows'
+        run: |
+          cmake -S native/translator_runtime_owned_diagnostic -B work/private-runtime-owned-cpu-ci
+          cmake --build work/private-runtime-owned-cpu-ci --config Release
+          ctest --test-dir work/private-runtime-owned-cpu-ci -C Release --output-on-failure
       - name: Upload Windows probe without vendor or test libraries
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v4
