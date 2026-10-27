@@ -199,6 +199,21 @@ jobs:
           cmake -S native/translator_private_diagnostic -B work/private-source-control-ci
           cmake --build work/private-source-control-ci --config Release
           ctest --test-dir work/private-source-control-ci -C Release --output-on-failure
+      - name: Check exact private receipt copies and original APP joins on Linux without a driver
+        if: runner.os == 'Linux'
+        run: |
+          cmake -S native/translator_runtime_diagnostic -B work/private-runtime-cpu-ci
+          cmake --build work/private-runtime-cpu-ci --parallel 2
+          ctest --test-dir work/private-runtime-cpu-ci --output-on-failure
+          cmake -S native/translator_runtime_diagnostic -B work/private-runtime-cpu-sanitized-ci -DCMAKE_BUILD_TYPE=Debug "-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer"
+          cmake --build work/private-runtime-cpu-sanitized-ci --parallel 2
+          ctest --test-dir work/private-runtime-cpu-sanitized-ci --output-on-failure
+      - name: Check exact private receipt copies and original APP joins on Windows without a driver
+        if: runner.os == 'Windows'
+        run: |
+          cmake -S native/translator_runtime_diagnostic -B work/private-runtime-cpu-ci
+          cmake --build work/private-runtime-cpu-ci --config Release
+          ctest --test-dir work/private-runtime-cpu-ci -C Release --output-on-failure
       - name: Upload Windows probe without vendor or test libraries
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v4

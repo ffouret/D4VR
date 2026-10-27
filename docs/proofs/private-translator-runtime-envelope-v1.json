@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "purpose": "verified_new_outer_ReceiptCopy_APP_CPU_protocol",
+  "status": "CPU_PROTOTYPE_ONLY",
+  "product_status": "Research/prototyping. No working Diablo VR, Diablo image in Quest, or continuous immersive cadence.",
+  "components": {
+    "auditor": "tools/private_translator_runtime_validate.py",
+    "new_fixture": "native/tests/private_translator_runtime_cpu_fixture.cpp",
+    "new_CMake": "native/translator_runtime_diagnostic/CMakeLists.txt",
+    "independent_tests": "tests/test_private_translator_runtime_validate.py",
+    "contract": "docs/PRIVATE_TRANSLATOR_RUNTIME_ENVELOPE.md"
+  },
+  "result": {
+    "supplied_outer_copy_and_APP_argument_relation_known": "true only for two healthy supplied CPU mock cases; OFF and sticky fault false",
+    "primary_exact_OUTER_audits_per_mode": {
+      "on": 2,
+      "off": 0,
+      "faulted": 2,
+      "runtime_disabled": 2
+    },
+    "immutable_typed_prefix_lengths": [
+      3,
+      7
+    ],
+    "stronger_claims_always_false": 25,
+    "full_child_calculations_preserved": true,
+    "raw_child_SHA_invented": false,
+    "readback_digest_recomputed_by_auditor": false,
+    "synthetic_CPU_storage_bytes": 147456,
+    "CPU_storage_is_GPU_readback": false
+  },
+  "checks": {
+    "new_independent_Python_tests": 45,
+    "new_native_CTest_passed_locally": 4,
+    "native_original_mock_delegates_each_mode": 57,
+    "native_APP_edges": {
+      "on": 146,
+      "off": 110,
+      "faulted": 146
+    },
+    "native_assertions": {
+      "on": 245,
+      "off": 208,
+      "faulted": 245
+    },
+    "Linux_strict_compile_and_CPU_execution": "passed",
+    "Windows_local_object": "compiled only, not executed",
+    "local_ASan_UBSan": "configure failed before new fixture compilation; HOST libasan.so.8.0.0 absent. Failure retained. CI sanitizer result is separate.",
+    "Python_sanitized": false,
+    "CI_result": "Not asserted by this source proof; separate later CI evidence.",
+    "runtime_disabled_probe_original_mock_delegates": 57
+  },
+  "bounds": {
+    "input_UTF8_bytes": 524288,
+    "nodes": 16384,
+    "depth": 18,
+    "calls": 256,
+    "edges": 512,
+    "cases": 2,
+    "primary_outer_payloads": 2,
+    "each_outer_bytes": 16384,
+    "Copy_observations": 4,
+    "complete_compact_ASCII_JSON_report_bytes": 4194304,
+    "bounds_are_total_CPU_memory": false
+  },
+  "pre_freeze_findings": {
+    "selected_nonfinal_Release": "Earlier new draft admitted a selected APP Release before cutoff; final rejects conservative eligibility from ENTRY. Preserved original mutant and inquiry, old calculators unchanged.",
+    "overlapping_control_outputs": "Earlier new draft admitted Begin nonce/output or Seal output overlaps; final checks disjoint owned spans.",
+    "short_circuit_U64_span_overflow": "Earlier new draft could skip the second span end or Retain end. Independent mutants preserved, final validates every end before comparison.",
+    "certificate_history_rewritten": false,
+    "disabled_Seal_false_refusal": "A genuine extra CABI disabled probe returned Seal OK with null snapshot. Earlier candidate8e8a rejected it; final owner replay admits those statuses and keeps the relation false. Original parser/proof checkpoints and exact probe retained."
+  },
+  "limitations": [
+    "D3D12 delegates are mocks; six genuine private controls and source wrapper/calculator code execute on CPU.",
+    "Compiled-off fixture profile does not attest absent exports in a loaded DLL.",
+    "Mock POD declarations do not replace the separately reviewed complete vendor ABI.",
+    "Supplied histories cannot establish current descriptor contents, silent-overwrite absence, GPU reads, renderer ownership, backing or game input.",
+    "The actual private translator OFF/ON DLLs were built under a separate prior proof; no DLL was loaded or executed in this CPU delivery.",
+    "No new vendor build, Wine, Vulkan, GPU, game, headset, shader or installed DLL change."
+  ],
+  "next": "Prepare and independently review a new owned PE two-case fixture and runner; then obtain exact bytes from the already-built actual translator. Preserve all frozen shaders/resources/oracles and installed originals."
+}
