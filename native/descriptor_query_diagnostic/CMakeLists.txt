@@ -24,11 +24,19 @@ add_executable(d4vr_descriptor_query_observer_tests
 target_include_directories(d4vr_descriptor_query_observer_tests PRIVATE ${D4VR_VULKAN_INCLUDE_DIR})
 target_link_libraries(d4vr_descriptor_query_observer_tests PRIVATE Threads::Threads)
 add_test(NAME descriptor_query_original_forwarding COMMAND d4vr_descriptor_query_observer_tests)
+add_executable(d4vr_translated_owner_gate_tests ../tests/translated_owner_scope.cpp)
+target_compile_definitions(d4vr_translated_owner_gate_tests PRIVATE D4VR_OWNER_GATE_CPU_TEST)
+add_test(NAME translated_owner_gate_protocol COMMAND d4vr_translated_owner_gate_tests self-test)
 if(WIN32)
     # Compile the owned D3D12 probe only. DXIL is supplied at runtime by its
     # separate builder; CI never starts the executable or needs a graphics driver.
     add_executable(d4vr_translated_descriptor_copy_fixture ../tests/translated_descriptor_copy.cpp)
     target_link_libraries(d4vr_translated_descriptor_copy_fixture PRIVATE ole32 uuid)
+    add_executable(d4vr_translated_owner_scope_fixture ../tests/translated_owner_scope.cpp)
+    target_include_directories(d4vr_translated_owner_scope_fixture PRIVATE ${D4VR_VULKAN_INCLUDE_DIR})
+    target_link_libraries(d4vr_translated_owner_scope_fixture PRIVATE ole32 uuid)
+    # File-attribute preparation only; no D3D12/Vulkan include or execution.
+    add_executable(d4vr_translated_gate_inspect ../tests/translated_gate_inspect.cpp)
 endif()
 if(UNIX AND NOT APPLE)
     target_sources(d4vr_descriptor_query_observer_tests PRIVATE ../vulkan/descriptor_query_transport.cpp)
