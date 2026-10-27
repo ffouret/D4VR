@@ -4,6 +4,13 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 enable_testing()
 find_package(Threads REQUIRED)
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
+add_executable(d4vr_typed_copy_transport_tests ../tests/typed_copy_transport_tests.cpp)
+target_link_libraries(d4vr_typed_copy_transport_tests PRIVATE Threads::Threads)
+add_test(NAME typed_copy_transport_cpu COMMAND d4vr_typed_copy_transport_tests)
+add_test(NAME typed_copy_native_wire
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/../../tests/test_typed_copy_transport_validate.py
+        --native-wire $<TARGET_FILE:d4vr_typed_copy_transport_tests>)
 find_path(D4VR_VULKAN_INCLUDE_DIR vulkan/vulkan.h REQUIRED)
 set(query_core ../vulkan/descriptor_query_observer.cpp)
 set(scope_inputs
@@ -41,6 +48,9 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     add_test(NAME exact_backing_metadata_cpu COMMAND d4vr_exact_backing_control --self-test)
 endif()
 if(WIN32)
+    # New two-case receipt transport fixture: compile only, no graphics in CI.
+    add_executable(d4vr_typed_descriptor_copy_fixture ../tests/typed_descriptor_copy_fixture.cpp)
+    target_link_libraries(d4vr_typed_descriptor_copy_fixture PRIVATE ole32 uuid)
     # Compile the owned D3D12 probe only. DXIL is supplied at runtime by its
     # separate builder; CI never starts the executable or needs a graphics driver.
     add_executable(d4vr_translated_descriptor_copy_fixture ../tests/translated_descriptor_copy.cpp)
