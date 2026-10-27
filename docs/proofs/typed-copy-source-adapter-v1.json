@@ -1,0 +1,188 @@
+{
+  "schema_version": 1,
+  "purpose": "typed_copy_source_adapter_CPU_foundation",
+  "status": "CPU_prototype_passed_not_vendor_runtime_provenance",
+  "source_reference_commit": "0bb64c56c8f0dcc11ecc0f6c56e00e4f7bd8d506",
+  "sources": {
+    "native/translator_diagnostic/CMakeLists.txt": {
+      "bytes": 2890,
+      "sha256": "a60a3dea66c7872223fb8838b8bd835086f56fb3eb45f1d3b357faaa0888bd39"
+    },
+    "native/translator_diagnostic/typed_copy_source_adapter.h": {
+      "bytes": 6025,
+      "sha256": "4709c4022e19aebdcde416f9123807a47ae7dc3a4f08c7d674282ade052b2261"
+    },
+    "native/translator_diagnostic/typed_copy_source_adapter.cpp": {
+      "bytes": 21235,
+      "sha256": "e765f15204f6665bd3baff7fe8ef70888187211846d5de39e110c93383320f57"
+    },
+    "native/translator_diagnostic/typed_copy_source_wrappers.inc": {
+      "bytes": 19359,
+      "sha256": "a721b998fd39dd485c1331b9b179195347689ef34ae486ae2f56528c2702b296"
+    },
+    "native/tests/typed_copy_source_adapter_tests.cpp": {
+      "bytes": 15841,
+      "sha256": "03dc4ce8f2b503ba909de025bf2ec29dfcb2f26ca3415ed3a0290d59ddcbae4b"
+    },
+    "native/tests/typed_copy_source_mock_types.h": {
+      "bytes": 2400,
+      "sha256": "e8a7371f63f7e1a20a3c219e0c8676bee15aef16632d137ad01aca0195cd2b88"
+    },
+    "native/tests/typed_copy_source_wrapper_tests.c": {
+      "bytes": 24782,
+      "sha256": "a9628ee64090c910d7151d8ca4f6528c292b1a9e290f9e9d84db6f558a2a016c"
+    },
+    "native/tests/typed_copy_source_integration_tests.c": {
+      "bytes": 10441,
+      "sha256": "0240a52b4108d90209e322df6d8e18c8e374fabc83e3fc2edd34f387aa9791f5"
+    },
+    "tools/typed_copy_source_validate.py": {
+      "bytes": 13699,
+      "sha256": "7fba1106856a764239df8865b62e1c51a08a479fb5bc5d99e7155804f5fcd994"
+    },
+    "tests/test_typed_copy_source_validate.py": {
+      "bytes": 18630,
+      "sha256": "cd3f892c3cbc28388b85b81671d93e00143913472cc0f659830362c8ddac6bc0"
+    },
+    ".github/workflows/checks.yml": {
+      "bytes": 15761,
+      "sha256": "47e367ed52c3d5d83d66fef2ceb0e996a90be8c954c66a787269a6baa5505170"
+    },
+    "docs/TYPED_COPY_SOURCE_ADAPTER.md": {
+      "bytes": 7157,
+      "sha256": "7367a6311a7d1503854c7c58e086c9f197fc20bccff3b5a2eb79808b7e3fba37"
+    }
+  },
+  "immutable_dependencies": {
+    "native/core/typed_copy_transport.hpp": {
+      "bytes": 23333,
+      "sha256": "db0be21782dfb31173dc71cb4631b4d609f15f0857f9ed91fb79935a4e67ad14"
+    },
+    "tools/typed_descriptor_copy.py": {
+      "bytes": 28627,
+      "sha256": "7987ec83978a2909d023e93d66dde66a473154fef5a1767df8b036c5964c1953"
+    },
+    "tools/typed_copy_transport_validate.py": {
+      "bytes": 41078,
+      "sha256": "9425f20396d1b980e75a22f05cdf25cf6d4880ee516731b890cac5823b39a982"
+    },
+    "native/tests/typed_descriptor_copy_fixture.cpp": {
+      "bytes": 48848,
+      "sha256": "bc0d9b2f935361b13bbb4c0201c4c04b17107af0c9f9a132aa52689b43fb84bf"
+    },
+    "native/descriptor_query_diagnostic/CMakeLists.txt": {
+      "bytes": 7059,
+      "sha256": "a486b5805881411e11ad4d974c95ae42d4a03be594ba914a4ef8555ba080397b"
+    }
+  },
+  "private_authorities": {
+    "adapter_author": {
+      "file": "typed-source-adapter-author-20261027-1/proof.json",
+      "bytes": 6564,
+      "sha256": "28b709cdf25e97299fca458ce4fb5e03e1eeab0157419481fcb26abea6ea6e7c"
+    },
+    "adapter_independent_and_parser_author": {
+      "file": "typed-source-independent-cpu-20261027-1/proof.json",
+      "bytes": 13302,
+      "sha256": "e22e28e767d299f9d51544aefc67921090f610ce85e2253b85c10964d38a7516"
+    },
+    "wrapper_earlier_dependency_checkpoint": {
+      "file": "typed-source-wrapper-review-20261027-1/proof.json",
+      "bytes": 16758,
+      "sha256": "3f422863c8e6b7bcb203cf339bd39a7df240e48d7ba84c6f4c366ff9a5ed6184"
+    },
+    "wrapper_final_dependencies": {
+      "file": "typed-source-wrapper-review-20261027-1/final-dependencies/proof.json",
+      "bytes": 16824,
+      "sha256": "0e90eede99d136a67b0ba668f854d5614f365e053a91a1f637107b3961892bb2"
+    },
+    "parser_independent_final": {
+      "file": "typed-source-wrapper-review-20261027-1/parser-final-full-review.json",
+      "bytes": 16952,
+      "sha256": "ff96a47b2d57a396259b144030aec4aa3c070fe88d5dd17dcc953e1df96dd0a3"
+    },
+    "parent_literal_signature_comparison": {
+      "file": "typed-source-parent-signature-review-20261027-1.json",
+      "bytes": 13745,
+      "sha256": "42f6c550d66ab147add4c677fbd734ff34c71dc57c15b0d1abd73674b150cf03"
+    }
+  },
+  "CPU": {
+    "Python_tests": 829,
+    "new_Python_auditor_tests": 33,
+    "new_CMake_controls_passed": 6,
+    "independent_C_ABI": {
+      "cases": 55,
+      "assertions": 985,
+      "original_mock_calls": 685,
+      "wires": 50,
+      "snapshots_consumed_by_frozen_model": 46,
+      "known_internal_histories": 22
+    },
+    "adapter_author": {
+      "cases": 23,
+      "assertions": 342,
+      "wires": 12,
+      "known_internal_histories": 3
+    },
+    "isolated_wrapper_mock_callbacks": {
+      "assertions": 487,
+      "original_mock_calls": 92
+    },
+    "compile_disabled": {
+      "assertions": 63,
+      "original_mock_calls": 24
+    },
+    "real_C_ABI_wrapper_integration_fake_originals": {
+      "assertions": 72,
+      "original_mock_calls": 20,
+      "wires": 3,
+      "snapshots_consumed_by_frozen_model": 3,
+      "known_internal_histories": 3
+    },
+    "parent_literal_C_signature_comparisons": 21,
+    "independent_parser_final_saved_wires": 53,
+    "independent_parser_targeted_falsifications_refused": 35,
+    "parser_author_actual_CPU_wire_falsifications_refused": 16,
+    "counts_overlap_not_additive": true,
+    "Windows_local_objects_compile_only": true,
+    "local_sanitizer_execution_claimed": false
+  },
+  "bounds": {
+    "per_adapter_run": true,
+    "shared_tickets": 4,
+    "slots_per_ticket": 3,
+    "mutations_per_ticket": 8,
+    "complete_outer_wire_bytes_per_ticket": 16384,
+    "total_CPU_memory_bound": false
+  },
+  "scope": {
+    "prototype_only": true,
+    "vendor_patch_applied": false,
+    "vendor_built": false,
+    "vendor_runtime_executed": false,
+    "Wine_or_Vulkan_or_GPU_calls_this_milestone": 0,
+    "original_typed_arguments_from_source_wrappers": "CPU_fake_originals_only",
+    "source_runtime_relation_known": false,
+    "public_device_create_result_known": false,
+    "input_facts_attested": false,
+    "current_contents_at_draw_known": false,
+    "sampled_resource_GPU_read_proven": false,
+    "renderer_owner_known": false,
+    "backing_known": false,
+    "global_API_absence_proven": false,
+    "installed_binary_source_equivalence_proven": false,
+    "old_gate_repaired": false,
+    "mapped_or_opaque_descriptor_payload_bytes_read": 0,
+    "game_or_headset": false
+  },
+  "limitations": [
+    "The isolated wrapper test mocks adapter callbacks; the separate integration actually links the C ABI adapter but still mocks original vendor delegates.",
+    "Internal NEW initialization is not the public device factory HRESULT; a known singleton keeps its generation and an unknown singleton cannot mint one.",
+    "Three SRV, eight Simple and one Ranges declaration proposals are reviewed; no vendor vtable or source patch is built or executed.",
+    "Local Windows ABI objects use real SDK POD declarations with an opaque Device15 surrogate, not the complete vendor headers.",
+    "Immutable getter occurrence export is not implemented; no same-run GPU bind provenance is claimed.",
+    "The parser reviewer authored wrappers and the earlier transport/model; the parser author authored its native countertests. This is not external certification.",
+    "Earlier and final dependency proofs are distinct; neither rewrites the prior owned physical authority or its source pins."
+  ]
+}
