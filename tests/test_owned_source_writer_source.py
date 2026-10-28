@@ -8,6 +8,7 @@ primary bytes; its explicit bridge uses the frozen calculation once per frame.
 from __future__ import annotations
 
 import copy
+import ctypes
 import hashlib
 import io
 import json
@@ -22,6 +23,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 from tools import owned_source_writer_source_native_wire as reader
+from tools import owned_source_writer_source_winfiles as winfiles
 
 STRONG_CLAIMS = (
     "input_facts_attested", "source_runtime_coverage_proven",
@@ -257,7 +259,9 @@ class ReaderControls(unittest.TestCase):
                 Path(path).write_bytes(self.raw)
             return original_open(path, flags, *args, **kwargs)
 
-        with mock.patch.object(reader.os, "open", side_effect=opening):
+        # This test injects the POSIX descriptor boundary explicitly. Actual
+        # Windows reads retain their native backend in the portable tests.
+        with mock.patch.object(reader, "_WINDOWS", False), mock.patch.object(reader.os, "open", side_effect=opening):
             self.refused_before_analysis()
         self.assertTrue(replaced)
 
@@ -272,7 +276,7 @@ class ReaderControls(unittest.TestCase):
                 with (self.directory / "one.wire.json").open("ab") as f: f.write(b" ")
             return value
 
-        with mock.patch.object(reader.os, "fstat", side_effect=fstat):
+        with mock.patch.object(reader, "_WINDOWS", False), mock.patch.object(reader.os, "fstat", side_effect=fstat):
             self.refused_before_analysis()
 
     def test_create_only_wrapper_collision_and_symlink_never_change_target(self):
@@ -285,6 +289,222 @@ class ReaderControls(unittest.TestCase):
             self.skipTest("Host cannot create test symlinks: " + str(error))
         with self.assertRaises(FileExistsError): reader._write_new(link, b"new")
         self.assertFalse((self.directory / "absent").exists())
+
+
+class FakeWinFunction:
+    """ctypes function-shaped callback, never a native DLL entry point."""
+    def __init__(self, function):
+        self.function = function
+        self.argtypes = None
+        self.restype = None
+
+    def __call__(self, *args):
+        return self.function(*args)
+
+
+class FakeWinFilesAPI:
+    """Independent Win32 result/argument mock for the new file backend.
+
+    This checks the Python binding and rejection decisions. It does not claim
+    that Linux mocks establish real Windows kernel sharing or reparse behavior;
+    the two ordinary portable file tests still exercise Win32 on Windows CI.
+    """
+    def __init__(self, data=b"one"):
+        self.state = {"data": data, "volume": (1 << 40) + 19,
+                      "identifier": bytes(range(16)), "creation": 101,
+                      "access": 103, "write": 107, "change": 109,
+                      "attributes": 0x80, "file_type": 1}
+        self.opens = []; self.closes = []; self.handles = {}
+        self.reads = []; self.writes = []
+        self.error = 50; self.open_error = None; self.query_error = None
+        self.fail_read = False; self.fail_write = False; self.fail_close = False
+        self.read_count = None; self.short_write = False
+        self.after_read = None; self.after_write = None; self.second_open = None
+        for name, method in (("CreateFileW", self.create), ("GetFileType", self.file_type),
+                ("GetFileInformationByHandleEx", self.info), ("GetFileSizeEx", self.size),
+                ("ReadFile", self.read), ("WriteFile", self.write), ("CloseHandle", self.close)):
+            setattr(self, name, FakeWinFunction(method))
+
+    @staticmethod
+    def number(pointer, c_type, value):
+        ctypes.cast(pointer, ctypes.POINTER(c_type))[0] = value
+
+    def create(self, path, access, share, security, disposition, flags, template):
+        self.opens.append((path, access, share, security, disposition, flags, template))
+        if self.open_error is not None:
+            self.error = self.open_error
+            return ctypes.c_void_p(-1).value
+        state = self.second_open if len(self.opens) > 1 and self.second_open is not None else self.state
+        handle = (1 << 40) + len(self.opens)  # Detect accidental 32-bit HANDLE declarations.
+        self.handles[handle] = state
+        return handle
+
+    def file_type(self, handle):
+        return self.handles[handle]["file_type"]
+
+    def info(self, handle, kind, pointer, size):
+        if self.query_error == kind:
+            return 0
+        s = self.handles[handle]
+        if kind == 18:
+            if size != 24: raise AssertionError("FILE_ID_INFO size")
+            out = ctypes.cast(pointer, ctypes.POINTER(winfiles.FileIdInfo)).contents
+            out.volume = s["volume"]
+            out.identifier[:] = s["identifier"]
+        elif kind == 0:
+            if size != 40: raise AssertionError("FILE_BASIC_INFO size")
+            out = ctypes.cast(pointer, ctypes.POINTER(winfiles.FileBasicInfo)).contents
+            for name in ("creation", "access", "write", "change", "attributes"):
+                setattr(out, name, s[name])
+        else:
+            raise AssertionError("Unexpected file-information class")
+        return 1
+
+    def size(self, handle, pointer):
+        s = self.handles[handle]
+        self.number(pointer, ctypes.c_int64, s.get("reported_size", len(s["data"])))
+        return 1
+
+    def read(self, handle, buffer, capacity, count, overlapped):
+        self.reads.append((handle, capacity, overlapped))
+        if self.fail_read: return 0
+        data = self.handles[handle]["data"][:capacity]
+        ctypes.memmove(buffer, data, len(data))
+        self.number(count, winfiles.DWORD, len(data) if self.read_count is None else self.read_count)
+        if self.after_read: self.after_read(self.handles[handle])
+        return 1
+
+    def write(self, handle, buffer, capacity, count, overlapped):
+        self.writes.append((handle, ctypes.string_at(buffer, capacity), overlapped))
+        if self.fail_write: return 0
+        n = capacity - 1 if self.short_write else capacity
+        self.handles[handle]["data"] = ctypes.string_at(buffer, n)
+        self.number(count, winfiles.DWORD, n)
+        if self.after_write: self.after_write(self.handles[handle])
+        return 1
+
+    def close(self, handle):
+        self.closes.append(handle)
+        return 0 if self.fail_close else 1
+
+
+class WindowsHandleControls(unittest.TestCase):
+    def backend(self, api):
+        return winfiles.WindowsFiles(api=api, last_error=lambda: api.error)
+
+    def test_fixed_widths_layouts_and_function_types(self):
+        api = FakeWinFilesAPI(); self.backend(api)
+        self.assertEqual((ctypes.sizeof(winfiles.DWORD), ctypes.sizeof(winfiles.BOOL)), (4, 4))
+        self.assertEqual((ctypes.sizeof(winfiles.FileIdInfo), ctypes.alignment(winfiles.FileIdInfo)), (24, 8))
+        self.assertEqual((ctypes.sizeof(winfiles.FileBasicInfo), ctypes.alignment(winfiles.FileBasicInfo)), (40, 8))
+        self.assertIs(api.CreateFileW.restype, ctypes.c_void_p)
+        self.assertIs(api.GetFileType.restype, ctypes.c_uint32)
+        self.assertIs(api.GetFileInformationByHandleEx.restype, ctypes.c_int32)
+
+    def test_native_read_keeps_all_identity_bits_and_leaf_no_follow(self):
+        api = FakeWinFilesAPI(b" \nraw\t")
+        self.assertEqual(self.backend(api).read_wire(Path("one.wire.json"), 6), b" \nraw\t")
+        self.assertEqual(len(api.opens), 2)
+        for row in api.opens:
+            self.assertEqual(row[1:5], (0x80000000, 1, None, 3))
+            self.assertEqual(row[5], 0x00200080)
+            self.assertIsNone(row[6])
+        self.assertEqual(api.closes, [(1 << 40) + 2, (1 << 40) + 1])
+        self.assertEqual(api.reads[0][1], 65537)
+
+    def test_upper_half_file_identifier_difference_is_not_truncated(self):
+        api = FakeWinFilesAPI(); other = copy.deepcopy(api.state)
+        other["identifier"] = other["identifier"][:8] + bytes([255]) + other["identifier"][9:]
+        api.second_open = other
+        with self.assertRaises(ValueError): self.backend(api).read_wire(Path("one"), 3)
+        self.assertEqual(len(api.closes), 2)
+
+    def test_upper_volume_bits_are_part_of_identity(self):
+        api = FakeWinFilesAPI(); api.second_open = copy.deepcopy(api.state)
+        api.second_open["volume"] += 1 << 40
+        with self.assertRaises(ValueError): self.backend(api).read_wire(Path("one"), 3)
+
+    def test_native_metadata_changes_reject_but_read_access_time_is_not_identity(self):
+        for field in ("creation", "write", "change"):
+            with self.subTest(field=field):
+                api = FakeWinFilesAPI(); api.after_read = lambda s, f=field: s.__setitem__(f, s[f] + 1)
+                with self.assertRaises(ValueError): self.backend(api).read_wire(Path("one"), 3)
+                self.assertEqual(len(api.closes), 1)
+        api = FakeWinFilesAPI(); api.after_read = lambda s: s.__setitem__("access", 999)
+        self.assertEqual(self.backend(api).read_wire(Path("one"), 3), b"one")
+
+    def test_pipe_directory_and_reparse_refused_before_read(self):
+        for key, value in (("file_type", 3), ("attributes", 0x400), ("attributes", 0x10), ("reported_size", -1)):
+            with self.subTest(key=key, value=value):
+                api = FakeWinFilesAPI(); api.state[key] = value
+                with self.assertRaises(ValueError): self.backend(api).read_wire(Path("one"), 3)
+                self.assertEqual(api.reads, [])
+                self.assertEqual(len(api.closes), 1)
+
+    def test_missing_full_file_id_query_has_no_permissive_fallback(self):
+        for kind in (18, 0):
+            with self.subTest(kind=kind):
+                api = FakeWinFilesAPI(); api.query_error = kind
+                with self.assertRaises(OSError): self.backend(api).read_wire(Path("one"), 3)
+                self.assertEqual(api.reads, [])
+                self.assertEqual(len(api.closes), 1)
+
+    def test_read_cap_truncation_and_failed_actual_read(self):
+        for count in (2, 65537):
+            with self.subTest(count=count):
+                api = FakeWinFilesAPI(); api.read_count = count
+                with self.assertRaises(ValueError): self.backend(api).read_wire(Path("one"), 3)
+                self.assertEqual(len(api.closes), 1)
+        api = FakeWinFilesAPI(); api.fail_read = True
+        with self.assertRaises(OSError): self.backend(api).read_wire(Path("one"), 3)
+        self.assertEqual(len(api.closes), 1)
+
+    def test_create_new_exact_flags_and_successful_raw_write(self):
+        api = FakeWinFilesAPI(b""); raw = b" \nowned raw\t"
+        self.backend(api).write_new(Path("new"), raw)
+        self.assertEqual(api.opens[0][1:6], (0x40000080, 0, None, 1, 0x00200080))
+        self.assertEqual(api.writes[0][1], raw)
+        self.assertEqual(api.state["data"], raw)
+        self.assertEqual(len(api.closes), 1)
+
+    def test_existing_object_errors_never_write_or_truncate(self):
+        for code in (80, 183):
+            with self.subTest(code=code):
+                api = FakeWinFilesAPI(b"keep"); api.open_error = code
+                with self.assertRaises(FileExistsError): self.backend(api).write_new(Path("link-or-file"), b"replace")
+                self.assertEqual(api.writes, [])
+                self.assertEqual(api.state["data"], b"keep")
+                self.assertEqual(api.closes, [])
+
+    def test_short_write_and_changed_destination_identity_rejected(self):
+        api = FakeWinFilesAPI(b""); api.short_write = True
+        with self.assertRaises(ValueError): self.backend(api).write_new(Path("new"), b"data")
+        self.assertEqual(api.state["data"], b"dat")  # Real partial result retained, no fake rollback.
+        self.assertEqual(len(api.closes), 1)
+        api = FakeWinFilesAPI(b""); api.after_write = lambda s: s.__setitem__("volume", s["volume"] + 1)
+        with self.assertRaises(ValueError): self.backend(api).write_new(Path("new"), b"data")
+
+    def test_new_file_nonempty_or_reparse_cannot_receive_payload(self):
+        for state in ({"data": b"old"}, {"attributes": 0x400}):
+            with self.subTest(state=state):
+                api = FakeWinFilesAPI(b""); api.state.update(state)
+                with self.assertRaises(ValueError): self.backend(api).write_new(Path("new"), b"payload")
+                self.assertEqual(api.writes, [])
+                self.assertEqual(len(api.closes), 1)
+
+    def test_close_and_write_failures_are_not_success(self):
+        api = FakeWinFilesAPI(b""); api.fail_write = True
+        with self.assertRaises(OSError): self.backend(api).write_new(Path("new"), b"data")
+        self.assertEqual(len(api.closes), 1)
+        api = FakeWinFilesAPI(); api.fail_close = True
+        with self.assertRaises(OSError): self.backend(api).read_wire(Path("one"), 3)
+
+    def test_writer_budget_rejected_before_any_open(self):
+        for raw in ("text", bytearray(b"bad"), b"x" * 4194305):
+            with self.subTest(kind=type(raw).__name__):
+                api = FakeWinFilesAPI(b"")
+                with self.assertRaises(ValueError): self.backend(api).write_new(Path("new"), raw)
+                self.assertEqual(api.opens, [])
 
 
 class FakeChild:

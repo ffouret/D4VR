@@ -25,6 +25,14 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 from tools.owned_source_writer_validate import analyze
 
+_WINDOWS = os.name == "nt"
+
+
+def _windows_files():
+    from tools.owned_source_writer_source_winfiles import WindowsFiles
+    return WindowsFiles()
+
+
 METRICS_LIMIT = 8192
 STDERR_LIMIT = 65536
 WIRE_LIMIT = 65536
@@ -143,6 +151,8 @@ def _regular(info) -> bool:
 def _read_wire(base: Path, filename: str, expected_bytes: int) -> bytes:
     # Canonicalize the host root; child names cannot introduce a path component.
     path = base / filename
+    if _WINDOWS:
+        return _windows_files().read_wire(path, expected_bytes)
     before = path.lstat()
     need(_regular(before) and before.st_size == expected_bytes, "CPU raw file type/size")
     flags = (os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
@@ -251,6 +261,9 @@ def verify_samples(metrics_raw: bytes, directory: Path,
 
 
 def _write_new(path: Path, raw: bytes) -> None:
+    if _WINDOWS:
+        _windows_files().write_new(path, raw)
+        return
     # A CPU child must not turn a reserved wrapper output into a followed link.
     flags = (os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_BINARY", 0)
              | getattr(os, "O_NOFOLLOW", 0))
