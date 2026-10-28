@@ -244,6 +244,21 @@ jobs:
           cmake -S native/source_emitted_writer_diagnostic -B work/source-emitted-writer-ci
           cmake --build work/source-emitted-writer-ci --config Release
           ctest --test-dir work/source-emitted-writer-ci -C Release --output-on-failure
+      - name: Check the exact owned SOURCE writer profile on Linux without a driver
+        if: runner.os == 'Linux'
+        run: |
+          cmake -S native/owned_source_writer_diagnostic -B work/owned-source-writer-ci
+          cmake --build work/owned-source-writer-ci --parallel 2
+          ctest --test-dir work/owned-source-writer-ci --output-on-failure
+          cmake -S native/owned_source_writer_diagnostic -B work/owned-source-writer-sanitized-ci -DCMAKE_BUILD_TYPE=Debug "-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer"
+          cmake --build work/owned-source-writer-sanitized-ci --parallel 2
+          ctest --test-dir work/owned-source-writer-sanitized-ci --output-on-failure
+      - name: Check the exact owned SOURCE writer profile on Windows without a driver
+        if: runner.os == 'Windows'
+        run: |
+          cmake -S native/owned_source_writer_diagnostic -B work/owned-source-writer-ci
+          cmake --build work/owned-source-writer-ci --config Release
+          ctest --test-dir work/owned-source-writer-ci -C Release --output-on-failure
       - name: Upload Windows probe without vendor or test libraries
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v4
