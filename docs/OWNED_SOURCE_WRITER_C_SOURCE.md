@@ -28,6 +28,8 @@ Spans and overlaps are checked before output writes. A valid alias with a short 
 
 Use a 64-bit GCC or Clang **GNU driver**. MSVC and clang-cl are explicitly outside this new module's compiler profile.
 
+The lock-free latch requirement uses a C11 `_Generic` selection of the compiler's constant capability macro for the actual `uint32_t` type and requires value 2 (always lock-free). An unsupported type or capability is a compile error. Strict `-pedantic -Werror` remains enabled; no builtin function call is assumed to be an ISO C integer constant expression.
+
 ```sh
 cmake -S native/owned_source_writer_source -B ../work/owned-C-source-cpu -DOSW_BUILD_CPU_TEST_SUPPORT=ON
 cmake --build ../work/owned-C-source-cpu

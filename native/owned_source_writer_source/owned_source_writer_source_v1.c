@@ -25,7 +25,11 @@ OSW_ASSERT(sizeof(osw_context)==404352, "typed context");
 OSW_ASSERT(sizeof(osw_core_issuer_v1)==64, "issuer");
 OSW_ASSERT(sizeof(uintptr_t)==8, "64 bit target");
 OSW_ASSERT(__BYTE_ORDER__==__ORDER_LITTLE_ENDIAN__, "little endian target");
-OSW_ASSERT(__atomic_always_lock_free(4, 0), "lock-free source latch");
+OSW_ASSERT(_Generic((uint32_t)0,
+    unsigned int: __GCC_ATOMIC_INT_LOCK_FREE,
+    unsigned long: __GCC_ATOMIC_LONG_LOCK_FREE,
+    unsigned short: __GCC_ATOMIC_SHORT_LOCK_FREE,
+    default: 0)==2, "lock-free source latch");
 
 #if defined(OSW_CPU_TESTING)
 static osw_context contexts[2];
