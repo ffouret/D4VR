@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "purpose": "owned_SOURCE_writer_C_precode_exact_lease_counter_addendum",
+  "status": "PROPOSED_NORMATIVE_ADDITIVE_V2_LOCK_ORDER_NO_CODE_NO_LAYOUT_CHANGE",
+  "base_contract": {
+    "path": "contract-final-proposed.json",
+    "bytes": 48606,
+    "sha256": "989224c8388364d5c1c26b08549ca1bfd48cdbc87e61be170472c97e3961f599",
+    "path_base": "this_contract_bundle"
+  },
+  "scope": "Clarifies the existing U32 diagnostic seal_acquire_count and ownership allocation ordering. No field/type/layout/signature/framecap/sourceclock/oldfile changes.",
+  "seal_acquire_count": {
+    "storage": "ContextHeader.seal_acquire_count uint32_t at the previously proposed offset; initially0.",
+    "domain": "Count successful D4VR_OwnedWriterSealV1 ownership acquisitions only, including later repeated Seal after Drop. It is NOT a count of frames, firstSeal, Retain, Copy, Drop, source events or allleases.",
+    "update": "On each successful Seal that commits a fresh alias, increment if below UINT32_MAX; otherwise remain UINT32_MAX (saturating diagnostic). A saturated value is only a lower-bound diagnostic, never an allocator, new generation, source fault, payload mutation or implicit control quota.",
+    "failed_control": "NOT_READY/INVALID/DISABLED/FAULT/QUOTA and structurally invalid calls never increment it; failed validation makes no writes per base contract. Retain can create a distinct alias but does NOT increment this Seal-only diagnostic."
+  },
+  "alias_allocation_order": [
+    "Perform ONLY structural pointer-span/alignment/overlap/arithmetic and local scalar checks before locking; no regular mutable run/owner/phase/READY/alias reads yet. Acquire context metadata trylock or return NOT_READY with specified safe outputs, no mutation. THEN validate run/owner/current phase/READY under that context lock. Only independent sticky atomic fault latch may be accessed concurrently outside the lock.",
+    "Check that fewer than8 external ownership slots are live BEFORE requesting or incrementing the CoreIssuer owner counter. A ninth simultaneous owner returns QUOTA, no ownerID consumed, no frame change or SOURCE mark/fault. Both Seal and Retain use this rule.",
+    "Then use the single loaded-core CoreIssuer checked monotone owner counter under its bounded trylock. Contention returns NOT_READY without allocation; exhausted U64 counter returns QUOTA without wrap/reuse/faulting the source or old immutable payload.",
+    "Commit one distinct issuer ID into one free alias slot and update external_owners together. Update Header.next_owner_id cache to the observed issuer high-water value; PublicStatus.next_alias_id is that diagnostic cache only, never an allocator or promised next alias.",
+    "For successful Seal, apply the saturating U32 diagnostic rule. Retain shares the same payload but leaves the Seal-only diagnostic unchanged. Safe output commit follows structural validation; Copy never creates a lease."
+  ],
+  "preservation": "Last Drop does not reopen capture, free the context-owned payload, reset counters or replace frame_generation. Existing valid owners and exact raw bytes remain usable under the base contract after expected control errors or late SOURCE operational faults. No guarantee of infinitely many new IDs; exhaustion is explicit QUOTA.",
+  "CPU_and_runtime_scope": "Documentation only. No C ABI/header/implementation/probe/compile/test/model/vendor/PE/Wine/GPU executed or admitted.",
+  "revision": {
+    "previous_checkpoint": {
+      "path": "lease-counter-addendum.json",
+      "bytes": 3196,
+      "sha256": "14796df00617ac5d046120105b915ff6590a5a0caa6eb3bf8977a129d36349f9",
+      "path_base": "this_contract_bundle"
+    },
+    "scope": "Only clarify context state is validated UNDER metadata lock, after structural pointer/scalar validation; no ABI/semanticquota/counterdomain change."
+  },
+  "lock_order": "The sole nested lock order is context metadata trylock THEN CoreIssuer trylock. No control reads regular context state before acquiring context lock; all alias/READY/run/counter/cache state checked and committed under it. Neither lock spans an original delegate; controls never wait. Issuer contention releases context and returns NOT_READY without allocation/output payload copy."
+}

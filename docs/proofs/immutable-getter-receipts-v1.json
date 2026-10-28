@@ -1,0 +1,234 @@
+{
+  "schema_version": 1,
+  "purpose": "immutable_original_getter_CPU_receipts",
+  "status": "CPU_prototype_passed_not_vendor_runtime_or_bind_provenance",
+  "sources": {
+    "native/translator_diagnostic/typed_copy_getter_adapter.h": {
+      "bytes": 5040,
+      "sha256": "c633dedfa3b6530d4f9664bdb1805cda03a0ddc1f39631a1a95c1c016aaf2597"
+    },
+    "native/translator_diagnostic/typed_copy_getter_adapter.cpp": {
+      "bytes": 27467,
+      "sha256": "8444a4ba4cddee9e2221b447c03f631eb8e78da36687e145e20e36b13fbb3ac4"
+    },
+    "native/translator_diagnostic/typed_copy_getter_wrappers.inc": {
+      "bytes": 10624,
+      "sha256": "bb889126a0af2e831c75e2346a67d10d89a167e09b4ea013813071cd5bd4f7eb"
+    },
+    "native/tests/typed_copy_getter_adapter_tests.cpp": {
+      "bytes": 21493,
+      "sha256": "1f8278232cb58f893b49367d15b736942809c8b2277cd9c1b2720cf21a1ba780"
+    },
+    "native/tests/typed_copy_getter_integration_tests.c": {
+      "bytes": 18932,
+      "sha256": "04448f1afea8e9485721a30e174827d021e2e4698f8d89e035641f9425cf5bcb"
+    },
+    "native/translator_getter_diagnostic/CMakeLists.txt": {
+      "bytes": 2403,
+      "sha256": "6fb0d54929f489a8826051f13f951e1c880fcfbdcb6883474144548b4dce0a58"
+    },
+    "tools/typed_copy_getter_validate.py": {
+      "bytes": 31766,
+      "sha256": "aa70c6219dc7ceb69fe9988a99610377215593d837fd9a98c1574c305e1a6feb"
+    },
+    "tests/test_typed_copy_getter_validate.py": {
+      "bytes": 15275,
+      "sha256": "30e772047d9c79c14024090b530f3e7082a205acda41084ef23a908043fd9ad1"
+    },
+    "docs/IMMUTABLE_GETTER_RECEIPTS.md": {
+      "bytes": 5877,
+      "sha256": "52d6533df546629d96b038a43f12daa6703c6d48843818abc64df348be97b3e9"
+    },
+    ".github/workflows/checks.yml": {
+      "bytes": 16862,
+      "sha256": "602fa24d1e3b7840d06de5d83f10c5123829814651a02d904730041930d8d9f5"
+    }
+  },
+  "immutable_dependencies": {
+    "native/translator_diagnostic/typed_copy_source_adapter.h": {
+      "bytes": 6025,
+      "sha256": "4709c4022e19aebdcde416f9123807a47ae7dc3a4f08c7d674282ade052b2261"
+    },
+    "native/translator_diagnostic/typed_copy_source_adapter.cpp": {
+      "bytes": 21235,
+      "sha256": "e765f15204f6665bd3baff7fe8ef70888187211846d5de39e110c93383320f57"
+    },
+    "native/translator_diagnostic/typed_copy_source_wrappers.inc": {
+      "bytes": 19359,
+      "sha256": "a721b998fd39dd485c1331b9b179195347689ef34ae486ae2f56528c2702b296"
+    },
+    "native/tests/typed_copy_source_mock_types.h": {
+      "bytes": 2400,
+      "sha256": "e8a7371f63f7e1a20a3c219e0c8676bee15aef16632d137ad01aca0195cd2b88"
+    },
+    "native/core/typed_copy_transport.hpp": {
+      "bytes": 23333,
+      "sha256": "db0be21782dfb31173dc71cb4631b4d609f15f0857f9ed91fb79935a4e67ad14"
+    },
+    "tools/typed_descriptor_copy.py": {
+      "bytes": 28627,
+      "sha256": "7987ec83978a2909d023e93d66dde66a473154fef5a1767df8b036c5964c1953"
+    },
+    "tools/typed_copy_transport_validate.py": {
+      "bytes": 41078,
+      "sha256": "9425f20396d1b980e75a22f05cdf25cf6d4880ee516731b890cac5823b39a982"
+    },
+    "tools/typed_copy_source_validate.py": {
+      "bytes": 13699,
+      "sha256": "7fba1106856a764239df8865b62e1c51a08a479fb5bc5d99e7155804f5fcd994"
+    },
+    "native/translator_diagnostic/CMakeLists.txt": {
+      "bytes": 2890,
+      "sha256": "a60a3dea66c7872223fb8838b8bd835086f56fb3eb45f1d3b357faaa0888bd39"
+    },
+    "native/tests/typed_descriptor_copy_fixture.cpp": {
+      "bytes": 48848,
+      "sha256": "bc0d9b2f935361b13bbb4c0201c4c04b17107af0c9f9a132aa52689b43fb84bf"
+    }
+  },
+  "private_authorities": {
+    "source_plan": {
+      "file": "typed-source-getter-provenance-next-20261027-1/plan.json",
+      "bytes": 16262,
+      "sha256": "d670ba44848d5520b28298b20b7d13623f3cfc5f8374e8cefd730b74e0af5fb1"
+    },
+    "source_plan_review": {
+      "file": "typed-source-getter-plan-review-20261027-1/proof.json",
+      "bytes": 15383,
+      "sha256": "6f67203f4d50080dd5264ca7cf6c220073bc1efa6679e410f913892237355d72"
+    },
+    "adapter_before_capture_guard": {
+      "file": "typed-getter-author-20261027-1/proof.json",
+      "bytes": 6656,
+      "sha256": "26c841b5afaf48ab5e66e9ea49950cc2a99caec4fc5e644c6a3c0e106eec2f38"
+    },
+    "adapter_final_and_counterfactual": {
+      "file": "typed-getter-author-20261027-2/proof.json",
+      "bytes": 6064,
+      "sha256": "da255ce2a6a5b390bc0dd89883290cac39324df63634d50a091541ebf8897c08"
+    },
+    "independent_before_capture_guard": {
+      "file": "typed-getter-independent-cpu-20261027-1/proof.json",
+      "bytes": 19943,
+      "sha256": "234c2558c635ebe7cbac557d1da2833d893371d0a781bdbf9feb06b18e68ac19"
+    },
+    "independent_final_dependencies": {
+      "file": "typed-getter-independent-cpu-20261027-1/final-dependencies/proof.json",
+      "bytes": 18696,
+      "sha256": "7861aeff1be7425f0a40fa0ed6680ecbd160ab1b8a4ce1dbc5bb89fc237c6bcb"
+    },
+    "wrapper_before_capture_guard": {
+      "file": "typed-getter-wrapper-review-20261027-1/proof.json",
+      "bytes": 24629,
+      "sha256": "ea0952cd018e636c83c053d8ae0f519a9bfd1ee9dd09a3d2aa055fd825ec69f8"
+    },
+    "wrapper_final_dependencies": {
+      "file": "typed-getter-wrapper-review-20261027-1/final-dependencies-3/proof.json",
+      "bytes": 44138,
+      "sha256": "6e34f390a82ee1acfbe82751cf7b8cd6adb50ad13e5b51337b610bb763e21fcd"
+    },
+    "parser_independent_final": {
+      "file": "typed-getter-wrapper-review-20261027-1/parser-final-review-2/proof.json",
+      "bytes": 22766,
+      "sha256": "cef359109aca71fd03c797ea385631c83d13c1d1fa5c27c80c0aaae8ad970fd1"
+    }
+  },
+  "CPU": {
+    "Python_tests": 860,
+    "new_auditor_tests": 31,
+    "new_CMake_controls_passed": 5,
+    "independent_C_ABI": {
+      "cases": 73,
+      "assertions": 1194,
+      "original_mock_calls": 892,
+      "wires": 69,
+      "model_snapshots": 65,
+      "known_internal_histories": 29
+    },
+    "real_C_ABI_wrapper_integration": {
+      "cases": 13,
+      "assertions": 951,
+      "original_mock_calls": 232,
+      "wires": 17,
+      "model_snapshots": 16,
+      "known_internal_histories": 9
+    },
+    "compile_disabled": {
+      "cases": 1,
+      "assertions": 60,
+      "original_mock_calls": 19,
+      "wires": 0
+    },
+    "adapter_author": {
+      "cases": 18,
+      "assertions": 431,
+      "wires": 22,
+      "known_internal_histories": 9
+    },
+    "parser_author_actual_wire_falsifications_refused": 24,
+    "parser_independent_final_memory_falsifications_refused": 49,
+    "local_capture_mutex_fault_control": {
+      "new_assertions": 95,
+      "old_counterfactual_assertions": 95,
+      "regular_quota_refusals": 80,
+      "quota_advances_clock": false,
+      "quota_faults_context": false,
+      "included_in_CI": false
+    },
+    "counters_overlap_not_additive": true,
+    "Windows_local_real_declaration_objects_compile_only": true,
+    "local_sanitizer_execution_claimed": false
+  },
+  "semantics": {
+    "original_values": "CPU_fake_original_delegates_only",
+    "arithmetic_eligible_scope": "original_RETURN_operand_only_not_heap_span_or_bind",
+    "publication": "observer_metadata_not_original_API",
+    "heap_span_checked_before_heapFacts": true,
+    "not_called_publication_result": null,
+    "exact_getter_IDs_saved_at_publication": true,
+    "export_lookup_of_current_GPU_base": false,
+    "historical_RETURN_not_retagged_at_seal": true
+  },
+  "bounds": {
+    "per_adapter_run": true,
+    "getters": 8,
+    "publication_attempts": 2,
+    "pending_callbacks": 32,
+    "shared_tickets": 4,
+    "slots_per_ticket": 3,
+    "typed_mutations_per_ticket": 8,
+    "complete_outer_wire_bytes": 16384,
+    "total_CPU_memory_bound": false,
+    "selected_large_wire_bytes": 13629,
+    "native_serialized_overflow_path_exercised": false
+  },
+  "scope": {
+    "prototype_only": true,
+    "vendor_patch_applied": false,
+    "vendor_built": false,
+    "vendor_runtime_executed": false,
+    "source_runtime_relation_known": false,
+    "public_device_create_result_known": false,
+    "same_run_bind_provenance_known": false,
+    "getter_to_bind_relation_known": false,
+    "input_facts_attested": false,
+    "current_contents_at_draw_known": false,
+    "sampled_resource_GPU_read_proven": false,
+    "renderer_owner_known": false,
+    "backing_known": false,
+    "global_API_absence_proven": false,
+    "installed_binary_source_equivalence_proven": false,
+    "old_gate_repaired": false,
+    "opaque_or_mapped_payload_bytes_read": 0,
+    "new_Wine_Vulkan_GPU_game_or_headset_executions": 0
+  },
+  "limitations": [
+    "Source wrappers and original signatures are proposals tested with fake original delegates, not a vendor build or runtime.",
+    "Value-known and operand eligibility at RETURN differ from later heap-span validity and bind provenance.",
+    "The parser author authored the independent native test; its reviewer authored the bridge and older transport/model. This is not external certification.",
+    "Initial bf264 CPP and c284 parser checkpoints remain immutable. Final dependencies use CPP8444 and parseraa70.",
+    "New C integration processes change actual stack pointers: 29 fields differ from the earlier checkpoint; their wires are not byte-identical. Other compared fields and pointer/null/alias relations are checked separately.",
+    "A controlled pthread-mutex failure exercised capture failure locally. This fault shim is not a CI or vendor runtime test.",
+    "Existing four readbacks, original files and prior game evidence are unchanged historical controls, not executions of this source producer."
+  ]
+}

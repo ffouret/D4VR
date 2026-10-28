@@ -1,0 +1,881 @@
+{
+  "schema_version": 1,
+  "created_utc": "2026-10-25T05:33:25.932096+00:00",
+  "scope": "Synthetic GPU scenes only. Disable diagnostic helper telemetry in private stereo variants, not arbitrary shader effects. Diablo is not rendered in VR.",
+  "repository_parent_commit": "403a66e1771aa92034409e220950dbaebc51255d",
+  "source_sha256": {
+    "native/vulkan/replay_specialization.hpp": "63c5c557802a1425cbe61582877778503d6555623fc57fec85f8edf4b90f9f72",
+    "native/vulkan/pipeline_recipe.cpp": "99b992c0af608b667c229838168b0ab6a132dadc00364648c5c47ab7c4cc68e3",
+    "native/vulkan/library_variants.cpp": "d961cfce4c34c18afadf66ea1dc7a32fe39415fd992371da22941d425d019c95",
+    "native/vulkan/eye_control.cpp": "ad44efba0e1088c5b4ab3874e3d14629a3c37bdbf639505d0bf455652bbd80e1",
+    "native/probe_gpu/stereo_transform.vert": "952f02620522ec2fff405aba5c9407c047a754982f7934a6a62f812a4cfa0250",
+    "native/tests/replay_specialization_tests.cpp": "c6b0a2d395e36e7ed456c6f0ae681e936af99609dcf87da64fc65c629ad3ff3d",
+    "native/tests/pipeline_recipe_tests.cpp": "9f278ac5c987a30662cff6309795796a12b9dfcbdf775fc59925bd7524b73994",
+    "native/tests/library_variants_tests.cpp": "1a340c13455d31a935752c72b4f7a591651461cda57e0b26e92dbf5ee56bf19d",
+    "native/tests/vulkan_trace_tests.cpp": "bb773af63d1197d393293fb151b3f66ce952a398aba2035aff59b3f7dd7911d4",
+    "native/tests/stereo_targets_vulkan.cpp": "4adceeab8dedb17e17f338b17e1dcebe5835f8c16dcab534cadb6242ca505b11",
+    "native/tests/vulkan_fixture.hpp": "6fa34c0a5ad1aa40f9a7cb0e9c59d6358b284b519f70c82e14c9e72083063c91",
+    "native/CMakeLists.txt": "2bfa8d570ac2da95ee50559da3aecf3d78811513e91e4608a6921f8e90ea4a6e",
+    "tools/stereo_mrt_validate.py": "beffb26defeae1e926ef0c4d150d915976827573e270d78d8ac69b0204bc75ff",
+    "tools/shader_effects.py": "a253b25dbddcc38a6d43b93f118b134404bce7c9f9e9e734acbe9519654cc980",
+    ".github/workflows/checks.yml": "5a3ce6358d3ff0096f1175bb3c45915415db2bfe032641287372a9864a015ddc",
+    "README.md": "61bd2c60cba21b9f38ae4123c2dde5853c4a739227a063e4498059771836a73d",
+    "docs/REPLAY_SPECIALIZATION.md": "15f38f9f39a3476619818494a9de66853f58ec5bf3a0ac584ea2defafd8ccff2",
+    "docs/PIPELINE_RECIPES.md": "092073b88637feca72f777f7594ab698cb7f84a756aa7bb6d208be47498e333e",
+    "docs/LIBRARY_VARIANTS.md": "98e3a3f69feb388fde1025a30993ebfded6be26e1278e9f55d49ba3025b5da80",
+    "docs/SHADER_EFFECTS.md": "dfe49a816000404a389e8113a259faa3d3626d50228b301e30cd7a1465bbd51a"
+  },
+  "private_stereo_specialization": {
+    "counters_address_spec_id_1": 0,
+    "ring_address_spec_id_2": 0,
+    "ring_words_spec_id_3": 1,
+    "eye_state_spec_id_4": "distinct borrowed eye address, nonzero and aligned to 16 bytes",
+    "other_entries_and_original_data_preserved": true,
+    "source_entry_limit": 64,
+    "source_data_limit_bytes": 4096,
+    "output_entry_limit": 68,
+    "output_data_limit_bytes": 4128,
+    "applies_only_to_verified_transformed_vertex": true,
+    "original_call_modified": false,
+    "fragment_stage_modified": false,
+    "single_eye_diagnostic_modified": false
+  },
+  "gpu_groups": {
+    "gpl_telemetry_disabled": {
+      "private_report_sha256": "82a556badc148f18996d5698d1dc20e26bd1857656df312f93159dce24bcaacc",
+      "input_sha256": {
+        "replay_telemetry_fixture": "193b8ec2c7f61cb56ec7128b7fdb3ece1376c4c61319dff22747a54791779f26",
+        "stereo-mrt-vertex.vert.spv": "32e631b8c871342e2af0612cb64158b006c6fa87f49ccd1085906fc64a22973f",
+        "stereo-mrt-vertex.observed.vert.spv": "1b3160f48e1e5e233b27ad38234d2a15746303ef6475feda10889dcc20cae071",
+        "stereo-mrt.frag.spv": "cb53b181176dbe1ff1834eb025efa126ce634c1447cf23c8e0a7d413efcebc6a",
+        "descriptor-echo.spv": "48c7d03c99aaa655d38b3c5279cab4a88d51c6e15089b7e4cc79c8d741530030"
+      },
+      "trace_layer_sha256": "7dff5be93ac887dd1b290a7a832032b807d49fd6dd0e9a467125d2a6dd6bbf57",
+      "positive_fixture_metrics": {
+        "stereo_mrt_fixture_passed": true,
+        "negative_sync_control": false,
+        "negative_compute_control": false,
+        "incorrect_compute_samples_detected": 0,
+        "clear_followed_by_load_verified": true,
+        "eye_rendering_passes": 24,
+        "recorded_graphics_replay_verified": true,
+        "captured_scopes_replayed": 12,
+        "captured_draw_copies": 24,
+        "original_state_commands_restored": 272,
+        "following_draw_reference_compared_bytes": 10485760,
+        "forwarded_original_reference_compared_bytes": 10485760,
+        "descriptor_buffer_replay_verified": true,
+        "following_compute_reference_words": 32,
+        "dynamic_state_replay_verified": true,
+        "declared_dynamic_states": 12,
+        "pipeline_recipe_variants_verified": false,
+        "original_shader_modules_destroyed_before_variants": false,
+        "library_pipeline_variants_verified": true,
+        "library_source_modules_destroyed_before_link": true,
+        "source_registry_released_before_render": true,
+        "source_libraries_released_before_render": true,
+        "source_executable_released_before_render": true,
+        "forwarded_original_gpl_witness_verified": false,
+        "gpl_dynamic_state_contract_resolved": true,
+        "gpl_dynamic_state_contract_used_for_replay": true,
+        "gpl_nonowner_dynamic_decoys_verified": false,
+        "gpl_effective_dynamic_state_count": 12,
+        "complete_static_state_contract_verified": false,
+        "static_bind_overwrites_dynamic_values_verified": false,
+        "following_draw_depth_write_disabled_verified": true,
+        "replay_telemetry_disabled_verified": true,
+        "telemetry_buffers_unchanged_bytes": 131584,
+        "enabled_telemetry_positive_control_words_written": 48,
+        "frozen_scene_cases": 4,
+        "epochs_per_case": 2,
+        "eye_renderings": 16,
+        "submissions": 9,
+        "color_reference_different_bytes": 0,
+        "color_reference_compared_bytes": 16777216,
+        "depth_reference_compared_texels": 1048576,
+        "max_normalized_depth_difference": 0,
+        "stencil_reference_different_bytes": 0,
+        "stencil_reference_compared_bytes": 1048576,
+        "original_targets_preserved_defined_bytes": 31457280,
+        "disparity_pixels_depth_2": 7.293567536,
+        "disparity_pixels_depth_4": 3.641939687,
+        "binocular_disocclusion_texels": 2738,
+        "color_formats": [
+          44,
+          64,
+          44,
+          50
+        ],
+        "depth_stencil_format": 129,
+        "game_draw_replay_implemented": false,
+        "game_stereo_submitted": false
+      },
+      "cases": [
+        {
+          "case": "native",
+          "exit_code": 0,
+          "validation_layer_loaded": false,
+          "intentional_sync_hazard_detected": false,
+          "intentional_wrong_compute_offset_detected": false,
+          "frame_metadata": {
+            "bounded_capture_verified": true,
+            "monolithic_pipeline_count": 3,
+            "linked_pipeline_count": 2,
+            "largest_dynamic_declaration": 12,
+            "clear_value_sets": 48,
+            "graphics_state_snapshot_complete": false
+          }
+        },
+        {
+          "case": "native-validation",
+          "exit_code": 0,
+          "validation_layer_loaded": true,
+          "intentional_sync_hazard_detected": false,
+          "intentional_wrong_compute_offset_detected": false,
+          "frame_metadata": {
+            "bounded_capture_verified": true,
+            "monolithic_pipeline_count": 3,
+            "linked_pipeline_count": 2,
+            "largest_dynamic_declaration": 12,
+            "clear_value_sets": 48,
+            "graphics_state_snapshot_complete": false
+          }
+        },
+        {
+          "case": "sync-negative-control",
+          "exit_code": 0,
+          "validation_layer_loaded": true,
+          "intentional_sync_hazard_detected": true,
+          "intentional_wrong_compute_offset_detected": false,
+          "frame_metadata": {
+            "bounded_capture_verified": true,
+            "monolithic_pipeline_count": 3,
+            "linked_pipeline_count": 2,
+            "largest_dynamic_declaration": 12,
+            "clear_value_sets": 48,
+            "graphics_state_snapshot_complete": false
+          }
+        },
+        {
+          "case": "descriptor-offset-negative-control",
+          "exit_code": 0,
+          "validation_layer_loaded": true,
+          "intentional_sync_hazard_detected": false,
+          "intentional_wrong_compute_offset_detected": true,
+          "frame_metadata": {
+            "bounded_capture_verified": true,
+            "monolithic_pipeline_count": 3,
+            "linked_pipeline_count": 2,
+            "largest_dynamic_declaration": 12,
+            "clear_value_sets": 48,
+            "graphics_state_snapshot_complete": false
+          }
+        },
+        {
+          "case": "metadata-disabled",
+          "exit_code": 0,
+          "validation_layer_loaded": true,
+          "intentional_sync_hazard_detected": false,
+          "intentional_wrong_compute_offset_detected": false,
+          "frame_metadata": {
+            "disabled_capture_verified": true
+          }
+        },
+        {
+          "case": "steam-runtime-validation",
+          "exit_code": 0,
+          "validation_layer_loaded": true,
+          "intentional_sync_hazard_detected": false,
+          "intentional_wrong_compute_offset_detected": false,
+          "frame_metadata": {
+            "bounded_capture_verified": true,
+            "monolithic_pipeline_count": 3,
+            "linked_pipeline_count": 2,
+            "largest_dynamic_declaration": 12,
+            "clear_value_sets": 48,
+            "graphics_state_snapshot_complete": false
+          }
+        }
+      ]
+    },
+    "monolithic_recipe_telemetry_disabled": {
+      "private_report_sha256": "6be716937387d64dc9fe10d70425a5855acf9f65ca7eb6a3782bcf47641f0355",
+      "input_sha256": {
+        "replay_telemetry_fixture": "193b8ec2c7f61cb56ec7128b7fdb3ece1376c4c61319dff22747a54791779f26",
+        "stereo-mrt-vertex.vert.spv": "32e631b8c871342e2af0612cb64158b006c6fa87f49ccd1085906fc64a22973f",
+        "stereo-mrt-vertex.observed.vert.spv": "1b3160f48e1e5e233b27ad38234d2a15746303ef6475feda10889dcc20cae071",
+        "stereo-mrt.frag.spv": "cb53b181176dbe1ff1834eb025efa126ce634c1447cf23c8e0a7d413efcebc6a",
+        "descriptor-echo.spv": "48c7d03c99aaa655d38b3c5279cab4a88d51c6e15089b7e4cc79c8d741530030"
+      },
+      "trace_layer_sha256": "7dff5be93ac887dd1b290a7a832032b807d49fd6dd0e9a467125d2a6dd6bbf57",
+      "positive_fixture_metrics": {
+        "stereo_mrt_fixture_passed": true,
+        "negative_sync_control": false,
+        "negative_compute_control": false,
+        "incorrect_compute_samples_detected": 0,
+        "clear_followed_by_load_verified": true,
+        "eye_rendering_passes": 24,
+        "recorded_graphics_replay_verified": true,
+        "captured_scopes_replayed": 12,
+        "captured_draw_copies": 24,
+        "original_state_commands_restored": 272,
+        "following_draw_reference_compared_bytes": 10485760,
+        "forwarded_original_reference_compared_bytes": 10485760,
+        "descriptor_buffer_replay_verified": true,
+        "following_compute_reference_words": 32,
+        "dynamic_state_replay_verified": true,
+        "declared_dynamic_states": 12,
+        "pipeline_recipe_variants_verified": true,
+        "original_shader_modules_destroyed_before_variants": true,
+        "library_pipeline_variants_verified": false,
+        "library_source_modules_destroyed_before_link": false,
+        "source_registry_released_before_render": false,
+        "source_libraries_released_before_render": false,
+        "source_executable_released_before_render": false,
+        "forwarded_original_gpl_witness_verified": false,
+        "gpl_dynamic_state_contract_resolved": false,
+        "gpl_dynamic_state_contract_used_for_replay": false,
+        "gpl_nonowner_dynamic_decoys_verified": false,
+        "gpl_effective_dynamic_state_count": 0,
+        "complete_static_state_contract_verified": false,
+        "static_bind_overwrites_dynamic_values_verified": false,
+        "following_draw_depth_write_disabled_verified": true,
+        "replay_telemetry_disabled_verified": true,
+        "telemetry_buffers_unchanged_bytes": 131584,
+        "enabled_telemetry_positive_control_words_written": 48,
+        "frozen_scene_cases": 4,
+        "epochs_per_case": 2,
+        "eye_renderings": 16,
+        "submissions": 9,
+        "color_reference_different_bytes": 0,
+        "color_reference_compared_bytes": 16777216,
+        "depth_reference_compared_texels": 1048576,
+        "max_normalized_depth_difference": 0,
+        "stencil_reference_different_bytes": 0,
+        "stencil_reference_compared_bytes": 1048576,
+        "original_targets_preserved_defined_bytes": 31457280,
+        "disparity_pixels_depth_2": 7.293567536,
+        "disparity_pixels_depth_4": 3.641939687,
+        "binocular_disocclusion_texels": 2738,
+        "color_formats": [
+          44,
+          64,
+          44,
+          50
+        ],
+        "depth_stencil_format": 129,
+        "game_draw_replay_implemented": false,
+        "game_stereo_submitted": false
+      },
+      "cases": [
+        {
+          "case": "native",
+          "exit_code": 0,
+          "validation_layer_loaded": false,
+          "intentional_sync_hazard_detected": false,
+          "intentional_wrong_compute_offset_detected": false,
+          "frame_metadata": {
+            "bounded_capture_verified": true,
+            "monolithic_pipeline_count": 5,
+            "linked_pipeline_count": 0,
+            "largest_dynamic_declaration": 12,
+            "clear_value_sets": 48,
+            "graphics_state_snapshot_complete": false
+          }
+        },
+        {
+          "case": "native-validation",
+          "exit_code": 0,
+          "validation_layer_loaded": true,
+          "intentional_sync_hazard_detected": false,
+          "intentional_wrong_compute_offset_detected": false,
+          "frame_metadata": {
+            "bounded_capture_verified": true,
+            "monolithic_pipeline_count": 5,
+            "linked_pipeline_count": 0,
+            "largest_dynamic_declaration": 12,
+            "clear_value_sets": 48,
+            "graphics_state_snapshot_complete": false
+          }
+        },
+        {
+          "case": "sync-negative-control",
+          "exit_code": 0,
+          "validation_layer_loaded": true,
+          "intentional_sync_hazard_detected": true,
+          "intentional_wrong_compute_offset_detected": false,
+          "frame_metadata": {
+            "bounded_capture_verified": true,
+            "monolithic_pipeline_count": 5,
+            "linked_pipeline_count": 0,
+            "largest_dynamic_declaration": 12,
+            "clear_value_sets": 48,
+            "graphics_state_snapshot_complete": false
+          }
+        },
+        {
+          "case": "descriptor-offset-negative-control",
+          "exit_code": 0,
+          "validation_layer_loaded": true,
+          "intentional_sync_hazard_detected": false,
+          "intentional_wrong_compute_offset_detected": true,
+          "frame_metadata": {
+            "bounded_capture_verified": true,
+            "monolithic_pipeline_count": 5,
+            "linked_pipeline_count": 0,
+            "largest_dynamic_declaration": 12,
+            "clear_value_sets": 48,
+            "graphics_state_snapshot_complete": false
+          }
+        },
+        {
+          "case": "metadata-disabled",
+          "exit_code": 0,
+          "validation_layer_loaded": true,
+          "intentional_sync_hazard_detected": false,
+          "intentional_wrong_compute_offset_detected": false,
+          "frame_metadata": {
+            "disabled_capture_verified": true
+          }
+        },
+        {
+          "case": "steam-runtime-validation",
+          "exit_code": 0,
+          "validation_layer_loaded": true,
+          "intentional_sync_hazard_detected": false,
+          "intentional_wrong_compute_offset_detected": false,
+          "frame_metadata": {
+            "bounded_capture_verified": true,
+            "monolithic_pipeline_count": 5,
+            "linked_pipeline_count": 0,
+            "largest_dynamic_declaration": 12,
+            "clear_value_sets": 48,
+            "graphics_state_snapshot_complete": false
+          }
+        }
+      ]
+    },
+    "traditional_descriptor_recipe_telemetry_disabled": {
+      "private_report_sha256": "9770d45a59b4e9675021a247960bed9825e9a0f74bd6690e74814eceeb501110",
+      "input_sha256": {
+        "replay_telemetry_fixture": "193b8ec2c7f61cb56ec7128b7fdb3ece1376c4c61319dff22747a54791779f26",
+        "stereo-mrt.vert.spv": "8f22dd63bc8bcd56e1b285079a98aa5d9e649774ff22dd8ce809e4a71f6fd5f7",
+        "stereo-mrt.observed.vert.spv": "e1818869fd5f4860c28228fdd2b3d82f2760f2e891ee1f8af9b6cdb37a4981ab",
+        "stereo-mrt.frag.spv": "cb53b181176dbe1ff1834eb025efa126ce634c1447cf23c8e0a7d413efcebc6a"
+      },
+      "trace_layer_sha256": "7dff5be93ac887dd1b290a7a832032b807d49fd6dd0e9a467125d2a6dd6bbf57",
+      "positive_fixture_metrics": {
+        "stereo_mrt_fixture_passed": true,
+        "negative_sync_control": false,
+        "negative_compute_control": false,
+        "incorrect_compute_samples_detected": 0,
+        "clear_followed_by_load_verified": true,
+        "eye_rendering_passes": 24,
+        "recorded_graphics_replay_verified": true,
+        "captured_scopes_replayed": 12,
+        "captured_draw_copies": 24,
+        "original_state_commands_restored": 108,
+        "following_draw_reference_compared_bytes": 10485760,
+        "forwarded_original_reference_compared_bytes": 10485760,
+        "descriptor_buffer_replay_verified": false,
+        "following_compute_reference_words": 0,
+        "dynamic_state_replay_verified": false,
+        "declared_dynamic_states": 3,
+        "pipeline_recipe_variants_verified": true,
+        "original_shader_modules_destroyed_before_variants": true,
+        "library_pipeline_variants_verified": false,
+        "library_source_modules_destroyed_before_link": false,
+        "source_registry_released_before_render": false,
+        "source_libraries_released_before_render": false,
+        "source_executable_released_before_render": false,
+        "forwarded_original_gpl_witness_verified": false,
+        "gpl_dynamic_state_contract_resolved": false,
+        "gpl_dynamic_state_contract_used_for_replay": false,
+        "gpl_nonowner_dynamic_decoys_verified": false,
+        "gpl_effective_dynamic_state_count": 0,
+        "complete_static_state_contract_verified": false,
+        "static_bind_overwrites_dynamic_values_verified": false,
+        "following_draw_depth_write_disabled_verified": false,
+        "replay_telemetry_disabled_verified": true,
+        "telemetry_buffers_unchanged_bytes": 131584,
+        "enabled_telemetry_positive_control_words_written": 48,
+        "frozen_scene_cases": 4,
+        "epochs_per_case": 2,
+        "eye_renderings": 16,
+        "submissions": 9,
+        "color_reference_different_bytes": 0,
+        "color_reference_compared_bytes": 16777216,
+        "depth_reference_compared_texels": 1048576,
+        "max_normalized_depth_difference": 0,
+        "stencil_reference_different_bytes": 0,
+        "stencil_reference_compared_bytes": 1048576,
+        "original_targets_preserved_defined_bytes": 31457280,
+        "disparity_pixels_depth_2": 7.293567536,
+        "disparity_pixels_depth_4": 3.641939687,
+        "binocular_disocclusion_texels": 2738,
+        "color_formats": [
+          44,
+          64,
+          44,
+          50
+        ],
+        "depth_stencil_format": 129,
+        "game_draw_replay_implemented": false,
+        "game_stereo_submitted": false
+      },
+      "cases": [
+        {
+          "case": "native",
+          "exit_code": 0,
+          "validation_layer_loaded": false,
+          "intentional_sync_hazard_detected": false,
+          "intentional_wrong_compute_offset_detected": false,
+          "frame_metadata": {
+            "bounded_capture_verified": true,
+            "monolithic_pipeline_count": 3,
+            "linked_pipeline_count": 0,
+            "largest_dynamic_declaration": 3,
+            "clear_value_sets": 48,
+            "graphics_state_snapshot_complete": false
+          }
+        },
+        {
+          "case": "native-validation",
+          "exit_code": 0,
+          "validation_layer_loaded": true,
+          "intentional_sync_hazard_detected": false,
+          "intentional_wrong_compute_offset_detected": false,
+          "frame_metadata": {
+            "bounded_capture_verified": true,
+            "monolithic_pipeline_count": 3,
+            "linked_pipeline_count": 0,
+            "largest_dynamic_declaration": 3,
+            "clear_value_sets": 48,
+            "graphics_state_snapshot_complete": false
+          }
+        },
+        {
+          "case": "sync-negative-control",
+          "exit_code": 0,
+          "validation_layer_loaded": true,
+          "intentional_sync_hazard_detected": true,
+          "intentional_wrong_compute_offset_detected": false,
+          "frame_metadata": {
+            "bounded_capture_verified": true,
+            "monolithic_pipeline_count": 3,
+            "linked_pipeline_count": 0,
+            "largest_dynamic_declaration": 3,
+            "clear_value_sets": 48,
+            "graphics_state_snapshot_complete": false
+          }
+        },
+        {
+          "case": "metadata-disabled",
+          "exit_code": 0,
+          "validation_layer_loaded": true,
+          "intentional_sync_hazard_detected": false,
+          "intentional_wrong_compute_offset_detected": false,
+          "frame_metadata": {
+            "disabled_capture_verified": true
+          }
+        },
+        {
+          "case": "steam-runtime-validation",
+          "exit_code": 0,
+          "validation_layer_loaded": true,
+          "intentional_sync_hazard_detected": false,
+          "intentional_wrong_compute_offset_detected": false,
+          "frame_metadata": {
+            "bounded_capture_verified": true,
+            "monolithic_pipeline_count": 3,
+            "linked_pipeline_count": 0,
+            "largest_dynamic_declaration": 3,
+            "clear_value_sets": 48,
+            "graphics_state_snapshot_complete": false
+          }
+        }
+      ]
+    },
+    "original_gpl_extended_regression": {
+      "private_report_sha256": "7b72996cacabf0aafb913b281716d3456cb7be3ef1fd5e7759ff679b1931ac17",
+      "input_sha256": {
+        "replay_telemetry_fixture": "193b8ec2c7f61cb56ec7128b7fdb3ece1376c4c61319dff22747a54791779f26",
+        "stereo-mrt-vertex.vert.spv": "32e631b8c871342e2af0612cb64158b006c6fa87f49ccd1085906fc64a22973f",
+        "stereo-mrt-vertex.observed.vert.spv": "1b3160f48e1e5e233b27ad38234d2a15746303ef6475feda10889dcc20cae071",
+        "stereo-mrt.frag.spv": "cb53b181176dbe1ff1834eb025efa126ce634c1447cf23c8e0a7d413efcebc6a",
+        "descriptor-echo.spv": "48c7d03c99aaa655d38b3c5279cab4a88d51c6e15089b7e4cc79c8d741530030"
+      },
+      "trace_layer_sha256": "7dff5be93ac887dd1b290a7a832032b807d49fd6dd0e9a467125d2a6dd6bbf57",
+      "positive_fixture_metrics": {
+        "stereo_mrt_fixture_passed": true,
+        "negative_sync_control": false,
+        "negative_compute_control": false,
+        "incorrect_compute_samples_detected": 0,
+        "clear_followed_by_load_verified": true,
+        "eye_rendering_passes": 24,
+        "recorded_graphics_replay_verified": true,
+        "captured_scopes_replayed": 12,
+        "captured_draw_copies": 24,
+        "original_state_commands_restored": 272,
+        "following_draw_reference_compared_bytes": 10485760,
+        "forwarded_original_reference_compared_bytes": 10485760,
+        "descriptor_buffer_replay_verified": true,
+        "following_compute_reference_words": 32,
+        "dynamic_state_replay_verified": true,
+        "declared_dynamic_states": 12,
+        "pipeline_recipe_variants_verified": false,
+        "original_shader_modules_destroyed_before_variants": false,
+        "library_pipeline_variants_verified": true,
+        "library_source_modules_destroyed_before_link": true,
+        "source_registry_released_before_render": true,
+        "source_libraries_released_before_render": false,
+        "source_executable_released_before_render": false,
+        "forwarded_original_gpl_witness_verified": true,
+        "gpl_dynamic_state_contract_resolved": true,
+        "gpl_dynamic_state_contract_used_for_replay": true,
+        "gpl_nonowner_dynamic_decoys_verified": true,
+        "gpl_effective_dynamic_state_count": 12,
+        "complete_static_state_contract_verified": false,
+        "static_bind_overwrites_dynamic_values_verified": false,
+        "following_draw_depth_write_disabled_verified": true,
+        "replay_telemetry_disabled_verified": false,
+        "telemetry_buffers_unchanged_bytes": 0,
+        "enabled_telemetry_positive_control_words_written": 0,
+        "frozen_scene_cases": 4,
+        "epochs_per_case": 2,
+        "eye_renderings": 16,
+        "submissions": 8,
+        "color_reference_different_bytes": 0,
+        "color_reference_compared_bytes": 16777216,
+        "depth_reference_compared_texels": 1048576,
+        "max_normalized_depth_difference": 0,
+        "stencil_reference_different_bytes": 0,
+        "stencil_reference_compared_bytes": 1048576,
+        "original_targets_preserved_defined_bytes": 31457280,
+        "disparity_pixels_depth_2": 7.293567536,
+        "disparity_pixels_depth_4": 3.641939687,
+        "binocular_disocclusion_texels": 2738,
+        "color_formats": [
+          44,
+          64,
+          44,
+          50
+        ],
+        "depth_stencil_format": 129,
+        "game_draw_replay_implemented": false,
+        "game_stereo_submitted": false
+      },
+      "cases": [
+        {
+          "case": "native",
+          "exit_code": 0,
+          "validation_layer_loaded": false,
+          "intentional_sync_hazard_detected": false,
+          "intentional_wrong_compute_offset_detected": false,
+          "frame_metadata": {
+            "bounded_capture_verified": true,
+            "monolithic_pipeline_count": 2,
+            "linked_pipeline_count": 3,
+            "largest_dynamic_declaration": 13,
+            "clear_value_sets": 48,
+            "graphics_state_snapshot_complete": false
+          }
+        },
+        {
+          "case": "native-validation",
+          "exit_code": 0,
+          "validation_layer_loaded": true,
+          "intentional_sync_hazard_detected": false,
+          "intentional_wrong_compute_offset_detected": false,
+          "frame_metadata": {
+            "bounded_capture_verified": true,
+            "monolithic_pipeline_count": 2,
+            "linked_pipeline_count": 3,
+            "largest_dynamic_declaration": 13,
+            "clear_value_sets": 48,
+            "graphics_state_snapshot_complete": false
+          }
+        },
+        {
+          "case": "sync-negative-control",
+          "exit_code": 0,
+          "validation_layer_loaded": true,
+          "intentional_sync_hazard_detected": true,
+          "intentional_wrong_compute_offset_detected": false,
+          "frame_metadata": {
+            "bounded_capture_verified": true,
+            "monolithic_pipeline_count": 2,
+            "linked_pipeline_count": 3,
+            "largest_dynamic_declaration": 13,
+            "clear_value_sets": 48,
+            "graphics_state_snapshot_complete": false
+          }
+        },
+        {
+          "case": "descriptor-offset-negative-control",
+          "exit_code": 0,
+          "validation_layer_loaded": true,
+          "intentional_sync_hazard_detected": false,
+          "intentional_wrong_compute_offset_detected": true,
+          "frame_metadata": {
+            "bounded_capture_verified": true,
+            "monolithic_pipeline_count": 2,
+            "linked_pipeline_count": 3,
+            "largest_dynamic_declaration": 13,
+            "clear_value_sets": 48,
+            "graphics_state_snapshot_complete": false
+          }
+        },
+        {
+          "case": "metadata-disabled",
+          "exit_code": 0,
+          "validation_layer_loaded": true,
+          "intentional_sync_hazard_detected": false,
+          "intentional_wrong_compute_offset_detected": false,
+          "frame_metadata": {
+            "disabled_capture_verified": true
+          }
+        },
+        {
+          "case": "steam-runtime-validation",
+          "exit_code": 0,
+          "validation_layer_loaded": true,
+          "intentional_sync_hazard_detected": false,
+          "intentional_wrong_compute_offset_detected": false,
+          "frame_metadata": {
+            "bounded_capture_verified": true,
+            "monolithic_pipeline_count": 2,
+            "linked_pipeline_count": 3,
+            "largest_dynamic_declaration": 13,
+            "clear_value_sets": 48,
+            "graphics_state_snapshot_complete": false
+          }
+        }
+      ]
+    },
+    "original_gpl_static_regression": {
+      "private_report_sha256": "6b60de27e990626cbc6ca0b8e407ff5f978404ab98fcd0b6ccb24c97e218aac8",
+      "input_sha256": {
+        "replay_telemetry_fixture": "193b8ec2c7f61cb56ec7128b7fdb3ece1376c4c61319dff22747a54791779f26",
+        "stereo-mrt.vert.spv": "8f22dd63bc8bcd56e1b285079a98aa5d9e649774ff22dd8ce809e4a71f6fd5f7",
+        "stereo-mrt.observed.vert.spv": "e1818869fd5f4860c28228fdd2b3d82f2760f2e891ee1f8af9b6cdb37a4981ab",
+        "stereo-mrt.frag.spv": "cb53b181176dbe1ff1834eb025efa126ce634c1447cf23c8e0a7d413efcebc6a",
+        "descriptor-echo.spv": "48c7d03c99aaa655d38b3c5279cab4a88d51c6e15089b7e4cc79c8d741530030"
+      },
+      "trace_layer_sha256": "7dff5be93ac887dd1b290a7a832032b807d49fd6dd0e9a467125d2a6dd6bbf57",
+      "positive_fixture_metrics": {
+        "stereo_mrt_fixture_passed": true,
+        "negative_sync_control": false,
+        "negative_compute_control": false,
+        "incorrect_compute_samples_detected": 0,
+        "clear_followed_by_load_verified": true,
+        "eye_rendering_passes": 24,
+        "recorded_graphics_replay_verified": true,
+        "captured_scopes_replayed": 12,
+        "captured_draw_copies": 24,
+        "original_state_commands_restored": 128,
+        "following_draw_reference_compared_bytes": 10485760,
+        "forwarded_original_reference_compared_bytes": 10485760,
+        "descriptor_buffer_replay_verified": true,
+        "following_compute_reference_words": 32,
+        "dynamic_state_replay_verified": false,
+        "declared_dynamic_states": 0,
+        "pipeline_recipe_variants_verified": false,
+        "original_shader_modules_destroyed_before_variants": false,
+        "library_pipeline_variants_verified": true,
+        "library_source_modules_destroyed_before_link": true,
+        "source_registry_released_before_render": true,
+        "source_libraries_released_before_render": false,
+        "source_executable_released_before_render": false,
+        "forwarded_original_gpl_witness_verified": true,
+        "gpl_dynamic_state_contract_resolved": true,
+        "gpl_dynamic_state_contract_used_for_replay": true,
+        "gpl_nonowner_dynamic_decoys_verified": false,
+        "gpl_effective_dynamic_state_count": 0,
+        "complete_static_state_contract_verified": true,
+        "static_bind_overwrites_dynamic_values_verified": true,
+        "following_draw_depth_write_disabled_verified": false,
+        "replay_telemetry_disabled_verified": false,
+        "telemetry_buffers_unchanged_bytes": 0,
+        "enabled_telemetry_positive_control_words_written": 0,
+        "frozen_scene_cases": 4,
+        "epochs_per_case": 2,
+        "eye_renderings": 16,
+        "submissions": 8,
+        "color_reference_different_bytes": 0,
+        "color_reference_compared_bytes": 16777216,
+        "depth_reference_compared_texels": 1048576,
+        "max_normalized_depth_difference": 0,
+        "stencil_reference_different_bytes": 0,
+        "stencil_reference_compared_bytes": 1048576,
+        "original_targets_preserved_defined_bytes": 31457280,
+        "disparity_pixels_depth_2": 7.293567536,
+        "disparity_pixels_depth_4": 3.641939687,
+        "binocular_disocclusion_texels": 2738,
+        "color_formats": [
+          44,
+          64,
+          44,
+          50
+        ],
+        "depth_stencil_format": 129,
+        "game_draw_replay_implemented": false,
+        "game_stereo_submitted": false
+      },
+      "cases": [
+        {
+          "case": "native",
+          "exit_code": 0,
+          "validation_layer_loaded": false,
+          "intentional_sync_hazard_detected": false,
+          "intentional_wrong_compute_offset_detected": false,
+          "frame_metadata": {
+            "bounded_capture_verified": true,
+            "monolithic_pipeline_count": 1,
+            "linked_pipeline_count": 3,
+            "largest_dynamic_declaration": 0,
+            "clear_value_sets": 48,
+            "graphics_state_snapshot_complete": false
+          }
+        },
+        {
+          "case": "native-validation",
+          "exit_code": 0,
+          "validation_layer_loaded": true,
+          "intentional_sync_hazard_detected": false,
+          "intentional_wrong_compute_offset_detected": false,
+          "frame_metadata": {
+            "bounded_capture_verified": true,
+            "monolithic_pipeline_count": 1,
+            "linked_pipeline_count": 3,
+            "largest_dynamic_declaration": 0,
+            "clear_value_sets": 48,
+            "graphics_state_snapshot_complete": false
+          }
+        },
+        {
+          "case": "sync-negative-control",
+          "exit_code": 0,
+          "validation_layer_loaded": true,
+          "intentional_sync_hazard_detected": true,
+          "intentional_wrong_compute_offset_detected": false,
+          "frame_metadata": {
+            "bounded_capture_verified": true,
+            "monolithic_pipeline_count": 1,
+            "linked_pipeline_count": 3,
+            "largest_dynamic_declaration": 0,
+            "clear_value_sets": 48,
+            "graphics_state_snapshot_complete": false
+          }
+        },
+        {
+          "case": "descriptor-offset-negative-control",
+          "exit_code": 0,
+          "validation_layer_loaded": true,
+          "intentional_sync_hazard_detected": false,
+          "intentional_wrong_compute_offset_detected": true,
+          "frame_metadata": {
+            "bounded_capture_verified": true,
+            "monolithic_pipeline_count": 1,
+            "linked_pipeline_count": 3,
+            "largest_dynamic_declaration": 0,
+            "clear_value_sets": 48,
+            "graphics_state_snapshot_complete": false
+          }
+        },
+        {
+          "case": "metadata-disabled",
+          "exit_code": 0,
+          "validation_layer_loaded": true,
+          "intentional_sync_hazard_detected": false,
+          "intentional_wrong_compute_offset_detected": false,
+          "frame_metadata": {
+            "disabled_capture_verified": true
+          }
+        },
+        {
+          "case": "steam-runtime-validation",
+          "exit_code": 0,
+          "validation_layer_loaded": true,
+          "intentional_sync_hazard_detected": false,
+          "intentional_wrong_compute_offset_detected": false,
+          "frame_metadata": {
+            "bounded_capture_verified": true,
+            "monolithic_pipeline_count": 1,
+            "linked_pipeline_count": 3,
+            "largest_dynamic_declaration": 0,
+            "clear_value_sets": 48,
+            "graphics_state_snapshot_complete": false
+          }
+        }
+      ]
+    }
+  },
+  "gpu_validation_processes": 29,
+  "intentional_negative_control_processes": 9,
+  "enabled_telemetry_positive_control_runs": 17,
+  "raw_transformed_fixture_census": {
+    "sha256": "1b3160f48e1e5e233b27ad38234d2a15746303ef6475feda10889dcc20cae071",
+    "bytes": 17104,
+    "grammar_sha256": "dd2a7c48d3131c9d0c78ad669ab4765048e6fd63e1fe277a0858f5458febdc68",
+    "explicit_external_pointer_write_instructions": 9,
+    "atomic_instructions": {
+      "OpAtomicIAdd": 3
+    },
+    "barrier_instructions": {
+      "OpMemoryBarrier": 2
+    },
+    "external_memory_writes_excluded": false,
+    "replay_allowed": false
+  },
+  "raw_spirv_instructions_removed": false,
+  "census_includes_unreachable_code": true,
+  "cpu_tests": {
+    "specialization_binary_sha256": "89ea47abc64d48e4925378248692fd225baffde4b4216cb020b386e5e6d70496",
+    "recipe_binary_sha256": "8500a30210c562ca498bbd6e480024c90a1dd6a8eca79ea8f7a72901755c794b",
+    "gpl_binary_sha256": "33d2a428fe1faf5e957d50cbd175ceaa5b9b9747e107744bdbd8f7f328ab6552",
+    "forwarding_binary_sha256": "0070a5b52e6d47908ad405ecf5890242258cc6e52083bfe717f8b85fd30a5b8c",
+    "active_source_addresses_overridden": true,
+    "nonhelper_constants_and_shared_offsets_preserved": true,
+    "both_eye_identities_verified": true,
+    "temporary_arrays_owned": true,
+    "malformed_entries_and_wrong_abi_widths_rejected": true,
+    "original_partial_batch_forwarding_preserved": true,
+    "new_test_added_to_windows_and_linux_sanitizers": true
+  },
+  "python_cases": 108,
+  "original_game_and_nvidia_audit": {
+    "expected_game_version": "3.2.3.73883",
+    "expected_streamline_version": "2.12.0.0",
+    "original_library_matches": true,
+    "game_executable_matches": true,
+    "exports_match": true,
+    "named_exports": 262,
+    "machine": "0x8664",
+    "installation_allowed": false,
+    "deployment_status": "blocked_by_game_signature_check"
+  },
+  "frozen_game_layer_sha256": "7dff5be93ac887dd1b290a7a832032b807d49fd6dd0e9a467125d2a6dd6bbf57",
+  "new_game_layer_binary_gpu_validated": false,
+  "automatic_shader_resource_audit": false,
+  "all_shader_external_writes_excluded": false,
+  "exact_real_game_module_identity_proven_by_this_step": false,
+  "attachment_aliases_excluded": false,
+  "real_game_load_dependencies_resolved": false,
+  "real_game_draw_replay_implemented": false,
+  "game_stereo_submitted": false,
+  "windows_native_d3d12_adapter_implemented": false,
+  "new_game_capture_performed": false,
+  "game_or_nvidia_binaries_changed": false,
+  "raw_game_shaders_or_logs_included": false,
+  "prior_static_nonowner_anomaly_resolved": false,
+  "prior_static_normalization_patch_applied": false,
+  "prior_original_gpl_late_bind_crash_retried": false,
+  "specification_reference": "https://docs.vulkan.org/refpages/latest/refpages/source/VkSpecializationInfo.html",
+  "remaining_work": [
+    "Audit exact transformed game shader modules with all original specialization constants and extended instruction effects; this policy disables only known helper diagnostics.",
+    "Resolve descriptors and attachment aliases, preparatory LOAD producers/barriers, exact fixed state and GPU lifetimes.",
+    "Integrate admissible real game pass replay and following processing, predicted headset poses and SteamVR submission.",
+    "Investigate the prior isolated static/nonowner GPL anomaly separately; implement native Windows D3D12 adapter."
+  ]
+}

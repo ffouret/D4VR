@@ -1,0 +1,192 @@
+{
+  "schema_version": 1,
+  "tested_source_commit": "16715d6df7c34dd18c73414cc2d604b17ae50d65",
+  "native_layer_source_commit": "d00a0e9386e769cf52a9195117d1356f69c21716",
+  "game_version": "3.2.3.73883",
+  "scope": "Actual Diablo IV original presentation with projection-only vertex overrides, repeated left/right private pipeline selections",
+  "synthetic_scene": false,
+  "game_process_observed": true,
+  "width": 2560,
+  "height": 1440,
+  "format": 44,
+  "layer_sha256": "e354317be5ad3608928579b010a2bb42be064d425d354471a91a23dcb0b20333",
+  "shader_bundle_sha256": "66b8134a81a6a4bfcb7b5df95ef975bda45f92d6f0ec3439c9d63910a02f9cff",
+  "projection_only_helper": true,
+  "shader_override_count": 2679,
+  "eye_separation_view_units": 0.128,
+  "images": [
+    {
+      "eye": 0,
+      "sequence": 1,
+      "present": 34130,
+      "selected_draw_commands": 537,
+      "selected_eye_mask": 1,
+      "single_eye_interval": true,
+      "pipeline_registry_at_export": {
+        "mode": "sequential_original_render",
+        "private_draws": true,
+        "duplicated_draws": false,
+        "original_arguments_unchanged": false,
+        "source_batches": 6425,
+        "source_outputs": 6425,
+        "library_pairs": 9,
+        "executable_pairs": 3377,
+        "rejected": 3039,
+        "driver_failures": 0,
+        "compile_required": 0,
+        "budget_rejections": 0,
+        "live_nodes": 3386,
+        "creation_attempts": 3386,
+        "maximum_live_nodes": 4096,
+        "maximum_creation_attempts": 4096
+      },
+      "bytes": 14745600,
+      "pixel_sha256": "9b9cc1b45e148b1b959b5b135b99ace62515e2b5df347a7729d9eece366db1c0"
+    },
+    {
+      "eye": 1,
+      "sequence": 2,
+      "present": 34427,
+      "selected_draw_commands": 552,
+      "selected_eye_mask": 2,
+      "single_eye_interval": true,
+      "pipeline_registry_at_export": {
+        "mode": "sequential_original_render",
+        "private_draws": true,
+        "duplicated_draws": false,
+        "original_arguments_unchanged": false,
+        "source_batches": 6463,
+        "source_outputs": 6463,
+        "library_pairs": 9,
+        "executable_pairs": 3415,
+        "rejected": 3039,
+        "driver_failures": 0,
+        "compile_required": 0,
+        "budget_rejections": 0,
+        "live_nodes": 3424,
+        "creation_attempts": 3424,
+        "maximum_live_nodes": 4096,
+        "maximum_creation_attempts": 4096
+      },
+      "bytes": 14745600,
+      "pixel_sha256": "e0ca94eb6cc0d5f77f44a0b39bd98931e8439799fb32dfdac192036a58ef7f6b"
+    },
+    {
+      "eye": 0,
+      "sequence": 3,
+      "present": 34724,
+      "selected_draw_commands": 538,
+      "selected_eye_mask": 1,
+      "single_eye_interval": true,
+      "pipeline_registry_at_export": {
+        "mode": "sequential_original_render",
+        "private_draws": true,
+        "duplicated_draws": false,
+        "original_arguments_unchanged": false,
+        "source_batches": 6521,
+        "source_outputs": 6521,
+        "library_pairs": 9,
+        "executable_pairs": 3472,
+        "rejected": 3039,
+        "driver_failures": 0,
+        "compile_required": 0,
+        "budget_rejections": 0,
+        "live_nodes": 3482,
+        "creation_attempts": 3482,
+        "maximum_live_nodes": 4096,
+        "maximum_creation_attempts": 4096
+      },
+      "bytes": 14745600,
+      "pixel_sha256": "9e0a57c97ffad2c070e57b87806fd4d082c7f198dcb4e4a90af67668eb873fed"
+    },
+    {
+      "eye": 1,
+      "sequence": 4,
+      "present": 35022,
+      "selected_draw_commands": 540,
+      "selected_eye_mask": 2,
+      "single_eye_interval": true,
+      "pipeline_registry_at_export": {
+        "mode": "sequential_original_render",
+        "private_draws": true,
+        "duplicated_draws": false,
+        "original_arguments_unchanged": false,
+        "source_batches": 6560,
+        "source_outputs": 6560,
+        "library_pairs": 9,
+        "executable_pairs": 3512,
+        "rejected": 3039,
+        "driver_failures": 0,
+        "compile_required": 0,
+        "budget_rejections": 0,
+        "live_nodes": 3521,
+        "creation_attempts": 3521,
+        "maximum_live_nodes": 4096,
+        "maximum_creation_attempts": 4096
+      },
+      "bytes": 14745600,
+      "pixel_sha256": "f299f350cbcc177f1562373399628aa9d06433460ed03aac6c7c6ad6229f71cf"
+    }
+  ],
+  "same_instant_pair": false,
+  "game_stereo_submitted": false,
+  "reproducible_terrain_disparity_observed": true,
+  "terrain_stereo_scope": "Partial: 21 of 36 accepted terrain patches show repeated nonzero binocular displacement; 15 remain fixed",
+  "all_world_draws_verified": false,
+  "new_headset_trial": false,
+  "eye_selection_restored_to_original": true,
+  "human_feedback": "Fabien independently reported seeing the displacement during this trial",
+  "autonomous_ui_launch_and_world_entry": true,
+  "vulkan_validation_enabled_for_game": false,
+  "terrain_patch_observation": {
+    "analysis": "Local mean-centered grayscale patch correspondences in actual captured pixels. Exploratory; no full-scene guarantee.",
+    "captured_scene_synthetic": false,
+    "accepted_patches": 36,
+    "total_contrasted_patches": 40,
+    "image_resize_for_analysis_only": 2,
+    "search_dx_pixels": 80,
+    "search_dy_pixels": 16,
+    "same_instant_pair": false,
+    "all_world_geometry_verified": false,
+    "first_pair": {
+      "median_dx_pixels": -6.0,
+      "median_dy_pixels": 0.0,
+      "dx_range": [
+        -18,
+        0
+      ]
+    },
+    "same_eye_return": {
+      "median_dx_pixels": 0.0,
+      "median_dy_pixels": 0.0,
+      "dx_range": [
+        0,
+        0
+      ]
+    },
+    "second_pair": {
+      "median_dx_pixels": -6.0,
+      "median_dy_pixels": 0.0,
+      "dx_range": [
+        -18,
+        0
+      ]
+    },
+    "binocular_nonzero_patches": 21,
+    "unchanged_patches": 15,
+    "binocular_repeat_disparities_identical": true,
+    "all_accepted_same_eye_displacements_zero": true
+  },
+  "raw_pixels_and_game_shaders_published": false,
+  "remaining": [
+    "Resolve the stationary geometry/other position paths and projection gates; full world stereo is not established",
+    "Produce both complete game eyes at the same instant with resource/dependency closure",
+    "Submit actual game stereo to SteamVR with head tracking",
+    "Resolve previously reported SteamVR validation issues",
+    "Implement and validate native Windows D3D12 backend"
+  ],
+  "all_owned_processes_exited": true,
+  "original_game_executable_matches_after_exit": true,
+  "original_vendor_library_matches_after_exit": true,
+  "original_exports_match_after_exit": true
+}

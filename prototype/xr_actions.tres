@@ -1,0 +1,78 @@
+[gd_resource type="OpenXRActionMap" format=3]
+
+[sub_resource type="OpenXRAction" id="OpenXRAction_e4bh1"]
+resource_name = "grip"
+localized_name = "Controller pose"
+action_type = 3
+toplevel_paths = PackedStringArray("/user/hand/left", "/user/hand/right")
+
+[sub_resource type="OpenXRAction" id="OpenXRAction_y7yy2"]
+resource_name = "move"
+localized_name = "Move character"
+action_type = 2
+toplevel_paths = PackedStringArray("/user/hand/left")
+
+[sub_resource type="OpenXRAction" id="OpenXRAction_5jebu"]
+resource_name = "adjust_view"
+localized_name = "Adjust height and orbit"
+action_type = 2
+toplevel_paths = PackedStringArray("/user/hand/right")
+
+[sub_resource type="OpenXRAction" id="OpenXRAction_gfhah"]
+resource_name = "recenter"
+localized_name = "Recenter view"
+action_type = 0
+toplevel_paths = PackedStringArray("/user/hand/right")
+
+[sub_resource type="OpenXRAction" id="OpenXRAction_35e1h"]
+resource_name = "cycle_scale"
+localized_name = "Change world scale"
+action_type = 0
+toplevel_paths = PackedStringArray("/user/hand/right")
+
+[sub_resource type="OpenXRAction" id="OpenXRAction_57xyo"]
+resource_name = "toggle_follow"
+localized_name = "Toggle character following"
+action_type = 0
+toplevel_paths = PackedStringArray("/user/hand/left")
+
+[sub_resource type="OpenXRActionSet" id="OpenXRActionSet_4g5wr"]
+resource_name = "d4vr"
+localized_name = "D4VR Lab"
+actions = [SubResource("OpenXRAction_e4bh1"), SubResource("OpenXRAction_y7yy2"), SubResource("OpenXRAction_5jebu"), SubResource("OpenXRAction_gfhah"), SubResource("OpenXRAction_35e1h"), SubResource("OpenXRAction_57xyo")]
+
+[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_xci0x"]
+action = SubResource("OpenXRAction_e4bh1")
+binding_path = "/user/hand/left/input/grip/pose"
+
+[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_n1dp7"]
+action = SubResource("OpenXRAction_e4bh1")
+binding_path = "/user/hand/right/input/grip/pose"
+
+[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_fdaik"]
+action = SubResource("OpenXRAction_y7yy2")
+binding_path = "/user/hand/left/input/thumbstick"
+
+[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_w56rs"]
+action = SubResource("OpenXRAction_5jebu")
+binding_path = "/user/hand/right/input/thumbstick"
+
+[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_or1us"]
+action = SubResource("OpenXRAction_gfhah")
+binding_path = "/user/hand/right/input/a/click"
+
+[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_xymqw"]
+action = SubResource("OpenXRAction_35e1h")
+binding_path = "/user/hand/right/input/b/click"
+
+[sub_resource type="OpenXRIPBinding" id="OpenXRIPBinding_uoddr"]
+action = SubResource("OpenXRAction_57xyo")
+binding_path = "/user/hand/left/input/y/click"
+
+[sub_resource type="OpenXRInteractionProfile" id="OpenXRInteractionProfile_44vjq"]
+interaction_profile_path = "/interaction_profiles/oculus/touch_controller"
+bindings = [SubResource("OpenXRIPBinding_xci0x"), SubResource("OpenXRIPBinding_n1dp7"), SubResource("OpenXRIPBinding_fdaik"), SubResource("OpenXRIPBinding_w56rs"), SubResource("OpenXRIPBinding_or1us"), SubResource("OpenXRIPBinding_xymqw"), SubResource("OpenXRIPBinding_uoddr")]
+
+[resource]
+action_sets = [SubResource("OpenXRActionSet_4g5wr")]
+interaction_profiles = [SubResource("OpenXRInteractionProfile_44vjq")]

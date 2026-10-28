@@ -1,0 +1,1058 @@
+{
+  "schema_version": 1,
+  "created_utc": "2026-10-25T06:03:21.224349+00:00",
+  "scope": "Bounded extended-instruction memory-effect classification; synthetic validation and aggregate static analysis of old private candidates. No shader replay authorization.",
+  "repository_parent_commit": "207f172ac6d28574a315eb32f1c0bf01ed3a12d0",
+  "source_sha256": {
+    "tools/glsl_effects.py": "f4b04140402f020d2facea1315c707658035278bb88f999fd95254c41bda66e5",
+    "tools/shader_effects.py": "cefc93ef2f3151d89cc1c00b591caad2520e8a8e78558a84881dbb3ee31ffa80",
+    "tools/shader_effects_validate.py": "41bbf6d136ef6079179485f30ea19bf8e3d39478b14918a503e3382b75819a64",
+    "tests/test_glsl_effects.py": "944f81ef79571a8677fedcc082ff85c9b888e87c3a612d5766a5f88c8cc4a1e9",
+    "tests/test_shader_effects.py": "b4d7ab65905fcafe86b31c5a7dfc343a4dda8aad066b48e7f03e9d8db6d5777c",
+    "native/tests/glsl_pure_effects.spvasm": "fc3d0757405226fe5a0f19fc53006e7af7f3abc7b4b62cf9c013c1f5541dc7cb",
+    "native/tests/glsl_pointer_effects.spvasm": "5dd12b9de554ccff5aec544cc11f1857fecd0059e284978389b639cf7db3b51d",
+    "native/tests/glsl_local_effects.spvasm": "e8b74d1a8075752dc87148ec4b46c5d9dee6dc89676c39fa9cc49c871ff47753",
+    "native/tests/glsl_unknown_effects.frag": "d215c1db34e4c609c4a477df998f3b273dbabbc2126a6bcbcdf03e71ee19305f",
+    ".github/workflows/checks.yml": "9a85bcf339659a42114db21a85f045e34634daa97b4d923dae0c17b1058c0212",
+    "README.md": "03763b69bffb0db38611e6aeece001d85909bdfb9a221d09eed88696e693eff9",
+    "docs/GLSL_EFFECTS.md": "ad890ffed1a857c52837c1dfd1e430d0d70c9b77c226b706ec3259c436a0f781",
+    "docs/SHADER_EFFECTS.md": "3536308942d8d80accc171c593fe4977fcf78a956ccd3884faffb6728220a114"
+  },
+  "grammar": {
+    "repository": "KhronosGroup/SPIRV-Headers",
+    "commit": "fbf86836a9b1966586faf7be7bb8a6440e156d62",
+    "core_sha256": "dd2a7c48d3131c9d0c78ad669ab4765048e6fd63e1fe277a0858f5458febdc68",
+    "glsl_sha256": "5d72e48247569f9b77a17a849db624350abc9d26f7f72b153bbcf15c37238239",
+    "glsl_url": "https://github.com/KhronosGroup/SPIRV-Headers/blob/fbf86836a9b1966586faf7be7bb8a6440e156d62/include/spirv/unified1/extinst.glsl.std.450.grammar.json"
+  },
+  "audited_signatures": [
+    {
+      "opcode": 4,
+      "name": "FAbs",
+      "operand_count": 1,
+      "written_pointer_operand": null,
+      "memory_effect": "none"
+    },
+    {
+      "opcode": 8,
+      "name": "Floor",
+      "operand_count": 1,
+      "written_pointer_operand": null,
+      "memory_effect": "none"
+    },
+    {
+      "opcode": 10,
+      "name": "Fract",
+      "operand_count": 1,
+      "written_pointer_operand": null,
+      "memory_effect": "none"
+    },
+    {
+      "opcode": 13,
+      "name": "Sin",
+      "operand_count": 1,
+      "written_pointer_operand": null,
+      "memory_effect": "none"
+    },
+    {
+      "opcode": 14,
+      "name": "Cos",
+      "operand_count": 1,
+      "written_pointer_operand": null,
+      "memory_effect": "none"
+    },
+    {
+      "opcode": 29,
+      "name": "Exp2",
+      "operand_count": 1,
+      "written_pointer_operand": null,
+      "memory_effect": "none"
+    },
+    {
+      "opcode": 30,
+      "name": "Log2",
+      "operand_count": 1,
+      "written_pointer_operand": null,
+      "memory_effect": "none"
+    },
+    {
+      "opcode": 31,
+      "name": "Sqrt",
+      "operand_count": 1,
+      "written_pointer_operand": null,
+      "memory_effect": "none"
+    },
+    {
+      "opcode": 32,
+      "name": "InverseSqrt",
+      "operand_count": 1,
+      "written_pointer_operand": null,
+      "memory_effect": "none"
+    },
+    {
+      "opcode": 35,
+      "name": "Modf",
+      "operand_count": 2,
+      "written_pointer_operand": 1,
+      "memory_effect": "pointer_write"
+    },
+    {
+      "opcode": 36,
+      "name": "ModfStruct",
+      "operand_count": 1,
+      "written_pointer_operand": null,
+      "memory_effect": "none"
+    },
+    {
+      "opcode": 50,
+      "name": "Fma",
+      "operand_count": 3,
+      "written_pointer_operand": null,
+      "memory_effect": "none"
+    },
+    {
+      "opcode": 51,
+      "name": "Frexp",
+      "operand_count": 2,
+      "written_pointer_operand": 1,
+      "memory_effect": "pointer_write"
+    },
+    {
+      "opcode": 52,
+      "name": "FrexpStruct",
+      "operand_count": 1,
+      "written_pointer_operand": null,
+      "memory_effect": "none"
+    },
+    {
+      "opcode": 79,
+      "name": "NMin",
+      "operand_count": 2,
+      "written_pointer_operand": null,
+      "memory_effect": "none"
+    },
+    {
+      "opcode": 80,
+      "name": "NMax",
+      "operand_count": 2,
+      "written_pointer_operand": null,
+      "memory_effect": "none"
+    },
+    {
+      "opcode": 81,
+      "name": "NClamp",
+      "operand_count": 3,
+      "written_pointer_operand": null,
+      "memory_effect": "none"
+    }
+  ],
+  "synthetic_validation": {
+    "schema_version": 1,
+    "scope": "original synthetic shader modules only; compiled and validated, never GPU executed",
+    "grammar_commit": "fbf86836a9b1966586faf7be7bb8a6440e156d62",
+    "grammar_sha256": "dd2a7c48d3131c9d0c78ad669ab4765048e6fd63e1fe277a0858f5458febdc68",
+    "cases": [
+      {
+        "case": "sampled-fragment",
+        "spirv_val_passed": true,
+        "source_sha256": "9aa244b88ebbf09c2a2fd0086143c12887824dd243f60b0a3fa0ab2412d5d078",
+        "schema_version": 1,
+        "scope": "static census of all module functions, including unreachable code",
+        "sha256": "59a25a6873582a3aa79e1f3a9b43027a10be6f2aaa2e15110b318f0533433019",
+        "bytes": 532,
+        "grammar_sha256": "dd2a7c48d3131c9d0c78ad669ab4765048e6fd63e1fe277a0858f5458febdc68",
+        "stages": [
+          "pixel"
+        ],
+        "instruction_count": 33,
+        "pointer_read_instructions_by_storage": {
+          "UniformConstant": 1
+        },
+        "pointer_write_instructions_by_storage": {
+          "Output": 1
+        },
+        "explicit_external_pointer_write_instructions": 0,
+        "unresolved_pointer_write_instructions": 0,
+        "image_instructions": {
+          "OpImageSampleExplicitLod": 1
+        },
+        "image_write_instructions": 0,
+        "atomic_instructions": {},
+        "barrier_instructions": {},
+        "input_attachment_type_declarations": 0,
+        "attachment_read_instructions": 0,
+        "declared_direct_output_locations": [
+          0
+        ],
+        "output_interface_fully_resolved": false,
+        "physical_storage_pointer_type_declarations": 0,
+        "extended_instructions": [],
+        "glsl_grammar_sha256": "5d72e48247569f9b77a17a849db624350abc9d26f7f72b153bbcf15c37238239",
+        "extended_instruction_policy": "glsl450_memory_v1",
+        "extended_instruction_effects": [],
+        "unmodeled_extended_instruction_forms": {},
+        "unmodeled_extended_instruction_count": 0,
+        "extended_pointer_write_instructions_by_storage": {},
+        "extended_external_pointer_write_instructions": 0,
+        "extended_unresolved_pointer_write_instructions": 0,
+        "non_atomic_external_pointer_write_instructions": 0,
+        "extended_instruction_effects_audited": true,
+        "unmodeled_resource_instructions": {},
+        "unknown_opcodes": {},
+        "declared_descriptor_resources": [
+          {
+            "id": 13,
+            "storage_class": "uniform_constant",
+            "name": "source",
+            "binding": 0,
+            "descriptor_set": 0
+          }
+        ],
+        "module_validation_performed": false,
+        "bound_descriptor_images_resolved": false,
+        "fixed_function_blend_and_masks_known": false,
+        "external_memory_writes_excluded": false,
+        "replay_allowed": false,
+        "game_stereo_submitted": false
+      },
+      {
+        "case": "input-attachment",
+        "spirv_val_passed": true,
+        "source_sha256": "9aa244b88ebbf09c2a2fd0086143c12887824dd243f60b0a3fa0ab2412d5d078",
+        "schema_version": 1,
+        "scope": "static census of all module functions, including unreachable code",
+        "sha256": "d02fb24863ac16077f1bcff9f0fac0355ec1e27453b9768813b63ff2969de50a",
+        "bytes": 536,
+        "grammar_sha256": "dd2a7c48d3131c9d0c78ad669ab4765048e6fd63e1fe277a0858f5458febdc68",
+        "stages": [
+          "pixel"
+        ],
+        "instruction_count": 34,
+        "pointer_read_instructions_by_storage": {
+          "UniformConstant": 1
+        },
+        "pointer_write_instructions_by_storage": {
+          "Output": 1
+        },
+        "explicit_external_pointer_write_instructions": 0,
+        "unresolved_pointer_write_instructions": 0,
+        "image_instructions": {
+          "OpImageRead": 1
+        },
+        "image_write_instructions": 0,
+        "atomic_instructions": {},
+        "barrier_instructions": {},
+        "input_attachment_type_declarations": 1,
+        "attachment_read_instructions": 0,
+        "declared_direct_output_locations": [
+          0
+        ],
+        "output_interface_fully_resolved": false,
+        "physical_storage_pointer_type_declarations": 0,
+        "extended_instructions": [],
+        "glsl_grammar_sha256": "5d72e48247569f9b77a17a849db624350abc9d26f7f72b153bbcf15c37238239",
+        "extended_instruction_policy": "glsl450_memory_v1",
+        "extended_instruction_effects": [],
+        "unmodeled_extended_instruction_forms": {},
+        "unmodeled_extended_instruction_count": 0,
+        "extended_pointer_write_instructions_by_storage": {},
+        "extended_external_pointer_write_instructions": 0,
+        "extended_unresolved_pointer_write_instructions": 0,
+        "non_atomic_external_pointer_write_instructions": 0,
+        "extended_instruction_effects_audited": true,
+        "unmodeled_resource_instructions": {},
+        "unknown_opcodes": {},
+        "declared_descriptor_resources": [
+          {
+            "id": 12,
+            "storage_class": "uniform_constant",
+            "name": "source",
+            "binding": 0,
+            "descriptor_set": 0
+          }
+        ],
+        "module_validation_performed": false,
+        "bound_descriptor_images_resolved": false,
+        "fixed_function_blend_and_masks_known": false,
+        "external_memory_writes_excluded": false,
+        "replay_allowed": false,
+        "game_stereo_submitted": false
+      },
+      {
+        "case": "buffer-image-atomic-writes",
+        "spirv_val_passed": true,
+        "source_sha256": "b21e04447f28c862b3d63e1d2000eb62344c40a0d165e0e7c0fb51a61c90b5ac",
+        "schema_version": 1,
+        "scope": "static census of all module functions, including unreachable code",
+        "sha256": "7028494760684d234676a951669a1311d926e56fe117b131ea6c5e3b98e711ed",
+        "bytes": 928,
+        "grammar_sha256": "dd2a7c48d3131c9d0c78ad669ab4765048e6fd63e1fe277a0858f5458febdc68",
+        "stages": [
+          "compute"
+        ],
+        "instruction_count": 55,
+        "pointer_read_instructions_by_storage": {
+          "UniformConstant": 1
+        },
+        "pointer_write_instructions_by_storage": {
+          "StorageBuffer": 1
+        },
+        "explicit_external_pointer_write_instructions": 1,
+        "unresolved_pointer_write_instructions": 0,
+        "image_instructions": {
+          "OpImageWrite": 1
+        },
+        "image_write_instructions": 1,
+        "atomic_instructions": {
+          "OpAtomicIAdd": 1
+        },
+        "barrier_instructions": {},
+        "input_attachment_type_declarations": 0,
+        "attachment_read_instructions": 0,
+        "declared_direct_output_locations": [],
+        "output_interface_fully_resolved": false,
+        "physical_storage_pointer_type_declarations": 0,
+        "extended_instructions": [],
+        "glsl_grammar_sha256": "5d72e48247569f9b77a17a849db624350abc9d26f7f72b153bbcf15c37238239",
+        "extended_instruction_policy": "glsl450_memory_v1",
+        "extended_instruction_effects": [],
+        "unmodeled_extended_instruction_forms": {},
+        "unmodeled_extended_instruction_count": 0,
+        "extended_pointer_write_instructions_by_storage": {},
+        "extended_external_pointer_write_instructions": 0,
+        "extended_unresolved_pointer_write_instructions": 0,
+        "non_atomic_external_pointer_write_instructions": 1,
+        "extended_instruction_effects_audited": true,
+        "unmodeled_resource_instructions": {},
+        "unknown_opcodes": {},
+        "declared_descriptor_resources": [
+          {
+            "id": 10,
+            "storage_class": "storage_buffer",
+            "name": "values",
+            "binding": 0,
+            "descriptor_set": 0
+          },
+          {
+            "id": 24,
+            "storage_class": "uniform_constant",
+            "name": "target",
+            "binding": 1,
+            "descriptor_set": 0
+          }
+        ],
+        "module_validation_performed": false,
+        "bound_descriptor_images_resolved": false,
+        "fixed_function_blend_and_masks_known": false,
+        "external_memory_writes_excluded": false,
+        "replay_allowed": false,
+        "game_stereo_submitted": false
+      },
+      {
+        "case": "physical-pointer-write",
+        "spirv_val_passed": true,
+        "source_sha256": "b21e04447f28c862b3d63e1d2000eb62344c40a0d165e0e7c0fb51a61c90b5ac",
+        "schema_version": 1,
+        "scope": "static census of all module functions, including unreachable code",
+        "sha256": "f18466cd849e0c932ac869e386bcd02972af7aea1547f1b0319e8222388a4de9",
+        "bytes": 716,
+        "grammar_sha256": "dd2a7c48d3131c9d0c78ad669ab4765048e6fd63e1fe277a0858f5458febdc68",
+        "stages": [
+          "compute"
+        ],
+        "instruction_count": 44,
+        "pointer_read_instructions_by_storage": {
+          "PushConstant": 1
+        },
+        "pointer_write_instructions_by_storage": {
+          "PhysicalStorageBuffer": 1
+        },
+        "explicit_external_pointer_write_instructions": 1,
+        "unresolved_pointer_write_instructions": 0,
+        "image_instructions": {},
+        "image_write_instructions": 0,
+        "atomic_instructions": {},
+        "barrier_instructions": {},
+        "input_attachment_type_declarations": 0,
+        "attachment_read_instructions": 0,
+        "declared_direct_output_locations": [],
+        "output_interface_fully_resolved": false,
+        "physical_storage_pointer_type_declarations": 2,
+        "extended_instructions": [],
+        "glsl_grammar_sha256": "5d72e48247569f9b77a17a849db624350abc9d26f7f72b153bbcf15c37238239",
+        "extended_instruction_policy": "glsl450_memory_v1",
+        "extended_instruction_effects": [],
+        "unmodeled_extended_instruction_forms": {},
+        "unmodeled_extended_instruction_count": 0,
+        "extended_pointer_write_instructions_by_storage": {},
+        "extended_external_pointer_write_instructions": 0,
+        "extended_unresolved_pointer_write_instructions": 0,
+        "non_atomic_external_pointer_write_instructions": 1,
+        "extended_instruction_effects_audited": true,
+        "unmodeled_resource_instructions": {},
+        "unknown_opcodes": {},
+        "declared_descriptor_resources": [
+          {
+            "id": 11,
+            "storage_class": "push_constant",
+            "name": "address"
+          }
+        ],
+        "module_validation_performed": false,
+        "bound_descriptor_images_resolved": false,
+        "fixed_function_blend_and_masks_known": false,
+        "external_memory_writes_excluded": false,
+        "replay_allowed": false,
+        "game_stereo_submitted": false
+      },
+      {
+        "case": "stereo-helper-telemetry",
+        "spirv_val_passed": true,
+        "source_sha256": "952f02620522ec2fff405aba5c9407c047a754982f7934a6a62f812a4cfa0250",
+        "schema_version": 1,
+        "scope": "static census of all module functions, including unreachable code",
+        "sha256": "bd0b8f084f28dfebc784c370845e7d6e61939a37ace33d47da2831eb4952792d",
+        "bytes": 14092,
+        "grammar_sha256": "dd2a7c48d3131c9d0c78ad669ab4765048e6fd63e1fe277a0858f5458febdc68",
+        "stages": [
+          "vertex"
+        ],
+        "instruction_count": 836,
+        "pointer_read_instructions_by_storage": {
+          "Function": 140,
+          "Input": 1,
+          "PhysicalStorageBuffer": 11
+        },
+        "pointer_write_instructions_by_storage": {
+          "Function": 46,
+          "Output": 1,
+          "PhysicalStorageBuffer": 9
+        },
+        "explicit_external_pointer_write_instructions": 9,
+        "unresolved_pointer_write_instructions": 0,
+        "image_instructions": {},
+        "image_write_instructions": 0,
+        "atomic_instructions": {
+          "OpAtomicIAdd": 3
+        },
+        "barrier_instructions": {
+          "OpMemoryBarrier": 2
+        },
+        "input_attachment_type_declarations": 0,
+        "attachment_read_instructions": 0,
+        "declared_direct_output_locations": [],
+        "output_interface_fully_resolved": false,
+        "physical_storage_pointer_type_declarations": 6,
+        "extended_instructions": [
+          {
+            "set": "GLSL.std.450",
+            "instruction": 4,
+            "count": 15
+          }
+        ],
+        "glsl_grammar_sha256": "5d72e48247569f9b77a17a849db624350abc9d26f7f72b153bbcf15c37238239",
+        "extended_instruction_policy": "glsl450_memory_v1",
+        "extended_instruction_effects": [
+          {
+            "set": "GLSL.std.450",
+            "instruction": 4,
+            "name": "FAbs",
+            "memory_effect": "none",
+            "count": 15
+          }
+        ],
+        "unmodeled_extended_instruction_forms": {},
+        "unmodeled_extended_instruction_count": 0,
+        "extended_pointer_write_instructions_by_storage": {},
+        "extended_external_pointer_write_instructions": 0,
+        "extended_unresolved_pointer_write_instructions": 0,
+        "non_atomic_external_pointer_write_instructions": 9,
+        "extended_instruction_effects_audited": true,
+        "unmodeled_resource_instructions": {},
+        "unknown_opcodes": {},
+        "declared_descriptor_resources": [],
+        "module_validation_performed": false,
+        "bound_descriptor_images_resolved": false,
+        "fixed_function_blend_and_masks_known": false,
+        "external_memory_writes_excluded": false,
+        "replay_allowed": false,
+        "game_stereo_submitted": false
+      },
+      {
+        "case": "glsl-pure",
+        "spirv_val_passed": true,
+        "source_sha256": "fc3d0757405226fe5a0f19fc53006e7af7f3abc7b4b62cf9c013c1f5541dc7cb",
+        "schema_version": 1,
+        "scope": "static census of all module functions, including unreachable code",
+        "sha256": "3994ba4ce3543360296080d39a9f71c22ecf044ba0d301cb4498b35132b0cbdb",
+        "bytes": 676,
+        "grammar_sha256": "dd2a7c48d3131c9d0c78ad669ab4765048e6fd63e1fe277a0858f5458febdc68",
+        "stages": [
+          "pixel"
+        ],
+        "instruction_count": 35,
+        "pointer_read_instructions_by_storage": {},
+        "pointer_write_instructions_by_storage": {
+          "Output": 1
+        },
+        "explicit_external_pointer_write_instructions": 0,
+        "unresolved_pointer_write_instructions": 0,
+        "image_instructions": {},
+        "image_write_instructions": 0,
+        "atomic_instructions": {},
+        "barrier_instructions": {},
+        "input_attachment_type_declarations": 0,
+        "attachment_read_instructions": 0,
+        "declared_direct_output_locations": [
+          0
+        ],
+        "output_interface_fully_resolved": false,
+        "physical_storage_pointer_type_declarations": 0,
+        "extended_instructions": [
+          {
+            "set": "GLSL.std.450",
+            "instruction": 4,
+            "count": 1
+          },
+          {
+            "set": "GLSL.std.450",
+            "instruction": 8,
+            "count": 1
+          },
+          {
+            "set": "GLSL.std.450",
+            "instruction": 10,
+            "count": 1
+          },
+          {
+            "set": "GLSL.std.450",
+            "instruction": 13,
+            "count": 1
+          },
+          {
+            "set": "GLSL.std.450",
+            "instruction": 14,
+            "count": 1
+          },
+          {
+            "set": "GLSL.std.450",
+            "instruction": 29,
+            "count": 1
+          },
+          {
+            "set": "GLSL.std.450",
+            "instruction": 30,
+            "count": 1
+          },
+          {
+            "set": "GLSL.std.450",
+            "instruction": 31,
+            "count": 1
+          },
+          {
+            "set": "GLSL.std.450",
+            "instruction": 32,
+            "count": 1
+          },
+          {
+            "set": "GLSL.std.450",
+            "instruction": 36,
+            "count": 1
+          },
+          {
+            "set": "GLSL.std.450",
+            "instruction": 50,
+            "count": 1
+          },
+          {
+            "set": "GLSL.std.450",
+            "instruction": 52,
+            "count": 1
+          },
+          {
+            "set": "GLSL.std.450",
+            "instruction": 79,
+            "count": 1
+          },
+          {
+            "set": "GLSL.std.450",
+            "instruction": 80,
+            "count": 1
+          },
+          {
+            "set": "GLSL.std.450",
+            "instruction": 81,
+            "count": 1
+          }
+        ],
+        "glsl_grammar_sha256": "5d72e48247569f9b77a17a849db624350abc9d26f7f72b153bbcf15c37238239",
+        "extended_instruction_policy": "glsl450_memory_v1",
+        "extended_instruction_effects": [
+          {
+            "set": "GLSL.std.450",
+            "instruction": 4,
+            "name": "FAbs",
+            "memory_effect": "none",
+            "count": 1
+          },
+          {
+            "set": "GLSL.std.450",
+            "instruction": 8,
+            "name": "Floor",
+            "memory_effect": "none",
+            "count": 1
+          },
+          {
+            "set": "GLSL.std.450",
+            "instruction": 10,
+            "name": "Fract",
+            "memory_effect": "none",
+            "count": 1
+          },
+          {
+            "set": "GLSL.std.450",
+            "instruction": 13,
+            "name": "Sin",
+            "memory_effect": "none",
+            "count": 1
+          },
+          {
+            "set": "GLSL.std.450",
+            "instruction": 14,
+            "name": "Cos",
+            "memory_effect": "none",
+            "count": 1
+          },
+          {
+            "set": "GLSL.std.450",
+            "instruction": 29,
+            "name": "Exp2",
+            "memory_effect": "none",
+            "count": 1
+          },
+          {
+            "set": "GLSL.std.450",
+            "instruction": 30,
+            "name": "Log2",
+            "memory_effect": "none",
+            "count": 1
+          },
+          {
+            "set": "GLSL.std.450",
+            "instruction": 31,
+            "name": "Sqrt",
+            "memory_effect": "none",
+            "count": 1
+          },
+          {
+            "set": "GLSL.std.450",
+            "instruction": 32,
+            "name": "InverseSqrt",
+            "memory_effect": "none",
+            "count": 1
+          },
+          {
+            "set": "GLSL.std.450",
+            "instruction": 36,
+            "name": "ModfStruct",
+            "memory_effect": "none",
+            "count": 1
+          },
+          {
+            "set": "GLSL.std.450",
+            "instruction": 50,
+            "name": "Fma",
+            "memory_effect": "none",
+            "count": 1
+          },
+          {
+            "set": "GLSL.std.450",
+            "instruction": 52,
+            "name": "FrexpStruct",
+            "memory_effect": "none",
+            "count": 1
+          },
+          {
+            "set": "GLSL.std.450",
+            "instruction": 79,
+            "name": "NMin",
+            "memory_effect": "none",
+            "count": 1
+          },
+          {
+            "set": "GLSL.std.450",
+            "instruction": 80,
+            "name": "NMax",
+            "memory_effect": "none",
+            "count": 1
+          },
+          {
+            "set": "GLSL.std.450",
+            "instruction": 81,
+            "name": "NClamp",
+            "memory_effect": "none",
+            "count": 1
+          }
+        ],
+        "unmodeled_extended_instruction_forms": {},
+        "unmodeled_extended_instruction_count": 0,
+        "extended_pointer_write_instructions_by_storage": {},
+        "extended_external_pointer_write_instructions": 0,
+        "extended_unresolved_pointer_write_instructions": 0,
+        "non_atomic_external_pointer_write_instructions": 0,
+        "extended_instruction_effects_audited": true,
+        "unmodeled_resource_instructions": {},
+        "unknown_opcodes": {},
+        "declared_descriptor_resources": [],
+        "module_validation_performed": false,
+        "bound_descriptor_images_resolved": false,
+        "fixed_function_blend_and_masks_known": false,
+        "external_memory_writes_excluded": false,
+        "replay_allowed": false,
+        "game_stereo_submitted": false
+      },
+      {
+        "case": "glsl-external-pointer-writes",
+        "spirv_val_passed": true,
+        "source_sha256": "5dd12b9de554ccff5aec544cc11f1857fecd0059e284978389b639cf7db3b51d",
+        "schema_version": 1,
+        "scope": "static census of all module functions, including unreachable code",
+        "sha256": "2a9e7bf8b9922202507bdc05c17d8fb0ac61f9c3bd5e5eb18c64bd8460ba7c99",
+        "bytes": 592,
+        "grammar_sha256": "dd2a7c48d3131c9d0c78ad669ab4765048e6fd63e1fe277a0858f5458febdc68",
+        "stages": [
+          "pixel"
+        ],
+        "instruction_count": 36,
+        "pointer_read_instructions_by_storage": {},
+        "pointer_write_instructions_by_storage": {
+          "Output": 1
+        },
+        "explicit_external_pointer_write_instructions": 0,
+        "unresolved_pointer_write_instructions": 0,
+        "image_instructions": {},
+        "image_write_instructions": 0,
+        "atomic_instructions": {},
+        "barrier_instructions": {},
+        "input_attachment_type_declarations": 0,
+        "attachment_read_instructions": 0,
+        "declared_direct_output_locations": [
+          0
+        ],
+        "output_interface_fully_resolved": false,
+        "physical_storage_pointer_type_declarations": 0,
+        "extended_instructions": [
+          {
+            "set": "GLSL.std.450",
+            "instruction": 35,
+            "count": 1
+          },
+          {
+            "set": "GLSL.std.450",
+            "instruction": 51,
+            "count": 1
+          }
+        ],
+        "glsl_grammar_sha256": "5d72e48247569f9b77a17a849db624350abc9d26f7f72b153bbcf15c37238239",
+        "extended_instruction_policy": "glsl450_memory_v1",
+        "extended_instruction_effects": [
+          {
+            "set": "GLSL.std.450",
+            "instruction": 35,
+            "name": "Modf",
+            "memory_effect": "pointer_write",
+            "count": 1
+          },
+          {
+            "set": "GLSL.std.450",
+            "instruction": 51,
+            "name": "Frexp",
+            "memory_effect": "pointer_write",
+            "count": 1
+          }
+        ],
+        "unmodeled_extended_instruction_forms": {},
+        "unmodeled_extended_instruction_count": 0,
+        "extended_pointer_write_instructions_by_storage": {
+          "StorageBuffer": 2
+        },
+        "extended_external_pointer_write_instructions": 2,
+        "extended_unresolved_pointer_write_instructions": 0,
+        "non_atomic_external_pointer_write_instructions": 2,
+        "extended_instruction_effects_audited": true,
+        "unmodeled_resource_instructions": {},
+        "unknown_opcodes": {},
+        "declared_descriptor_resources": [
+          {
+            "id": 4,
+            "storage_class": "storage_buffer",
+            "name": null,
+            "descriptor_set": 0,
+            "binding": 0
+          }
+        ],
+        "module_validation_performed": false,
+        "bound_descriptor_images_resolved": false,
+        "fixed_function_blend_and_masks_known": false,
+        "external_memory_writes_excluded": false,
+        "replay_allowed": false,
+        "game_stereo_submitted": false
+      },
+      {
+        "case": "glsl-local-pointer-writes",
+        "spirv_val_passed": true,
+        "source_sha256": "e8b74d1a8075752dc87148ec4b46c5d9dee6dc89676c39fa9cc49c871ff47753",
+        "schema_version": 1,
+        "scope": "static census of all module functions, including unreachable code",
+        "sha256": "8d3eb5b4afb3b07241281099ef9c1e0a4b1e3ca86e1eb65ed668768dbbe51323",
+        "bytes": 404,
+        "grammar_sha256": "dd2a7c48d3131c9d0c78ad669ab4765048e6fd63e1fe277a0858f5458febdc68",
+        "stages": [
+          "pixel"
+        ],
+        "instruction_count": 25,
+        "pointer_read_instructions_by_storage": {},
+        "pointer_write_instructions_by_storage": {
+          "Output": 1
+        },
+        "explicit_external_pointer_write_instructions": 0,
+        "unresolved_pointer_write_instructions": 0,
+        "image_instructions": {},
+        "image_write_instructions": 0,
+        "atomic_instructions": {},
+        "barrier_instructions": {},
+        "input_attachment_type_declarations": 0,
+        "attachment_read_instructions": 0,
+        "declared_direct_output_locations": [
+          0
+        ],
+        "output_interface_fully_resolved": false,
+        "physical_storage_pointer_type_declarations": 0,
+        "extended_instructions": [
+          {
+            "set": "GLSL.std.450",
+            "instruction": 35,
+            "count": 1
+          },
+          {
+            "set": "GLSL.std.450",
+            "instruction": 51,
+            "count": 1
+          }
+        ],
+        "glsl_grammar_sha256": "5d72e48247569f9b77a17a849db624350abc9d26f7f72b153bbcf15c37238239",
+        "extended_instruction_policy": "glsl450_memory_v1",
+        "extended_instruction_effects": [
+          {
+            "set": "GLSL.std.450",
+            "instruction": 35,
+            "name": "Modf",
+            "memory_effect": "pointer_write",
+            "count": 1
+          },
+          {
+            "set": "GLSL.std.450",
+            "instruction": 51,
+            "name": "Frexp",
+            "memory_effect": "pointer_write",
+            "count": 1
+          }
+        ],
+        "unmodeled_extended_instruction_forms": {},
+        "unmodeled_extended_instruction_count": 0,
+        "extended_pointer_write_instructions_by_storage": {
+          "Function": 1,
+          "Private": 1
+        },
+        "extended_external_pointer_write_instructions": 0,
+        "extended_unresolved_pointer_write_instructions": 0,
+        "non_atomic_external_pointer_write_instructions": 0,
+        "extended_instruction_effects_audited": true,
+        "unmodeled_resource_instructions": {},
+        "unknown_opcodes": {},
+        "declared_descriptor_resources": [],
+        "module_validation_performed": false,
+        "bound_descriptor_images_resolved": false,
+        "fixed_function_blend_and_masks_known": false,
+        "external_memory_writes_excluded": false,
+        "replay_allowed": false,
+        "game_stereo_submitted": false
+      },
+      {
+        "case": "unmodeled-debug-printf",
+        "spirv_val_passed": true,
+        "source_sha256": "d215c1db34e4c609c4a477df998f3b273dbabbc2126a6bcbcdf03e71ee19305f",
+        "schema_version": 1,
+        "scope": "static census of all module functions, including unreachable code",
+        "sha256": "f25104f771dcd7d9d1ac9fcecb2e0ceb9363a37ecc6a809e09ff3ce615039a96",
+        "bytes": 516,
+        "grammar_sha256": "dd2a7c48d3131c9d0c78ad669ab4765048e6fd63e1fe277a0858f5458febdc68",
+        "stages": [
+          "pixel"
+        ],
+        "instruction_count": 30,
+        "pointer_read_instructions_by_storage": {
+          "Input": 2
+        },
+        "pointer_write_instructions_by_storage": {
+          "Output": 1
+        },
+        "explicit_external_pointer_write_instructions": 0,
+        "unresolved_pointer_write_instructions": 0,
+        "image_instructions": {},
+        "image_write_instructions": 0,
+        "atomic_instructions": {},
+        "barrier_instructions": {},
+        "input_attachment_type_declarations": 0,
+        "attachment_read_instructions": 0,
+        "declared_direct_output_locations": [
+          0
+        ],
+        "output_interface_fully_resolved": false,
+        "physical_storage_pointer_type_declarations": 0,
+        "extended_instructions": [
+          {
+            "set": "NonSemantic.DebugPrintf",
+            "instruction": 1,
+            "count": 1
+          }
+        ],
+        "glsl_grammar_sha256": "5d72e48247569f9b77a17a849db624350abc9d26f7f72b153bbcf15c37238239",
+        "extended_instruction_policy": "glsl450_memory_v1",
+        "extended_instruction_effects": [
+          {
+            "set": "NonSemantic.DebugPrintf",
+            "instruction": 1,
+            "name": null,
+            "memory_effect": "unknown",
+            "count": 1
+          }
+        ],
+        "unmodeled_extended_instruction_forms": {},
+        "unmodeled_extended_instruction_count": 1,
+        "extended_pointer_write_instructions_by_storage": {},
+        "extended_external_pointer_write_instructions": 0,
+        "extended_unresolved_pointer_write_instructions": 0,
+        "non_atomic_external_pointer_write_instructions": 0,
+        "extended_instruction_effects_audited": false,
+        "unmodeled_resource_instructions": {},
+        "unknown_opcodes": {},
+        "declared_descriptor_resources": [],
+        "module_validation_performed": false,
+        "bound_descriptor_images_resolved": false,
+        "fixed_function_blend_and_masks_known": false,
+        "external_memory_writes_excluded": false,
+        "replay_allowed": false,
+        "game_stereo_submitted": false
+      }
+    ],
+    "glsl_grammar_sha256": "5d72e48247569f9b77a17a849db624350abc9d26f7f72b153bbcf15c37238239",
+    "source_sha256": {
+      "tools/shader_effects.py": "cefc93ef2f3151d89cc1c00b591caad2520e8a8e78558a84881dbb3ee31ffa80",
+      "tools/shader_effects_validate.py": "41bbf6d136ef6079179485f30ea19bf8e3d39478b14918a503e3382b75819a64",
+      "tools/glsl_effects.py": "f4b04140402f020d2facea1315c707658035278bb88f999fd95254c41bda66e5"
+    },
+    "gpu_shader_execution_performed": false,
+    "game_stereo_submitted": false
+  },
+  "synthetic_private_report_sha256": "026860eb0be9cf894e397b5de1af7be759e514ef7257a9c56293da10cac5b7d9",
+  "prior_candidate_analysis": {
+    "private_validation_report_sha256": "0a301f4eb496ea30af28d1bfaa453fda5f95cbbf25c63d29393a719214b75ed5",
+    "reports": [
+      {
+        "private_report_sha256": "e914806f4cefdfc50f7a7f5574065b955c3be6cb1d2d0249ccbbc9b8a883da1b",
+        "candidate_modules": 17,
+        "stage_associations": 20,
+        "unresolved_extended_effect_modules": 0,
+        "extended_calls": 507,
+        "distinct_extended_operations": [
+          4,
+          8,
+          10,
+          13,
+          14,
+          29,
+          30,
+          31,
+          32,
+          50,
+          79,
+          80,
+          81
+        ],
+        "extended_pointer_writes": 0,
+        "external_write_exclusion_proven": false,
+        "replay_allowed": false
+      },
+      {
+        "private_report_sha256": "cda2c929195f112809bc2d7fa599012ee6c9bc2cdf363ff8ba36bc8f8fc05622",
+        "candidate_modules": 7,
+        "stage_associations": 8,
+        "unresolved_extended_effect_modules": 0,
+        "extended_calls": 151,
+        "distinct_extended_operations": [
+          10,
+          29,
+          30,
+          50
+        ],
+        "extended_pointer_writes": 0,
+        "external_write_exclusion_proven": false,
+        "replay_allowed": false
+      }
+    ],
+    "unique_candidate_modules": 17,
+    "all_candidate_modules_passed_spirv_val": true,
+    "sets_overlap_do_not_sum_module_or_call_counts": true,
+    "module_or_pipeline_identifiers_published": false,
+    "raw_shader_bytes_published": false,
+    "exact_identity_with_live_game_modules_proven": false,
+    "new_game_capture_performed": false,
+    "unresolved_preparatory_LOAD_counts": [
+      2,
+      1
+    ],
+    "replay_allowed": false
+  },
+  "local_tool_sha256": {
+    "glslang": "96ea85d4228d7065507cd58454628e0d3c9ec8bbd29a0cd20ee0f3cefaf6d026",
+    "spirv-as": "ef27f4a3890f80abd21bd9cb919b16471472bcbb94dfa6f455b6bb3f1f047bdd",
+    "spirv-val": "20c5998a46f02310f56bf11be238c34d374bb50104b7ccf85bb909f9da883ff9"
+  },
+  "python_cases": 117,
+  "new_unit_tests": 9,
+  "shader_modules_built_and_validated": 9,
+  "old_candidate_modules_revalidated": 17,
+  "gpu_shader_execution_performed": false,
+  "new_runtime_binary_built": false,
+  "automatic_external_write_exclusion": false,
+  "bound_descriptors_and_attachment_aliases_resolved": false,
+  "fixed_function_and_masks_audited": false,
+  "real_game_load_dependencies_resolved": false,
+  "game_draw_replay_implemented": false,
+  "game_stereo_submitted": false,
+  "windows_native_d3d12_adapter_implemented": false,
+  "original_game_and_nvidia_audit": {
+    "expected_game_version": "3.2.3.73883",
+    "expected_streamline_version": "2.12.0.0",
+    "original_library_matches": true,
+    "game_executable_matches": true,
+    "exports_match": true,
+    "named_exports": 262,
+    "machine": "0x8664",
+    "installation_allowed": false,
+    "deployment_status": "blocked_by_game_signature_check"
+  },
+  "game_or_nvidia_binaries_changed": false,
+  "raw_game_shaders_or_logs_included": false,
+  "previous_static_GPL_anomaly_retried_or_resolved": false,
+  "references": [
+    "https://registry.khronos.org/SPIR-V/specs/unified1/GLSL.std.450.html",
+    "https://github.com/KhronosGroup/GLSL/blob/main/extensions/ext/GLSL_EXT_debug_printf.txt"
+  ],
+  "remaining_work": [
+    "Audit exact transformed/specialized shader modules and the remaining core instructions; this model classifies only17 extended operations and is not a complete module write proof.",
+    "Resolve actual descriptors/attachment aliases, preparatory LOAD producers and barriers, exact fixed state and GPU lifetimes.",
+    "Integrate admissible real game passes and following processing, predicted headset poses and SteamVR submission; implement native Windows D3D12 adapter."
+  ]
+}

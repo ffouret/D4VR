@@ -1,0 +1,8 @@
+LIBRARY "d4vr_streamline_original"
+EXPORTS
+    slInit
+    slShutdown
+    slSetConstants
+    slSetTag
+    slSetTagForFrame
+    slIsFeatureLoaded

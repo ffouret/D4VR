@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "actual_game": "Diablo IV",
+  "mode": "fixed_monoscopic_successive_narrow_history_and_color_blit_provenance",
+  "layer_sha256": "dabfed4b4fb9dce5fbc7f671b387f34334b987bc7300047effd98cb29f418dfa",
+  "shader_bundle_reused_intact": true,
+  "shader_entries": 5379,
+  "new_shader_built": false,
+  "raw_depth_exports": 3,
+  "raw_depth_dimensions": [
+    1707,
+    960
+  ],
+  "raw_depth_format": "D24 low24 words",
+  "depth_bytes": 19664640,
+  "successive_monoscopic_pairs": 6,
+  "request_script_host_seconds": 17.761074688001827,
+  "measured_hold_host_ms": [
+    5410,
+    5420,
+    5400
+  ],
+  "measured_hold_present_intervals": [
+    781,
+    782,
+    780
+  ],
+  "depth_packet_revisions": [
+    2,
+    4,
+    6
+  ],
+  "color_measure_packet_revisions": [
+    3,
+    5,
+    7
+  ],
+  "delivered_eye_receipts_with_source_values": 12,
+  "distinct_capture_source_lifetimes": 3,
+  "one_source_common_to_all_eyes": false,
+  "hook_submission_capture_consistency_checked_eyes": 4,
+  "receipt_only_eyes": 8,
+  "all_eyes_have_both_secondary_logs": false,
+  "bounded_record_rows": 32,
+  "bounded_submit_rows": 32,
+  "log_limit_exhausted_by_including_discarded_or_unexported_capture_work": true,
+  "trace_identity_scope": "One process/device/observer. Original hook/submission/capture consistency is not an independent original-game argument or pixel reference.",
+  "exact_depth_copy_bridges": 3,
+  "forward_occurrences_each": 8,
+  "forward_events": [
+    100,
+    100,
+    100
+  ],
+  "forward_windows_locally_truncated": false,
+  "captured_sources_joined_to_depth_window_associations": 0,
+  "sampled_path_still_unknown": true,
+  "source_history_at_last_capture": {
+    "global_overflow": 37,
+    "instrumented_overflow_causes": {
+      "recording_event_limit": 0,
+      "live_event_limit": 0,
+      "snapshot_reference_limit": 0,
+      "additional_endpoint_limit": 0
+    },
+    "other_or_unattributed_overflow": 37,
+    "excluded_attempts": 19680872,
+    "admitted_live_endpoints": 9,
+    "live_event_nodes": 3586,
+    "snapshot_references": 3514,
+    "prefixes_missing": true,
+    "faulted": false
+  },
+  "counter_comparison_limit": "Earlier 5612508 vs current37 are cumulative counters from different sessions and durations. No normalized rate or pixel improvement inferred; four newly classified event/reference/endpoint overflow causes are zero in these current snapshots.",
+  "normal_ui_exit": true,
+  "launcher_exit_code": 0,
+  "all_owned_processes_exited": true,
+  "original_audit_unchanged": true,
+  "named_exports_checked": 262,
+  "game_khronos_used": false,
+  "final_device_fence_or_lease_counts_observed": false,
+  "independent_analysis_sha256": "255c87bf283bc0f2b243b6f21603a38ceffa19b193cfd724f32a14c5312a1014",
+  "claims": {
+    "independent_original_game_arguments_or_pixels_verified": false,
+    "all_eyes_secondary_hook_logs_verified": false,
+    "coverage_repaired": false,
+    "last_gpu_writer_known": false,
+    "sampled_consumer_proven": false,
+    "initialized_pixels_verified": false,
+    "whole_scene_verified": false,
+    "common_scene_time_known": false,
+    "xr_pose_known": false,
+    "game_image_sent_to_quest": false,
+    "continuous_immersive_vr": false
+  },
+  "limits": [
+    "Record/submitted trace limits are reached, so eight delivered eye receipts lack those secondary log rows. Do not retag current rows or claim twelve cross-checked chains.",
+    "The three actual capture sources have no exact declared association in the retained depth windows; image size/format/pose cannot fill that gap.",
+    "Targeted admission excludes unrelated scopes; absence does not imply unused or no geometry.",
+    "Raw game shaders/images/journals stay private. No independent game pixel reference or Khronos game validation was run.",
+    "Large wide-field cutouts and rectangular color difference remain visible."
+  ],
+  "delivered_source_identity_bridges_marked_known": 12,
+  "delivered_blit_refs_with_retained_journal_event_flag": 0,
+  "game_layer_precedes_later_cpu_report_exception_guard": true,
+  "later_guard_layer_reexecuted_in_game": false
+}

@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "owned_scene": true,
+  "actual_wsi": true,
+  "game_rendered": false,
+  "xr_submission": false,
+  "unit": {
+    "depth_audit_tests_passed": true,
+    "immutable_submission_values": true,
+    "bounds_and_unknowns": true,
+    "shared_readback_predicates": true,
+    "concurrent_cpu_calls": 2000,
+    "gpu_calls": 0
+  },
+  "cases": [
+    {
+      "environment": "baseline-native",
+      "reports": 0,
+      "present_calls": 64,
+      "original_calls": 65,
+      "unchanged_color_bytes": 0,
+      "original_early_signal_succeeded": true,
+      "gpu_depth_reads": 0,
+      "validation_errors": 0,
+      "on_request_reports_before_teardown": false,
+      "scope_contract_incompatible_observed": false
+    },
+    {
+      "environment": "audit-native",
+      "reports": 10,
+      "present_calls": 64,
+      "original_calls": 65,
+      "unchanged_color_bytes": 1048576,
+      "original_early_signal_succeeded": true,
+      "gpu_depth_reads": 0,
+      "validation_errors": 0,
+      "on_request_reports_before_teardown": true,
+      "scope_contract_incompatible_observed": true
+    },
+    {
+      "environment": "baseline-runtime",
+      "reports": 0,
+      "present_calls": 64,
+      "original_calls": 65,
+      "unchanged_color_bytes": 0,
+      "original_early_signal_succeeded": true,
+      "gpu_depth_reads": 0,
+      "validation_errors": 0,
+      "on_request_reports_before_teardown": false,
+      "scope_contract_incompatible_observed": false
+    },
+    {
+      "environment": "audit-runtime",
+      "reports": 10,
+      "present_calls": 64,
+      "original_calls": 65,
+      "unchanged_color_bytes": 1048576,
+      "original_early_signal_succeeded": true,
+      "gpu_depth_reads": 0,
+      "validation_errors": 0,
+      "on_request_reports_before_teardown": true,
+      "scope_contract_incompatible_observed": true
+    }
+  ],
+  "validation_errors": 0,
+  "layer_sha256": "1988b2c6ade3d28f749d6f2fd4b349ed5539021c285127c40d0edac59ea7a4f7",
+  "fixture_sha256": "32d8ac415174ee77d72df981e97648f9afca6332d4432a32745c5f70c7a6cef9",
+  "unit_sha256": "b4fbce51936d534163389fccaaddc81a97b552973f2c7eda23c9629e70c94ab6",
+  "forwarding_sha256": "4f62b42691bd3fbe54a1dfdb3c95dea4626d57792bab1a2878bca67077b5de2a",
+  "source_sha256": {
+    "native/vulkan/depth_audit.hpp": "430c67755eb76a875fec010e0b24b137f03e897d69511723bb623f757f596c77",
+    "native/vulkan/depth_audit.cpp": "4e8dc4f11695fbaf7894ae84b1d031b6e2ee3145a7f943656982164aba537c95",
+    "native/vulkan/depth_readback.hpp": "b02ee21265b98a407971143eaf758147f10b5a9b626eb8500db9740d2deddd89",
+    "native/vulkan/depth_readback.cpp": "c3a9cba161d30ee37283567b5d9f8ae7f0621284fb64833da5313a62c78cb9db",
+    "native/vulkan/trace_layer.cpp": "c8745cb81d605deb605a72d279a62eb363bc01f6b2b88f6a8e3812e6bd78640f",
+    "native/tests/depth_audit_tests.cpp": "2a0bdcc7d67a51aed2b47433731c0fcda84f63e862656511476b1b0f3049b402",
+    "native/tests/present_layer_vulkan.cpp": "e1d8ab3b279553aeb3445d2cade9fa0620d2bad8bef55c74dc0e4d67b7843ed2",
+    "native/tests/vulkan_trace_tests.cpp": "6d647a49111c7807f156771853591d3377e1387dced0720a07dc560de7495e6e",
+    "tools/depth_audit_validate.py": "25b30ba095cf94e95648a61bbeef8e375136ba79c497c7e7ec8cbfc6b4176a5d"
+  },
+  "readback_admission_regression": {
+    "gpu_cases": 24,
+    "wsi_cases": 4,
+    "validation_errors": 0,
+    "layer_sha256": "1988b2c6ade3d28f749d6f2fd4b349ed5539021c285127c40d0edac59ea7a4f7",
+    "source_sha256": {
+      "native/vulkan/depth_readback.hpp": "b02ee21265b98a407971143eaf758147f10b5a9b626eb8500db9740d2deddd89",
+      "native/vulkan/depth_readback.cpp": "c3a9cba161d30ee37283567b5d9f8ae7f0621284fb64833da5313a62c78cb9db",
+      "native/vulkan/trace_layer.cpp": "c8745cb81d605deb605a72d279a62eb363bc01f6b2b88f6a8e3812e6bd78640f",
+      "native/tests/depth_readback_tests.cpp": "d01ec86565548c1316a608ea93f82594f053adc70fdf6bb09edfc4da9ce6a364",
+      "native/tests/depth_readback_vulkan.cpp": "a64fd8917328ac77c0dc82ab34cf78f324f7b7065d651c5f2db4dc8d4e2b8060",
+      "tools/depth_readback_validate.py": "0538771accf3f23fdb30678f95dd0d2f6e2957d0c5ccc7a821eee48dd580711e",
+      "native/tests/present_layer_vulkan.cpp": "e1d8ab3b279553aeb3445d2cade9fa0620d2bad8bef55c74dc0e4d67b7843ed2"
+    }
+  },
+  "actual_game_proof": "diablo-depth-audit-v1.json",
+  "reader_admitted_in_game": false,
+  "python_tests": 201
+}

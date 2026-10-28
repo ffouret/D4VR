@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "tested_commit": "992d685a007916d38a75562f17db27222888c585",
+  "purpose": "Scope DXIL constant-buffer range IDs to the constant-buffer resource class",
+  "synthetic_controls": {
+    "python_tests_passed": 170,
+    "resource_class_collision_regression_passed": true,
+    "missing_or_ambiguous_root_refused": true,
+    "duplicate_or_missing_buffer_entries_refused": true,
+    "original_matrix_recognition_tests_passed": true,
+    "gpu_validation": {
+      "stereo_gpu_fixture_passed": true,
+      "packet_gpu_updates_verified": true,
+      "independent_reference_images_verified": true,
+      "reference_cases": 11,
+      "telemetry_samples": 0,
+      "telemetry_disabled_and_buffers_preserved": true,
+      "max_reference_different_bytes": 0,
+      "eye_separation_view_units": 0.064,
+      "disparity_pixels_depth_2": 7.29788,
+      "disparity_pixels_depth_4": 3.65839,
+      "head_translation_rotation_verified": true,
+      "asymmetric_projection_verified": true,
+      "source_jitter_depth_changes_verified": true,
+      "inactive_and_non_target_unchanged": true,
+      "game_stereo_proven": false
+    }
+  },
+  "private_game_shader_scan": {
+    "vertex_shaders_scanned": 5784,
+    "errors": 0,
+    "previous_recognized_final_projections": 2679,
+    "recognized_final_projections": 5378,
+    "added": 2699,
+    "removed": 0,
+    "all_recognized_projection_buffer_space": 0,
+    "all_recognized_projection_buffer_register": 0,
+    "all_recognized_projection_byte_offset": 1152,
+    "transformed_modules_validated_by_spirv_val": 5378,
+    "all_source_identities_checked": true
+  },
+  "private_previous_game_frame_correlation": {
+    "added_vertex_pipeline_associations": 25,
+    "passes_with_additions": 14,
+    "main_resolution_passes_with_additions": 7,
+    "scene_roles_visually_proven": false
+  },
+  "bundle_sha256": "eec657b192baf48c912c414d2e2157b595fe3778ee118fa5318b0ebc3a13f76b",
+  "helper_sha256": "104c868b52025cb8c60b976ee891945cfba35ff859e23f2d2f71d023f385dd6e",
+  "runtime_module_sha256": "37016d6b7d9507aec44ce096e634d331f9d116d343ec2cde0a07fd4db6509bb2",
+  "helper_and_native_layer_changed": false,
+  "newly_matched_game_shaders_or_pixels_published": false,
+  "full_world_stereo_proven": false,
+  "game_stereo_submitted": false
+}

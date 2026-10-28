@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "scope": "upstream source audit only, not observed game commands",
+  "upstream_commit": "0bb64c56c8f0dcc11ecc0f6c56e00e4f7bd8d506",
+  "runtime_version": "3.1.0",
+  "runtime_reports_local_changes": true,
+  "exact_local_source_reconstructed": false,
+  "sources": [
+    {
+      "file": "command.c",
+      "sha256": "45829650b34e6cfa5b2ecb4452f429d6489d70951ee6287d358ea5888a7417cb",
+      "url": "https://raw.githubusercontent.com/HansKristian-Work/vkd3d-proton/0bb64c56c8f0dcc11ecc0f6c56e00e4f7bd8d506/libs/vkd3d/command.c",
+      "bytes": 1163073
+    },
+    {
+      "file": "state.c",
+      "sha256": "f3b17fc716c6adc013dc49ad25f01f26c18f87bfea74c426dc47dcbdd52b62a5",
+      "url": "https://raw.githubusercontent.com/HansKristian-Work/vkd3d-proton/0bb64c56c8f0dcc11ecc0f6c56e00e4f7bd8d506/libs/vkd3d/state.c",
+      "bytes": 373876
+    }
+  ],
+  "states": [
+    {
+      "vkd3d_flag": "VKD3D_DYNAMIC_STATE_VIEWPORT",
+      "vulkan_state": "VK_DYNAMIC_STATE_VIEWPORT_WITH_COUNT_EXT",
+      "replay_support": "captured_with_explicit_pipeline_contract"
+    },
+    {
+      "vkd3d_flag": "VKD3D_DYNAMIC_STATE_SCISSOR",
+      "vulkan_state": "VK_DYNAMIC_STATE_SCISSOR_WITH_COUNT_EXT",
+      "replay_support": "captured_with_explicit_pipeline_contract"
+    },
+    {
+      "vkd3d_flag": "VKD3D_DYNAMIC_STATE_BLEND_CONSTANTS",
+      "vulkan_state": "VK_DYNAMIC_STATE_BLEND_CONSTANTS",
+      "replay_support": "captured_with_explicit_pipeline_contract"
+    },
+    {
+      "vkd3d_flag": "VKD3D_DYNAMIC_STATE_STENCIL_REFERENCE",
+      "vulkan_state": "VK_DYNAMIC_STATE_STENCIL_REFERENCE",
+      "replay_support": "captured_with_explicit_pipeline_contract"
+    },
+    {
+      "vkd3d_flag": "VKD3D_DYNAMIC_STATE_DEPTH_BOUNDS",
+      "vulkan_state": "VK_DYNAMIC_STATE_DEPTH_BOUNDS",
+      "replay_support": "captured_with_explicit_pipeline_contract"
+    },
+    {
+      "vkd3d_flag": "VKD3D_DYNAMIC_STATE_TOPOLOGY",
+      "vulkan_state": "VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT",
+      "replay_support": "captured_with_explicit_pipeline_contract"
+    },
+    {
+      "vkd3d_flag": "VKD3D_DYNAMIC_STATE_VERTEX_BUFFER_STRIDE",
+      "vulkan_state": "VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT",
+      "replay_support": "captured_with_explicit_pipeline_contract"
+    },
+    {
+      "vkd3d_flag": "VKD3D_DYNAMIC_STATE_FRAGMENT_SHADING_RATE",
+      "vulkan_state": "VK_DYNAMIC_STATE_FRAGMENT_SHADING_RATE_KHR",
+      "replay_support": "rejected"
+    },
+    {
+      "vkd3d_flag": "VKD3D_DYNAMIC_STATE_PRIMITIVE_RESTART",
+      "vulkan_state": "VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE_EXT",
+      "replay_support": "captured_with_explicit_pipeline_contract"
+    },
+    {
+      "vkd3d_flag": "VKD3D_DYNAMIC_STATE_PATCH_CONTROL_POINTS",
+      "vulkan_state": "VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT",
+      "replay_support": "rejected"
+    },
+    {
+      "vkd3d_flag": "VKD3D_DYNAMIC_STATE_DEPTH_WRITE_ENABLE",
+      "vulkan_state": "VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE",
+      "replay_support": "captured_with_explicit_pipeline_contract"
+    },
+    {
+      "vkd3d_flag": "VKD3D_DYNAMIC_STATE_STENCIL_WRITE_MASK",
+      "vulkan_state": "VK_DYNAMIC_STATE_STENCIL_WRITE_MASK",
+      "replay_support": "captured_with_explicit_pipeline_contract"
+    },
+    {
+      "vkd3d_flag": "VKD3D_DYNAMIC_STATE_DEPTH_BIAS",
+      "vulkan_state": "VK_DYNAMIC_STATE_DEPTH_BIAS",
+      "replay_support": "captured_with_explicit_pipeline_contract"
+    },
+    {
+      "vkd3d_flag": "VKD3D_DYNAMIC_STATE_DEPTH_BIAS",
+      "vulkan_state": "VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE",
+      "replay_support": "captured_with_explicit_pipeline_contract"
+    },
+    {
+      "vkd3d_flag": "VKD3D_DYNAMIC_STATE_RASTERIZATION_SAMPLES",
+      "vulkan_state": "VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT",
+      "replay_support": "rejected"
+    }
+  ],
+  "additional_unmodeled_command": "vkCmdSetDepthBias2EXT",
+  "game_pipeline_dynamic_states_captured": false,
+  "game_stereo_submitted": false
+}

@@ -1,0 +1,423 @@
+{
+  "schema_version": 1,
+  "scope": "bounded exact GetDescriptor outputs and observed resource identities on the original synthetic GPU fixture",
+  "synthetic_scene": true,
+  "diablo_rendered": false,
+  "game_resource_admission": false,
+  "descriptor_buffer_snapshot_implemented": false,
+  "descriptor_query_selection_proven": false,
+  "new_human_headset_trial": false,
+  "encoding_bytes_public": false,
+  "exact_comparison": "full byte equality plus observed typed source; all ambiguous candidates retained; no hash admission",
+  "observations": [
+    "six uniform buffer descriptor outputs compared exactly with application oracle",
+    "one unused sampled image descriptor output compared exactly after destination overwrite and source view destruction",
+    "source union selected by descriptor type; ignored fields not read",
+    "generation identity, null/unknown/ambiguous sources, explicit unresolved samplers",
+    "owned immutable catalog prefix at submission; budget/failure closes candidate lookup"
+  ],
+  "limits": {
+    "entries": 4096,
+    "bytes_per_entry": 4096,
+    "total_entry_bytes": 1048576,
+    "coverage": "bounded prefix of observed device queries, not proof of active descriptor placement"
+  },
+  "cpu_checks": {
+    "python_tests": 146,
+    "strict_frame_metadata_tests": "passed",
+    "strict_forwarding_tests": "passed",
+    "sanitizers": "local runtime absent; Linux CI runs frame metadata and forwarding under ASan/UBSan"
+  },
+  "source_sha256": {
+    "native/vulkan/descriptor_receipts.hpp": "621e5f8c78943d177176286bb33ebf29c4e6a730d0ae4eab0504aeb7746d3c82",
+    "native/vulkan/frame_trace.hpp": "af83244909993badb6b8da62ad54604006a066e5dd01711323fd65d488a2f8b0",
+    "native/vulkan/trace_layer.cpp": "828ba4a964cda4fedf0f9831e5356486f6af250d8354043129c6f99f8bfd0923",
+    "native/tests/frame_trace_tests.cpp": "d86e9760143a66f34cb114fbc144dc87a11b91d547d06980505a1c83eea47c5c",
+    "native/tests/vulkan_trace_tests.cpp": "9394b071aec568ec4fcc411c40b4e80414eec70bc32a16023455bc04754f1bb8",
+    "native/tests/stereo_targets_vulkan.cpp": "5e9889572cac1b28088c0b55997515aad90291cfaf521302c5f7b7048436c39b",
+    "tools/frame_trace.py": "1212c3f5b59d6f778afd820b9b6b63e79e78da7710cad6532af7efb8ac411e8a",
+    "tools/stereo_mrt_validate.py": "2f61ae633df1c5acf626f691a09e80a60887efcdbe0f56dca0c0a33afad0c26c",
+    "tests/test_frame_trace.py": "94ce4541806aa7a395d4b60a3a1b29795b8977bbd431b432a8f9b60f4d958217"
+  },
+  "artifact_sha256": {
+    "libd4vr_vulkan_trace.so": "0594b7bbf12ed67fa7bb83c956d1d566ca5cb7f1f5f80e3619e388fbcf099226",
+    "frozen_targets_fixture": "a54454e0aa2ab91fac820525b59329b196a49137a00279c5860c7bb70242bdf0"
+  },
+  "gpu_controls": [
+    {
+      "case": "native",
+      "exit_code": 0,
+      "validation_layer_loaded": false,
+      "intentional_sync_hazard_detected": false,
+      "intentional_wrong_compute_offset_detected": false,
+      "frame_metadata": {
+        "bounded_capture_verified": true,
+        "monolithic_pipeline_count": 4,
+        "linked_pipeline_count": 0,
+        "largest_dynamic_declaration": 3,
+        "clear_value_sets": 48,
+        "graphics_state_snapshot_complete": false,
+        "resource_observation_counts": {
+          "descriptor_buffers": 4,
+          "descriptor_offsets": 8,
+          "draw": 8,
+          "dispatch": 1,
+          "classic_descriptors": 4
+        },
+        "buffer_address_status_counts": {
+          "unique_observed_range": 4
+        },
+        "layout_observation_counts": {
+          "descriptor_offsets": 8,
+          "classic_descriptors": 4
+        },
+        "descriptor_layout_query_counts": {
+          "sizes": 1,
+          "binding_offsets": 2
+        },
+        "observed_pipeline_layouts": 2,
+        "observed_set_layouts": 8,
+        "descriptor_query_counts": {
+          "observed_calls": 7,
+          "owned_receipts": 7,
+          "encoding_bytes": 52,
+          "resource_kinds": {
+            "1": 6,
+            "2": 1
+          }
+        },
+        "descriptor_exact_byte_oracle_verified": true,
+        "descriptor_source_buffers": 6,
+        "descriptor_source_image_views": 1,
+        "descriptor_query_selection_proven": false
+      },
+      "reference_checks": {
+        "color_reference_different_bytes": 0,
+        "depth_reference_compared_texels": 1048576,
+        "max_normalized_depth_difference": 0,
+        "stencil_reference_different_bytes": 0,
+        "following_compute_reference_words": 32,
+        "incorrect_compute_samples_detected": 0,
+        "original_targets_preserved_defined_bytes": 31457280
+      }
+    },
+    {
+      "case": "native-validation",
+      "exit_code": 0,
+      "validation_layer_loaded": true,
+      "intentional_sync_hazard_detected": false,
+      "intentional_wrong_compute_offset_detected": false,
+      "frame_metadata": {
+        "bounded_capture_verified": true,
+        "monolithic_pipeline_count": 4,
+        "linked_pipeline_count": 0,
+        "largest_dynamic_declaration": 3,
+        "clear_value_sets": 48,
+        "graphics_state_snapshot_complete": false,
+        "resource_observation_counts": {
+          "descriptor_buffers": 4,
+          "descriptor_offsets": 8,
+          "draw": 8,
+          "dispatch": 1,
+          "classic_descriptors": 4
+        },
+        "buffer_address_status_counts": {
+          "unique_observed_range": 4
+        },
+        "layout_observation_counts": {
+          "descriptor_offsets": 8,
+          "classic_descriptors": 4
+        },
+        "descriptor_layout_query_counts": {
+          "sizes": 1,
+          "binding_offsets": 2
+        },
+        "observed_pipeline_layouts": 2,
+        "observed_set_layouts": 8,
+        "descriptor_query_counts": {
+          "observed_calls": 7,
+          "owned_receipts": 7,
+          "encoding_bytes": 52,
+          "resource_kinds": {
+            "1": 6,
+            "2": 1
+          }
+        },
+        "descriptor_exact_byte_oracle_verified": true,
+        "descriptor_source_buffers": 6,
+        "descriptor_source_image_views": 1,
+        "descriptor_query_selection_proven": false
+      },
+      "reference_checks": {
+        "color_reference_different_bytes": 0,
+        "depth_reference_compared_texels": 1048576,
+        "max_normalized_depth_difference": 0,
+        "stencil_reference_different_bytes": 0,
+        "following_compute_reference_words": 32,
+        "incorrect_compute_samples_detected": 0,
+        "original_targets_preserved_defined_bytes": 31457280
+      }
+    },
+    {
+      "case": "sync-negative-control",
+      "exit_code": 0,
+      "validation_layer_loaded": true,
+      "intentional_sync_hazard_detected": true,
+      "intentional_wrong_compute_offset_detected": false,
+      "frame_metadata": {
+        "bounded_capture_verified": true,
+        "monolithic_pipeline_count": 4,
+        "linked_pipeline_count": 0,
+        "largest_dynamic_declaration": 3,
+        "clear_value_sets": 48,
+        "graphics_state_snapshot_complete": false,
+        "resource_observation_counts": {
+          "descriptor_buffers": 4,
+          "descriptor_offsets": 8,
+          "draw": 8,
+          "dispatch": 1,
+          "classic_descriptors": 4
+        },
+        "buffer_address_status_counts": {
+          "unique_observed_range": 4
+        },
+        "layout_observation_counts": {
+          "descriptor_offsets": 8,
+          "classic_descriptors": 4
+        },
+        "descriptor_layout_query_counts": {
+          "sizes": 1,
+          "binding_offsets": 2
+        },
+        "observed_pipeline_layouts": 2,
+        "observed_set_layouts": 8,
+        "descriptor_query_counts": {
+          "observed_calls": 7,
+          "owned_receipts": 7,
+          "encoding_bytes": 52,
+          "resource_kinds": {
+            "1": 6,
+            "2": 1
+          }
+        },
+        "descriptor_exact_byte_oracle_verified": true,
+        "descriptor_source_buffers": 6,
+        "descriptor_source_image_views": 1,
+        "descriptor_query_selection_proven": false
+      },
+      "reference_checks": {
+        "color_reference_different_bytes": 0,
+        "depth_reference_compared_texels": 1048576,
+        "max_normalized_depth_difference": 0,
+        "stencil_reference_different_bytes": 0,
+        "following_compute_reference_words": 32,
+        "incorrect_compute_samples_detected": 0,
+        "original_targets_preserved_defined_bytes": 31457280
+      }
+    },
+    {
+      "case": "descriptor-offset-negative-control",
+      "exit_code": 0,
+      "validation_layer_loaded": true,
+      "intentional_sync_hazard_detected": false,
+      "intentional_wrong_compute_offset_detected": true,
+      "frame_metadata": {
+        "bounded_capture_verified": true,
+        "monolithic_pipeline_count": 4,
+        "linked_pipeline_count": 0,
+        "largest_dynamic_declaration": 3,
+        "clear_value_sets": 48,
+        "graphics_state_snapshot_complete": false,
+        "resource_observation_counts": {
+          "descriptor_buffers": 4,
+          "descriptor_offsets": 9,
+          "draw": 8,
+          "dispatch": 1,
+          "classic_descriptors": 4
+        },
+        "buffer_address_status_counts": {
+          "unique_observed_range": 4
+        },
+        "layout_observation_counts": {
+          "descriptor_offsets": 9,
+          "classic_descriptors": 4
+        },
+        "descriptor_layout_query_counts": {
+          "sizes": 1,
+          "binding_offsets": 2
+        },
+        "observed_pipeline_layouts": 2,
+        "observed_set_layouts": 8,
+        "descriptor_query_counts": {
+          "observed_calls": 7,
+          "owned_receipts": 7,
+          "encoding_bytes": 52,
+          "resource_kinds": {
+            "1": 6,
+            "2": 1
+          }
+        },
+        "descriptor_exact_byte_oracle_verified": true,
+        "descriptor_source_buffers": 6,
+        "descriptor_source_image_views": 1,
+        "descriptor_query_selection_proven": false
+      },
+      "reference_checks": {
+        "color_reference_different_bytes": 0,
+        "depth_reference_compared_texels": 1048576,
+        "max_normalized_depth_difference": 0,
+        "stencil_reference_different_bytes": 0,
+        "following_compute_reference_words": 32,
+        "incorrect_compute_samples_detected": 8,
+        "original_targets_preserved_defined_bytes": 31457280
+      }
+    },
+    {
+      "case": "metadata-disabled",
+      "exit_code": 0,
+      "validation_layer_loaded": true,
+      "intentional_sync_hazard_detected": false,
+      "intentional_wrong_compute_offset_detected": false,
+      "frame_metadata": {
+        "disabled_capture_verified": true
+      },
+      "reference_checks": {
+        "color_reference_different_bytes": 0,
+        "depth_reference_compared_texels": 1048576,
+        "max_normalized_depth_difference": 0,
+        "stencil_reference_different_bytes": 0,
+        "following_compute_reference_words": 32,
+        "incorrect_compute_samples_detected": 0,
+        "original_targets_preserved_defined_bytes": 31457280
+      }
+    },
+    {
+      "case": "steam-runtime-validation",
+      "exit_code": 0,
+      "validation_layer_loaded": true,
+      "intentional_sync_hazard_detected": false,
+      "intentional_wrong_compute_offset_detected": false,
+      "frame_metadata": {
+        "bounded_capture_verified": true,
+        "monolithic_pipeline_count": 4,
+        "linked_pipeline_count": 0,
+        "largest_dynamic_declaration": 3,
+        "clear_value_sets": 48,
+        "graphics_state_snapshot_complete": false,
+        "resource_observation_counts": {
+          "descriptor_buffers": 4,
+          "descriptor_offsets": 8,
+          "draw": 8,
+          "dispatch": 1,
+          "classic_descriptors": 4
+        },
+        "buffer_address_status_counts": {
+          "unique_observed_range": 4
+        },
+        "layout_observation_counts": {
+          "descriptor_offsets": 8,
+          "classic_descriptors": 4
+        },
+        "descriptor_layout_query_counts": {
+          "sizes": 1,
+          "binding_offsets": 2
+        },
+        "observed_pipeline_layouts": 2,
+        "observed_set_layouts": 8,
+        "descriptor_query_counts": {
+          "observed_calls": 7,
+          "owned_receipts": 7,
+          "encoding_bytes": 52,
+          "resource_kinds": {
+            "1": 6,
+            "2": 1
+          }
+        },
+        "descriptor_exact_byte_oracle_verified": true,
+        "descriptor_source_buffers": 6,
+        "descriptor_source_image_views": 1,
+        "descriptor_query_selection_proven": false
+      },
+      "reference_checks": {
+        "color_reference_different_bytes": 0,
+        "depth_reference_compared_texels": 1048576,
+        "max_normalized_depth_difference": 0,
+        "stencil_reference_different_bytes": 0,
+        "following_compute_reference_words": 32,
+        "incorrect_compute_samples_detected": 0,
+        "original_targets_preserved_defined_bytes": 31457280
+      }
+    }
+  ],
+  "closed_replay_regression": {
+    "render_extent": [
+      1024,
+      1024
+    ],
+    "layer_sha256": "250c5d3e875f81a37ad3a0a41e9fb792dc6f07bb1d22067901175fe898cafe1a",
+    "cases": [
+      {
+        "name": "positive",
+        "returncode": 0,
+        "validation_errors": 0
+      },
+      {
+        "name": "unsupported-command",
+        "returncode": 0,
+        "validation_errors": 0
+      },
+      {
+        "name": "unrecognized-shader",
+        "returncode": 0,
+        "validation_errors": 0
+      },
+      {
+        "name": "disabled",
+        "returncode": 0,
+        "validation_errors": 0
+      },
+      {
+        "name": "wrong-client",
+        "returncode": 0,
+        "validation_errors": 0
+      },
+      {
+        "name": "xr-loader-unavailable",
+        "returncode": 0,
+        "validation_errors": 0
+      },
+      {
+        "name": "steam-runtime",
+        "returncode": 0,
+        "validation_errors": 0
+      },
+      {
+        "name": "xr-mock-session-failure",
+        "returncode": 0,
+        "validation_errors": 0
+      },
+      {
+        "name": "xr-mock-preflight",
+        "returncode": 0,
+        "validation_errors": 0
+      },
+      {
+        "name": "xr-mock-frames",
+        "returncode": 0,
+        "validation_errors": 0
+      },
+      {
+        "name": "xr-mock-steam-runtime",
+        "returncode": 0,
+        "validation_errors": 0
+      }
+    ]
+  },
+  "still_required": [
+    "active descriptor-buffer contents and placement",
+    "buffer-memory binding/map provenance and visibility",
+    "sampler definitions, full view/image contracts and physical aliases",
+    "complete draw state, shader identity, resource lease and LOAD producer closure",
+    "actual Diablo stereo rendering and submission; native Windows D3D12 adapter"
+  ]
+}

@@ -1,0 +1,164 @@
+{
+  "schema_version": 1,
+  "purpose": "owned_exact_FD_PROT_NONE_VMA_CPU_metadata_control_public_aggregate",
+  "recorded_date_UTC": "2026-10-27",
+  "status": "local_original_FD_to_VMA_known_optional_map_files_target_metadata_unknown",
+  "scope": {
+    "owned_CPU_control_only": true,
+    "fixed_file_roles": [
+      "fixture",
+      "d3d12",
+      "d3d12core",
+      "dxgi",
+      "observer"
+    ],
+    "ordinary_file_reading_for_hashing": true,
+    "mapped_payload_read_or_written_bytes": 0,
+    "new_Wine_Vulkan_GPU_renderer_game_or_headset_work": false,
+    "remote_gate_route_admitted": false
+  },
+  "actual": {
+    "collector_completed": true,
+    "collector_exit_code": 0,
+    "elapsed_host_seconds": 0.10164681299647782,
+    "timing_is_not_GPU_or_cadence": true,
+    "raw_JSON_bytes": 54448,
+    "process_start_cookie_stable": true,
+    "kernel_release_observed": "7.2.9-ogc3.1.fc44.x86_64",
+    "page_size_bytes": 4096,
+    "original_mmap_occurrences": 5,
+    "local_owned_FD_to_exact_VMA_known_count": 5,
+    "max_controlled_live_mappings": 1,
+    "mapping_arguments": {
+      "prot": "PROT_NONE",
+      "prot_value": 0,
+      "flags": "MAP_PRIVATE",
+      "flags_value": 2,
+      "offset": 0
+    },
+    "ordinary_file_hash_read_bytes_before_and_after": 23710448,
+    "mapped_payload_read_or_written_bytes": 0,
+    "operation_entry_return_transitions": 140,
+    "transitions_are_not_per_primitive_syscall": true,
+    "maps_device_each": [
+      0,
+      36
+    ],
+    "FD_stat_device_each": [
+      0,
+      60
+    ],
+    "device_fields_equal_each": false,
+    "device_domains_preserved_separately": true,
+    "filesystem_type": {
+      "hex": "0x9123683e",
+      "decimal": 2435016766,
+      "classification": "Btrfs",
+      "source": "actual_held_FD_fstatfs_return",
+      "header_magic_sha256": "fc7cf0a4a624ce9908431e8ea9fe97db341c499fa8007594a54d8ed622e3f16c",
+      "kernel_source_binary_equivalence_attested": false
+    },
+    "map_files_readlinks_exact": 10,
+    "map_files_target_stat": {
+      "attempts": 5,
+      "successful": 0,
+      "errno": "EPERM",
+      "errno_value": 1,
+      "refusals_preserved": true,
+      "fallback_or_capability_escalation": false
+    },
+    "map_files_backing_metadata_known_count": 0,
+    "original_munmap_successes": 5,
+    "original_close_successes": 5,
+    "all_recorded_cleanup_complete": true,
+    "file_hash_and_captured_stat_fields_before_after_equal": true,
+    "selected_target_VMA_rows_before_after_equal": true
+  },
+  "bounds": {
+    "fixed_roles": 5,
+    "simultaneous_controlled_file_mappings": 1,
+    "mapping_pages_per_occurrence": 1,
+    "ordinary_file_hash_bytes_per_operation": 67108864,
+    "maps_bytes_per_snapshot": 1048576,
+    "maps_lines_per_snapshot": 8192,
+    "map_files_target_bytes": 4096,
+    "readlink_buffer_bytes": 4097,
+    "snapshot_and_output_bytes": 25165824,
+    "operation_envelopes_per_role": 14,
+    "entry_return_transitions": 140
+  },
+  "producer_restrictions": {
+    "predeclared_file_size_at_least_one_page": true,
+    "exact_hash_cap_may_be_conservatively_refused_without_EOF_probe": true,
+    "not_general_Linux_API_requirements": true
+  },
+  "CPU_validation": {
+    "local_Python_tests_passed": 681,
+    "model_cases_included_in_Python_total": 22,
+    "native_CPU_self_test_assertions": 19,
+    "independent_synthetic_review": {
+      "repeated_model_cases": 22,
+      "private_discriminating_mutations_refused": 15,
+      "positive_controls": 7,
+      "counts_not_additive_to_Python_total": true
+    },
+    "remote_CI_pass_certified_by_this_proof": false
+  },
+  "integrity": {
+    "five_predeclared_file_bytes_sources_and_execution_artifacts_unchanged": true,
+    "raw_hashes_not_text_normalized": true,
+    "old_game_and_native_query_artifacts_unchanged": true,
+    "parent_literal_audit_uses_model_or_parse_maps_helpers": false
+  },
+  "source_sha256": {
+    "native/tests/exact_backing_control.cpp": "8419f60cfd874fb0116109d0796f3e1191b742d83150042244bed75939ce5410",
+    "native/tests/sampled_writer_hash.hpp": "f6b59c3568c23d6f3198a8d952fbdcf8a4da85db945d311a0b369d15ae266f9e",
+    "native/descriptor_query_diagnostic/CMakeLists.txt": "b31a888a13023f9724f265918611d335e8aa44b72001b0d918793a4a61941d1d",
+    "tools/exact_backing_validate.py": "cacc575ca8c3ed69acf0f36822515fb60aa260e6faf9668fee46278e9270051c",
+    "tests/test_exact_backing_validate.py": "270c492d117dea8933df0639c01653342b0522bc8161a2ead5634d4748b98a72"
+  },
+  "execution_artifact_sha256": {
+    "collector": "4644a89476436fe0e48a702865919072fd9869ec5d6339c1525e4d46f8d6a1b0",
+    "compiled_private_pins": "479194227edf26cb259d5ef6e21643004fd6421505411767b6234bc58567f819",
+    "expected_pins": "c813cd331eb2ec0eb6c1ebd8cd453648e3f429559ec1ec220e197d65f766362f",
+    "configuration": "3daaf508ee6e651887e3aafe504c63b37c1e352cb8aca4730a1122b619705287",
+    "parent_runner": "738d6cef6c511fc7992fc2461cd6d9a3af3f979b91039edc3d5e75f9a3062e93"
+  },
+  "five_pinned_file_sha256": {
+    "fixture": "dd152bd2a7e84aa2e694ff7a36655bbea34d6da7b524e87dc7ef335f8909a86d",
+    "d3d12": "3260a32720bcd72baa0b699b6564dd74de12933f0235420d12df7c2803c4e8aa",
+    "d3d12core": "37016d6b7d9507aec44ce096e634d331f9d116d343ec2cde0a07fd4db6509bb2",
+    "dxgi": "f9f2dd88f49a5fe5b439f01af463d4503c1d10f05d9798e2d3e31b5752b92231",
+    "observer": "e73467252bde1f549bf1e5304876d453ee66b27f10b1330ca9da4361ffdf1a29"
+  },
+  "evidence_sha256": {
+    "parent_final_private_authority": "1659e09a79ce9d2f903b0e2a8d500f15895396f0aa16c8d5ad7c3fcecbfaef21",
+    "stdout.json": "d30da1afd301f9bc34d82777e2e56c76990c29d1d863eb3f0033e1c1f5b9701b",
+    "stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "result.json": "310f101a0ac4de139f024ea47b30c657fafe83463a4a710c0662087108262315",
+    "before.json": "a22a2315fbecb18c8e3d049a5a9aedc53b8b07688c655c21f5f9c77e0beaa28a",
+    "after.json": "03b249aeec3c3d488ed43237dda9c5eb0ee63f0e0a0ae8e6f074f65372a7ff20",
+    "audit.json": "b501c34be3f57dc3231f81ff8b5cd90a5ba9410cd88df1650dbb44be230978fb",
+    "parent-literal-audit.json": "f303c31dfe030226c397da7b59fd72bbc3df34ffd70e062d366bea6fca61f36f",
+    "CPU_model_preflight": "e3098838299b4e23b7daef42a2968e1c13136b9e74ed48f12c196242393ebcfe",
+    "independent_synthetic_preflight": "a5521ef885c655e9322472146a2ab3e7019544f9847ed3782cdc9123aec527c0",
+    "native_source_review": "5c567b1acd2288274927c93c1c8abb2dd15e85bd3b0fcaac26ade69db1dc54fb",
+    "local_Python_preflight_log": "148ad33ff758a049305d148ca9731b2f44156885ea6694d42bf663da41b2123a"
+  },
+  "claims_not_established": {
+    "remote_backing_identity_proven": false,
+    "loaded_memory_bytes_attested": false,
+    "translated_Unix_device_owner_known": false,
+    "PE_to_Unix_handle_mapping_known": false,
+    "global_query_absence_proven": false,
+    "GPU_sampled_resource_known": false,
+    "global_device_translation_admitted": false,
+    "actual_Btrfs_cause_proven": false,
+    "OFF2_retrospectively_repaired": false,
+    "gate_policy_changed": false
+  },
+  "public_redaction": {
+    "private_paths_PIDs_cookies_addresses_inodes_FSID_values_and_maps_payloads_omitted": true,
+    "published_file_evidence": "hashes_and_aggregate_facets_only"
+  }
+}

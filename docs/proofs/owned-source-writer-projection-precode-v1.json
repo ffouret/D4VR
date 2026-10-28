@@ -1,0 +1,108 @@
+{
+  "schema_version": 1,
+  "purpose": "SOURCE writer exact private bridge/digest precode reviewed before CPU implementation; not execution evidence",
+  "created_utc": "2026-10-28T05:49:03.113701+00:00",
+  "status": "REVIEWED_DOCUMENTARY_CHOICE_CLOSED_FOR_EXACT_SEVEN_BRIDGE_OPS_PLUS_SHA448_ONLY",
+  "ordered_manifest": {
+    "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/docs/proposals/owned-source-writer-projection-v1/manifest.json",
+    "bytes": 10605,
+    "sha256": "d3bcf9369a34a78851991c59fb14e081f04792d00691d0b8786a464cd81faaeb"
+  },
+  "prose": {
+    "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/docs/OWNED_SOURCE_WRITER_PROJECTION_PRECODE.md",
+    "bytes": 4527,
+    "sha256": "3c6372f9108124d1baac2f5713adc787471c63ccf4c5eb5657d878133c6cf2b1"
+  },
+  "freeze_before_new_CPU_admission": {
+    "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-additive-precode-20261028-1/precode-freeze.json",
+    "bytes": 3470,
+    "sha256": "d6d5ba7563d124989760894d093e3de997c5d630497c9e7107ec9d2dc44f5e4b"
+  },
+  "independent_documentary_review": {
+    "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-additive-precode-independent-review-20261028-1/proof.json",
+    "bytes": 15137,
+    "sha256": "a6d10de71f8521ac219b07073d7bd4279b095752aecbf3f7ff8e8ed7dd657806"
+  },
+  "authorities": {
+    "bridge_author": {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-additive-precode-20261028-1/author-bridge-proof.json",
+      "bytes": 25810,
+      "sha256": "1adfb68584b96053d784b5264b6f329e048e5af07f39daa14618f8fadd20ad14"
+    },
+    "digest_author": {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-additive-precode-20261028-1/author-digest-proof-v2.json",
+      "bytes": 10828,
+      "sha256": "f05a28a83aae521c5129cd0bae6650d8e9483188a9941e6afec21eb33398554b"
+    },
+    "parent_targeted_input_identity_checkpoint": {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-additive-precode-20261028-1/parent-adopted-pin-checkpoint.json",
+      "bytes": 10111,
+      "sha256": "b700cf9362f0bf9da20788deb58fb46b50ef194697d693d5275deddc2da626f9"
+    }
+  },
+  "next_plan_document_only": {
+    "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-additive-precode-20261028-1/next-CPU-implementation-plan.json",
+    "bytes": 35795,
+    "sha256": "7d016753fe6c7b881dbc0eb3a736416972a00f87873346dbb0df409d7ae5a532",
+    "public_copy": "docs/proposals/owned-source-writer-projection-v1/next-CPU-implementation-plan.json"
+  },
+  "decision": {
+    "exact_R1_R5_documentary_choice_closed_for_declared_CPU_scope": true,
+    "separate_parent_CPU_admission_required": true,
+    "new_CPU_code_exists": false,
+    "generic46_projector_API_contracted": false,
+    "real_SOURCE_insertion_precode_all_closed": false,
+    "vendor_configure_or_build_ready": false,
+    "physical_ready": false,
+    "human_required": false
+  },
+  "concrete_choices": [
+    "Same-thread genuine committed pending RootCreate only; generic parse before root allocation and transfer/conversion/free. One embedding core includes the frozen implementation once, shader bridge stateless.",
+    "GRAPHICS comes from a literal SOURCE callsite and exact reserved64B marker; current raw-handle generation cannot substitute original lineage. CLOSED operational bytes may persist without mutating a frozen frame.",
+    "ACTIVE-at-helper-return is a chosen local guard eligibility refusal with existing reason5; legal helper E_INVALIDARG has zero native calls. No missing API, unreadability, count, ScopeGap, HRESULT-to-VkResult or birth is fabricated.",
+    "Both true nested SetPipeline(NULL) remain; constructor command prebirth and Reset2 pre-RETURN state remain genuine. A valid frame can be READY with the ENTIRE unchanged660 unknown report; no filtered positive or relaxed model.",
+    "Production digest proposal448B hashes complete permitted source spans only, at most1MiB each. Known pointer/count with optional digest unavailable remains incompleteCode0xB, not automatic NO_PAYLOAD.",
+    "All fixed raw/record/mark/object/pending caps stay unchanged. Conditional paths and documentary object sums do not prove actual SOURCE fit, native branch, compiled layout/stack or total CPU memory.",
+    "Only exact7privateoperations plus exactSHA API are contracted. Generic46builder API, real wrappers/hooks, source patch/link, vendor build and physical execution remain separately unopened gates."
+  ],
+  "reference_correction": {
+    "canonical_schema_key": "native_pipeline_policy.module_lifetime_exact",
+    "historical_attribution_typo": "A1 attribution reused native_pipeline_origin, which is not a schema key. Its normative lifetime replacement is correct: ModuleCreateRETURN before PipelineCreateENTRY; no ModuleDestroyENTRY before PipelineCreateRETURN; no module lifetime extension through Execute. Stage final review verifies the canonical key. Historical3947 is preserved."
+  },
+  "counts_and_independence": {
+    "Stage_documentary_comparisons": 246,
+    "Stage_targeted_paths_before_after": 46,
+    "parent_targeted_pin_checks": 29,
+    "these_are_behavior_tests_or_ABI_probes": false,
+    "counts_overlap_not_additive": true,
+    "limits": "Reviewer did not author these new contracts but shares older e2/564/660/schema/source foundations and authored earlier tests/mocks/reader controls. This is not third-party certification of that sink/model, a SOURCE producer or runtime."
+  },
+  "validation_for_this_change": {
+    "new_model_analyze_calls": 0,
+    "new_or_old_CPU_tests": 0,
+    "ABI_compiler_or_vendor_build": 0,
+    "new_renderer_Wine_GPU_game_headset": 0,
+    "tool_acquisition": 0,
+    "CI": "Documentation-only commit intentionally requests [skip ci]. No new CI result asserted. CI232 belongs only to the prior implemented CPU tree, with distinct tested merge commit but equal entire tree to cafa496."
+  },
+  "product": "Research/prototyping, no usable Diablo VR. Last Diablo rectangle/cutouts and unknown actual input/writer/transforms unchanged; no established Quest image or continuous immersive presentation.",
+  "claims": {
+    "prototype_only": true,
+    "producer_inputs_attested": false,
+    "new_SOURCE_producer_implemented": false,
+    "new_vendor_built": false,
+    "new_runtime_executed": false,
+    "actual_source_contents": false,
+    "unchanged_contents": false,
+    "actual_sampled_input": false,
+    "GPU_read": false,
+    "renderer_owner": false,
+    "backing_known": false,
+    "global_absence": false,
+    "game_identity": false,
+    "game_UV": false,
+    "VR": false,
+    "stronger17_model_facets_unchanged_false": true
+  },
+  "preservation": "No earlier source/model/header/schema/fixture/shader/helper/DLL/game receipt/certificate is rewritten. The latest actual translator runtime is the previous external e304636d authority for a different route. Old CPU flags remain unchanged."
+}

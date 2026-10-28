@@ -1,0 +1,72 @@
+{
+  "purpose": "sequential_presentation_capture",
+  "schema_version": 1,
+  "layer_sha256": "e354317be5ad3608928579b010a2bb42be064d425d354471a91a23dcb0b20333",
+  "wsi_loader_capture_passed": true,
+  "original_pixels_restored": true,
+  "synthetic_scene": true,
+  "game_stereo_submitted": false,
+  "cases": [
+    {
+      "case": "native",
+      "reference_equal_bytes": 1048576,
+      "original_restored_bytes": 262144,
+      "disparities_pixels": [
+        14.607794894025403,
+        7.31257269928156
+      ],
+      "different_pixel_bytes": 3330,
+      "repeated_capture_frames": 4,
+      "sequential_quota_verified": true
+    },
+    {
+      "case": "disabled",
+      "disabled_capture_verified": true,
+      "original_restored_bytes": 262144
+    },
+    {
+      "case": "steam-runtime",
+      "reference_equal_bytes": 1048576,
+      "original_restored_bytes": 262144,
+      "disparities_pixels": [
+        14.607794894025403,
+        7.31257269928156
+      ],
+      "different_pixel_bytes": 3330,
+      "repeated_capture_frames": 4,
+      "sequential_quota_verified": true
+    }
+  ],
+  "forwarding_tests_passed": true,
+  "scope": "Bounded sequential pipeline quota and four presentation captures in owned WSI tests",
+  "real_game_trial_of_this_revision": false,
+  "last_real_game_tested_commit": "24e19a94f24122071748f87f069ed604cffe7363",
+  "real_game_coverage_proven": false,
+  "python_tests": 164,
+  "native_cpu_forwarding_passed": true,
+  "native_cpu_4096_pair_quota_and_lease_cleanup_passed": true,
+  "cpu_driver_mock_handles_at_maximum": 8192,
+  "gpu_test_does_not_allocate_4096_pairs": true,
+  "maximum_live_nodes_sequential": 4096,
+  "maximum_creation_attempts_sequential": 4096,
+  "maximum_live_nodes_other_modes": 512,
+  "maximum_creation_attempts_other_modes": 512,
+  "partial_or_out_of_order_repeat_refused": true,
+  "stationary_real_scene_proven": false,
+  "source_sha256": {
+    "native/vulkan/library_variants.hpp": "20478f6e3414a924c95f35aafc7733aec9c6c04f1aa68dc8b6741a508eef3482",
+    "native/vulkan/library_variants.cpp": "1c5c6adcd72227b42f7ba767c3920a41fa4593732d87e5cbd0a1ece6939cc647",
+    "native/vulkan/trace_layer.cpp": "6b495926911c263013442c83964767e4be754c2fef40b7a46a58f2be071b1af0",
+    "native/tests/library_variants_tests.cpp": "ce3ec4c7b97a28ce8b7578a33df0c1d05a6899767debcd6d1a00d757dfd506ca",
+    "native/tests/present_layer_vulkan.cpp": "93d029fd2b3bc9cd7e16d5dd6509cc3dd50785fb48af2ef74021a499c47490c8",
+    "tools/sequential_capture.py": "15100e38e408c5add2d15cc7574b1e9433865cc005d358cc6367095bed328733",
+    "tools/present_validate.py": "6c17b3b5b2ce4fd150d38c339645a3a93bcfd4271ddbdafcdc5b77ee0c6b33c6",
+    "tests/test_sequential_capture.py": "94a753f5ae7347dfaaa88f0bf28aced618af22668c9d0e0ac9db88637f47b2cb"
+  },
+  "remaining": [
+    "Real-game repeated capture and verification of whether budget refusals persist",
+    "Consistent geometric transformation of all required world pipelines",
+    "Actual game images submitted to SteamVR, continuous stereo and game head tracking"
+  ],
+  "pipeline_counters_at_each_image_export_verified": true
+}

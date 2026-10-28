@@ -1,0 +1,37 @@
+# Original depth transfer observations
+
+The regular layer now observes original CopyImage, CopyImageToBuffer and BlitImage commands, including the promoted core/KHR forms. A completed actual Diablo session finds an original full-region **1707 × 960 D24S8 image-to-image copy**, with depth and stencil aspects. This is a concrete candidate for a diagnostic read at the existing COPY stage. **It is not yet a private readback, proof of scene-depth initialization, or a fix for missing wide-field regions.**
+
+The observer extends [the CPU-only depth audit](DEPTH_AUDIT.md), under `D4VR_DEPTH_AUDIT=1`. It inserts no GPU work, changes no layouts/scopes/arguments and rejects no original calls. The [strict EndRendering reader](DEPTH_READBACK.md) remains inadmissible in this game. No shader/helper was rebuilt and no XR call was added.
+
+## Values and lifetime
+
+`TransferAudit` retains source image creation values and generation, source layout, aspect/mip/layer range and copy footprint. Image copies retain destination format/generation/layout and region; buffer copies retain 64-bit offset, row length and image height. Blits retain explicit endpoints and filter. Extension presence and first type remain explicit; chain contents are not interpreted. Destination buffer identity/memory are not tracked.
+
+API values 1–6 mean CopyImage, CopyImage2, CopyImageToBuffer, CopyImageToBuffer2, BlitImage and BlitImage2. Core and KHR spellings share the promoted implementation. Copy endpoints are computed with signed 64-bit arithmetic from original offset/extent; offsets and literal blit endpoints retain their original 32-bit representation. These are observations, not validated bounds or a conversion policy. See the original [copy footprint](https://docs.vulkan.org/refpages/latest/refpages/source/vkCmdCopyImage.html), [buffer-copy forms](https://docs.vulkan.org/refpages/latest/refpages/source/vkCmdCopyImageToBuffer2.html), and [blit rules](https://docs.vulkan.org/refpages/latest/refpages/source/vkCmdBlitImage.html).
+
+Rows cover known depth/stencil source formats or explicit depth/stencil source aspects. Color transfers still increment API counters. Unknown source/command, truncation and overflow are reported. Shader sampling, hidden/downstream dispatch, resolve mechanisms and secondary expansion are outside this surface; a missing row does not prove an absence of depth access.
+
+There are at most 128 transfer descriptions, 64 inspected regions per call, 65,536 registered images and 32,768 current command recordings. Submission inspection retains at most 256 command references and 128 grouped value observations. Equal descriptions group resources and recordings: each row retains aggregate counts and its **last representative** source/destination/recording/transfer ordinal. This is not a complete event trace. Existing report count/byte limits still apply.
+
+Before submission, representative values are copied by value. A shared CPU recording object preserves successful-return accounting across reset and late callbacks; it owns no application pointers, Vulkan resources or GPU leases. Failed attempts do not count as successful repetition. A new recording at the same handle has a new identity. No observer mutex spans the original call. Root and transfer counters can be sampled at different CPU instants; none are GPU timestamps or a common scene instant.
+
+Flags-zero commands have no assumed one-time guarantee. This follows [Vulkan's command-use definitions](https://docs.vulkan.org/refpages/latest/refpages/source/VkCommandBufferUsageFlagBits.html). The owned test actually repeats a recording; the game result below does not observe repetition among tracked depth transfers.
+
+## Actual Diablo observation
+
+[diablo-depth-transfer-v1.json](proofs/diablo-depth-transfer-v1.json) records two on-request world reports. The selected character entered and stayed still, using original camera/shaders, then the game exited through its normal UI. Launcher return code is zero, all owned processes exited, and originals plus 262 exports are unchanged. The world looked normal; exact game pixels and in-game Khronos validation are not claimed.
+
+The later report observes 472,264 successful Submit2 calls. Its transfer counters contain 139,551 CopyImage2 calls, 211,890 CopyImageToBuffer2 calls and 27,829 legacy blits. Five depth-source descriptions, all CopyImage2, retain 40,190 recorded depth-aspect regions. No unknown source/command, transfer truncation/overflow or repeated successful tracked recording is observed.
+
+The 1707 × 960 pattern has source/destination format 129, GENERAL layouts, depth-plus-stencil aspects, mip/layer zero, one layer, zero offsets and the full extent. Source usage is 39, sharing is concurrent, samples/mips/layers are one, flags are `0x00400000`, command flags are zero, family is zero, and root/region extension chains are absent. Its representative source/destination generations agree across reports. Successful submit observations rise from **23,608 to 39,505**, a delta of 15,897 equal to the aggregate presentation-boundary delta. This does not establish per-frame timing, completion or causal linkage.
+
+Other patterns are D32 at 768 × 768 with six layers and 256 × 256, and D24S8 at 128 × 128 and 256 × 256. Dimensions do not establish scene depth, initialized pixels, camera attribution or physical distance. No actual game depth pixels were exported; the held-view geometric result and its missing wide-field regions remain separate.
+
+## Verification and next producer
+
+[depth-transfer-audit-v1.json](proofs/depth-transfer-audit-v1.json) separates owned verification from the game. CPU controls cover six routes, immutable regions/offsets/mirrored blits, generation reuse, failures versus repeated successes, late callbacks, bounds and 1,000 calls from two threads. White-box forwarding checks 18 original calls across enabled/disabled modes and promoted spellings, preserving pointers/chains/regions. The POC's previous unsupported/barrier behavior is preserved in the regular wrappers.
+
+Four real X11/WSI runs compare audit enabled/disabled in native and Steam Runtime. An application-owned flags-zero recording containing all six forms is submitted twice with original COPY|BLIT signals and device mask zero. Its known-clear D32 readouts are 1,536 exact original bytes per run: these are application reads, not reads added by the observer or geometry depth. Audit retains seven recorded region descriptions, fourteen successful submit observations and one repeatedly successful recording. The application has 67 submissions, 64 presents and 128 draws per run. Enabled/disabled comparisons preserve 2,097,152 original color bytes; Khronos synchronization validation reports zero errors, including teardown. These single-queue/fence-paced controls do not certify a multiqueue asynchronous producer.
+
+The subsequent [bounded duplicate-read producer](DEPTH_COPY_READBACK.md) is now implemented and GPU-tested separately. It reads the original depth source directly into its own buffer, handles reusable-recording epochs and attaches a private fence only to an originally fence-less submit, without adding a queue submission or GPU wait. This observer milestone itself exported no game depth. The new producer's actual-game admission and pixel evidence are recorded separately; do not broaden original masks, relax the old reader, or repeat this unchanged observation.

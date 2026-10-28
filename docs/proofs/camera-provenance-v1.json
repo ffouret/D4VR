@@ -1,0 +1,197 @@
+{
+  "schema_version": 1,
+  "synthetic_scene": true,
+  "diablo_rendered": false,
+  "actual_steamvr_submission": false,
+  "actual_xr_pose_source": false,
+  "whole_scene_verified": false,
+  "khronos_synchronization_validation_loaded": true,
+  "validation_errors": 0,
+  "corrupted_evidence_controls_refused": 5,
+  "camera_ownership": {
+    "camera_provenance_passed": true,
+    "value_owned": true,
+    "unknown_and_mixed_refused": true,
+    "xr_pose_inferred": false
+  },
+  "delayed_gpu_cases": [
+    {
+      "case": "delayed-gpu-native",
+      "gpu_capture_fixture_passed": true,
+      "synthetic_scene": true,
+      "diablo_rendered": false,
+      "actual_steamvr_submission": false,
+      "leased_frames": 37,
+      "slots": 4,
+      "allocations": 4,
+      "reuses": 37,
+      "backpressure": 3,
+      "reserved_bytes": 262144,
+      "gpu_lease_exact_bytes": 1818624,
+      "source_preserved_bytes": 1818624,
+      "producer_readback_buffers": 0,
+      "producer_maps": 0,
+      "producer_readback_commands": 0,
+      "producer_and_consumer_pending_controls": true,
+      "command_reference_retirement_verified": true,
+      "stale_lease_refused": true,
+      "invalid_provenance_refused": 4,
+      "camera_packet_copies_verified": 37,
+      "delayed_camera_not_retagged": true
+    },
+    {
+      "case": "delayed-gpu-steam-runtime",
+      "gpu_capture_fixture_passed": true,
+      "synthetic_scene": true,
+      "diablo_rendered": false,
+      "actual_steamvr_submission": false,
+      "leased_frames": 37,
+      "slots": 4,
+      "allocations": 4,
+      "reuses": 37,
+      "backpressure": 3,
+      "reserved_bytes": 262144,
+      "gpu_lease_exact_bytes": 1818624,
+      "source_preserved_bytes": 1818624,
+      "producer_readback_buffers": 0,
+      "producer_maps": 0,
+      "producer_readback_commands": 0,
+      "producer_and_consumer_pending_controls": true,
+      "command_reference_retirement_verified": true,
+      "stale_lease_refused": true,
+      "invalid_provenance_refused": 4,
+      "camera_packet_copies_verified": 37,
+      "delayed_camera_not_retagged": true
+    }
+  ],
+  "immutable_wsi_evidence": [
+    {
+      "case": "native",
+      "frames": 4,
+      "packet_sequence": 1
+    },
+    {
+      "case": "steam-runtime",
+      "frames": 4,
+      "packet_sequence": 1
+    }
+  ],
+  "mutable_wsi_evidence": [
+    {
+      "case": "cpu-mutable-wsi-native",
+      "frames_with_exact_camera_bytes": 4,
+      "packet_sequences": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "original_submissions": 320,
+      "original_draws": 128,
+      "validation_errors": 0,
+      "gpu_mode": false
+    },
+    {
+      "case": "gpu-mutable-wsi-native",
+      "frames_with_exact_camera_bytes": 56,
+      "packet_sequences": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "original_submissions": 320,
+      "original_draws": 128,
+      "validation_errors": 0,
+      "gpu_mode": true
+    },
+    {
+      "case": "cpu-mutable-wsi-steam-runtime",
+      "frames_with_exact_camera_bytes": 4,
+      "packet_sequences": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "original_submissions": 320,
+      "original_draws": 128,
+      "validation_errors": 0,
+      "gpu_mode": false
+    },
+    {
+      "case": "gpu-mutable-wsi-steam-runtime",
+      "frames_with_exact_camera_bytes": 56,
+      "packet_sequences": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "original_submissions": 320,
+      "original_draws": 128,
+      "validation_errors": 0,
+      "gpu_mode": true
+    }
+  ],
+  "legacy_wsi": {
+    "purpose": "sequential_presentation_capture",
+    "schema_version": 1,
+    "layer_sha256": "127d4a210756a86329cfee88d79aa11e74396ee28a271cfdaad7a403b7b79ca7",
+    "wsi_loader_capture_passed": true,
+    "original_pixels_restored": true,
+    "synthetic_scene": true,
+    "game_stereo_submitted": false,
+    "cases": [
+      {
+        "case": "native",
+        "reference_equal_bytes": 1048576,
+        "original_restored_bytes": 262144,
+        "disparities_pixels": [
+          14.607794894025403,
+          7.31257269928156
+        ],
+        "different_pixel_bytes": 3330,
+        "repeated_capture_frames": 4,
+        "sequential_quota_verified": true
+      },
+      {
+        "case": "disabled",
+        "disabled_capture_verified": true,
+        "original_restored_bytes": 262144
+      },
+      {
+        "case": "steam-runtime",
+        "reference_equal_bytes": 1048576,
+        "original_restored_bytes": 262144,
+        "disparities_pixels": [
+          14.607794894025403,
+          7.31257269928156
+        ],
+        "different_pixel_bytes": 3330,
+        "repeated_capture_frames": 4,
+        "sequential_quota_verified": true
+      }
+    ],
+    "forwarding_tests_passed": true
+  },
+  "layer_sha256": "127d4a210756a86329cfee88d79aa11e74396ee28a271cfdaad7a403b7b79ca7",
+  "gpu_fixture_sha256": "cf2adf68d4f0f3a13b1288780e217ac0fe3462f3f50d0a078440af39f92d1b75",
+  "limits": [
+    "All new GPU and WSI controls use owned synthetic scenes; this layer revision was not launched in Diablo.",
+    "Copy-submit and selected-draw-interval packets are separate scopes; neither proves a whole game scene used that pose.",
+    "Packets are diagnostic, with no actual XR source, common scene instant or SteamVR submission.",
+    "GPU fixture caller-supplied camera evidence checks ownership and delayed delivery; the real WSI fixture additionally renders with the recorded camera revisions.",
+    "Windows tests cover portable data/ownership logic; the native Windows D3D12 VR path is absent."
+  ],
+  "source_sha256": {
+    "native/core/camera_provenance.hpp": "5b50816755095584cb8d54f8677ff1b1abad7650cedad6728d313854e14324d6",
+    "native/vulkan/present_capture.hpp": "9e8a83813126bf1dbeff4459b26b1432ac930dbacefebe114b2f313755c43d11",
+    "native/vulkan/present_capture.cpp": "7b99d80d6400d19291457e63b238f7ceebd4d677931b4694c54353276b25ba4d",
+    "native/vulkan/trace_layer.cpp": "c3d8bb6f6e05575c3e88fe06da0a97af8b54cbe5015702efaf30c5364b554edc",
+    "native/tests/camera_provenance_tests.cpp": "7e0d5076cf62d316359aba7e1f20bffd65a414b36842821287ebafb9eb7e3f5c",
+    "native/tests/present_stream_tests.cpp": "877f153ff612ad8bffe072e1b26a3587abf2d7cad124fd4e68adb30113d5100a",
+    "native/tests/gpu_capture_vulkan.cpp": "e7aeed48519d7fda326b3229506bacd4f54f232a5032d63685037711a61f5268",
+    "tools/camera_provenance_validate.py": "d4b296cdb9939e73de599153c1832c21e54788f62cdbea28c15655d4d025a90b"
+  }
+}

@@ -1,0 +1,589 @@
+{
+  "schema_version": 1,
+  "purpose": "owned_SOURCE_writer_C_only_precode_contract",
+  "status": "FINAL_PROPOSED_PRECODE_FOR_INDEPENDENT_AND_PARENT_REVIEW_NOT_IMPLEMENTED",
+  "normative_path_policy": "Repository/upstream/bundle-relative normative paths; absolute producer spellings only in private proof ledgers. No source/generated-header normalization is implied.",
+  "authority": {
+    "wire_schema": {
+      "path": "docs/schemas/owned-source-writer-v1.json",
+      "sha256": "693021b27fbb12ed298b486ee38e3bdd3a5429c7478d47a3640158aa22011143"
+    },
+    "pure_model": {
+      "path": "tools/owned_source_writer_validate.py",
+      "sha256": "660623fb5da3cbec1ea7fbe2c6f1513beadd3950c97416a6126a71de119479bf"
+    },
+    "CPU_public_commit": "80d0808c9d17251405da65fac4fd05ed05a44c2a",
+    "CI224": "SUCCESS per parent sealed proof; no rerun/query in this preparation",
+    "schema_change": false,
+    "precedence": "This C ABI maps EXACT existing wire grammar; it neither adds model keys nor changes eligibility. Unsupported fixed projections may terminate without a frame; this is not a fabricated wire."
+  },
+  "scope": {
+    "admitted_now": "Documentation/review of proposed exact C ABI only. No header, implementation, compiler, test, analyzer, source hook/patch/vendor/runtime executed or admitted.",
+    "first_useful_success": "Future newly captured genuine SOURCE declared-view/bind/emitted-writer facts consumed by unchanged pure model; no old pixel repeat.",
+    "known_route": "Only conditional cold COM volatile-table/legacy-monolithic first writer. GPL/descriptor_heap/cache-without-origin/predication/deferred/internal-copy/warm/outside-window remain unknown; no selector skip to later convenient writer.",
+    "stronger_claims": "All17 model strong claims remain false; prototype provenance is not runtime instrumentation or original-input attestation.",
+    "runtime_ready": false,
+    "game_applicability_known": false
+  },
+  "bundle_documents": [
+    {
+      "path": "docs-proposals/pod-layouts-final-proposed.json",
+      "bytes": 293648,
+      "sha256": "6efc9f61f9cb66e57abc7c67d10909cb39b4cbe58c5aaa5ce35bf9c3dfbe608c",
+      "path_base": "this_contract_bundle"
+    },
+    {
+      "path": "docs-proposals/private-memory-final-proposed.json",
+      "bytes": 24154,
+      "sha256": "5ed91cb4d56011f798038dfee39203604809f5708342cf6502fd96dd3c61b69e",
+      "path_base": "this_contract_bundle"
+    },
+    {
+      "path": "docs-proposals/source-callbacks-final-proposed.json",
+      "bytes": 50536,
+      "sha256": "837f20a99202ee73a8cbdaefdabe469ff06069dc17892cc47f387bb60a13582d",
+      "path_base": "this_contract_bundle"
+    },
+    {
+      "path": "docs-proposals/source-protocol-final-proposed.json",
+      "bytes": 37201,
+      "sha256": "63c6989bd665204259be34df37f7dc713cc8e304e7b664b180c3122a5b94b720",
+      "path_base": "this_contract_bundle"
+    },
+    {
+      "path": "docs-proposals/source-callback-fields-final-proposed.json",
+      "bytes": 256790,
+      "sha256": "3a76ca68fee98ab892272ecc3b90e1cb28675e9349b3df9fe65fc18ed517443d",
+      "path_base": "this_contract_bundle"
+    },
+    {
+      "path": "docs-proposals/no-reread-addendum.json",
+      "bytes": 15380,
+      "sha256": "732e92e886baef9c53995bbc0d7e9eb9c36356e45d3eec8352daa396991d312a",
+      "path_base": "this_contract_bundle"
+    }
+  ],
+  "C_ABI": {
+    "namespace": "d4vr_osw_ private C symbols, osw_*_v1 POD names, D4VR_OwnedWriter*V1 six public names; never old d4vr_tcs/tcg/tcps/TCP controls",
+    "linkage": "extern C in C++ declaration consumers, native C declarations in vendor C. No C++ types, exceptions, references, aggregate by-value returns, Cenum/bool/long/size_t payload fields. uint32 metadata status only.",
+    "calling_convention": "Proposed __cdecl on Windows x64 for NEW private/source/control functions; no decoration alias. Future x64 ELFhost/WindowsC/C++ ABI compile gate must verify sizeof/align/offset and six PFNs. Original COM STDMETHODCALLTYPE/Vulkan VKAPI_PTR prototypes remain byte/typed exact; never cast/bypass dispatch.",
+    "target": "64bit little-endian WindowsAMD64 source ABI; CPUhost x64 probes future, not evidence already compiled",
+    "version": 1,
+    "size_gate": "Each Before/After begins abi_size and abi_version; exact sizeof/version1 only. Outputs token/admission/status use named fixed layout. Unknown size/version is metadata INVALID before field copy; original still forwarded.",
+    "proposed_layout_document": "docs-proposals/pod-layouts-final-proposed.json",
+    "binary_layouts_are_proposed_not_measured": true,
+    "enum_tables": {
+      "object_kind": {
+        "device": 1,
+        "vk_device": 2,
+        "resource": 3,
+        "heap": 4,
+        "allocator": 5,
+        "command": 6,
+        "queue": 7,
+        "root": 8,
+        "pso": 9,
+        "module": 10,
+        "pipeline_layout": 11,
+        "pipeline": 12
+      },
+      "event_tag": {
+        "DeviceCreate": 1,
+        "VkDeviceCreate": 2,
+        "ResourceCreate": 3,
+        "HeapCreate": 4,
+        "AllocatorCreate": 5,
+        "QueueCreate": 6,
+        "CommandCreate": 7,
+        "RootCreate": 8,
+        "RootParse": 9,
+        "PSOCreate": 10,
+        "ModuleCreate": 11,
+        "PipelineLayoutCreate": 12,
+        "PipelineCreate": 13,
+        "Increment": 14,
+        "CPUStart": 15,
+        "GPUStart": 16,
+        "CreateSRV": 17,
+        "CopySimple": 18,
+        "CopyRanges": 19,
+        "Reset": 20,
+        "Close": 21,
+        "ClearState": 22,
+        "SetPipeline": 23,
+        "SetRoot": 24,
+        "SetHeaps": 25,
+        "SetTable": 26,
+        "Viewports": 27,
+        "Scissors": 28,
+        "RTV": 29,
+        "Draw": 30,
+        "BindPipeline": 31,
+        "EmitDraw": 32,
+        "Execute": 33,
+        "Release": 34,
+        "AllocatorReset": 35,
+        "PipelineLookup": 36,
+        "CreateSampler": 37,
+        "CreateRTV": 38,
+        "SetConstants": 39,
+        "Topology": 40,
+        "ModuleDestroy": 41,
+        "PipelineDestroy": 42,
+        "PipelineLayoutDestroy": 43,
+        "ScopeGap": 44,
+        "VkViewportCount": 45,
+        "VkScissorCount": 46
+      },
+      "domain": {
+        "source_original": 1,
+        "COM_original": 2,
+        "Vulkan_original": 3,
+        "source_observer": 4
+      },
+      "source_site": {
+        "COM_DrawInstanced": 1,
+        "other": 2,
+        "CreateCommandList": 3,
+        "command_constructor_reset": 4,
+        "default": 5,
+        "embedded_64_16": 6,
+        "embedded_32_16": 7,
+        "embedded_32_32": 8,
+        "embedded_128_32": 9,
+        "embedded_default": 10,
+        "pipeline_get": 11,
+        "pipeline_get_or_create": 12,
+        "root_graphics_layout": 13
+      },
+      "pipeline_route": {
+        "legacy_monolithic": 1,
+        "descriptor_heap": 2,
+        "GPL_link": 3,
+        "other": 4
+      },
+      "device_origin": {
+        "genuine_new": 1,
+        "singleton_existing": 2,
+        "unknown": 3
+      },
+      "pipeline_next_kind": {
+        "rendering": 1,
+        "flags2": 2
+      },
+      "scopegap_code": {
+        "outside_profile": 1,
+        "missing_origin": 2,
+        "unsupported_draw_branch": 3,
+        "unqualified_native_route": 4,
+        "unsupported_root_state": 5,
+        "unretained_selected_original": 6,
+        "unsafe_projection": 7,
+        "quota": 8
+      },
+      "output_field": {
+        "output_raw": 1
+      },
+      "callback_token_state": {
+        "ZERO_UNTRACKED": 0,
+        "ENTERED": 1,
+        "BEFORE_COMMITTED": 2,
+        "RETURNED": 3,
+        "DRAINED": 4
+      },
+      "admission_mode": {
+        "UNSELECTED": 0,
+        "SELECTED": 1,
+        "DRAIN_ONLY": 2
+      },
+      "context_phase": {
+        "UNBEGUN": 0,
+        "DISABLED": 1,
+        "OBSERVING": 2,
+        "CLOSING": 3,
+        "READY": 4,
+        "NO_PAYLOAD": 5
+      },
+      "terminal_reason": {
+        "NONE": 0,
+        "RECORD_CAP": 1,
+        "MARK_CAP": 2,
+        "PENDING_CAP": 3,
+        "IDENTITY_CAP": 4,
+        "UNSAFE_FIXED_PROJECTION": 5,
+        "FOREIGN_SOURCE_THREAD": 6,
+        "STALE_OR_DUPLICATE_TOKEN": 7,
+        "CONTEXT_OR_SLOT_MISMATCH": 8,
+        "ARITHMETIC_OVERFLOW": 9,
+        "PROJECTION_ABI_OR_MASK": 10,
+        "CONTRADICTORY_CONSTRUCTOR_NOTE": 11,
+        "MISSING_SELECTED_EXECUTE": 12,
+        "SERIALIZER_CAP_OR_FRAME": 13,
+        "SOURCE_LOCK_CONTENTION": 14,
+        "ISSUER_EXHAUSTED": 15,
+        "SOURCE_OWNER_MISSING": 16
+      },
+      "pending_state": {
+        "FREE": 0,
+        "ENTERED": 1,
+        "COMMITTED": 2,
+        "SNAPSHOT_PENDING_DRAIN": 3
+      },
+      "identity_state": {
+        "FREE": 0,
+        "LIVE": 1,
+        "RETIRE_PENDING": 2,
+        "RETIRED": 3
+      },
+      "serializer_state": {
+        "NOT_STARTED": 0,
+        "IN_PROGRESS": 1,
+        "READY": 2,
+        "FAILED": 3
+      },
+      "alias_state": {
+        "FREE": 0,
+        "OWNED": 1
+      },
+      "pending_flags": {
+        "device_NEW_note": 1,
+        "root_note": 2,
+        "PSO_note": 4,
+        "command_note": 8,
+        "snapshot_closed": 16
+      },
+      "identity_flags": {
+        "birth_success": 1,
+        "COM_interface_known": 2,
+        "internal_pointer_known": 4,
+        "root_association_known": 8,
+        "has_Release_ENTRY": 16,
+        "final_Release_zero": 32,
+        "native_destroyed": 64
+      },
+      "context_flags": {
+        "fault": 1,
+        "gap": 2,
+        "overflow": 4,
+        "source_window_closed": 8,
+        "payload_ready": 16,
+        "postpublish_operational_fault": 32,
+        "serializer_failed": 64
+      },
+      "issuer_exhausted_flags": {
+        "context": 1,
+        "run": 2,
+        "owner": 4,
+        "thread": 8
+      }
+    },
+    "status_values": {
+      "OK": 0,
+      "INVALID": 1,
+      "DISABLED": 2,
+      "FAULT": 3,
+      "QUOTA": 4,
+      "SMALL": 5,
+      "NOT_READY": 6,
+      "ALREADY": 7
+    },
+    "private_bits": "present subset observed; observed/present bits >= mask_field_count MUST0. Named reservedfields, inlinearrayunusedtail and inactiveuniontailstorage MUST0; nonzero namedreserved storage INVALID metadata, never an extension. Implicit C padding is not a field/fact and is ignored, not read as evidence. Zero-init all ownedPODs before typed assignment.",
+    "atomic_backend": "Proposed GCC/Clang __atomic operations on naturally aligned private uint32_t try_lock/terminal_reason/flags (and issuer lock/flags) fields. No cast to a differently laid out _Atomic type, no atomicstruct/flexiblearray assumption. All concurrent accesses to a shared latch are atomic; regular context mutations happen under trylock. Four-byte lock/latch operations must be verified lockfree on future pinned target compilers; ABI/stack/link not measured here.",
+    "issuer_counter_meaning": "Only CoreIssuer counters allocate IDs; each next_* field holds HIGHEST ISSUED checkedU64value, initially0, then checked+1 allocation. Header.next_owner_id and PublicStatus.next_alias_id are diagnostic CACHES of the highest owner counter observed from that issuer, initially0. They are NEVER local allocators, never a promise about the next returned alias. No local increment or raw token reuse."
+  },
+  "source_API": {
+    "entry_signature": "uint32_t d4vr_osw_enter_v1(uint32_t event_tag, const osw_sourceentryinput_v1 *source_entry, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+    "typed_callbacks_document": "docs-proposals/source-callbacks-final-proposed.json",
+    "event_count": 46,
+    "grammar_type_count": 62,
+    "source_only": "Private symbols reachable from trusted compiled SOURCE projectors only; APP exports never accept eventtags/PODs/rawobjects/gens/roles/sourceclock. Header visibility/linkage is not a cryptographic authorization boundary.",
+    "two_stage": "Enter classifies source site/owner/thread/window BEFORE IID/description/array/output reads, reserves one real ENTRY+pending record and returns immutable admission+token. Typed before_commit copies owned inline exact original projection to SAME record without another tick. No mutex spans original. Actual original executes once regardless metadata results. Typed after receives actual return/defined output and seals same RETURN once. No second ENTRY for classification/commit.",
+    "prepare_original": "Metadata POD construction/read/digest is guarded independently before/after original. Failure cannot throw through C or suppress original/cleanup. Nonselected admission has may_project_before=0 and may_snapshot_defined_output=0; do not touch IID/description/output. Fault/quota/off always forwards original exactly.",
+    "scope_input": "SourceEntryInput is a safe inline snapshot of source-owned scalar locals only. Its raw receiver/internal associations are resolved at that ENTRY; SOURCE projectors do not supply IDs/generations/parentCallID. SourceScope is derived from pending stack+identity ledger plus these actual source associations, never from current lookup at Seal.",
+    "ObjectArg_input": "Raw and kind come from actual typed args/selected SOURCE local. In every callback ObjectArg, generation mask MUST unobserved+absent and backing value0; sink resolves genuine occurrence at original ENTRY from bounded ledger/pendingcreator. Source caller cannot provide a generation. Entire Birth/SourceScope/SourceAfter/Call/Capture/Ticket physical types are sink-owned, never accepted callback payload arguments.",
+    "pending_creators": "Actual parent chain frozen at ENTRY; pending creator ID comes from real active stack, never hydrated after RETURN. Child Birth owner_creator_call is that creator; it does not become a premature liveRef. ConstructorReset requires pending baseCommandCreate plus genuine source association and null generation; only base success publishes command birth.",
+    "constructor_note_signature": "uint32_t d4vr_osw_constructor_note_v1(osw_token_v1 *creator, uint32_t note_tag, uint64_t raw_object, uint64_t interface_pointer, uint64_t root_pointer);",
+    "constructor_note_policy": "Private SOURCE-only note, no extra mark/ENTRY/Birth. tag1 Device genuineNEW after singleton/alloc/memset before init, tag2 provisional root on actual RootCreate path before graphics layout, tag3 provisional PSO plus assigned root on actual PSO constructor, tag4 baseCommand pending eventual iface after actual nested List1 output before its vtableReset. Token thread/epoch/creator type/state checked and each association assigned once; inconsistent repeated note=>terminal fault. Notes must occur from actual SOURCE-owned locals, never APP or raw-offset arithmetic. Note is unavailable before relevant source state exists; no requirement to deref an uninitialized object. final success/defined outputs required, failure discards provisional association without a birth.",
+    "tokens": "48byte token matches context_cookie,epoch,callid,slot_generation,thread_cookie,pending_index,state. Validate against shared32pending entry atomically; token copies have no ownership and cannot complete twice. Wrong thread/context/epoch/slot/stale/duplicate cannot add an original_return, newmark or newbirth. Matched successful after retires pending exactly once.",
+    "source_stack": "First actualinternal DeviceCreate factory candidate ENTRY afterBegin owns SOURCEthread beforeNEW/singleton branchknown; genuineNEW classification laterfromactualSOURCE requiredforpositive. Cannot skip singleton/preexistingcandidate forlaterNEW. TLSthreadcookie allocatedchecked fromonecoreissuer,8bytes/thread. Sharedactive stack32 inheader and32pending; no extraTLSstack. Reentry keepsactualparentpending chain. Relevantforeign/asyncthread atomicallylatches terminalfault andforwardsoriginal, no waiting/fakeowner. Reverseactualreturns permitted.",
+    "generations": "Per-kind checked monotone reserved at genuine creation ENTRY, NOT RETURN. Failures may leave holes. 21retained lifetime occurrences, no ledger eviction/rebirth/rawreuse hydration. Native kind distinct from COM even when raw values numerically equal. Actual pointer equality across domains not required nor prohibited.",
+    "release_after": "Release signature is token+actual ULONG only. BEFORE stores identity/canonicalparent/gen/owners; after ULONG0 do NOT impl_from_iface/readobject/device. >0 never ends raw lifetime; any relevant ReleaseENTRY before use/cut ineligible. NativeDestroy signature token only with actual voidreturn; opaquehandle/device/owners BEFORE, no reread afterward. No SOURCEAfterInput on these calls.",
+    "on_invalid_before": "If required fixed nonnullable fields could not be safely projected, terminate NO_PAYLOAD at known real source boundary, latch truthful prefix/drop/gap/fault. No fakezero/fullrow, rollback/renumber, or later hydration. Safe fixedparent+partial array is representable with count/pointer/prefix/completefalse for modelunknown.",
+    "source_pointer_validation": "SOURCEtoken/admission/POD pointers must pointto callerownednativealignedobjects, not originalU64rawaddresses. Before sourcewrites validatealloutputspans/disjointfrominlineSOURCEinput/token/knownprivatearena; noearlyzerooutput. Enter noactivecapture returnszeroUNTRACKEDtoken+UNSELECTEDadmission onlyafterspanvalidation. Token may be updated initsowndeclaredspan aftermatchedcall; duplicatecopy cannotrewriteregistry. Sink neverkeepsborrowedBefore/Afterpointer. This doesnotprove arbitrarycallerpointerreadability.",
+    "extra_protocol_document": "docs-proposals/source-protocol-final-proposed.json",
+    "constructor_note_current_signature": "uint32_t d4vr_osw_constructor_note_current_v1(uint32_t note_tag, uint64_t raw_object, uint64_t interface_pointer, uint64_t root_pointer);",
+    "constructor_note_current_policy": "At exact trusted source site, core resolves bounded active-stack nearest genuine pending creator of the note_tag-required API (RootCreate tag2 or PSOCreate tag3). Must match actual current thread/context/ancestor interval and assigned-once association. Missing/conflicting/returned creator => terminal NO_PAYLOAD, no guessed token, no new mark or original argument. This solves state.c helper lexical scope without changing original prototypes. Token-specific note remains available for DeviceNEW tag1/baseCommand tag4 where wrapper token is actually in lexical scope.",
+    "return_admit_signature": "uint32_t d4vr_osw_return_admit_v1(const osw_token_v1 *token, osw_admission_v1 *admission_out);",
+    "drain_return_signature": "uint32_t d4vr_osw_drain_return_v1(osw_token_v1 *token);",
+    "return_output_read_policy": "Exact ordered return_protocol in source-protocol-final-proposed.json. Original scalar first; successful same-token before commit plus return_admit statusOK AND SELECTED AND may_snapshot_defined_output1 AND API-defined valid storage. OK with DRAIN_ONLY means NO output read, then drain_return. No receiver/owner reread for Release/Destroy.",
+    "private_status_semantics": {
+      "enter": "structural invalid spans=>INVALID/no writes. Safe UNBEGUN/DISABLED/after-window/unselected membership=>DISABLED with zeroUNTRACKEDtoken and UNSELECTEDadmission, no tick. Selected entry reserved=>OK/ENTERED/SELECTED. Failed selected reserve=>FAULT/zeroUNTRACKED/no invented pairing; original forwards.",
+      "before_commit": "Exact valid ENTERED token+typed ABI/projection=>OK, marks token COMMITTED without another source tick. ABI/mask/projection contradiction=>FAULT/terminal; valid pending token remains drainable after actual original. Duplicate/wrongtoken INVALID and selected capture becomes terminal unless already published; never completes another token.",
+      "return_admit": "Exact valid token and committed OBSERVING source=>OK/SELECTED/outputflag1. Exact valid token but uncommitted/fault/closed=>OK/DRAIN_ONLY/outputflag0. Missing/wrong/stale token=>INVALID and no authorization. Every output written only after all span checks. No return counter/tick/slot change.",
+      "typed_after": "Matched committed pending token captures actual returned scalar/defined detached POD, adds one actual RETURN and retires exactly once while observing. In closed/drain state same matched token simply drains and returnsOK without record/counter mutation. Wrong/duplicate token INVALID and no extra return.",
+      "drain_return": "Valid matched pending=>OK/retire exactlyonce, no output reads. In OBSERVING this also latches unsafe-return-projection terminal fault first. ZeroUNTRACKEDtoken=>DISABLED/no coverage claim. Wrong/stale/duplicate=>INVALID/no drain/return count.",
+      "constructor_notes": "Valid compatible genuinely pending creator on current selected stack/thread, assigned-once original association=>OK/no mark. Missing/conflicting owner=>FAULT/terminal; never allocates a fake creator or changes original ABI.",
+      "scopegap": "Valid observer code + safely available record/mark capacity=>OK, one observer entry==return mark, not an original return/seen/pending. Outside active window=>DISABLED/no tick. Capacity/unsafe observer projection=>FAULT/NO_PAYLOAD, never suppress an original."
+    },
+    "before_receiver_cross_check": "Before_commit MUST cross-check the SourceEntryInput.raw_receiver detached at Enter against the exact original receiver field listed by event below. Mismatch is terminal unknown/NO_PAYLOAD, never retagging to another valid object. Corresponding command/internalowner/source-site fields must likewise agree with actual safely captured source association. DeviceCreate/RootParse have no receiver and require that field unobserved. ScopeGap is observer-only."
+  },
+  "field_presence": {
+    "mask_rule": "present_mask subset of observed_mask; required nonnullable fields need both bits. Nullable unavailable=observed0/present0, actual null nullable=observed1/present0, observed numeric0=observed1/present1 withvalue0. Failed/pending/N/A afterfacets unobserved+absent. Inactive union bytes zero and absent. Unknown fixed required field terminates capture NO_PAYLOAD, never creates0row.",
+    "nullable_detail": "ALL original operands required by the chosen projection, EVEN nullable, must have a known observation of actualNULL/nonNULL (observed1). An original nullable operand unread/unsafe (observed0) MUST NOT be encoded as the legitimate NULL which the model could admit: terminate NO_PAYLOAD unless a separately explicit incomplete representation forces unknown. Examples: CopyRanges.sizes/description pointers, CreateSRV.description, nullable original root operands. A field not present in the original version/active union may be known-N/A (observed1,present0) based ONLY on the genuine version/tag; do not read inactive union memory. Optional derived digest can be unknown only with Code.completefalse; unknown pNext uses known headpointer+safe prefix+completefalse, not a fabricatedNULL. SOURCE bookkeeping inapplicable/missing fields may be null under exact applicability; failed/pending creation output is unobserved/absent/null because API gives no safe read, never an observed0 or caller-storage overwrite.",
+    "scalar_zero": "U64/U32/I32 observed0 value uses both maskbits1; enumtags0 reserved only where closedtag optionalfield is absent; original Enum32 may0/negative and stays typed. BOOL originalI32 not oswBool.",
+    "arrays": "Inline helper length is copied_count bounded by schema cap; original Span.count/pointer remain independent original fields; complete is explicit0/1. Prefixlen>actualcount is invalid. Missing tail/count>cap=>completefalse/modelunknown, never trim then claimcomplete. Pointer0/count0 actualarray is recorded distinctly from missingpointer. Nullable NULLsizes remain null and unit lengths derived only by unchangedmodel. No source pointer borrowed by sink.",
+    "tagged_unions": "RootParameter union by originalparameter_type/version; PipelineNextNode only rendering/flags2tag with exact matching payload/sType, inactivebyteszero/absent. Unsupported node stores original headpointer +safe knownprefix completefalse, no readunknownunion/no fakeNULL.",
+    "strings": "256bytes counted strictUTF8, no NUL; no payloadpointer in sink, explicitlength; SHA binary32 renderslowerhex, GUID typed16 renderscanonical. Hash/code is ordinary source observation (cap1MiBread) not shader identity/access/equivalence evidence.",
+    "SourceAfter": "Only permitted actual successful association fields, absent on failed/pending/nonapplicable; no defaulting from objectcurrentstate. Rootparse layout captured originalbeforeconversion, never version1.2 output relabeled1.0.",
+    "mask_bit_bounds": "present subset observed; observed/present bits >= mask_field_count MUST0. Named reservedfields, inlinearrayunusedtail and inactiveuniontailstorage MUST0; nonzero namedreserved storage INVALID metadata, never an extension. Implicit C padding is not a field/fact and is ignored, not read as evidence. Zero-init all ownedPODs before typed assignment."
+  },
+  "RootParse_bridge": {
+    "actual_original": "int vkd3d_shader_parse_root_signature(const struct vkd3d_shader_code *dxbc, struct vkd3d_versioned_root_signature_desc *root_signature, vkd3d_shader_hash_t *compatibility_hash);",
+    "actual_site": "upstream/libs/vkd3d-shader/vkd3d_shader_main.c generic branch615; typed desc at exact RETURN before convert628/free629. Raw4argument branch607 unsupported separate.",
+    "proposed_bridge": "At the actual generic callsite, call common d4vr_osw_enter_v1(tag9,safeSourceEntry,token,admission), then d4vr_osw_rootparse_before_v1(token,ownedBeforePOD) only if selected. Call the original three-argument parser EXACTLY ONCE unchanged and capture its int result first. Follow source-protocol-final-proposed ordered return protocol: same-token before_commitOK + return_admitOK + SELECTED + output flag1 + actual status0 + valid source-owned desc storage. Only then copy original version/union/counts/arrays inline immediately BEFORE conversion628/free629; call rootparse_after on that detached POD. Failure output is unread/absent. Drain-only path never rereads desc. Private C functions resolve once in core; no shader context, extra parse or version relabel.",
+    "owner": "Core active original RootCreate thread/stack supplies pendingowner, never parser argumentaddedrole or APPtypedRootDesc. compatibility_hash originalpointer forwarded unchanged, notcertified by selectedwire. No extra parse.",
+    "link_choice": "Core-only instrumented static vkd3d-shader variant replaces ordinary archive in NEWcore link closure, including vkd3d-proton shader_dep transitive dependency. Do not add newarchive beside ordinary via d3d12core_dependencies. Other tests/extras/tools use unchanged ordinary shaderarchive and cannot resolve/call privatebridge. One core sink context, no shader/forwarder context.",
+    "prototype_gate": "Original3args/int exactsource+54signature table pinned; future modulecrosslibrary C compile/link gate required, no measuredABI claim now."
+  },
+  "source_selection_and_freeze": {
+    "begin": "No source frame before valid Begin. enabledfalse means no selected source reads/ticks. Begin precedes genuine origins; no replay/hydration. Retain the FIRST actual internal factory candidate ENTRY before NEW/singleton branch is known. A singleton/preexisting candidate stays diagnostic unknown; NEVER skip it for a later convenient NEW. Positive requires actual genuineNEW facts from that same original candidate. No firstmatchingraw selector.",
+    "finite_membership": "Exact publicschema window_and_membership applies: baseResource only, baseCommand only+REAL nested Reset, graphicslayout actualcallsite beforetick only, nonnullselectedModuleDestroy only. Sixresources/fourheaps are retained based on genuineorigins/usages, not APProles. Unselected forwarding originals are not absenceproof. Relevant unjoinable selectedcallback never discarded to preserve older state.",
+    "first_candidate": "First attempted direct COMDraw in selected coldscope is frozen at its ENTRY BEFORE nativebranch knowledge. Predication/noEmit/cache/GPL/descriptor_heap cannot be skipped. First directcandidate might yield modelunknown, not another ticket.",
+    "first_epoch": "Retain constructorReset successfulordinal1/setupClose+Execute then actual firstcaseAllocatorReset+Reset successfulordinal2 referenced by CallID. No forcednumeric1/APPepoch or erasedconstructor. WarmnextReset outside oneframe cannot produce secondpositive.",
+    "execute_choice": "At actual Execute BEFORE commit derive whether full original commandsarray contains selectedcommand/selectedReset epoch. Its actual ENTRY is immutable mutableSRVcut, independently each copy source fixed at its own COPYENTRY by original graph. SourceAfterselectedExecute cannot choose via currentstate. If actualselectedExecute cannot be established, no inventedcut/frame; NOT_READY while stillobserving, terminalFAULT if windowlost.",
+    "automatic_close": "At genuine selected Execute RETURN reserve/record its actual returnmark, immediately close selectedwindow regardless serializer/aliases. latch immutable snapshotcapture/ticket+recordarena. No extra Sealmark and no rescan objectstate. Sourcecallbacks alreadytrackedpending retain returnnull in snapshot and make modelunknown; their laterafter maydrain once but never rewriteclosedrecord/counters. Other later originals unaffected.",
+    "serializer": "CLOSING publishes nothing and controls returnNOT_READY, no waiting. Pure bounded serializer operates only closedarena outsideobserverlock using65536workspace, no dynamicJSONAST/unboundedrecursion; rawexact UTF8 sourceinputschema2 and strictwhole65536/4096nodes/depth20/string256. Validatecompleteframing before singleimmutablepayloadpublish. Failure→NO_PAYLOAD/FAULT, never partialbytelease/truncation/retryhydration.",
+    "terminal_fault": "On attempt to EXCEED record64/mark128/pending32/identity21 (65/129/33/22), fixedunsafe/foreignthread/tokenviolation/overflow: stop new capture at the actual observed failing SOURCE boundary, set gap/fault (+overflow for capacity), latch the truthful known prefix. EXACT64/128/32/21 is permitted. No fake Execute/RETURN, rollback or count repair. Rejected33rd active call gets ZERO untracked token; no once-safe return coverage is claimed for it. Existing32 registered tokens drain once in separate live_drain_pending without changing boundary snapshot. NO_PAYLOAD is not healthy Execute closure. READY immutable payload is never rewritten by late errors.",
+    "counters": "WhileOBSERVING underlock: actualrecognizedselectedENTRY incrementsseen exactlyonce, reservesoneCallID/mark andsharedpending ifcapacity; actualvalidatedRETURN incrementsreturns/mark once. ScopeGap addsoneobservermark/record, notseen/returns. Clock0..128 no holesinhealthyframe. Atfirstcapacity/faultboundary latchprefixknowncounts; firstrecognizedselectedENTRYwhichcouldnotretain incrementsseen/droppedonce ifrepresentableunderlock, neverfakesrow/returndrain. Lockcontention hasnoexactmissedcallcountclaim; NO_PAYLOADonly. Afterboundary no sourcecapturing countersadvance; registeredtokens drainonce currentlivependingonly. Snapshotpending staysboundarypending, nevercalledcurrentpending. No unboundedrejectedtokentracking.",
+    "after_ready_errors": "READY framebytes/clock/countersimmutable. Stalecallbackinvalidity mayflag liveoperationalfault/status but cannot revoke validalias/modifyoldpayload; Copy/Retain/Seal remainavailable for frozenbytes subjectvalidrun/alias/quota. No postready mutation of rawfaultflags.",
+    "locking": "Bounded atomic trylock metadata only, no mutex across original. SOURCE contention cannot block original and terminatesunknown if selectededgecannot safelyrecord; publiccontrols NOT_READY onbusy aftersafeoutputspanvalidation, no contextfault.",
+    "concurrent_fault": "Only the trylock owner mutates regular record/pending/counter arena. A SOURCE trylock loser uses the INDEPENDENT sticky atomic terminal_reason latch (uint32 __atomic CAS firsterror), not ordinary unlocked writes; it cannot claim a reserved timestamp or exact seen/return for the lost call. The lockowner merges that latch before every new admission and BEFORE payloadpublish; any latch forces terminal NO_PAYLOAD if no READYpayload. A validated source after can still drain trackedpending once. Prefix/status remains unknown, never healthy Execute closure from a lost edge. Public control contention only returnsNOT_READY and doesnotlatchSOURCEfault. READYpayload staysimmutable and available undervalidleases.",
+    "wire_identity": "Serializer writes Capture.context=actual contextcookie, context_epoch=that one context epoch1 (no reset), run_id=ownednonce32 copied at Begin. Ticket.reset_call is actual successful selectedReset CallID (ordinal2), emission_call actual first attemptedcandidate Emit if retained ornull, execute_call actualselectedExecute. SourceIDs/epochs/ticks are never controlsinput. Disabled mode doesnot manufacture an empty wire/payload; controls reportDISABLED."
+  },
+  "ownership_and_controls": {
+    "public_control_count": 6,
+    "controls": [
+      {
+        "name": "D4VR_OwnedWriterBeginV1",
+        "signature": "uint32_t D4VR_OwnedWriterBeginV1(uint32_t abi_version, const uint8_t *nonce, uint32_t nonce_bytes, uint32_t enabled, uint64_t *run_out);",
+        "inputs": "abi_version1,nonce32lowerhex bytes,enabled0or1 only",
+        "output_spans": [
+          {
+            "name": "run_out",
+            "bytes": 8
+          }
+        ],
+        "success": "OK writes new nonzero run token; enabled0 returns DISABLED with valid run token. Repeated identical nonce+enabled returns ALREADY with SAME run token; differing nonce/enabled INVALID with run_out0. No reset or second context."
+      },
+      {
+        "name": "D4VR_OwnedWriterSealV1",
+        "signature": "uint32_t D4VR_OwnedWriterSealV1(uint64_t run, uint64_t *owner_out, uint32_t *bytes_out);",
+        "inputs": "run only; no sequence/frameid/typedfacts",
+        "output_spans": [
+          {
+            "name": "owner_out",
+            "bytes": 8
+          },
+          {
+            "name": "bytes_out",
+            "bytes": 4
+          }
+        ],
+        "success": "Only publishes a distinct ownership alias for already frozen raw bytes. Every successful call acquires one alias to SAME persistent frame; no serialization/selection/tick. May repeat after lastDrop; quota8. OK=>alias>0 and nbytes; every safe nonOK=>0,0."
+      },
+      {
+        "name": "D4VR_OwnedWriterReceiptCopyV1",
+        "signature": "uint32_t D4VR_OwnedWriterReceiptCopyV1(uint64_t run, uint64_t owner, uint8_t *destination, uint32_t capacity, uint32_t *written, uint32_t *required);",
+        "inputs": "run,owner,capacity0..65536,owned destination span only",
+        "output_spans": [
+          {
+            "name": "written",
+            "bytes": 4
+          },
+          {
+            "name": "required",
+            "bytes": 4
+          },
+          {
+            "name": "destination",
+            "bytes": "capacity if nonNULL"
+          }
+        ],
+        "success": "Exact raw bytes; no NUL append/JSON reserialization/new owner. Detached external bytes are NOT counted as retained payloads or owners."
+      },
+      {
+        "name": "D4VR_OwnedWriterReceiptRetainV1",
+        "signature": "uint32_t D4VR_OwnedWriterReceiptRetainV1(uint64_t run, uint64_t owner, uint64_t *owner_out);",
+        "inputs": "existing live owner; output scalar token cannot alias a different owner implicitly",
+        "output_spans": [
+          {
+            "name": "owner_out",
+            "bytes": 8
+          }
+        ],
+        "success": "OK=>DISTINCT never-reused alias to same raw payload; at most8total; safe failure writes0."
+      },
+      {
+        "name": "D4VR_OwnedWriterReceiptDropV1",
+        "signature": "uint32_t D4VR_OwnedWriterReceiptDropV1(uint64_t run, uint64_t owner);",
+        "inputs": "run and one currently owned alias",
+        "output_spans": [],
+        "success": "Consumes EXACT one alias. Duplicate/stale/wrongrun INVALID leaves other owners intact. LastDrop does not destroy payload/core/context/COM/GPU or reopen capture."
+      },
+      {
+        "name": "D4VR_OwnedWriterStatusV1",
+        "signature": "uint32_t D4VR_OwnedWriterStatusV1(uint64_t run, osw_status_v1 *status_out, uint32_t capacity);",
+        "inputs": "run,owned output capacity0..4096",
+        "output_spans": [
+          {
+            "name": "status_out",
+            "bytes": "capacity"
+          }
+        ],
+        "success": "capacity>=192 and validrun=>writes exactly192bytes, paddingzero, OK. Status control returns current state (including FAULT phase in output), no source state repair/tick. Smaller capacity=>SMALL/no write; invalidrun=>INVALID/no write."
+      }
+    ],
+    "status": "uint32 metadatastatus values only, not original HRESULT/VkResult/void; controlOK never historicalrelationknown.",
+    "span_validation": "Before FIRST write validate exactABI/width/count/nullness/checked U64uintptr spanend for EVERY declared span (no shortcircuit skipping overflowcheck), allpairwise writable overlaps, nonce-input vsoutputs, destination vswritten/required, and all knowncontext/workspace/payload overlap. NO arbitrarypointerreadabilityscanner: caller supplies valid owned read/write storage, projection sourcepreconditions distinct. Any structuralspanerror INVALID and ZEROwrites (outputsremainpreviousbytes).",
+    "pointer_alignment": "U64outputs8aligned/U32outputs4aligned/status8aligned; bytebuffers1aligned. SOURCE token48/admission24/SourceEntryInput56 are valid owned pointers to exact fixedV1 native layouts (NO abi_size member). Before/After alone carry abi_size/version and mustmatchtheir exact layout; every source pointer nativealignment applies. Invalid alignment/span gives INVALID/no writes, no pointer-probing memory scan.",
+    "transaction": "After structuralvalidation compute result/status/outputvalues, then one commit of permittedoutputspans only. Wrongrun/alias/expectedquota doesnotfaultcapture or alteraliases; outputs deterministic asspecified. No outputzeroing beforevalidation. Busycontrol NOT_READY commitszerotoscalaroutputs ifstructurallyvalid, Status unchanged.",
+    "copy_order": [
+      "Validate written/required nonNULL,4aligned/disjoint; capacity<=65536; if destination nonNULL check ENTIRE capacity span/overflow/overlap/output+knownprivatebuffers before writes. destinationNULL is not read or considered a realspan.",
+      "Validate run+alias. Invalid=>INVALID,written0,required0; no destinationwrites. If noREADYpayload=>DISABLED/NOT_READY/FAULT,written0,required0.",
+      "Let n be exactfrozenrawbytes>0. If capacity<n=>SMALL,written0,requiredn, destinationUNCHANGED evenNULL.",
+      "If capacity>=n and destinationNULL=>INVALID,written0,requiredn, no payload/destinationbufferinvented.",
+      "Else copy EXACTnbytes,destinationtail[n:capacity]unchanged, then writtenn/requiredn/statusOK. No terminator, no aliasnewpin."
+    ],
+    "seal_results": "UNBEGUN/wrongrun INVALID; DISABLED DISABLED; OBSERVING/CLOSING NOT_READY; NO_PAYLOAD FAULT. READY allocatefreealias or QUOTA, exactbytesn. Expectedwrongrun/alias/quota never sourcefault. AliasIDcheckedmonotoneU64 withno reuse, exhaustionQUOTA. No terminalrefcountwrap.",
+    "alias_semantics": "One context-owned immutablepayload persists even0externalowners; not ninthalias. Eight32byte slots, eachdistinctU64ownershipID/context/framegen one-shot. Retain/Seal sharepin, neverduplicatebuffer. Copydetachesbytes into externalownedbuffer, no retentionquota/CPUglobalclaim. Rawscalaraliases doNOTRetain. FutureRAII copy mustcallRetain. 80Acquire/Dropcycles feasible on SAMEbytes/no newframe/tick/generation.",
+    "no_teardown": "No publicReset/Destroy/Contextpointer. Contextlifetime coreDLL/sourceoriginalcallbacks; DropneverCOM/GPUcleanup. Future privateCPU harnesscontextdestructor separatelygated, mustwaitallregisteredpending drained, no calleruseafterdestroy. CannotunloadcorewhileSOURCEcallbacksorcontrolleaseusers active.",
+    "memory": "docs-proposals/private-memory-final-proposed.json; typedcontext404352 +oneissuer64=404416B proposedstaticobserverstorage; SOURCEconditional memory4032B =32*(48+24)+max(1448,704,56)+RootParse24+digest256, NOTmeasuredstack/totalCPU. NoCexecutionenvelope orreportbuffer.",
+    "caller_failure": "Memoryvalidity is caller precondition; invalidunmappedpointercannotbe universallydetected by spanmath. Contractdoesnotauthorizeprobing/scanning memory or manufacture success.",
+    "uniqueness": "All contextcookies,run andownerIDs are checkedmonotone nonzero issued byone64Bloadedcoreissuer; neverreusewithinoneNEWcoreload. Oneproductioncontextepoch1/noreset. PrivateCPUtestcontexts mustshareissuer. ScopeNOTinterprocess,NOTacrossDLLunload/reloadorindependentcorecopies,NOTauthentication. Same nonce doesnotyieldsamecontext/run; repeatedBeginonsameexistingcontextexplicitALREADYreturnsitsownrun. Tokens/callbacksmustvalidateallcontext/epoch/slot/threadcomponents; ownerIDsvalidatedagainstactive8aliases+run. Overflow=>noallocation, QUOTAforcontrolownerexhaustion, FAULTforSOURCEcookieexhaustion; no wrap/collision.",
+    "source_faults_vs_control": "Wrongrun/stalealias/expectedQUOTA/SMALL/structuralINVALID donotfaultSOURCE. StaleSOURCEcallbacktokencannotaddreturn/mark; beforeREADY terminalunknown, afterREADY operationalfaultonly preservespayloadandvalidleases. Expectedno-source-origins NOT_READYwhileOBSERVING, failuretoprojectselectedExecute cannotbehealedbySeal."
+  },
+  "build_and_export_closure": {
+    "new_option": "owned_source_writer_observer=false (definitive NEW Meson option name)",
+    "legacy_option": "enable_d4vr_typed_copy_source=false (existing frozen Meson option; no rename)",
+    "mutual_exclusion": "get_option(owned_source_writer_observer) && get_option(enable_d4vr_typed_copy_source) =>configurationerror, beforetargets. Never silentlydisableoldroute or compiletwocontexts.",
+    "off": "NEWfalse: no SOURCEcallbacks/bridgeimports/new6exports/newcontext, originaldispatch/libraryunchanged. Oldroute mayremainavailable peritsseparateunchangedoption; NOTsame observer upscaled.",
+    "on": "Newcorecompiles onesink/onecontext/newcontroltranslationunit and uses instrumentedcore-only shaderarchive plus vkd3d-protondependencyclosure replacingordinary shaderdep. SourcewrappersC only; no C++ requirement from thisproposednewobserver. Other originalvendorC++dependenciesunchanged.",
+    "public_exports": [
+      "D4VR_OwnedWriterBeginV1",
+      "D4VR_OwnedWriterSealV1",
+      "D4VR_OwnedWriterReceiptCopyV1",
+      "D4VR_OwnedWriterReceiptRetainV1",
+      "D4VR_OwnedWriterReceiptDropV1",
+      "D4VR_OwnedWriterStatusV1"
+    ],
+    "visibility": "Only sixNEWcontrols publiccore.def. Sourcefunctions private externC resolvedonce insidecore; bridge notdllexport, no forwarderexports/context. Basecoreoriginal2exports untouched. No claim newpairbinarycompatible witholdprivateCPUapp/newhook.",
+    "link_gate": "Future Meson source patchmust show oneeffective shaderarchive infulltransitiveNEWcore graph, actualenabledtests/extras ordinary consumers, defaultOFF/ON+legacyerror, DLLexportset andlinkmap/no unresolvedbridge; notrunornowadmitted.",
+    "source_names": "All events46 and perfieldtableprovenance proposed; exactwrappers originalprototypes/genuinecallsite bridge reviewedbefore implementation, compilerproofmustinclude hidden-sret pointer-return and fullDevice15/Resource2/vtable variants.",
+    "concrete_target_graph": {
+      "ordinary_shader": "vkd3d_shader_lib/vkd3d_shader_dep unchanged for ordinaryconsumers",
+      "new_shader": "new static target vkd3d-shader-owned-source plus vkd3d_owned_source_shader_dep, fromsamepinnedsourceswithonlynewSOURCEbridgecompiledefine",
+      "ordinary_translator": "ordinaryvkd3d_lib/vkd3d_dep fornonNEWconsumers",
+      "new_translator": "new vkd3d-owned-source static target and vkd3d_owned_source_dep whose dependencylist REPLACES vkd3d_shader_dep with vkd3d_owned_source_shader_dep",
+      "core_selection": "d3d12core_dependencies selects EXACTONE of ordinaryvkd3d_dep or vkd3d_owned_source_dep; noordinaryshaderarchivevia transitivevkd3d_lib inNEWcore",
+      "bridge_functions": "privateexternC d4vr_osw_* definedonce NEWcoresink; shaderarchive hasnoobjectwithcontext/storage andnoncoreconsumersneverlinkinstrumentedarchive",
+      "scope": "ProposedexactMesonpatchdesign, notimplemented/configured/compiled/linkmapverified."
+    }
+  },
+  "future_gates_before_code_and_runtime": [
+    "Independentliteralcontract/PODlayout/privatearenacount/fieldpresence/status/sourcecuts/link review +parentprecodefreeze/publication BEFORE header/code.",
+    "Separateparentadmission for portableC-only sink/mockcallbacks and independentCPUtests; actualsizes/offsets/x64C/C++PFN/link probes onlythen. No vendorhooks/PE/GPUimplicit.",
+    "Laterseparate SOURCEpatch/bridgeinstrumentation/genuineclosurebudget/ABI pair/recipe/build/physical approval gates. Route/sampler/game/runtimeprovenance remainunknown."
+  ],
+  "limits": {
+    "contexts": 1,
+    "device": 1,
+    "vk_device": 1,
+    "resource": 6,
+    "selected_SRV_resources": 2,
+    "auxiliary_resources": 4,
+    "heap": 4,
+    "selected_SRV_heaps": 2,
+    "auxiliary_heaps": 2,
+    "allocator": 1,
+    "command": 1,
+    "queue": 1,
+    "root": 1,
+    "pso": 1,
+    "module": 2,
+    "pipeline_layout": 1,
+    "pipeline": 1,
+    "pipeline_create_attempts": 2,
+    "module_destroy_nonnull": 2,
+    "getters": 8,
+    "typed_SRV_mutations": 8,
+    "CreateSampler": 2,
+    "CreateRTV": 1,
+    "selected_slots": 3,
+    "unselected_sampler_slots": 2,
+    "RTV_handles": 1,
+    "root_parameters": 3,
+    "ranges_per_table": 1,
+    "root_constant_words": 2,
+    "heaps_per_bind": 2,
+    "commands_per_Execute": 1,
+    "viewports": 1,
+    "scissors": 1,
+    "pipeline_stages": 2,
+    "set_layout_raws": 8,
+    "push_ranges": 1,
+    "pipeline_next_nodes": 2,
+    "pipeline_library_raws_diagnostic_only": 3,
+    "root_epochs_selected": "1 actual selected Reset occurrence referenced byticket.reset_call; not value1 or APP1",
+    "constructor_Reset_callbacks": 1,
+    "selected_Reset_callbacks": 1,
+    "tickets": 1,
+    "pending_shared": 32,
+    "source_calls": 64,
+    "all_records_including_observers": 64,
+    "source_edges": 128,
+    "input_UTF8_bytes": 65536,
+    "output_UTF8_bytes": 262144,
+    "nodes": 4096,
+    "depth_root0": 20,
+    "string_UTF8_bytes": 256,
+    "diagnostics": 64,
+    "diagnostic_call_ids": 8,
+    "status": "CANDIDATE2_NUMERIC_LIMITS_PENDING_EXACT_DOCUMENTARY_BYTE_NODE_AUDIT; CALLFRONTIER59..63CONDITIONAL_NOT_RUNTIME_PROOF",
+    "native_WithCount_viewport_calls": 1,
+    "native_WithCount_scissor_calls": 1,
+    "native_BindPipeline_calls": 1,
+    "native_EmitDraw_calls": 1,
+    "native_PipelineLookup_calls": 2
+  },
+  "source_field_authority": {
+    "table": {
+      "path": "docs-proposals/source-callback-fields-final-proposed.json",
+      "bytes": 256790,
+      "sha256": "3a76ca68fee98ab892272ecc3b90e1cb28675e9349b3df9fe65fc18ed517443d",
+      "path_base": "this_contract_bundle"
+    },
+    "no_reread_addendum": {
+      "path": "docs-proposals/no-reread-addendum.json",
+      "bytes": 15380,
+      "sha256": "732e92e886baef9c53995bbc0d7e9eb9c36356e45d3eec8352daa396991d312a",
+      "path_base": "this_contract_bundle"
+    },
+    "composition": "46args173/result62 mappings unchanged plus54actualsignaturestrings. Exact SOURCE safe-read sites/cuts/presence/link rules here apply. No nullable-unread→observedNULL, receiver retag, postdestroy reread or universalnonnull-readability claim."
+  },
+  "unresolved_not_promoted": [
+    "ProposedABI sizes/atomicbackend/actualstack notmeasured.",
+    "RawSOURCEclosure actualbyte/node/records includingrealretries notcaptured; fixedcapsreject no truncation.",
+    "RootParsecore-onlystaticvariant/transitivedeps/newoptions/exportnames/sourcepatchnotimplemented.",
+    "No genuineproducer/hook/ABIadapter/runtimebuildproven by CPUmodel.",
+    "Actualownedbranchmonolithic/DESCRIPTOR_HEAP/GPL and Diablo applicabilityunknown, VRscopeunfinished."
+  ],
+  "revision": {
+    "previous_contract_sha256": "0aeed4d67b4accfa70cfb77dfad303cf730fa7954835ada3f92c817104dadfe5",
+    "changes": [
+      "No field/signature/offset/size/cap changes from candidate4; exact mask/reserved/cache/atomic closure prose only.",
+      "Unknown original nullable operands cannot serialize as a legitimate observed NULL; original argument unknown requires NO_PAYLOAD or explicitly incomplete diagnostic route.",
+      "Entry rawreceiver is cross-checked against exact original Before field before commit, never retagged.",
+      "Source field table historical note becomes publication-resolvable prose; no source field/cut changes."
+    ]
+  }
+}

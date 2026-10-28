@@ -1,0 +1,41 @@
+# Finite attachment-depth diagnostic
+
+`depth::Readback` now reads an original depth attachment immediately after the application's original `vkCmdEndRendering`. The regular trace layer instantiates it only with `D4VR_DEPTH_READBACK_DIAGNOSTIC=1`. It does not change the source usage, layout, depth/stencil values, original commands or semaphore scopes. It is a diagnostic readback, with synchronous CPU file exports; it is not a VR transport or a cadence improvement.
+
+This reader is tested on owned attachments and real X11 presentation. **It has not been run in Diablo.** A subsequent [CPU-only audit of the actual game](DEPTH_AUDIT.md) finds original scopes and resource/command descriptions outside its policy, so enabling it unchanged is not admitted. The latest actual geometric game images remain the [held-view experiment](FIXED_VIEW_HOLD.md): large regions are still missing at the wide optical field. Reading depth should help distinguish absent depth from later color processing, but no such causal result from Diablo is claimed yet.
+
+## Selection and provenance
+
+Write a bounded regular file `depth.request` in `D4VR_TRACE_DIR`, atomically:
+
+```text
+D4VR_DEPTH_1 1 1707 960 129 2
+```
+
+The fields are tag, increasing request ID, exact width, height, Vulkan format, and number of matching rendering boundaries (1–4). Format 129 is D24_UNORM_S8_UINT; 126 is D32_SFLOAT. This example extent comes from old private metadata and does **not** identify the scene depth in a new game session. The file is polled at successful command-buffer begin; the first eligible matching boundaries consume the request. One request can be pending. Cancelling stops future insertions, not already recorded GPU work. An exhausted allocation budget cancels that request rather than retrying indefinitely.
+
+Only known, primary, unprotected, one-time command buffers qualify. Images must be exclusive, optimal, single-sample 2D, one mip/layer, with original TRANSFER_SRC and DEPTH_STENCIL_ATTACHMENT usage. Unknown image extensions/flags, protected/sparse/aliased image flags and unrecognized views are refused. The rendering must have a full matching area, one layer, no multiview/suspend/resume/extension flags, no depth resolve, GENERAL layout and STORE. The original load operation and clear-depth bits are preserved; LOAD/DONT_CARE never become proof that every returned pixel was initialized by this pass.
+
+Each read retains independent image/view generations, command recording ID, rendering ordinal, original request/copy ID, local successful-submit counter and queue family. These counters are process-local observations, not driver frame IDs. Handle reuse invalidates previous registrations. A camera observation, when available, is copied by value from the packet known **before the original submission**, with the command's frozen eye selector. Later delivery does not update it. This observation does not prove all draws or the accumulated depth image use that camera. No present ID or common scene instant is invented; whole-scene, XR-pose and common-time claims remain false.
+
+## Synchronization contract
+
+The diagnostic requires a conservative **device-wide** submit contract for its entire lifetime, including batches without a depth copy. Legacy semaphore waits must use ALL_COMMANDS. Submit2 waits **and signals** must use ALL_COMMANDS, with ordinary device index/mask, no unknown extension chains or protected submit. At most 256 batches and 256 command buffers total are admitted per call. Sparse submissions are refused. Both core/KHR Submit2 aliases use the existing intercept path.
+
+Checking only the batch containing a copy would be insufficient: an early signal in a later batch could bypass that earlier transfer read. Unsupported submissions are refused **before forwarding**, without broadening masks or inserting waits on future application work. This restricted contract must be inspected against the actual game before enabling reads there. Hidden/downstream dispatch, external producers, arbitrary asynchronous engines and cross-family ownership are not certified by these tests.
+
+After original rendering, an ALL_COMMANDS write-to-transfer-read barrier precedes the depth copy. A transfer-to-subsequent-access/host barrier follows it. No layout transition is added. After a successful original submission, an owned empty fence marker is submitted on that same queue under the caller's external queue synchronization. CPU export polls this fence without waiting. Failed original submissions get no receipt; failed markers never authorize export. Reset/free detaches the command lookup but retains every inserted buffer/fence until the caller completes all device work and tears down the diagnostic. A command containing a copy cannot be submitted twice or on a different family through the guarded path.
+
+Resources are finite: at most eight copies for the device lifetime, no buffer reuse, and at most 128 MiB of private coherent allocations. An unsubmitted, cancelled or failed read still counts against the cap. The caller must complete all device work before destruction, including work whose marker failed. There is no free-running worker or new XR call.
+
+D24 depth aspect copies use X8_D24_UNORM_PACK32. Undefined X bits are cleared in the **exported CPU words**, retaining the low 24 defined depth bits. D32 words retain their exact binary32 representation. Neither format is linearized or interpreted as physical distance. See the [Khronos copy rules](https://docs.vulkan.org/spec/latest/chapters/copies.html) and [packed format representation](https://docs.vulkan.org/spec/latest/chapters/formats.html).
+
+## Verification
+
+[depth-readback-v1.json](proofs/depth-readback-v1.json) records the exact source/binary hashes and results. Native and Steam Runtime each run direct and real-loader cases: 24 GPU cases altogether, 294,912 exact defined-depth bytes, 294,912 unchanged color bytes and 36,864 unchanged stencil bytes. Known independent clears are read before a later overwrite. Two actual producer fences per execution are held unsignaled while readout remains unavailable. Two cases per execution overwrite on a second real graphics queue, using explicit ALL_COMMANDS timeline dependencies without a host wait between producer and consumer. An otherwise valid early signal is rejected before forwarding; its timeline remains zero after queue idle. Sparse submission is also rejected.
+
+Four additional real X11/WSI runs compare the probe enabled/disabled in each environment. Eight depth exports validate 2,097,152 bytes of known **clear-only** depth and preserve 2,097,152 original color bytes exactly. The application still submits 64 command buffers, presents 64 times and issues 128 draws per run. The depth reference in this WSI fixture is a clear, not depth written by those geometry draws. Direct/loader GPU fixtures separately verify depth and stencil overwrites. All new GPU/WSI runs load Khronos synchronization validation and report zero errors.
+
+Portable controls cover request decoding, secondary/protected command refusal, render flags/layout/store/multiview refusal, command/view/image generations, request changes between begin/end, duplicate/wrong-family submission, original camera immutability, D24 padding, held fences, unsubmitted/reset work, failed markers and count/byte budgets. The test is added to Linux/Windows common checks and Linux ASan/UBSan. Eight held-view WSI regressions, four default-driver regressions, two negative controls and the original forwarding tests also pass on the new layer. The 201 Python tests pass.
+
+The [subsequent audit](DEPTH_AUDIT.md) is implemented and has been run in the actual game: its observed contract is incompatible with this reader. The [original transfer observer](ORIGINAL_DEPTH_TRANSFERS.md) finds an actual D24S8 copy. A separate [bounded COPY producer](DEPTH_COPY_READBACK.md) is now implemented and GPU-tested there; this EndRendering reader remains unchanged and inadmissible. Pass selection, initialized regions and correlation with final color must be established before inferring culling or a downstream failure. The original readback milestone rebuilt no shader bundle and launched no game or headset; later game observations are separate evidence. No Diablo image has reached the Quest.

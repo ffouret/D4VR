@@ -1,0 +1,152 @@
+{
+  "schema_version": 1,
+  "purpose": "Ordered additive SOURCE writer projection PRECODE bundle; no implementation or execution attestation",
+  "created_utc": "2026-10-28T05:39:58.670457+00:00",
+  "status": "PRECODE_ONLY_NO_IMPLEMENTATION",
+  "ordered_base_authorities": [
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/docs/schemas/owned-source-writer-c-abi-v1/normative-manifest.json",
+      "bytes": 1364,
+      "sha256": "ebee057ce52163760ec9c2ce92bf80d452bd557d002a143731f8988f4ea9268e"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-insertion-precode-20261028-1/sites.json",
+      "bytes": 157527,
+      "sha256": "644357f943e0fa200e09e76b5b77e8aaab6ab64e9c316784cc25b3123b502250"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-insertion-precode-20261028-1/cold-budget.json",
+      "bytes": 42567,
+      "sha256": "1eac5e8750ec790dae1f0d4006e275e89593fa3c8388502da4ca50fdbdbd1f34"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-insertion-precode-20261028-1/build-link.json",
+      "bytes": 13767,
+      "sha256": "037f768f8742d882fee039c485a58a5f88e6fb078227b33e2640b45be588ee26"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-insertion-precode-20261028-1/build-link-generation-addendum.json",
+      "bytes": 1872,
+      "sha256": "6c2ffbba0983b4ef74526f9240f03f30a1d241b67e46ca9d1366b330b0db5221"
+    }
+  ],
+  "additive_documents": [
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-additive-precode-20261028-1/bridge-provenance-contract.json",
+      "bytes": 44064,
+      "sha256": "05071a6a699964c381bef584fd683a077d44227d30db9095ea061b940fb16b33",
+      "public_copy": "docs/proposals/owned-source-writer-projection-v1/bridge-provenance-contract.json"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-additive-precode-20261028-1/bridge-provenance-addendum.json",
+      "bytes": 9612,
+      "sha256": "3947db0a809db897b32b5a9f3c822c6690bb27bed08941e52c324b9dc69560da",
+      "public_copy": "docs/proposals/owned-source-writer-projection-v1/bridge-provenance-addendum.json"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-additive-precode-20261028-1/bridge-provenance-count-erratum.json",
+      "bytes": 1637,
+      "sha256": "5bd7894f08e6306814efd7efe469c9c627d7df228bbddb627fedc191a6719e23",
+      "public_copy": "docs/proposals/owned-source-writer-projection-v1/bridge-provenance-count-erratum.json"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-additive-precode-20261028-1/digest-storage-contract-v2.json",
+      "bytes": 34029,
+      "sha256": "0d50ba047a8902a1aeae06d7ff5966cb3b2f83f5bca39860ab34947e0fead9e9",
+      "public_copy": "docs/proposals/owned-source-writer-projection-v1/digest-storage-contract-v2.json"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-additive-precode-20261028-1/diagnostic-read-contract.json",
+      "bytes": 58589,
+      "sha256": "1b13a9073ab1aaaf48705e331f345141832b2b5dcc3977906bfb6e2410f668ac",
+      "public_copy": "docs/proposals/owned-source-writer-projection-v1/diagnostic-read-contract.json"
+    }
+  ],
+  "precedence": [
+    "Base C ABI normative manifest remains necessary with every annex and its existing lease-counter addendum. Current frozen e2 implementation and564 header are adopted, without relabeling historical draft statuses as current execution.",
+    "Bridge0507 MUST be read with addendum3947 and count-erratum5bd7. The erratum changes prose count only: version/state2U32 plus7U64=64B, nine named fields. Module lifetime ends no earlier than PipelineCreate RETURN; helper input-bit restrictions are site-specific.",
+    "Bridge addendumA5 takes priority for FUTURE FILENAMES/PATHS ONLY over old path suggestions inside R4v2 or previous build documents: all new private files live in native/owned_source_writer_projection/. R4v2 remains exact digest API/algorithm/layout authority; no function/type/layout alteration follows from this path choice.",
+    "The only reserved-zero exception is the exact RootCreate record span[2504,2568), containing the specified ACTIVE/CONSUMED and persistent CLOSED states in this new embedding profile. Other tags/tails/reserved bytes remainzero. Frozen source files and old proofs are not modified. One core includes frozen core.c exactly once, never separately also.",
+    "GRAPHICS ACTIVE at helper RETURN deliberately refuses this new private observation under existing terminal reason5. This local eligibility policy does not mean an original native call was missing or memory unreadable: legal E_INVALIDARG contains zero PFN calls and no row/mark/count/VkResult is invented. Semantic unknown elsewhere can remain READY.",
+    "R3/R5 retains both genuine nested SetPipeline(NULL), original parentage/prebirth/Reset state and the entire unchanged660 unknown report. No positive trace, new model, forced branch or filtered stream is admitted.",
+    "Known original Code pointer/count with optional full digest unavailable uses incomplete Code0xB; required fixed unsafe or protocol failures retain their refusal semantics. No nullptr/readability inference or rawU64 dereference.",
+    "Build-link base plus generation addendum remain required: strictC11 one embedding context, core-only shader variant replaces ordinary transitive parser, defaultOFF and old+new ON error. Shared GeneratedList is not single ownership; future commands/CustomTarget/include/archive/link/exports require separate pins/review before configure."
+  ],
+  "storage_composition": {
+    "frozen_context_plus_issuer_bytes": 404416,
+    "existing_TLS_separate": true,
+    "new_persistent_allocation_bytes": 0,
+    "reserved_marker_bytes_per_Root_record": 64,
+    "root_record_reserved_subspace_max_bytes": 4096,
+    "digest_workspace_bytes": 448,
+    "digest_rodata_bytes": 288,
+    "private_guard_bytes": 320,
+    "graphics_cookie_bytes": 64,
+    "conditional_pending32_named_object_sum_bytes": 4608,
+    "conditional_synchronous_peak3_named_object_sum_bytes": 2520,
+    "formula": "4224+320+64=4608;2136+320+64=2520. Includes proposed448digest. No second guard envelope/cookie activation while live; no hash/original/callback under metadata helpers.",
+    "limits": "Documentary named-object sums under the explicit lifetime conditions, not compiled sizeof/stack/spills, original vendor stack, other threads or total process/CPU RAM."
+  },
+  "fixed_limits": {
+    "raw_bytes": 65536,
+    "nodes": 4096,
+    "depth": 20,
+    "string_bytes": 256,
+    "records": 64,
+    "marks": 128,
+    "pending": 32,
+    "object_occurrences": 21,
+    "tickets": 1,
+    "retained_epochs": 1,
+    "owners": 8,
+    "complete_model_report_bytes": 262144
+  },
+  "unchanged_files": [
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/native/owned_source_writer_source/owned_source_writer_source_v1.c",
+      "bytes": 52825,
+      "sha256": "e2f464bb2a6159ce88eac1c71bf4442c999856f4876a19c3f912dc07e8ea86b7"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/native/owned_source_writer_source/owned_source_writer_source_v1.h",
+      "bytes": 282735,
+      "sha256": "564e8955d9b97211e81b10defafc6e1a49b07291f57090e4e821fab454588583"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/tools/owned_source_writer_validate.py",
+      "bytes": 95467,
+      "sha256": "660623fb5da3cbec1ea7fbe2c6f1513beadd3950c97416a6126a71de119479bf"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/docs/schemas/owned-source-writer-v1.json",
+      "bytes": 90039,
+      "sha256": "693021b27fbb12ed298b486ee38e3bdd3a5429c7478d47a3640158aa22011143"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/native/tests/private_translator_runtime_owned.cpp",
+      "bytes": 58239,
+      "sha256": "695836203c4821e7d429460ef5b672359d6fb10b77f0132a3a77e323aad7b6f2"
+    }
+  ],
+  "remaining_execution_limits": [
+    "No implementation, ABI probe, model call, test or vendor configuration/build has occurred for this bundle.",
+    "Actual cold SOURCE raw/node fit and actual native branch remain unproved. Conditional retries may exceed fixed caps; refusal never suppresses original/cleanup or raises caps.",
+    "The frozen model cannot yield its positive for this faithful nested-setter profile. A future complete unknown supplied-history report is not actual input attestation.",
+    "No source-hook/vendor/renderer/runtime/GPU/game/headset gate is opened by this manifest. Separate parent CPU admission follows final documentary review/freeze; subsequent gates remain distinct."
+  ],
+  "claims": {
+    "documentary_contract": true,
+    "producer_implemented": false,
+    "CPU_tests_passed_for_this_bundle": false,
+    "vendor_built_for_this_bundle": false,
+    "runtime_executed_for_this_bundle": false,
+    "game_or_VR_progress": false,
+    "human_required": false
+  },
+  "review_authority": "The sibling public proof and private final external parent proof identify actual reviews/publication. This manifest does not self-attest implementation or execution.",
+  "next_CPU_scope_limit": {
+    "concrete_declared_operations": "Only the seven exact private bridge declarations and the exact SHA256448 API have a new contracted C interface. After separate admission, owned mocks may construct the frozen existing PODs and exercise these operations; a new bounded reader and real-header compile-only probes are possible.",
+    "not_admitted_by_proposed_names": "The proposed projectors_v1.h/.c filenames do not define a46-builder API. No generic projector function signatures/ownership are contracted here and no such API may be invented during CPU implementation. A separately reviewed exact ABI/static insertion decision must precede it.",
+    "later_gates": "Real SOURCE wrappers/hooks, patch/application/copytree, target configure/link/vendor build and renderer/Wine/GPU/game/headset remain closed. Current raw/node fit and native branch are not retrospectively established."
+  }
+}

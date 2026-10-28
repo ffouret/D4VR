@@ -1,0 +1,12 @@
+#version 460
+#extension GL_EXT_buffer_reference : require
+#extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
+layout(local_size_x=1) in;
+layout(set=3,binding=0,std140) uniform Projection { vec4 rows[113]; } projection;
+layout(set=3,binding=1,std140) uniform View { vec4 rows[80]; } view;
+layout(buffer_reference,std430,buffer_reference_align=16) buffer Echo { uvec4 values; };
+layout(constant_id=7) const uint64_t output_address = 0;
+void main() {
+    Echo(output_address).values = floatBitsToUint(vec4(projection.rows[72].x,
+        projection.rows[73].y,view.rows[56].w,view.rows[58].z));
+}

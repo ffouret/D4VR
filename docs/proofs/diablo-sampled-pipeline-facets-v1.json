@@ -1,0 +1,120 @@
+{
+  "schema_version": 1,
+  "actual_game": "Diablo IV",
+  "mode": "fixed_monoscopic_successive_capture_original_writer_pipeline_facets",
+  "layer_sha256": "cfc3220d3d8dfacd68fb2c5addf5b896edd280c05d5909c94d2d2172fd7bfda9",
+  "writer_state_json_schema_version": 2,
+  "existing_shader_bundle_reused_intact": true,
+  "shader_overrides": 5379,
+  "new_game_shader_or_helper_built": false,
+  "observer_added_gpu_resource_command_wait_submission_or_application_rejection": false,
+  "existing_color_producer_consumer_gpu_operations_still_exist": true,
+  "successive_monoscopic_pairs": 4,
+  "delivered_eyes": 8,
+  "dimensions": [
+    2560,
+    1440
+  ],
+  "requested_phases": [
+    "reference",
+    "wide"
+  ],
+  "return_requested": false,
+  "return_measurement_claimed": false,
+  "request_script_host_seconds": 11.610373908995825,
+  "held_host_ms": [
+    5334,
+    5323
+  ],
+  "held_present_intervals": [
+    770,
+    770
+  ],
+  "host_ms_are_gpu_elapsed_time": false,
+  "held_packet_revisions": [
+    2,
+    4
+  ],
+  "measurement_packet_revisions": [
+    3,
+    5
+  ],
+  "depth_readback_requested": false,
+  "raw_depth_exports": 0,
+  "saved_lifecycle_pairs_exact": 8,
+  "available_prefixes": 8,
+  "prefix_events": 42,
+  "nonempty_prefixes": 7,
+  "empty_first_prefix_retained": true,
+  "all_prefixes_keep_earlier_admission_and_prefix_gaps": true,
+  "exact_original_stage_pair_draws": 7,
+  "direct_three_vertex_draws": 7,
+  "writer_substituted": false,
+  "same_session_lifetimes_only": true,
+  "old_numeric_resource_or_pipeline_ids_used_for_selection": false,
+  "live_stage_join": "FNV1a64 plus byte size and stage, uniquely matched to privately SHA-verified local originals; not a live cryptographic content hash",
+  "raw_fragment_push_bytes_observed_each_draw": 28,
+  "raw_push_byte_mask_hex": "0x0fffffff",
+  "compatible_word_mask_hex": "0x7f",
+  "known_compatible_fragment_words": 7,
+  "push_layout_known_draws": 7,
+  "declared_compatible_image_and_sampler_index_draws": 7,
+  "known_indices_prove_shader_read_or_descriptor_selection": false,
+  "conventional_viewport_declaration_known_draws": 0,
+  "conventional_scissor_declaration_known_draws": 0,
+  "remaining_viewport_scissor_reason": "unknown_raster_chain",
+  "observed_raster_subchain_types": [
+    1000102001
+  ],
+  "observed_raster_subchain_names": [
+    "VkPipelineRasterizationDepthClipStateCreateInfoEXT"
+  ],
+  "raster_subchain_payload_observed": false,
+  "viewport_state_body_observed": false,
+  "empty_viewport_chain_array_means_chain_absent": false,
+  "full_source_or_central_rectangle_classification_possible": false,
+  "fragment_shading_rate_known": false,
+  "rate_declarations_observed": [
+    "rendering_fsr_attachment",
+    "fsr_dynamic_declaration"
+  ],
+  "independent_game_original_arguments_or_pixels_referenced": false,
+  "wide_field_cutouts_and_central_rectangle_persist_visually": true,
+  "inter_session_pixel_improvement_claimed": false,
+  "coverage_repaired": false,
+  "normal_ui_exit": true,
+  "launcher_exit_code": 0,
+  "all_owned_processes_exited": true,
+  "original_audit_identical_before_after": true,
+  "original_named_exports_unchanged": 262,
+  "headset_or_openxr_used": false,
+  "khronos_in_game": false,
+  "device_destroy_or_final_global_fence_lease_counts_claimed": false,
+  "raw_logs_shaders_push_values_images_private": true,
+  "private_analysis_sha256": "474dd29ad5412e02e6c5ff6f84223c964f8cb277ad4ee4cd5e77f32313f678f6",
+  "private_capture_sha256": "9bc846a2f4745794b1009d6884c0951e034d72deeb9c90fb43b755b9893d36fb",
+  "claims": {
+    "sampled_image_identity_known": false,
+    "descriptor_placement_known": false,
+    "ubo_bytes_known": false,
+    "gpu_read_proven": false,
+    "gpu_execution_order_known": false,
+    "last_gpu_writer_known": false,
+    "initialized_pixels_verified": false,
+    "whole_scene_verified": false,
+    "common_scene_time_known": false,
+    "xr_pose_known": false,
+    "xr_submission": false,
+    "physical_steamvr_certified": false,
+    "continuous_immersive_rendering": false
+  },
+  "limits": [
+    "Compatible saved host words are candidate shader indices, not a proof of descriptor placement, a shader read, sampled-image identity or UBO contents.",
+    "The independently preserved depth-clip subchain remains unclassified and its payload is not read. Its presence is not evidence that depth clipping causes the visual defect.",
+    "The viewport/scissor state body was not inspected after the raster refusal. Empty arrays do not establish absent extensions, and the last setter ordinals do not reveal their saved operands.",
+    "Writer and BLIT belong to different CPU recording occurrences. Their ordinals are not compared as a common sequence or GPU execution order.",
+    "The first prefix is empty; every retained prefix keeps earlier admission/prefix gaps. No earlier writer or initialization was reconstructed.",
+    "The two eyes are successive partial views with their original packets, poses, FOV, times, capture/present/lease identities; no common scene instant or XR pose is invented.",
+    "The existing bundle is fixed-view diagnostic only. No temporal-history VR support, physical SteamVR compatibility or native Windows D3D12/VR integration is established."
+  ]
+}

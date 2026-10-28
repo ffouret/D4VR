@@ -1,0 +1,155 @@
+{
+  "schema_version": 1,
+  "purpose": "published_summary_of_reviewed_owned_private_translator_execution_control",
+  "product_status": "RESEARCH_AND_PROTOTYPING_NO_WORKING_DIABLO_VR",
+  "result": "The previously built private instrumented vendor core executed in the new owned OFF/ON two-case workload; ON returned original ReceiptCopy bytes and all four images matched the fixed oracles.",
+  "scope": "Only these finite private OFF/ON owned processes; not a Diablo hook or game input identity.",
+  "observations": {
+    "original_PE_launches": [
+      "off",
+      "on"
+    ],
+    "automatic_retries": 0,
+    "cases_per_mode": [
+      "direct_A_clamp",
+      "after_bind_B_clamp"
+    ],
+    "original_wrapper_returncodes": [
+      0,
+      0
+    ],
+    "original_API_COM_occurrences_per_mode": 129,
+    "ON_additional_control_calls": 18,
+    "OFF_controls_and_receipts": 0,
+    "ON_primary_receipt_bytes": [
+      8844,
+      11159
+    ],
+    "ON_primary_receipt_sha256": [
+      "556e958b0d97bd667604eae47281e5a3143412b7c53800f59849ad77c1cc88dd",
+      "0ef8e0e69460b6171389aaba960d96aa4e4d66b81c5099e8976beefaa09f1108"
+    ],
+    "ON_cumulative_typed_mutations": [
+      3,
+      7
+    ],
+    "ON_Copy_buffers_including_retained_alias_rechecks": 4,
+    "source_cached_getter_IDs_in_this_run_only": [
+      13,
+      14,
+      15,
+      16
+    ],
+    "historical_APP_origin_generations_in_this_run_only": [
+      51,
+      53
+    ],
+    "actual_readbacks": 4,
+    "actual_readback_bytes": 589824,
+    "each_readback_bytes": 147456,
+    "OFF_ON_bytes_compared_once": 294912,
+    "all_readbacks_equal_existing_integer_oracles": true,
+    "captured_original_argument_roles_HRESULTs_and_schedule_equal": true,
+    "all_original_arguments_captured": false,
+    "pinned_external_inputs_unchanged": 94,
+    "external_input_bytes": 99196990,
+    "validation_activation_markers_per_run": 1,
+    "preserved_warning_lines_per_run": 25,
+    "logged_VUIDs_or_matching_validation_errors": 0,
+    "universal_error_absence_proven": false,
+    "original_wrapper_return_saved_before_postprobe_by_frozen_runner": true,
+    "child_paths_and_control_PFN_owner_match_private_core": true,
+    "disk_hashes_are_not_loaded_memory_or_backing_attestation": true
+  },
+  "source_sha256": {
+    ".github/workflows/checks.yml": "64ca0a46f65fef8b74723061d8048509110b9eb836c09b06e81539e65e0c526f",
+    "native/tests/private_translator_runtime_owned.cpp": "695836203c4821e7d429460ef5b672359d6fb10b77f0132a3a77e323aad7b6f2",
+    "native/tests/private_translator_runtime_owned_protocol.hpp": "c33983d5c037368b7a08a03f6dcf8b8239f1df4a223af8375dfe06cc763a42a0",
+    "native/tests/private_runtime_owned_protocol_tests.cpp": "e0b4bbfda442f8635fd3a874c448575d32ad8f11efe2bedab2e9c6a09009788d",
+    "native/translator_runtime_owned_diagnostic/CMakeLists.txt": "e289f27fa9a1505647d76d2c52b81d8299ec3757294dc80a60fadc5d19c685be",
+    "tools/private_translator_runtime_execution.py": "25abdbeaf878cc708cd9f392c9e7ea0153c2c80411c3707d9a7da9fdd66310ab",
+    "tests/test_private_translator_runtime_execution.py": "fa0d2d379e4247eb44bb78e27887d9d69ac817c71f31f88ce3512de6c68cb967",
+    "docs/PRIVATE_TRANSLATOR_OWNED_EXECUTION.md": "77e77af315d9965cb3c3494cad1d08bf563def8fd801b21fbf48f64b78e71766",
+    "docs/PRIVATE_TRANSLATOR_OWNED_RUNTIME_CONTROL.md": "79583f4c2f158cf6f3b659ce7c0a12c0c17e1d52d87c13f345d0d9458aaadc08"
+  },
+  "private_evidence": {
+    "final_authority": {
+      "name": "private-runtime-owned-final-proof-20261027-1.json",
+      "bytes": 11442,
+      "sha256": "e304636d91bcdea6874618236354f342d07e68e731dcf395fa3dda72b05291a5"
+    },
+    "original_parent": {
+      "name": "private-runtime-owned-control-proof-20261027-1.json",
+      "bytes": 32584,
+      "sha256": "bbf85633639a071a5da6126c3d6845ff3bb851bb8c21dbaf43537efb620bdeed"
+    },
+    "whole_pair": {
+      "name": "private-runtime-owned-launch-20261027-1/pair-audit.json",
+      "bytes": 627168,
+      "sha256": "cb3c4558df936137a2bf00f57b005185caa0b052a13a3e33be73de976a6f89a5"
+    },
+    "independent_review": {
+      "name": "private-runtime-owned-actual-independent-review-20261027-1/proof.json",
+      "bytes": 5662,
+      "sha256": "63a1ef148536dd24b2158a6776f14c3aeb4280032d1b60d2d2407c7f24faac45"
+    },
+    "reader_author_review": {
+      "name": "private-runtime-owned-author-actual-review-20261027-1/proof.json",
+      "bytes": 83642,
+      "sha256": "b7260b94b34469d72685a16774a4fd808911882704385c713cb37ecdea47cf0c"
+    }
+  },
+  "verification": {
+    "whole_pair_and_postruns_reconstructed_exactly": true,
+    "new_independent_Python_unit_tests": 45,
+    "local_full_Python_suite": 1014,
+    "new_portable_protocol_CPU_cases": 19,
+    "new_portable_protocol_CPU_assertions": 69,
+    "new_CMake_CPU_tests": 1,
+    "independent_actual_in_memory_mutations_refused": 44,
+    "counts_overlap_not_additive": true,
+    "Python_models_sanitized": false,
+    "CI_for_this_change": "not_yet_run_at_publication_of_this_summary"
+  },
+  "source_prototype_flags_preserved": {
+    "prototype_only": true,
+    "vendor_built": false,
+    "runtime_executed": false
+  },
+  "review_independence": [
+    "Author of45 independent execution/protocol CPU tests; not author of the new reader/runner or PE. Uses the frozen supplied-fact analyzers as dependencies.",
+    "AUTHOR of reader and upstream models/native metadata producer; not a third-party independent runtime review",
+    "No third-party certification of the complete producer/model; frozen supplied-fact analyzers are shared dependencies."
+  ],
+  "claims": {
+    "input_facts_attested": false,
+    "loaded_memory_attested": false,
+    "source_memory_attested": false,
+    "loaded_binary_source_equivalence_proven": false,
+    "current_descriptor_contents_known": false,
+    "sampled_resource_GPU_read_proven": false,
+    "renderer_owner_known": false,
+    "global_API_absence_proven": false,
+    "exclusive_phase_attribution_proven": false,
+    "generic_PE_to_Unix_mapping_known": false,
+    "game_or_XR_result_proven": false,
+    "actual_source_contents_at_copy_proven": false,
+    "current_contents_at_draw_known": false,
+    "unchanged_since_copy_proven": false,
+    "backing_known": false,
+    "source_runtime_relation_known": false,
+    "same_run_bind_provenance_known": false,
+    "game_rendered": false,
+    "XR_submitted": false,
+    "Diablo_in_Quest_established": false,
+    "continuous_immersive_cadence_established": false
+  },
+  "limits": [
+    "The reader/whole-source calculations are supplied-fact proofs, not attestation that every captured input is faithful.",
+    "Historical typed-copy lineage and observed output equality do not prove current descriptor bytes, sampled resource GPU identity, exclusive ownership or generic PE/Unix mappings.",
+    "The pixel calculation here is independent integer arithmetic; the frozen model/reader reuse is explicitly a dependency, not an independent implementation of every schema.",
+    "No conclusion extends to games, XR, global process teardown, global API absence or unchanged code loaded in memory."
+  ],
+  "private_raw_wires_logs_images_DLLs_not_published": true,
+  "game_and_headset_result": "No Diablo image in Quest or continuous immersive cadence established; the rectangle and cutouts remain unresolved."
+}

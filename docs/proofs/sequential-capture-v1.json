@@ -1,0 +1,76 @@
+{
+  "purpose": "sequential_presentation_capture",
+  "schema_version": 1,
+  "layer_sha256": "c6a319c8df11683a20ffa4b420f71eb2f190774826c2a84bcfe3c063df9af3ba",
+  "wsi_loader_capture_passed": true,
+  "original_pixels_restored": true,
+  "synthetic_scene": true,
+  "game_stereo_submitted": false,
+  "cases": [
+    {
+      "case": "native",
+      "reference_equal_bytes": 524288,
+      "original_restored_bytes": 262144,
+      "disparities_pixels": [
+        14.607794894025403,
+        7.31257269928156
+      ],
+      "different_pixel_bytes": 3330
+    },
+    {
+      "case": "disabled",
+      "disabled_capture_verified": true,
+      "original_restored_bytes": 262144
+    },
+    {
+      "case": "steam-runtime",
+      "reference_equal_bytes": 524288,
+      "original_restored_bytes": 262144,
+      "disparities_pixels": [
+        14.607794894025403,
+        7.31257269928156
+      ],
+      "different_pixel_bytes": 3330
+    }
+  ],
+  "forwarding_tests_passed": true,
+  "diablo_rendered": false,
+  "real_game_pair_captured": false,
+  "new_headset_trial": false,
+  "same_instant_pair": false,
+  "all_world_draws_verified": false,
+  "original_game_files_modified": false,
+  "source_sha256": {
+    "native/vulkan/present_capture.hpp": "d8cbb0450ef9034d16aabe194e6e3b06113a60522aa592433955465dabfad320",
+    "native/vulkan/present_capture.cpp": "608340f5aa377e64d34a6f22887f63594898c4b1e820d1585cdea63641d09dcc",
+    "native/vulkan/trace_layer.cpp": "d001365a4e57fb410394e4f5e63fb9c73fdd21c5a99e23114768de82c6bd3410",
+    "native/tests/present_capture_vulkan.cpp": "bbe9ee9ce85b34a5925bbbb67c10b30d300752ac335571683f4dc66b8254b659",
+    "native/tests/present_layer_vulkan.cpp": "29c3495278d50579921d2661871b662ce2b5d121135b9f70476f374c8a37af04",
+    "native/tests/present_eye.vert": "5430d5370c0fad0e507a7177ff76c55f0135169a6c77d594dbdc0d9edcc7e190",
+    "native/tests/present_eye.frag": "93eea131bfdeb6d05a97b7b477fe8a60476551af985d6fdb303572aa2dd3063f",
+    "native/CMakeLists.txt": "d1111d153f994220008837209be0a9372a2d5eadfa499461793f36b60a0e5072",
+    "tools/layer_poc_codegen.py": "6e3e5347d12ef4a8d7fcc55b514bce1b831eaf82d6fc866abbf3fd006e619bb7",
+    "tools/present_validate.py": "87f20065dd534a3d1f479e2407fbd58adf6ecde304e4fc519ffed6178c96ce26",
+    "tools/sequential_capture.py": "98220a3da1c7e4b1f4c9a0f1bb6117230430d91779f6e0515883e372b7e03b83",
+    "tests/test_sequential_capture.py": "fc6d53607e6d2a9de83afe4e6498fb8493aef76ab16d8f9a663b884d8e001993"
+  },
+  "core_gpu_copy": {
+    "exact_reference_bytes": 49152,
+    "source_preserved": true,
+    "original_target_preserved": true,
+    "resources_retained_after_reset": true,
+    "synchronization_validation_errors": 0
+  },
+  "python_tests": 162,
+  "regressions": {
+    "mrt_controls": 6,
+    "layer_poc_controls_at_1024": 11,
+    "passed": true
+  },
+  "remaining": [
+    "First actual Diablo pair through the pinned Lutris runtime",
+    "Inspect geometric coverage and temporal artifacts",
+    "Present actual game images to SteamVR; then continuous same-instant stereo and head tracking",
+    "Native Windows D3D12 adapter"
+  ]
+}

@@ -1,0 +1,1263 @@
+{
+  "schema_version": 2,
+  "status": "FINAL4_PRECODE_CANDIDATE_WAIT_ADDITIVE_REVIEW_AND_PARENT_FREEZE_NO_IMPLEMENTATION",
+  "type_language": "Every dictionary in types/catalog is an EXACT object: all listed keys required, no extra keys. T|null means union with JSONnull; T[a..b] is a JSONarray with that exact inclusive cardinality. Enum strings separated by | are literal choices. Scalar aliases resolve only through types. All numbers are exact JSON types; bool never integer. No wildcard args/result dictionaries exist.",
+  "input_format": {
+    "accepted_API": "analyze(raw:bytes|str) only, not dict for first version",
+    "UTF8_bytes_before_decode": 65536,
+    "duplicate_keys": "ValueError",
+    "NaN_Infinity": "ValueError",
+    "nodes_after_decode": "4096 values/containers total: root counts1; each dict/list/scalar/null value counts1; dictionary keys do not add nodes but their UTF8/type/length are checked",
+    "depth_root0": 20,
+    "all_strings_UTF8_bytes": 256,
+    "integers": "U32/I32/U64/ID as typed below; no conversions",
+    "errors": "Malformed UTF8/JSON/types/keys/enum/width/caps=>ValueError. Well-typed unsupported or missing/contradictory causal evidence=>complete unknown diagnostic report, never promote or silently repair. Array prefixes longer than their original count are malformed; shorter safe prefixes or unsupported originals are semantic unknown, never normalized."
+  },
+  "input_exact_root": {
+    "schema_version": "exact int2",
+    "purpose": "literal supplied_SOURCE_owned_first_writer_originals",
+    "capture": "Capture",
+    "calls": "Call[0..64]",
+    "ticket": "Ticket"
+  },
+  "types": {
+    "U32": "exact JSON integer0..4294967295; bool and float rejected",
+    "I32": "exact JSON integer -2147483648..2147483647; bool/float rejected",
+    "U64": "exact JSON integer0..18446744073709551615; bool/float rejected",
+    "ID": "U64 strictly>0; never0 as a known ID",
+    "Bool": "exact JSON boolean",
+    "String": "strict UTF8 string, no NUL, at most256 encoded bytes",
+    "SHA256": "String matching exactly64 lowercase hex chars",
+    "Code": {
+      "pointer": "U64",
+      "bytes": "U64",
+      "sha256": "SHA256|null",
+      "complete": "Bool"
+    },
+    "Ref": {
+      "kind": "one of device,vk_device,resource,heap,allocator,command,queue,root,pso,module,pipeline_layout,pipeline",
+      "raw": "ID",
+      "generation": "ID"
+    },
+    "ObjectArg": {
+      "kind": "same enum as Ref",
+      "raw": "U64 (original0 is allowed)",
+      "generation": "ID|null (null explicitly means missing genuine birth)"
+    },
+    "Birth": {
+      "ref": "Ref",
+      "output_field": "one of output_raw",
+      "parent": "ObjectArg|null",
+      "owner_creator_call": "ID|null (actual retained original enclosing creator, alternative to already-live parent Ref)"
+    },
+    "SourceScope": {
+      "command": "ObjectArg|null",
+      "recording_epoch_ref": "ID|null (actual selected Reset CallID, never APP epoch1 or a renumbered SOURCE reset)",
+      "resource": "ObjectArg|null",
+      "source_site": "null|COM_DrawInstanced|other|CreateCommandList|command_constructor_reset|default|embedded_64_16|embedded_32_16|embedded_32_32|embedded_128_32|embedded_default|pipeline_get|pipeline_get_or_create|root_graphics_layout",
+      "pipeline_owner": "ObjectArg|null (COM pso association SOURCE bookkeeping, not helper state* argument)",
+      "owner_creation_call": "ID|null (constructor owner actual original CallRef id, not a fabricated live Ref)",
+      "reset_ordinal": "ID|null (genuine successful original Reset ordinal: constructor1, selected first-case2)",
+      "pipeline_route": "null|legacy_monolithic|descriptor_heap|GPL_link|other (actual SOURCE branch bookkeeping only)"
+    },
+    "SourceAfter": {
+      "births": "Birth[0..1]",
+      "recording_epoch_ref": "ID|null (selected original Reset CallID assigned only by that returned Reset; setup null)",
+      "command_buffer": "U64|null (direct immutable observation only after successful original Reset, including constructor Reset; never fabricated CommandCreate output)",
+      "pso_pointer": "U64|null (actual internal d3d12_pipeline_state* frozen only on genuine successful PSOCreate; unrelated to COM interface numerical equality)",
+      "device_interface_pointer": "U64|null (direct source observation &object->ID3D12Device_iface after genuine factory success; distinct from internal factory output)",
+      "device_origin": "null|genuine_new|singleton_existing|unknown (SOURCE classification at actual original NEW/singleton path)",
+      "reset_ordinal": "ID|null (new genuine successful Reset ordinal only on Reset RETURN; constructor1, first-case2)",
+      "root_signature_pointer": "U64|null (only genuine successful RootCreate internal pointer association)",
+      "pso_root_pointer": "U64|null (actual assigned internal root_signature* frozen only on successful PSOCreate)"
+    },
+    "ResourceDesc": {
+      "dimension": "Enum32",
+      "alignment": "U64",
+      "width": "U64",
+      "height": "U32",
+      "depth_or_array_size": "U16",
+      "mip_levels": "U16",
+      "format": "Enum32",
+      "sample_count": "U32",
+      "sample_quality": "U32",
+      "layout": "Enum32",
+      "flags": "U32"
+    },
+    "HeapDesc": {
+      "heap_type": "Enum32",
+      "count": "U32",
+      "flags": "U32",
+      "node_mask": "U32"
+    },
+    "SRV": {
+      "format": "U32",
+      "view_dimension": "U32",
+      "component_mapping": "U32",
+      "most_detailed_mip": "U32",
+      "mip_levels": "U32",
+      "plane_slice": "U32",
+      "min_lod_clamp_bits": "U32"
+    },
+    "RootRange": {
+      "range_type": "Enum32",
+      "num_descriptors": "U32",
+      "base_shader_register": "U32",
+      "register_space": "U32",
+      "offset": "U32",
+      "flags": "U32|null"
+    },
+    "RootConstants": {
+      "shader_register": "U32",
+      "register_space": "U32",
+      "num32": "U32"
+    },
+    "RootDescriptor": {
+      "shader_register": "U32",
+      "register_space": "U32",
+      "flags": "U32|null"
+    },
+    "RootParameter": {
+      "parameter_type": "Enum32",
+      "visibility": "Enum32",
+      "ranges": "SpanRootRanges|null",
+      "constants": "RootConstants|null",
+      "descriptor": "RootDescriptor|null"
+    },
+    "RootDesc": {
+      "original_version": "Enum32",
+      "flags": "U32",
+      "parameters": "SpanRootParameters",
+      "static_sampler_count": "U32"
+    },
+    "Viewport": {
+      "x_bits": "U32",
+      "y_bits": "U32",
+      "width_bits": "U32",
+      "height_bits": "U32",
+      "min_depth_bits": "U32",
+      "max_depth_bits": "U32"
+    },
+    "Rect": {
+      "left": "I32",
+      "top": "I32",
+      "right": "I32",
+      "bottom": "I32"
+    },
+    "RangeSide": {
+      "count": "U32",
+      "starts_pointer": "U64",
+      "starts": "U64[0..3]",
+      "sizes_pointer": "U64",
+      "sizes": "U32[0..3]|null"
+    },
+    "Stage": {
+      "s_type": "Enum32",
+      "p_next": "U64",
+      "flags": "U32",
+      "stage": "Enum32",
+      "module": "ObjectArg",
+      "name_pointer": "U64",
+      "entry": "String|null",
+      "specialization_pointer": "U64"
+    },
+    "Call": {
+      "id": "ID",
+      "entry": "ID",
+      "return": "ID|null",
+      "parent": "ID|null",
+      "api": "closed catalog below",
+      "domain": "catalog fixed domain",
+      "source_before": "SourceScope",
+      "source_after": "SourceAfter",
+      "args": "catalog exact object",
+      "result": "catalog exact object or null"
+    },
+    "Capture": {
+      "context": "ID",
+      "run_id": "String exactly32lowercasehex",
+      "enabled": "Bool",
+      "faulted": "Bool",
+      "gap": "Bool",
+      "overflow": "Bool",
+      "calls_seen": "U64",
+      "original_returns": "U64",
+      "calls_dropped": "U64",
+      "pending": "U32<=32",
+      "clock": "U64",
+      "sealed_at": "U64",
+      "context_epoch": "ID (source-context generation only; not a command Reset ordinal, APP epoch, recording label or ticket epoch)"
+    },
+    "Ticket": {
+      "reset_call": "ID|null (actual retained first-case original Reset CallID)",
+      "emission_call": "ID|null",
+      "execute_call": "ID|null"
+    },
+    "Diagnostic": {
+      "code": "String matching[a-z0-9_]{1,64}",
+      "calls": "ID[0..8]"
+    },
+    "ViewResult": {
+      "resource": "Ref of kind resource",
+      "original_view_call": "ID (returned original CreateSRV)",
+      "history_version": "ID (last returned typed mutation call id at Execute ENTRY)",
+      "lineage_calls": "ID[1..8] (derived copy lineage through origin CreateSRV)",
+      "selected_slot": "LogicalSlot",
+      "root_layout_call": "ID (actual original RootParse)",
+      "root_parameter_index": "U32 (actual SetTable parameter)",
+      "format": "U32",
+      "most_detailed_mip": "U32",
+      "mip_count": "U32",
+      "declared_width": "U32",
+      "declared_height": "U32",
+      "binding_origin": "literal COM_mutable_table",
+      "cut": "ID (original Execute ENTRY)"
+    },
+    "ScissorObservation": {
+      "domain": "literal D3D12_RECT",
+      "rect": "Rect"
+    },
+    "ViewportObservation": {
+      "domain": "literal D3D12_VIEWPORT",
+      "value": "Viewport"
+    },
+    "SpanRootParameters": {
+      "count": "U32",
+      "pointer": "U64",
+      "values": "RootParameter[0..3]",
+      "complete": "Bool"
+    },
+    "SpanRootRanges": {
+      "count": "U32",
+      "pointer": "U64",
+      "values": "RootRange[0..1]",
+      "complete": "Bool"
+    },
+    "SpanSetLayouts": {
+      "count": "U32",
+      "pointer": "U64",
+      "values": "U64[0..8]",
+      "complete": "Bool"
+    },
+    "SpanStages": {
+      "count": "U32",
+      "pointer": "U64",
+      "values": "Stage[0..2]",
+      "complete": "Bool"
+    },
+    "SpanHeaps": {
+      "count": "U32",
+      "pointer": "U64",
+      "values": "ObjectArg[0..2]",
+      "complete": "Bool"
+    },
+    "SpanViewports": {
+      "count": "U32",
+      "pointer": "U64",
+      "values": "Viewport[0..1]",
+      "complete": "Bool"
+    },
+    "SpanRects": {
+      "count": "U32",
+      "pointer": "U64",
+      "values": "Rect[0..1]",
+      "complete": "Bool"
+    },
+    "SpanRTVHandles": {
+      "count": "U32",
+      "pointer": "U64",
+      "values": "U64[0..1]",
+      "complete": "Bool"
+    },
+    "SpanCommands": {
+      "count": "U32",
+      "pointer": "U64",
+      "values": "ObjectArg[0..1]",
+      "complete": "Bool"
+    },
+    "LogicalSlot": {
+      "heap": "Ref of kind heap",
+      "index": "U32",
+      "cpu_handle": "U64"
+    },
+    "U16": "exact JSON integer0..65535; bool and float rejected",
+    "Enum32": "exact JSON integer -2147483648..2147483647; original 32bit enum value, no coercion to/from U32 or bool",
+    "GUID": "String exactly canonical lowercase xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx hexadecimal",
+    "HeapProperties": {
+      "type": "Enum32",
+      "cpu_page_property": "Enum32",
+      "memory_pool_preference": "Enum32",
+      "creation_node_mask": "U32",
+      "visible_node_mask": "U32"
+    },
+    "SpanU32Words": {
+      "count": "U32",
+      "pointer": "U64",
+      "values": "U32[0..2]",
+      "complete": "Bool"
+    },
+    "SpanFormats": {
+      "count": "U32",
+      "pointer": "U64",
+      "values": "Enum32[0..1]",
+      "complete": "Bool"
+    },
+    "SamplerDesc": {
+      "filter": "Enum32",
+      "address_u": "Enum32",
+      "address_v": "Enum32",
+      "address_w": "Enum32",
+      "mip_lod_bias_bits": "U32",
+      "max_anisotropy": "U32",
+      "comparison_func": "Enum32",
+      "border_color_bits": "U32[4..4]",
+      "min_lod_bits": "U32",
+      "max_lod_bits": "U32"
+    },
+    "PushRange": {
+      "stage_flags": "U32",
+      "offset": "U32",
+      "size": "U32"
+    },
+    "SpanPushRanges": {
+      "count": "U32",
+      "pointer": "U64",
+      "values": "PushRange[0..1]",
+      "complete": "Bool"
+    },
+    "RenderingPayload": {
+      "view_mask": "U32",
+      "color_formats": "SpanFormats",
+      "depth_format": "Enum32",
+      "stencil_format": "Enum32"
+    },
+    "Flags2Payload": {
+      "flags": "U64"
+    },
+    "PipelineNextNode": {
+      "kind": "rendering|flags2",
+      "pointer": "U64",
+      "s_type": "Enum32",
+      "next_pointer": "U64",
+      "payload": "RenderingPayload when kind=rendering; Flags2Payload when kind=flags2; exact tagged union"
+    },
+    "PipelineNext": {
+      "pointer": "U64",
+      "nodes": "PipelineNextNode[0..2]",
+      "complete": "Bool"
+    },
+    "SpanPipelineLibraries": {
+      "count": "U32",
+      "pointer": "U64",
+      "values": "U64[0..3]",
+      "complete": "Bool"
+    },
+    "LibraryProjection": {
+      "structure_pointer": "U64",
+      "s_type": "Enum32",
+      "libraries": "SpanPipelineLibraries"
+    },
+    "OwnedAuxResult": {
+      "sampler_heap": "Ref of kind heap",
+      "sampler_table_call": "ID",
+      "sampler_parameter": "U32",
+      "sampler_gpu_handle": "U64",
+      "constants_call": "ID",
+      "constant_words": "U32[2..2]",
+      "rtv_heap": "Ref of kind heap",
+      "rtv_resource": "Ref of kind resource",
+      "create_rtv_call": "ID",
+      "rtv_bind_call": "ID"
+    },
+    "VkRect": {
+      "offset_x": "I32",
+      "offset_y": "I32",
+      "width": "U32",
+      "height": "U32"
+    },
+    "SpanVkRects": {
+      "count": "U32",
+      "pointer": "U64",
+      "values": "VkRect[0..1]",
+      "complete": "Bool"
+    },
+    "VkRasterResult": {
+      "viewport_call": "ID",
+      "scissor_call": "ID",
+      "viewport": "Viewport",
+      "scissor": "VkRect"
+    },
+    "PipelineStatePointers": {
+      "vertex_input": "U64",
+      "input_assembly": "U64",
+      "tessellation": "U64",
+      "viewport": "U64",
+      "rasterization": "U64",
+      "multisample": "U64",
+      "depth_stencil": "U64",
+      "color_blend": "U64",
+      "dynamic": "U64"
+    }
+  },
+  "callback_catalog": {
+    "DeviceCreate": {
+      "domain": "source_original",
+      "original_symbol": "d3d12_device_create (genuineNEW factory path only)",
+      "args": {
+        "output_pointer": "U64"
+      },
+      "result": {
+        "hresult": "I32",
+        "output_raw": "U64|null"
+      },
+      "return_kind": "HRESULT_internal"
+    },
+    "VkDeviceCreate": {
+      "domain": "Vulkan_original",
+      "original_symbol": "vkCreateDevice",
+      "args": {
+        "physical_device_raw": "U64",
+        "output_pointer": "U64"
+      },
+      "result": {
+        "vk_result": "I32",
+        "output_raw": "U64|null"
+      },
+      "return_kind": "VkResult"
+    },
+    "ResourceCreate": {
+      "domain": "COM_original",
+      "original_symbol": "d3d12_device_CreateCommittedResource base boundary only; DESC original, not nested DESC1 forwarding",
+      "args": {
+        "device": "ObjectArg",
+        "heap_properties_pointer": "U64",
+        "heap_properties": "HeapProperties|null",
+        "heap_flags": "U32",
+        "description_pointer": "U64",
+        "description": "ResourceDesc|null",
+        "initial_state": "U32",
+        "clear_value_pointer": "U64",
+        "requested_iid": "GUID|null",
+        "output_pointer": "U64"
+      },
+      "result": {
+        "hresult": "I32",
+        "output_raw": "U64|null"
+      },
+      "return_kind": "HRESULT"
+    },
+    "HeapCreate": {
+      "domain": "COM_original",
+      "original_symbol": "CreateDescriptorHeap",
+      "args": {
+        "device": "ObjectArg",
+        "description": "HeapDesc",
+        "output_pointer": "U64",
+        "description_pointer": "U64",
+        "requested_iid": "GUID|null"
+      },
+      "result": {
+        "hresult": "I32",
+        "output_raw": "U64|null"
+      },
+      "return_kind": "HRESULT"
+    },
+    "AllocatorCreate": {
+      "domain": "COM_original",
+      "original_symbol": "CreateCommandAllocator",
+      "args": {
+        "device": "ObjectArg",
+        "output_pointer": "U64",
+        "type": "Enum32"
+      },
+      "result": {
+        "hresult": "I32",
+        "output_raw": "U64|null"
+      },
+      "return_kind": "HRESULT"
+    },
+    "QueueCreate": {
+      "domain": "COM_original",
+      "original_symbol": "CreateCommandQueue",
+      "args": {
+        "device": "ObjectArg",
+        "output_pointer": "U64",
+        "type": "Enum32"
+      },
+      "result": {
+        "hresult": "I32",
+        "output_raw": "U64|null"
+      },
+      "return_kind": "HRESULT"
+    },
+    "CommandCreate": {
+      "domain": "COM_original",
+      "original_symbol": "d3d12_device_CreateCommandList base boundary only; genuine nested Reset is separate retained callback",
+      "args": {
+        "device": "ObjectArg",
+        "allocator": "ObjectArg|null",
+        "initial_pipeline": "ObjectArg|null",
+        "output_pointer": "U64",
+        "node_mask": "U32",
+        "type": "Enum32",
+        "requested_iid": "GUID|null"
+      },
+      "result": {
+        "hresult": "I32",
+        "output_raw": "U64|null"
+      },
+      "return_kind": "HRESULT"
+    },
+    "RootCreate": {
+      "domain": "COM_original",
+      "original_symbol": "CreateRootSignature",
+      "args": {
+        "device": "ObjectArg",
+        "blob": "Code",
+        "output_pointer": "U64",
+        "node_mask": "U32"
+      },
+      "result": {
+        "hresult": "I32",
+        "output_raw": "U64|null"
+      },
+      "return_kind": "HRESULT"
+    },
+    "RootParse": {
+      "domain": "source_original",
+      "original_symbol": "vkd3d_shader_parse_root_signature BEFORE conversion output is freed",
+      "args": {
+        "blob": "Code",
+        "description_output_pointer": "U64"
+      },
+      "result": {
+        "status": "I32",
+        "description": "RootDesc|null"
+      },
+      "return_kind": "vkd3d_status"
+    },
+    "PSOCreate": {
+      "domain": "COM_original",
+      "original_symbol": "CreateGraphicsPipelineState",
+      "args": {
+        "device": "ObjectArg",
+        "root": "ObjectArg",
+        "vertex_bytecode": "Code",
+        "pixel_bytecode": "Code",
+        "output_pointer": "U64",
+        "rtv_formats": "SpanFormats",
+        "sample_count": "U32",
+        "sample_quality": "U32"
+      },
+      "result": {
+        "hresult": "I32",
+        "output_raw": "U64|null"
+      },
+      "return_kind": "HRESULT"
+    },
+    "ModuleCreate": {
+      "domain": "Vulkan_original",
+      "original_symbol": "vkCreateShaderModule",
+      "args": {
+        "device": "ObjectArg",
+        "create_info_pointer": "U64",
+        "s_type": "Enum32",
+        "p_next": "U64",
+        "flags": "U32",
+        "code": "Code",
+        "allocator_pointer": "U64",
+        "output_pointer": "U64"
+      },
+      "result": {
+        "vk_result": "I32",
+        "output_raw": "U64|null"
+      },
+      "return_kind": "VkResult"
+    },
+    "PipelineLayoutCreate": {
+      "domain": "Vulkan_original",
+      "original_symbol": "vkCreatePipelineLayout nested only in true GRAPHICS root helper callsite state.c1982 (membership before tick)",
+      "args": {
+        "device": "ObjectArg",
+        "create_info_pointer": "U64",
+        "s_type": "Enum32",
+        "p_next": "U64",
+        "flags": "U32",
+        "set_layout_raws": "SpanSetLayouts",
+        "push_constant_ranges": "SpanPushRanges",
+        "allocator_pointer": "U64",
+        "output_pointer": "U64"
+      },
+      "result": {
+        "vk_result": "I32",
+        "output_raw": "U64|null"
+      },
+      "return_kind": "VkResult"
+    },
+    "PipelineCreate": {
+      "domain": "Vulkan_original",
+      "original_symbol": "vkCreateGraphicsPipelines, count1 only",
+      "args": {
+        "device": "ObjectArg",
+        "cache_raw": "U64",
+        "create_info_count": "U32",
+        "create_info_pointer": "U64",
+        "create_info_complete": "Bool",
+        "s_type": "Enum32",
+        "flags": "U32",
+        "p_next": "PipelineNext",
+        "library_info": "LibraryProjection|null",
+        "layout": "ObjectArg|null",
+        "render_pass_raw": "U64",
+        "subpass": "U32",
+        "base_pipeline_raw": "U64",
+        "base_pipeline_index": "I32",
+        "stages": "SpanStages",
+        "allocator_pointer": "U64",
+        "output_pointer": "U64",
+        "state_pointers": "PipelineStatePointers"
+      },
+      "result": {
+        "vk_result": "I32",
+        "output_raw": "U64|null"
+      },
+      "return_kind": "VkResult"
+    },
+    "Increment": {
+      "domain": "COM_original",
+      "original_symbol": "GetDescriptorHandleIncrementSize",
+      "args": {
+        "device": "ObjectArg",
+        "heap_type": "Enum32"
+      },
+      "result": {
+        "value": "U32"
+      },
+      "return_kind": "uint32"
+    },
+    "CPUStart": {
+      "domain": "source_original",
+      "original_symbol": "GetCPUDescriptorHandleForHeapStart source hidden output-pointer ABI",
+      "args": {
+        "heap": "ObjectArg",
+        "output_pointer": "U64"
+      },
+      "result": {
+        "returned_pointer": "U64",
+        "value": "U64|null"
+      },
+      "return_kind": "original_pointer"
+    },
+    "GPUStart": {
+      "domain": "source_original",
+      "original_symbol": "GetGPUDescriptorHandleForHeapStart source hidden output-pointer ABI",
+      "args": {
+        "heap": "ObjectArg",
+        "output_pointer": "U64"
+      },
+      "result": {
+        "returned_pointer": "U64",
+        "value": "U64|null"
+      },
+      "return_kind": "original_pointer"
+    },
+    "CreateSRV": {
+      "domain": "COM_original",
+      "original_symbol": "CreateShaderResourceView",
+      "args": {
+        "device": "ObjectArg",
+        "resource": "ObjectArg|null",
+        "destination": "U64",
+        "description": "SRV|null",
+        "description_pointer": "U64"
+      },
+      "result": null,
+      "return_kind": "void"
+    },
+    "CopySimple": {
+      "domain": "COM_original",
+      "original_symbol": "CopyDescriptorsSimple",
+      "args": {
+        "device": "ObjectArg",
+        "count": "U32",
+        "destination": "U64",
+        "source": "U64",
+        "heap_type": "Enum32"
+      },
+      "result": null,
+      "return_kind": "void"
+    },
+    "CopyRanges": {
+      "domain": "COM_original",
+      "original_symbol": "CopyDescriptors",
+      "args": {
+        "device": "ObjectArg",
+        "destinations": "RangeSide",
+        "sources": "RangeSide",
+        "heap_type": "Enum32"
+      },
+      "result": null,
+      "return_kind": "void"
+    },
+    "Reset": {
+      "domain": "COM_original",
+      "original_symbol": "ID3D12GraphicsCommandList::Reset",
+      "args": {
+        "command": "ObjectArg",
+        "allocator": "ObjectArg",
+        "initial_pipeline": "ObjectArg|null"
+      },
+      "result": {
+        "hresult": "I32"
+      },
+      "return_kind": "HRESULT"
+    },
+    "Close": {
+      "domain": "COM_original",
+      "original_symbol": "ID3D12GraphicsCommandList::Close",
+      "args": {
+        "command": "ObjectArg"
+      },
+      "result": {
+        "hresult": "I32"
+      },
+      "return_kind": "HRESULT"
+    },
+    "ClearState": {
+      "domain": "COM_original",
+      "original_symbol": "ClearState",
+      "args": {
+        "command": "ObjectArg",
+        "pipeline": "ObjectArg|null"
+      },
+      "result": null,
+      "return_kind": "void"
+    },
+    "SetPipeline": {
+      "domain": "COM_original",
+      "original_symbol": "SetPipelineState",
+      "args": {
+        "command": "ObjectArg",
+        "pipeline": "ObjectArg"
+      },
+      "result": null,
+      "return_kind": "void"
+    },
+    "SetRoot": {
+      "domain": "COM_original",
+      "original_symbol": "SetGraphicsRootSignature",
+      "args": {
+        "command": "ObjectArg",
+        "root": "ObjectArg|null"
+      },
+      "result": null,
+      "return_kind": "void"
+    },
+    "SetHeaps": {
+      "domain": "COM_original",
+      "original_symbol": "SetDescriptorHeaps",
+      "args": {
+        "command": "ObjectArg",
+        "heaps": "SpanHeaps"
+      },
+      "result": null,
+      "return_kind": "void"
+    },
+    "SetTable": {
+      "domain": "COM_original",
+      "original_symbol": "SetGraphicsRootDescriptorTable original selected variant",
+      "args": {
+        "command": "ObjectArg",
+        "parameter": "U32",
+        "gpu_handle": "U64"
+      },
+      "result": null,
+      "return_kind": "void"
+    },
+    "Viewports": {
+      "domain": "COM_original",
+      "original_symbol": "RSSetViewports",
+      "args": {
+        "command": "ObjectArg",
+        "viewports": "SpanViewports"
+      },
+      "result": null,
+      "return_kind": "void"
+    },
+    "Scissors": {
+      "domain": "COM_original",
+      "original_symbol": "RSSetScissorRects",
+      "args": {
+        "command": "ObjectArg",
+        "rects": "SpanRects"
+      },
+      "result": null,
+      "return_kind": "void"
+    },
+    "RTV": {
+      "domain": "COM_original",
+      "original_symbol": "OMSetRenderTargets",
+      "args": {
+        "command": "ObjectArg",
+        "handles": "SpanRTVHandles",
+        "single_range": "I32 (original BOOL, no JSONbool coercion)",
+        "dsv_pointer": "U64"
+      },
+      "result": null,
+      "return_kind": "void"
+    },
+    "Draw": {
+      "domain": "COM_original",
+      "original_symbol": "DrawInstanced",
+      "args": {
+        "command": "ObjectArg",
+        "vertex_count": "U32",
+        "instance_count": "U32",
+        "first_vertex": "U32",
+        "first_instance": "U32"
+      },
+      "result": null,
+      "return_kind": "void"
+    },
+    "BindPipeline": {
+      "domain": "Vulkan_original",
+      "original_symbol": "vkCmdBindPipeline",
+      "args": {
+        "vk_command_buffer": "U64",
+        "bind_point": "Enum32",
+        "pipeline": "ObjectArg"
+      },
+      "result": null,
+      "return_kind": "void"
+    },
+    "EmitDraw": {
+      "domain": "Vulkan_original",
+      "original_symbol": "vkCmdDraw at exact source callsite",
+      "args": {
+        "vk_command_buffer": "U64",
+        "vertex_count": "U32",
+        "instance_count": "U32",
+        "first_vertex": "U32",
+        "first_instance": "U32"
+      },
+      "result": null,
+      "return_kind": "void"
+    },
+    "Execute": {
+      "domain": "COM_original",
+      "original_symbol": "ExecuteCommandLists",
+      "args": {
+        "queue": "ObjectArg",
+        "commands": "SpanCommands"
+      },
+      "result": null,
+      "return_kind": "void"
+    },
+    "Release": {
+      "domain": "COM_original",
+      "original_symbol": "IUnknown::Release",
+      "args": {
+        "object": "ObjectArg"
+      },
+      "result": {
+        "value": "U32"
+      },
+      "return_kind": "uint32"
+    },
+    "AllocatorReset": {
+      "domain": "COM_original",
+      "original_symbol": "ID3D12CommandAllocator::Reset",
+      "args": {
+        "allocator": "ObjectArg"
+      },
+      "result": {
+        "hresult": "I32"
+      },
+      "return_kind": "HRESULT"
+    },
+    "PipelineLookup": {
+      "domain": "source_original",
+      "original_symbol": "d3d12_pipeline_state_get_pipeline or d3d12_pipeline_state_get_or_create_pipeline (source_site distinguishes)",
+      "args": {
+        "state_pointer": "U64",
+        "dynamic_state_pointer": "U64",
+        "dsv_format_pointer": "U64",
+        "dynamic_flags_output_pointer": "U64"
+      },
+      "result": {
+        "value": "U64",
+        "dynamic_flags": "U32|null"
+      },
+      "return_kind": "VkPipeline"
+    },
+    "CreateSampler": {
+      "domain": "COM_original",
+      "original_symbol": "CreateSampler",
+      "args": {
+        "device": "ObjectArg",
+        "description_pointer": "U64",
+        "description": "SamplerDesc|null",
+        "description_complete": "Bool",
+        "destination": "U64"
+      },
+      "result": null,
+      "return_kind": "void"
+    },
+    "CreateRTV": {
+      "domain": "COM_original",
+      "original_symbol": "CreateRenderTargetView",
+      "args": {
+        "device": "ObjectArg",
+        "resource": "ObjectArg|null",
+        "description_pointer": "U64",
+        "destination": "U64"
+      },
+      "result": null,
+      "return_kind": "void"
+    },
+    "SetConstants": {
+      "domain": "COM_original",
+      "original_symbol": "SetGraphicsRoot32BitConstants",
+      "args": {
+        "command": "ObjectArg",
+        "parameter": "U32",
+        "words": "SpanU32Words",
+        "destination_offset": "U32"
+      },
+      "result": null,
+      "return_kind": "void"
+    },
+    "Topology": {
+      "domain": "COM_original",
+      "original_symbol": "IASetPrimitiveTopology",
+      "args": {
+        "command": "ObjectArg",
+        "topology": "Enum32"
+      },
+      "result": null,
+      "return_kind": "void"
+    },
+    "ModuleDestroy": {
+      "domain": "Vulkan_original",
+      "original_symbol": "vkDestroyShaderModule",
+      "args": {
+        "device": "ObjectArg",
+        "object": "ObjectArg of kind module",
+        "allocator_pointer": "U64"
+      },
+      "result": null,
+      "return_kind": "void"
+    },
+    "PipelineDestroy": {
+      "domain": "Vulkan_original",
+      "original_symbol": "vkDestroyPipeline",
+      "args": {
+        "device": "ObjectArg",
+        "object": "ObjectArg of kind pipeline",
+        "allocator_pointer": "U64"
+      },
+      "result": null,
+      "return_kind": "void"
+    },
+    "PipelineLayoutDestroy": {
+      "domain": "Vulkan_original",
+      "original_symbol": "vkDestroyPipelineLayout",
+      "args": {
+        "device": "ObjectArg",
+        "object": "ObjectArg of kind pipeline_layout",
+        "allocator_pointer": "U64"
+      },
+      "result": null,
+      "return_kind": "void"
+    },
+    "ScopeGap": {
+      "domain": "source_observer",
+      "original_symbol": "explicit missing/unsupported selected SOURCE observation; NOT original API success",
+      "args": {
+        "code": "outside_profile|missing_origin|unsupported_draw_branch|unqualified_native_route|unsupported_root_state|unretained_selected_original|unsafe_projection|quota"
+      },
+      "result": null,
+      "return_kind": "observer"
+    },
+    "VkViewportCount": {
+      "domain": "Vulkan_original",
+      "original_symbol": "vkCmdSetViewportWithCount (COM route command.c8382)",
+      "args": {
+        "vk_command_buffer": "U64",
+        "viewports": "SpanViewports"
+      },
+      "result": null,
+      "return_kind": "void"
+    },
+    "VkScissorCount": {
+      "domain": "Vulkan_original",
+      "original_symbol": "vkCmdSetScissorWithCount (COM route command.c8421)",
+      "args": {
+        "vk_command_buffer": "U64",
+        "rects": "SpanVkRects"
+      },
+      "result": null,
+      "return_kind": "void"
+    }
+  },
+  "window_and_membership": {
+    "start": "Begin before genuine DeviceCreate and all required origins. One core SOURCE context; no APP typed facts. Clock starts0, exact selected callback/observer edge coverage1..clock, sealed_at==clock, no seal tick.",
+    "end": "One immutable frame after original first-case Execute RETURN, before cleanup. No requirement that all COM objects are destroyed after this historical cut. Selected Release ENTRY before use/cut is unknown, including nonfinal RETURN>0.",
+    "constructor": "One selected CommandCreate wraps actual BASE d3d12_device_CreateCommandList. Its real internal CreateCommandList1 is outside the selected boundary before tick; it is neither erased from the source description nor separately birthed. The genuine nested vtable Reset IS selected before CommandCreate RETURN: args.command has actual source raw, generation=null, source_before.owner_creation_call and Call.parent identify that pending base creator, source_site=command_constructor_reset. Its allocator is already genuinely live. On success it publishes reset_ordinal1 and actual command_buffer, recording_epoch_ref=null, births empty. Only eventual successful base CommandCreate publishes one command birth. Positive requires the original requested base GraphicsCommandList IID, actual constructor Reset receiver association to its eventual defined base-interface output and matching source parent; pointer proximity alone never establishes it. No other external use of a pre-birth command is eligible. Failed ctor/Reset/outer return cannot establish the ticket.",
+    "two_namespaces": "reset_ordinal counts every successful selected original Reset including constructor1 then first-case2. recording_epoch_ref is null during constructor/setup; thereafter it is the ACTUAL selected Reset CallID from ticket.reset_call, not numeric1 and not an APP epoch. Both genuine Reset E/R rows stay in the same source counter. The selected epoch is an original occurrence reference, not another ordinal. Initial open state comes from the actual constructor Reset, followed by setup Close/Execute(null retained epoch), not from an invented Create state.",
+    "first_case_only": "The ticket selects the first original direct COM writer after actual setup Close/Execute. Its source epoch reference is ticket.reset_call, whose actual reset_ordinal is2. APP recordingEpoch1 remains entirely outside these SOURCE inputs. Require exactly constructor Reset1 plus selected Reset2, one retained command epoch by exact Reset reference; selected first-case AllocateReset/Reset is genuinely after setup ExecuteRETURN. Warm original case2 would use another actual Reset/old origins, so is UNKNOWN in this one-frame protocol. No generation/clock rebirth, prefix hydration or two independently cold mock proof of that warm sequence.",
+    "resource_boundary": "ResourceCreate observes only actual base CreateCommittedResource with original DESC. Its internal calls1/2/DESC1 promotion are explicitly outside this selected callback protocol; no triple counter/birth. Direct unsupported creation variants do not manufacture a base origin; if their objects affect this selected graph, missing-origin/gap gives unknown.",
+    "graphics_layout_membership": "PipelineLayoutCreate membership is decided BEFORE tick at the pinned GRAPHICS helper callsite state.c1982, actual bind_point_layout==&root->graphics and genuine RootCreate owner. Other compute/mesh/raygen layout originals remain outside this selected catalog BEFORE tick; never first-layout/equal-value selection or clock pause. No global layout alias/absence claim.",
+    "destroy_membership": "ModuleDestroy includes nonzero raw matching one retained selected module generation/owner. NULL shader-module destroy has no selected object and is explicitly outside membership BEFORE tick. Selected module destroys are retained; known use requires module live at PipelineCreate only, not Execute. Selected pipeline/layout destruction before use/cut invalidates that origin. No native destroy is COM Release.",
+    "outside_originals": "This protocol does NOT select ResourceBarrier, upload/readback Map/Unmap, GetDesc/GetCopyableFootprints, CopyTextureRegion or ClearRenderTargetView as history rows. Their actual delegates remain unmodified; this is not evidence they were absent. They affect contents/transfers/clear, for which every strong claim remains false. Any selected recording/binding/pipeline/emitter effect they trigger must still appear in its own selected SOURCE callback or yield ScopeGap. Internal copy/resolve/deferred emissions remain unsupported, never fake COMDraw. Excluded ResourceBarrier/CopyTexture/ClearRT never certify contents, successful transitions, target writes or pixel origin. The first ticket still requires the actually emitted WithCount viewport/scissor and Bind/Emit originals in the selected Draw; no internal raster variant is substituted.",
+    "finite_membership": "All remaining callbacks listed in this catalog use original receiver/genuine owner/ticket command scope before any tick/value copy. A relevant callback cannot be discarded merely because its scope metadata is absent/wrong. Missing owner/receiver or unsupported selected route yields gap/unknown, not an older preserved state. No general tracker, eviction or object scan is proposed."
+  },
+  "object_and_array_caps": {
+    "contexts": 1,
+    "device": 1,
+    "vk_device": 1,
+    "resource": 6,
+    "selected_SRV_resources": 2,
+    "auxiliary_resources": 4,
+    "heap": 4,
+    "selected_SRV_heaps": 2,
+    "auxiliary_heaps": 2,
+    "allocator": 1,
+    "command": 1,
+    "queue": 1,
+    "root": 1,
+    "pso": 1,
+    "module": 2,
+    "pipeline_layout": 1,
+    "pipeline": 1,
+    "pipeline_create_attempts": 2,
+    "module_destroy_nonnull": 2,
+    "getters": 8,
+    "typed_SRV_mutations": 8,
+    "CreateSampler": 2,
+    "CreateRTV": 1,
+    "selected_slots": 3,
+    "unselected_sampler_slots": 2,
+    "RTV_handles": 1,
+    "root_parameters": 3,
+    "ranges_per_table": 1,
+    "root_constant_words": 2,
+    "heaps_per_bind": 2,
+    "commands_per_Execute": 1,
+    "viewports": 1,
+    "scissors": 1,
+    "pipeline_stages": 2,
+    "set_layout_raws": 8,
+    "push_ranges": 1,
+    "pipeline_next_nodes": 2,
+    "pipeline_library_raws_diagnostic_only": 3,
+    "root_epochs_selected": "1 actual selected Reset occurrence referenced byticket.reset_call; not value1 or APP1",
+    "constructor_Reset_callbacks": 1,
+    "selected_Reset_callbacks": 1,
+    "tickets": 1,
+    "pending_shared": 32,
+    "source_calls": 64,
+    "all_records_including_observers": 64,
+    "source_edges": 128,
+    "input_UTF8_bytes": 65536,
+    "output_UTF8_bytes": 262144,
+    "nodes": 4096,
+    "depth_root0": 20,
+    "string_UTF8_bytes": 256,
+    "diagnostics": 64,
+    "diagnostic_call_ids": 8,
+    "status": "CANDIDATE2_NUMERIC_LIMITS_PENDING_EXACT_DOCUMENTARY_BYTE_NODE_AUDIT; CALLFRONTIER59..63CONDITIONAL_NOT_RUNTIME_PROOF",
+    "native_WithCount_viewport_calls": 1,
+    "native_WithCount_scissor_calls": 1,
+    "native_BindPipeline_calls": 1,
+    "native_EmitDraw_calls": 1,
+    "native_PipelineLookup_calls": 2
+  },
+  "original_array_policy": {
+    "Span": "For every Span<T>, count/pointer are the actual original count/pointer, values is the by-value copied prefix and complete states whether the entire declared array was captured. A positive relation requires complete=true, count==len(values), count within its per-array cap, and pointer!=0 when count>0. count0 with NULL or nonNULL unused pointer and [] is representable; each callback profile decides whether zero is supported. No pointer value causes an analyzer dereference.",
+    "Incomplete": "Actual count>cap, pointer0 with count>0 or safe copy unavailable => complete=false and a bounded prefix (possibly []) only; valid diagnostic unknown. values beyond its explicit cap or beyond declared count are malformed ValueError. A producer must not read an over-cap tail, suppress an original or relabel a prefix as complete.",
+    "RootUnion": "RootParameter only captures the active original union: type0 table has ranges nonnull and constants/descriptor null; type1 constants has constants nonnull and ranges/descriptor null; type2/3 descriptor has descriptor nonnull and other fields null. Unsupported parameter_type remains unknown with no inactive-union read. RootDesc parameters and each active table ranges retain their actual counts/pointers/completeness. New positive root profile is the exact3parameter owned layout, not the old general minimal layout.",
+    "Pipeline": "Every original count/pointer/value prefix remains explicit. Native chain nodes are bounded SOURCE projections of linked original structures, not invented API array counts; node pointer/next links retain actual original fields. Pipeline batchcount1 and count2stages must be complete. No malformed excess prefix is silently trimmed.",
+    "Code": "Original PSO code is bounded pointer/size/SHA metadata only, and module Code size is positive multiple4 for positive. Each hash observation reads at most1MiB of ordinary source-provided code bytes before original, no arbitrary memory/descriptor/IR decode and zero raw payload bytes in wire. Failure/oversize/unavailable original code retains size,pointer,complete=false,sha256null =>unknown. No SHA equality across domains or between unrelated original occurrences identifies a birth or PSO; actual constructor ownership/callgraph and defined outputs do.",
+    "Setters": "Original SetHeaps/Viewports/Scissors/RTV/Execute and Vulkan viewport/scissor arrays use their own counts/pointers. No array length is substituted for the original count. The finite positive profile requires one viewport/scissor/RTV and selected known command exactly once; zero counts remain known arguments but unsupported relation.",
+    "WithCount": "Native WithCount shaders have original viewportCount/scissorCount and pointer in theirSpan, no inventedfirst. Need completecount1forpositive. NativeVkRect2D offsetI32/extentU32distinctfromD3DLONGrect.",
+    "pNext": "An actual nonNULL unrecognized chain or stage pNext is representable without fake recognized payload: retain actual top/stage pointer, only safely retained recognized prefix nodes, complete=false and ScopeGap unsafe_projection/unqualified_native_route as needed. The full prefix last next_pointer may point at the unrecognized actual structure, never overwritten0. A well-typed unknown route is semantic UNKNOWN, not ValueError just for being a legal native input. Actual counts beyond chosen cap retain bounded prefix/complete=false; oversized supplied prefix itself is malformed. Node kind enum remains closed; no opaque unions decoded. Stage nonzero pNext is preserved as scalar and gives unknown in this branch; it is not made NULL. Diagnostic library_info can retain actual structure pointer/sType/count/pointer/<=3raws, but no library identities or birth relation are invented."
+  },
+  "callback_provenance": {
+    "meaning": "Catalog rows are explicit bounded chosen-field projections at actual original SOURCE delegate ENTRY/RETURN; omitted original fields remain uncaptured. This is not full ABI argument identity or complete vendor API coverage. Domain is fixed by catalog. Exactly ONE catalog kind, ScopeGap, is source_observer: one explicit observed mark, NOT a fabricated original delegate/API success.",
+    "source_before": "SOURCE bookkeeping captured at ENTRY separately from args: genuine command/resource occurrence and current recording epoch, or null if unavailable. These fields are never described as D3D/Vulkan arguments.",
+    "source_after": "SOURCE bookkeeping completed after actual RETURN: at most one genuine birth bound to an actual defined output_raw and an optional successful new recording epoch. No generation is a public API output. Pending calls have no births/new epoch.",
+    "call_clock": "id/entry are unique positiveU64. List ordered by ENTRY; RETURN may be reverse/reentrant. Source clock timestamps for all ENTRY/RETURN and observations are unique. return null means pending and result null; nonnull means actual return, including void result:null. No duplicate AFTER or token reuse.",
+    "observation_clock": "source_observer records have return==entry and result:null, one mark not two edges, births=[] and no new recording epoch; original returned records have distinct entry<return. Shared selected counter starts0 and each retained ENTRY, RETURN or explicit source-observer mark increments by1. For a healthy positive, the complete set of edge/mark values is exactly1..capture.clock, maxedge==clock==sealed_at and <=128. No hidden transition, absent gap or arbitrary offset is admitted. Empty diagnostic uses clock0/sealed_at0. Seal snapshot endpoint adds no transition. CallIDs/generations are independent positive namespaces, never asserted equal to transition numbers. Diagnostic fault/gap/drop/overflow captures may contain missing counter positions and cannot become positive.",
+    "parent": "null or earlier actual enclosing original call ID. Require child original ENTRY/RETURN inside parent original interval when returned. A pending/missing parent cannot establish the ticket. No thread proximity/cache lookup/clock-number equality replaces nesting.",
+    "genuine_births": "Only a real returned creation may publish <=1 genuine Birth from its defined output on exact typed success0 (I32 HRESULT/VkResult/status), nonNULL output slot and nonzero returned object. No Bool/int coercion or fabricated publicHRESULT. Generations are monotonic perkind by genuine creator ENTRY, gaps allowed, never assigned from old raw or APP facts. DeviceCreate internal pointer remains distinct from directly observed successful genuineNEW COM interface association. A genuine pending owner uses actual owner_creator_call/ancestor until its later successful RETURN; an already-live owner uses Birth.parent. Those alternatives are mutually exclusive. A constructor child cannot make its parent falsely live. All owning COM/resource/PSO creations must return success before their external typed use; only the strictly defined constructor Reset exception below is allowed.",
+    "small_scope": "NEW proposed useful-owned profile only; does not generalize the old model or claim actual runtime/game applicability. Native route/window/callback budgets remain admission gates.",
+    "COM_lifetimes": "Release applies only to original COM receiver kinds device/resource/heap/allocator/command/queue/root/pso. Its original U32 result is never a HRESULT. Only actual result0 retires that COM occurrence at RETURN; no new same raw generation may overlap through that RETURN. The ENTRY..RETURN interval is conservatively ineligible. A nonfinal result>0 NEVER frees the raw/generation for reuse. The first positive policy treats any relevant selected Release ENTRY before its later selected use/Execute cut as unknown even when result>0. Native Vulkan destructions or source local view decrefs are not COM Release and cannot be substituted with this callback. Modules need genuine live creation inputs at native PipelineCreate, not an invented COM lifetime through Execute.",
+    "projection_completeness": "The catalog retains only each chosen original field, not full C structures, all ABI arguments or all VkGraphicsPipeline state semantics. PipelineStatePointers stores the nine original state pointers and their nullness only; no pointed-to state is decoded or claimed equivalent. Code stores ordinary original code pointer/byte-size/bounded SHA observation, not raw code in JSON, IR access, DXIL/SPIRV equivalence, identity by hash or runtime attestation. All chosen arrays/pNext nodes do require complete chosen fields for a positive. Source labels/creator associations stay outside original args."
+  },
+  "capture_accounting": {
+    "healthy": "enabled=true; faulted/gap/overflow=false; calls_dropped=0; calls_seen equals number of non-observer records; original_returns equals returned non-observer records; pending equals nonreturned non-observer records; pending must0 for relation_known. calls_seen includes only this selected capture window, never universal API completeness. Additionally exact selected edge/mark coverage must be contiguous1..clock per callback_provenance.observation_clock, with clock==sealed_at and no silent omitted counter transition. This is the finite selected callback protocol only, never universal API absence.",
+    "diagnostic": "Disabled/fault/gap/overflow/dropped/pending remains representable within type/caps, preserves entire retained input and all false claims, reports unknown. Counters must not understate retained calls/returns; no arithmetic overflow. calls_seen may exceed64 only with incomplete flags; no extra row retention/eviction.",
+    "selection": "ticket IDs are observer selection of actual original EmitDraw and Execute occurrences only. No supplied selectedView/lastWrite/sourceVersion/root0/shader-index. Missing ticket IDs give unknown; labels/count3/dimensions/hash alone never create an emission.",
+    "endpoint": "clock/sealed_at permit0 for an empty diagnostic. A healthy endpoint is exactly the largest retained edge/mark value, clock==sealed_at; all source transitions from1 through it are retained. Seal is an observer snapshot, no fake API or added tick. Actual E/R timestamps are distinct except a source_observer row carries its one mark in entry==return. Selected Execute RETURN is included before or at the endpoint for a known relation.",
+    "selected_window": "Begin before genuine DeviceCreate and all required origins. One core SOURCE context; no APP typed facts. Clock starts0, exact selected callback/observer edge coverage1..clock, sealed_at==clock, no seal tick. One immutable frame after original first-case Execute RETURN, before cleanup. No requirement that all COM objects are destroyed after this historical cut. Selected Release ENTRY before use/cut is unknown, including nonfinal RETURN>0. This protocol does NOT select ResourceBarrier, upload/readback Map/Unmap, GetDesc/GetCopyableFootprints, CopyTextureRegion or ClearRenderTargetView as history rows. Their actual delegates remain unmodified; this is not evidence they were absent. They affect contents/transfers/clear, for which every strong claim remains false. Any selected recording/binding/pipeline/emitter effect they trigger must still appear in its own selected SOURCE callback or yield ScopeGap. Internal copy/resolve/deferred emissions remain unsupported, never fake COMDraw.",
+    "node_counting": "4096 values/containers total: root counts1; each dict/list/scalar/null value counts1; dictionary keys do not add nodes but their UTF8/type/length are checked"
+  },
+  "owned_original_profile": {
+    "classification": "Derived from original receiver/output/description/use only. No supplied role names, selectedView, shader index, APP clock/gen, currentObject lookup or seal-time hydration. Auxiliary does not mean shader-inactive.",
+    "selected_resources": "Exactly two ResourceCreate outputs used by genuine typed CreateSRV. Texture2D dimension3,format28,layers1,sample_count1,quality0,alignment0,layout0,flags0,width/height1..16384,mips1..15 legal <=floorlog2(maxdim)+1. For unchanged owned they are8x8/mip1. HeapProperties.type1,heap_flags0,clear_value_pointer0,initial_stateCOPY_DEST0x400. Only nonNULL safe original base inputs/output/IID permit classification.",
+    "aux_resources": "Exactly four additional genuine ResourceCreate outputs: two UPLOAD buffers(type2) and one READBACK buffer(type3), Dimension1,alignment0,Format0,Height1,layers1,mips1,sample1,quality0,LayoutROW_MAJOR1,flags0,0<Width<=1048576; plus one DEFAULT(type1) target Texture2D256x144,format87,layers1/mips1/sample1/quality0,layout0,alignment0,flagsALLOW_RENDER_TARGET1,initial COPY_SOURCE0x800. Upload initial GENERIC_READ must equal the pinned enum; readback initial COPY_DEST0x400. No selected SRV may use an auxiliary object. Distinct genuine lifetimes/raws; ambiguity or extra relevant object is unknown.",
+    "aux_width_limit": "This contract classifies auxiliary buffers from their ORIGINAL ResourceCreate descriptions/heap type; it makes no new assertion that Width equals an uncaptured GetCopyableFootprints output. That separate old runtime/readback proof stays unchanged. No footprint, content or readback causal claim is obtained from this structural writer input.",
+    "heaps": "Exactly four born under selected device, node_mask0: CPU-SRV(type0,count2,flags0), visible-SRV(type0,count1,flags1), SAMPLER(type1,count2,flags1), RTV(type2,count1,flags0). Original SetHeaps requires complete actual count2/pointer and precisely visible-SRV plus SAMPLER in original order. No DSV heap, extra heap, root descriptors or direct indexing admitted.",
+    "getters": "Exactly eight original occurrences for a positive: Increment type0,U32result; CPUStart CPU-SRV; CPUStart/GPUStart visible-SRV; Increment type1; CPUStart/GPUStart SAMPLER; CPUStart RTV. Original D3D enum input is Enum32, getter result U32. Hidden output-pointer result must match nonNULL caller output before reading value; mismatch =>value=null; observed0 remains known but arithmetic-ineligible. No RTV increment is invented, no repeated equal getter substitution or publications.",
+    "address_domains": "Check U64 CPU span base+count*originalincrement for both SRV heaps and samplerheap, and disjoint CPU spans. RTVcount1 uses its exact CPUStart handle only, with no invented stride; it must not alias any tracked CPU descriptor address/span. Check separate visible-SRV and SAMPLER GPU spans with their own original increments and unique non-MSB handles. CPU numerical addresses are never compared with GPU numerical addresses as aliases.",
+    "samplers": "Two actual CreateSampler void rows, each description pointer/nonNULL,complete and full bounded fields. Their original CPU destinations resolve to the two sampler slots. Closed supplied profile is filter0, addressU/V/W all3 for one and all1 for the other, comparison8,max_anisotropy1,mip_bias/minLOD/maxLOD/border_color IEEE32bits all0. This retains arguments ONLY; no sampler object birth, actual shader use, current sampler contents or sampler_known is inferred.",
+    "rtv": "One CreateRTV original void row with selected device, auxiliary target87 ref, description_pointer EXACT0 and destination equal original RTVCPUbase. No typed view synthesized from NULLdesc, no native view birth. OMSetRenderTargets has actual handlescount1,nonnull pointer,full1value,original BOOL single_rangeI32 EXACT1,dsv_pointer0 and that handle. Target/bind lifetimes are genuine; original void RETURN is not HRESULT success.",
+    "root": "Exactly original RootParse version1.0,flagsALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT1,static_sampler_count0,parameters count3,complete. Param0 tableType0/PIXELvisibility5/rangeTypeSRV0,count1,register0,space0,offset0. Param1 tableType0/PIXEL5/rangeTypeSAMPLER3,count1,register0,space0,offset0. Param2 constantsType1/PIXEL5,register0,space0,num32=2. Each table original flagsnull; derived effectiveflags3 applies to1.0 only. No v1.1 generalization here. Typed parse is genuine nested SOURCE output, not public blob args or APP typed layout.",
+    "root_setters": "Real SetRoot/SetHeaps/SetTable indices0and1 and SetConstants index2 are retained. Match original parameter indices to original parsed layout, never assume root0 from convenience. Five embedded/default variants preserve originals. Same root occurrence preserves tables; changed/null/ClearState invalidates them. Heap change requires genuine rebind. Any relevant later/overlapping setter or unsupported singleConstant/root-descriptor override before selected emission yields unknown, not old-state preservation.",
+    "constants": "SetConstants retains ORIGINAL count/data_pointer/bounded rawU32 values/complete/destination_offset. Positive needs count2,nonnull/full2,parameter2,destination_offset0. Actual old words are0x3e000000 and0xbe000000, but retained words are original supplied observations, never reconstructed from APP decimal floats or treated as shader transformation/LOD. Coherent different words can still identify a historical declared SRV; no old pixel result is inferred for them. This explicitly supersedes the earlier plan shorthand changedconstants=>unknown: COHERENTLY retained different original words can preserve declared-view history only. Mismatched BEFORE/AFTER, unavailable/incomplete data, overlapping/missing/later override or any unjoined selected constants setter remains unknown. No old oracle assertion is made for changed words.",
+    "recording": "Retain original AllocatorReset and Reset(allocator,nullPSO), SetPipeline/Root/Heaps/Tables/Constants, TopologyTRIANGLELIST4 and Draw. Exactly one original COM viewport and scissor are supplied at positive uses: viewport is six finite IEEE32 rawbit values, positive width/height; scissor four original LONG/I32 fields. Native selected raster consists of actual vkCmdSetViewportWithCount and vkCmdSetScissorWithCount, not old non-WithCount APIs, both real count1/full array/nonNULL pointer and same actualCB/sourceResetRef under selected Draw. Do not add nonexistent first index. Source transforms COMviewport Y/top+height and negative height; scissor uses actual clamped renderArea/viewport-dependent array. Retain both domains separately; the output does not present a reconstructed native result as original or assert they are an effective GPU raster. No extra native raster call may be added to improve metadata; missing/pre-window/cached required originals yields unknown. Draw four scalars must match actual EmitDraw four scalars exactly, including coherent zeros. Actual returned Close after Draw before selected ExecuteENTRY and ExecuteRETURN are needed.",
+    "typed_history": "Three original SRVs in case1 at CPUslot0,CPUslot1,visible0 define A,B,A. No latecopy is added to unchanged case1. Parser may calculate unitCopySimple/CopyRanges history only from actual original callbacks within its single selected epoch/cut; source version is frozen at COPYENTRY. Unit source/destination total1,source CPU-only,dest visible,actual NULLsizes=>1. Warm case2 cannot become positive via this optional mathematical support.",
+    "output_meaning": "Only historical DECLARED bound SRV/resource/mip and actual original command/emission/Execute arguments plus auxiliary argument consistency. No shader access/read/UV/texel/current/native-view/source-runtime/input/game identity. All17strong claims false.",
+    "SRV_pointer": "CreateSRV.description_pointer is the actual original pointer. Pointer0 requires description=null; nonNULL pointer with failed safe projection may description=null and gap/unknown. Positive requires nonzero pointer/full nonNULL description. Contradictory null-pointer/nonNULL typeddesc is malformed framing, never synthetic default desc. CreateRTV description remains its actual NULL pointer, without any invented default descriptor or native view."
+  },
+  "native_pipeline_policy": {
+    "status": "EXACT_MINIMUM_FROM_BLIT_NOTES0eb4_AND_ADDITIVE01b1; ACTUAL_RUNTIME_BRANCH_UNATTESTED",
+    "positive": "Only actual legacy-monolithic graphics route with retained original2stage VS1/FS16 PipelineCreate success0/nonNULL and root-owned GRAPHICS layout. Never force branch/feature masks or change original shaders.",
+    "root_PSO_association": "Genuine RootCreate directly freezes source_after.root_signature_pointer and returned COM ref. PSOCreate directly freezes actual internal pso_pointer and assigned pso_root_pointer (state.c6417). Pipeline root must equal this genuine source root association, not current graphics object or equal Code hash. PipelineLookup ENTRY freezes state/dynamic/dsv/flags-output pointers and source PSO owner; its actual VkPipeline scalar RETURN must identify the same retained genuine native birth. Both constructor-pending and already-live owner forms remain explicit.",
+    "module": "Original VkShaderModuleCreateInfo sType16,pNext0,flags0,code original pointer/bytes/digest<=1MiB,allocator0,outnonnull. Two modules born under the genuine PSO initializer or its real nested lazy lookup, complete original code observations; DXIL and SPIRV hashes need not equal and imply no shader use.",
+    "layout": "GRAPHICS-only genuine VkPipelineLayoutCreateInfo sType30,pNext0,flags0,sets actualSpan<=8,pushRanges actualSpan<=1,allocator0,outnonnull,source_before.source_site=root_graphics_layout. Parent RootCreate/original bindpoint-graphics association must be real and immutable. No global/compute layout is relabelled rootgraphics.",
+    "pipeline": "Original count1, nonNULL/full chosen info/output, sType28, flags0, original genuine GRAPHICS layout, renderPass0,subpass0,basePipeline0,index-1,allocator0. Nine state pointers/nullness are retained as a deliberately partial original projection, with no pointee-state semantic claim. Stages are original count2/pointer/full2: sType18,pNext0,flags0,stage1and16,two genuine moduleRefs,nonNULL name pointers/entry main,specialization0. Top pNext must be a complete finite <=2node projection preserving actual addresses/order/next links, unique kinds and no cycle: exactly one Rendering sType1000044002 and optional Flags2 sType1000470005. Rendering originals require viewMask0,colorFormats actualcount1/full/nonnull pointer/value44,depthFormat0,stencilFormat0. The native44 must be observed, never deduced from DXGI87 alone; source can force UNDEFINED for missing color attachment support. Flags2 node, when present, must have NONZERO flags exactly1,0x20000000 or0x20000001; its absence denotes effective flags0, not a fabricated node. library_info must be null for a positive. No LIBRARY/descriptor_heap/identifier/subgroup/feedback/unknown chain is silently skipped.",
+    "attempts": "At most2 retained PipelineCreate attempts; only exactVkResult0 defines output/birth. Failure outputnull. Modules<=2 births total; a retry that requires extra modules exceeds this finite profile and is unknown. Original failed attempt cannot be erased just because a second succeeds.",
+    "lifetimes": "Selected ModuleDestroy callbacks retain real raw/type/allocator and void E/R. They may occur after successful PipelineCreate but before Execute without invalidating the birth; modules must be live at native create. Selected pipeline/layout must not be destroyed before their selected uses/cut. Nonfinal COM Release does not free a raw; pending selected owner or any relevant ReleaseENTRY before cut =>unknown.",
+    "unsupported": "Descriptor_heap has no per-root graphics VkPipelineLayout and may original stage.pNext mapping; GPL final link has stageCount0 and library handles; cache/async/outside-window lacks retained origin. All are diagnostic UNKNOWN in THIS contract, not silently accepted by missing native facts or copied stages. Actual current owned runtime branch remains unestablished. InternalCopyRenderPass/resolve/deferred/predication/DGC/bundle/indirect likewise unknown.",
+    "no_native_image_requirement": "No VkImage/View/GetDescriptor query is required or synthesized for the declared COM view. ResourceCreate+original CreateSRV/copy lineage determine the declared view. Native pipeline births here establish the actual emitted command/PSO relation only, never descriptor/native-image binding or GPU-read.",
+    "pNext_unknown_framing": "An actual nonNULL unrecognized chain or stage pNext is representable without fake recognized payload: retain actual top/stage pointer, only safely retained recognized prefix nodes, complete=false and ScopeGap unsafe_projection/unqualified_native_route as needed. The full prefix last next_pointer may point at the unrecognized actual structure, never overwritten0. A well-typed unknown route is semantic UNKNOWN, not ValueError just for being a legal native input. Actual counts beyond chosen cap retain bounded prefix/complete=false; oversized supplied prefix itself is malformed. Node kind enum remains closed; no opaque unions decoded. Stage nonzero pNext is preserved as scalar and gives unknown in this branch; it is not made NULL. Diagnostic library_info can retain actual structure pointer/sType/count/pointer/<=3raws, but no library identities or birth relation are invented.",
+    "code_observation": "Original PSO code is bounded pointer/size/SHA metadata only, and module Code size is positive multiple4 for positive. Each hash observation reads at most1MiB of ordinary source-provided code bytes before original, no arbitrary memory/descriptor/IR decode and zero raw payload bytes in wire. Failure/oversize/unavailable original code retains size,pointer,complete=false,sha256null =>unknown. No SHA equality across domains or between unrelated original occurrences identifies a birth or PSO; actual constructor ownership/callgraph and defined outputs do.",
+    "raster": "VkViewportCount and VkScissorCount are the actual COM-path core source WithCount calls (command.c8382/8421), no first parameter. Their arrays/pointers/counts/values are original snapshots. Different native internal vkCmdSetViewport/Scissor APIs are not projections of these originals and remain unsupported. Both must finish before EmitENTRY on the same genuine nativeCB/reset/command and selected parentDraw. No backward reconstruction from COM floats/LONG values. Their finite original arguments are reported separately from COM raster, not equated or promoted to GPU raster execution.",
+    "module_lifetime_exact": "For each selected stage module, actual successful ModuleCreateRETURN < selected successful PipelineCreateENTRY, and NO selected ModuleDestroyENTRY may occur before that PipelineCreateRETURN (including overlap/pending). Actual ModuleDestroyENTRY after successful PipelineCreateRETURN is permitted before Lookup/Draw/Execute; no module-live-atExecute condition is invented. DestroyNULL is outside selected membership before tick; all actual selected nonNULL retirements are retained and preserve exact voidreturns.",
+    "lookup_exact": "A selected positive PipelineLookup has original state_pointer, dynamic_state_pointer and dynamic_flags_output_pointer all nonzero, actual returned VkPipeline value>0, defined original U32 dynamic_flags and genuine immutable SOURCE PSO owner atENTRY. dsv_format_pointer may be original0. The actual state_pointer equals the retained successful PSOCreate pso_pointer association, not its COMraw. Original result0 remains actual0; dynamic_flags is JSONnull unless a specific genuine original write was actually guaranteed/observed. No default flags0, publicHRESULT or pipelinebirth is manufactured from this scalar helperreturn. Failed-firstLookup must remain a retained actual call."
+  },
+  "typed_copy_policy": {
+    "Heaps": "Exactly four born under selected device, node_mask0: CPU-SRV(type0,count2,flags0), visible-SRV(type0,count1,flags1), SAMPLER(type1,count2,flags1), RTV(type2,count1,flags0). Original SetHeaps requires complete actual count2/pointer and precisely visible-SRV plus SAMPLER in original order. No DSV heap, extra heap, root descriptors or direct indexing admitted. Three selected SRVslots only; auxiliary SAMPLER/RTV are never processed as SRV slots.",
+    "CreateSRV": "CreateSRV destination resolves uniquely at ENTRY to a retained source slot or visible slot. Required CPU getter/increment original RETURNS precede the use. NULL resource or NULL desc is original observed input but outside this nonNULL typed profile and yields unknown. No descriptor bytes or sampler identity inferred.",
+    "RangeSide": "count0..3 and len(starts)==count for complete captured profile; starts_pointer must be nonzero if count>0. sizes=null iff sizes_pointer==0, meaning each original range has implicit size1. NonNULL sizes has sizes_pointer>0 and len(sizes)==count. Every retained start is U64 and every size U32; values outside these scalar types reject. count>3 is well-typed unsupported with no tail read: retain at most3 starts/sizes and gap/unknown, never trim count to3.",
+    "UnitCopy": "First positive permits only heap_type0 and checked total source descriptors==total destination descriptors==1. For each RangeSide, NULL sizes implies1 for each range; otherwise use actual sizes (only0 or1 permitted in this profile). Expand original range order with checked U64 address arithmetic and original increment; exactly one source CPU-only slot and one visible destination slot must resolve uniquely. Empty or unequal totals and unsupported sizes give unknown. CopySimple requires count1, same profile. Copy source version is frozen at original COPY ENTRY; reverse AFTERs never change that snapshot."
+  },
+  "output_exact_root": {
+    "schema_version": "exact int2",
+    "purpose": "literal supplied_SOURCE_owned_first_writer_historical_relation",
+    "valid_source_input": "exact true (malformed raises)",
+    "historical_declared_bound_view_known": "Bool",
+    "origin": "COM_mutable_table|null",
+    "recording_join_known": "Bool",
+    "execute_arguments_join_known": "Bool",
+    "auxiliary_arguments_consistent": "Bool",
+    "declared_view": "ViewResult|null",
+    "auxiliary_arguments": "OwnedAuxResult|null",
+    "recorded_viewport": "ViewportObservation|null",
+    "recorded_scissor": "ScissorObservation|null",
+    "diagnostics": "Diagnostic[0..64]",
+    "claims": {
+      "input_facts_attested": "exact false",
+      "source_runtime_coverage_proven": "exact false",
+      "actual_sampled_input_identity_known": "exact false",
+      "shader_uses_selected_binding_proven": "exact false",
+      "sampled_resource_GPU_read_proven": "exact false",
+      "current_descriptor_contents_known": "exact false",
+      "current_input_texels_known": "exact false",
+      "sampler_known": "exact false",
+      "game_numeric_UV_known": "exact false",
+      "renderer_owner_known": "exact false",
+      "backing_known": "exact false",
+      "loaded_binary_source_equivalence_proven": "exact false",
+      "generic_PE_to_Unix_mapping_known": "exact false",
+      "global_API_absence_proven": "exact false",
+      "VR_solution_proven": "exact false",
+      "native_descriptor_or_image_view_binding_proven": "exact false",
+      "public_device_factory_result_known": "exact false"
+    },
+    "retained_input": "entire original decoded input, fresh deep value copy",
+    "native_raster_arguments": "VkRasterResult|null (only literal retained WithCount originals; not reconstructed COM conversion)"
+  },
+  "output_policy": "ENTIRE report including all retained input/auxiliary/calls/diagnostics/17falseclaims <=262144 UTF8 bytes, else ValueError without truncation. Input malformed=>ValueError; well-typed incomplete/unsupported/contradictory original evidence=>complete unknown report. No reserialized-child rawSHA, no runtime/source equivalence.",
+  "non_goals": "No actual shader access, sampleridentity, readback/pixels, globalcoverage, gamewriter, view-native descriptor decode, old strict/backing waiver, implementation/CABI/sourcehooks/build/launch admission.",
+  "semantic_causal_rules": [
+    "All input keys/types/closedenum/scalar widths/caps checked without coercion. Duplicate JSONkeys/nonfinite/invalidUTF8/depth/node/bytes=>ValueError. Valid but unsupported or causally contradictory graph=>complete unknown, not a repaired input.",
+    "Calls list in strictly increasing actual ENTRY order; ids unique positive distinct namespace. Returns may reverse/reenter and must not be sorted byid. Returned originals have unique entry<return, pending return=null/result=null; void returned keeps result=null. A parent is a real retained enclosing original with childinterval inside parent and successful genuine association by the cut.",
+    "Healthy exact source selected counter starts0, contiguous all retained ENTRY/RETURN/observermarks1..clock with clock==sealed_at; no gaps, counteroffset or seal tick. calls_seen equals nonobserverrows, original_returns equals returned nonobserverrows, pending0, drops0,enabledtrue,fault/gap/overflowfalse. Diagnostic flags preserve input but cannot promote known.",
+    "Only creation catalog callbacks may publish Birth. Exact typed success0+defined output+nonnull slot; parent genuineRef or pending actualcreatorCall exactlyone. SourceAfter fields only applicable creator/Reset events may be nonNULL. No copied oldRef/generation or duplicateBirth at internal forwarding.",
+    "Every original receiver must match a genuine device/heap/resource/command/PSO/root/queue owner, including auxiliary objects and native args; same raw with missing/wrong generation cannot be ignored by SourceScope filtering. Live/generation checks use original ENTRY, never lastObject at seal.",
+    "Within each kind, successful genuine births have increasing generation in actual creatorENTRY order. Same raw cannot be reused until real final Release0 or selected nativeDestroyRETURN. A nonfinal ULONG>0 never frees it; pendingRelease and every relevant ReleaseENTRY before use/ExecuteENTRY make the first relation unknown. Native destroys are void lifetimes, not COMRelease.",
+    "Exactly six resource and fourheap births with the owned classifications; selected/auxiliary sets are derived from original descriptions/uses and lifetimes, never role labels or firstmatchingraw. Ambiguous aliases/getter candidates or extra selected-scope objects =>unknown. No sampler identity or native image relation.",
+    "Unique original getters precede each relevant use, same genuine receiver/parent occurrence. Two eligible candidates before use are ambiguous even equal; futuregetter cannot retag earlieruse. CPU source/visible and sampler spans checked/disjoint; RTVsingleton actualhandle disjoint. GPU spans checked separately, never cross CPU/GPU domain bynumericaddress.",
+    "RootParse is actual nested successful parse before conversion/free with same blobmetadata and pointerdefined. Its exact owned3parameters match activeunion/count/pointer/ranges; v1.0flagNULL remainsoriginal, derivedvolatile3 not capturedvalue. All chosen unionfields inactive=NULL.",
+    "Replay initial command construction using actual nestedReset then setupClose/Execute; one eventual outercommandbirth. The selected Reset referenced by ticket.reset_call has ordinal2 and occurs after setupExecuteRETURN/AllocatorReset. Record nativeCB immutable at each successful Reset; no latercurrentCBlookup.",
+    "Replay all actual relevant root/pipeline/heaps/tables/constants/topology/raster E/R rows before selectedDraw. Disjoint ordinary operations can return reverse; overlapping relevant state setters yieldunknown. Same root occurrence preserves bindings; changed/null/ClearState invalidates; table/heap change requires original complete rebind. Last actual relevant arguments win only when nonoverlapping/retained, not labels.",
+    "Draw requires same genuine command/resetRef/nativeCB as actual EmitDraw, source_siteCOM_DrawInstanced and actualparentDraw. Fouroriginal U32 scalars equal; consistent0 is valid declaredhistory, not proofpixels. Predicated/indirect/internal/deferred/meta draw is unknown and never fabricatedCOMDraw.",
+    "Actual original PSO/root association must match SetPipeline/SetRoot. Actual retained module/layout/pipeline births and lookup/bind calls obey closednativepolicy. Cache/lazy name is not birth; AHEAD ownerPSO and LAZY real nestedLookup underDraw use genuine constructor graph; missing/async/prewindow ownership =>unknown.",
+    "Actual native WithCount raster and BindPipeline finish before actual EmitDraw in selectedDraw, sameCB/sourceResetRef. Any later pertinent original with same rawCB/receiver but missing/wrong scope is unknown, never filtered to preserve an older binding. All chosen original setters remain accounted even if original void returned.",
+    "Selected Draw/Emit finishes before genuine selected Close success, which precedes selected ExecuteENTRY; actual ExecuteRETURN included before/atsealed_at. Execute actual count1/fullknowncommand exactlyonce. No new completion/fence/readback meaning is derived from voidExecute.",
+    "TypedSRV mutations resolve only unique genuine selected SRVslots at originalENTRY, and all ordinary owning creations/getters returned. Copy source logical version frozen at original COPYENTRY; reverseAfter cannot retag it. Unitcopy heapEnum0/sourceCPU/destvisible,checkedU64/counts/nullsizes implicit1 and equal totals1 only. No samplers/RTVprocessed asSRVslots.",
+    "Select logical visibleSRVslot0 from original RootParse/SRVtable setter/getter span, not a supplied shaderindex. Compute latest nonoverlapping returned typed mutation strictly before actual ExecuteENTRY cut, with originalsourceENTRY lineage. Returned declared width/height is mip extent only, not sampledLOD or actualinputidentity.",
+    "The first actual writer is the only ticket. Warm case2/secondselectedReset/syntheticcopiedorigin or hydratedprefix is unknown. Any well-typed unsupported nativebranch/missingrequiredoriginal retains all inputs and17falseclaims; oldpixels/oldmodelsare not recertified.",
+    "Seal only snapshots after original selected ExecuteRETURN; mutable typed history is frozen at that ExecuteENTRY, strictly from retained original mutation/copyENTRY snapshots. Mutation/reentry after ENTRY cannot change that selected history, even if it returns before Seal. No final-state lookup, object.gpu read, equal-value source search or ID-number arithmetic reconstructs it.",
+    "For each selected stage module, actual successful ModuleCreateRETURN < selected successful PipelineCreateENTRY, and NO selected ModuleDestroyENTRY may occur before that PipelineCreateRETURN (including overlap/pending). Actual ModuleDestroyENTRY after successful PipelineCreateRETURN is permitted before Lookup/Draw/Execute; no module-live-atExecute condition is invented. DestroyNULL is outside selected membership before tick; all actual selected nonNULL retirements are retained and preserve exact voidreturns.",
+    "A selected positive PipelineLookup has original state_pointer, dynamic_state_pointer and dynamic_flags_output_pointer all nonzero, actual returned VkPipeline value>0, defined original U32 dynamic_flags and genuine immutable SOURCE PSO owner atENTRY. dsv_format_pointer may be original0. The actual state_pointer equals the retained successful PSOCreate pso_pointer association, not its COMraw. Original result0 remains actual0; dynamic_flags is JSONnull unless a specific genuine original write was actually guaranteed/observed. No default flags0, publicHRESULT or pipelinebirth is manufactured from this scalar helperreturn. Failed-firstLookup must remain a retained actual call.",
+    "All SourceScope/After bookkeeping applicability is checked explicitly as above. Wrong/extra contradictory nonNULL association is unknown, never filtered as irrelevant metadata. The four selected native command ownerRefs are retained for positive scope and checked independently of callbackbytecost. Compact NEW pso_pointer/pso_root_pointer keys change no values or facts."
+  ],
+  "field_applicability": {
+    "SourceScope": {
+      "resource": "MUSTnull in THIS COM-only selected scope projection. Original ResourceCreate/Resource/RTV/SRV receiver/input refs remain in their exact args. No native-image/internal-view resource association is captured here; null means not in this bookkeeping projection, not absence of a real resource.",
+      "command": "Required exact original command receiver on recording COM calls. ConstructorReset uses actualraw/genNULL + pendingcreator until eventual successful base output; no early liveRef. Required genuine selected command on Lookup/Bind/Emit/WithCount callbacks under selectedDraw. Constructor-native module/pipeline calls have command only if actually nested in a retained selectedDraw/Lookup; otherwise null. No current-command association inferred for unrelated device/constructor calls.",
+      "epoch": "recording_epoch_ref is actual ticket.reset_call on selected epoch callbacks, null on constructor/setup; reset_ordinal is the genuine current successful selected Reset serial (setup1,selected2), not APPepoch. Fields copied atENTRY. Unrelated noncommand callbacks use null, not a stale active-command lookup.",
+      "pipeline_owner": "REQUIRED genuine live PSO Ref frozen directly atENTRY for PipelineLookup, BindPipeline, EmitDraw, VkViewportCount and VkScissorCount. Same original SetPipeline/PSO/root/lookup/birth relation must match; a populated wrong Ref is never ignored. ModuleCreate/PipelineCreate/ModuleDestroy/PipelineDestroy with already-live PSO owner also require that Ref; while actual PSO constructor is pending, pipeline_owner=null and actual owner_creation_call identifies that pending PSO creator instead. Other callbacks use null. This keeps the four native-command PSO facts, not NULL-for-budget.",
+      "owner_creation_call": "Only a real currently-pending original creator/ancestor, frozen atENTRY; used for nested constructorReset/nativechild ownership, never an arbitrary old lifetime call or fake liveRef. An already-live owner instead uses its genuine Ref. Alternatives cannot both identify different owners.",
+      "source_site": "Exact source function/callsite tag only where catalog qualifies it: COMDraw emission, baseCommandCreate, constructorReset, embedded/default SetTable variants, actual PipelineLookup helper and rootGRAPHICS layout callsite. All other sites null. No shaderID/firstmatchingraw selector.",
+      "pipeline_route": "Populated only on PipelineCreate from its actual original SOURCE branch: legacy_monolithic,descriptor_heap,GPL_link,other; otherwise null. Tag cannot override contradictory original fields or supply a missing birth. Unsupported branch remains unknown."
+    },
+    "SourceAfter": "Births only genuine successful creation callbacks. device_interface_pointer/device_origin onlyDeviceCreate; pso_pointer/pso_root_pointer only successfulPSOCreate; root_signature_pointer onlysuccessfulRootCreate; reset_ordinal/recording_epoch_ref/command_buffer only actualsuccessfulReset. ConstructorReset publishes ordinal1/epoch_refnull/realCB; selectedReset publishes ordinal2/epoch_ref=selfCallID/realCB. All other callbacks have these afterfacetsnull. No pending or failed callback publishes newbirth/epoch/pointerassociation; SourceAfter is never a final-state lookup.",
+    "success": "S_OK/VK_SUCCESS/status0 is exactpositive. Defined original outputs are only read whereoriginaltypedAPI defines them; failedHRESULT<0/VkResult!=0 outputnull/noBirth. Nonzero successfulHRESULT outside this closedprofile remains diagnostic, no inventednewgeneration. voidreturned resultNULL staysdistinctfrompendingreturnNULL.",
+    "Code": "No codebytes retained; Code flags/digest are ordinary bounded sourceobservation. A missing/unreadable digest never becomes another shaderhash or a shader-use fact.",
+    "NativeState": "PipelineStatePointers is expressly a nullness/pointer projection; it is not VkPipeline struct semantics or equality of all originalargs. Unknownbranch/array/unrecognizedpNext is preserved asunsupported, not erased.",
+    "UnknownVersusZero": "JSONnull in output_raw/value/output-association means UNKNOWN/UNREAD, not an observed zero and never a write to the original caller storage. U64=0 is an observed zero only where the actual original API/source guarantees the read is valid, including safe matching getter output; it never becomes a birth. This closed producer projection does not read creation outputs on failed HRESULT/VkResult, so those output_raw fields remain JSONnull; the original bytes/arguments/return/cleanup are never overwritten to manufacture NULL. Pending callbacks likewise retain no fabricated result/newbirth/after association. Diagnostic incomplete capture remains faithful unknown, no repair."
+  },
+  "future_artifact_paths_not_implemented": {
+    "pure_model": "D4VR/tools/owned_source_writer_validate.py",
+    "independent_tests": "D4VR/tests/test_owned_source_writer_validate.py",
+    "CPU_mock_harness": "D4VR/native/tests/owned_source_writer_fixture.cpp",
+    "public_schema": "D4VR/docs/schemas/owned-source-writer-v1.json",
+    "public_contract": "D4VR/docs/OWNED_SOURCE_WRITER_CONTRACT.md",
+    "scope": "Proposed distinct future artifacts only; implementation requires later authorization after precode freeze. This stage adds no CABI/producer/hooks/vendor work."
+  },
+  "budget_policy": {
+    "fixed_framing_caps": {
+      "raw_UTF8_bytes": 65536,
+      "decoded_value_container_nodes": 4096,
+      "root0_depth": 20,
+      "complete_report_bytes": 262144,
+      "retained_calls": 64,
+      "shared_edges_marks": 128
+    },
+    "conditional_count": "Selected first-writer frontier B50 + one GRAPHICS layout +2modules +P1..2 +Q1..2 +D0..2 +4native Bind/Emit/WithCount =59..63originals/118..126edges, only under exactly contracted membership. Observernotice/extra relevant original consumes remaining real capacity; never fabricated/hidden.",
+    "not_a_universal_fit": "Call count alone never proves byte/node/depth fit. Schema admits data ranges whose complete frame may exceed64KiB; such a frame is rejected beforedecode/serialization commit, never truncated/evicted, and cannot be promoted known. A future producer must refuse capture and leave originals unchanged, with honest status; it may not overwrite earlier rows or invent a smaller healthy frame.",
+    "precode_counterexample_preserved": "Candidate2 63wide20 plus four actualPSOownerRefs is65611B, exceeding64KiB by75B. It remains an immutable documentary counterexample. NEW names pso_pointer/pso_root_pointer only compact repeated nullable bookkeeping keys, retaining every original fact; remeasure beforefreeze.",
+    "measurements_pending": "Independent candidate3 exact documentary shapes measured:61rows54752B/2950value-nodes;63rows57730B/3106nodes;63wide20+4requiredPSOowners63934B/3106nodes/depth11 (1602B margin). A documentary complete report with retained input once/64diagnostics/optional output facts measured82994B. These are not model outputs, universal worst-case bounds, sourcecaptures or runtime eligibility. Candidate4 changes ONLY normative prose, retaining all five wire-shape sections byte-value identical to candidate3; strict per-frame/report caps still reject overflow without truncation. Final independent quantitative proof remains a separate artifact.",
+    "no_cpu_total_bound": "These are per-frame parse/retention/report limits, not a bound on total CPU/process memory or universal callcoverage."
+  },
+  "same_SOURCE_domain_resolution": {
+    "DeviceCanonicalRef": "In THIS NEW contract, DeviceCreate is the real internal d3d12_device_create. Its result.output_raw is the defined internal struct d3d12_device* output; its sole canonical Birth.ref(kind=device).raw is THAT internal output, generation assigned by that genuine creator. Exact success0 and genuine_new are required. Do not reinterpret this HRESULT as public D3D12CreateDevice or use the COM pointer as this internal result/ref.",
+    "DeviceCOMReceiver": "source_after.device_interface_pointer is the separately frozen direct SOURCE observation of &object->ID3D12Device_iface on that same successful genuine NEW instance. An original COM args.device/Release(device) ObjectArg keeps the ACTUAL COM receiver raw and the same genuine canonical device generation. Resolve it ONLY by the pair (canonical internal Birth.ref, this original immutable interface association). No equality/offset/pointer proximity, no rewriting COMraw to internalraw, no caller-supplied mapping or seal-time conversion. A missing/ambiguous/wrong association yields unknown.",
+    "MetadataParent": "Birth.parent is SOURCE ownership metadata, not an original receiver argument: it uses the canonical owner identity Ref/raw/generation. For device this is the internal canonical device Ref. Thus a COM ResourceCreate args.device.raw remains its real COM receiver, while its Birth.parent resolves to the same canonical internal device through the frozen original association. Other kinds use their genuine original output Ref. Parent/object resolution must explicitly distinguish this metadata domain from catalog COM receiver arguments; no raw-only fallback.",
+    "VkDevice": "VkDeviceCreate remains an actual Vulkan original with its own VkDevice output and separate kind=vk_device generation. During DeviceCreate construction it uses the real pending owner_creator_call/parent interval, not a fake live device. After successful owner completion, that native birth resolves to the canonical internal device owner; it is never a COM receiver or PE/Unix translation. Native args.device retain the true VkDevice raw/ref.",
+    "PSORoot": "RootCreate and PSOCreate canonical Refs retain their genuine returned COM output raws. root_signature_pointer is the direct SOURCE internal root object association on successful RootCreate. pso_pointer and pso_root_pointer are direct SOURCE internal PSO/root pointers on successful PSOCreate. Match PSOCreate original args.root COM Ref through RootCreate frozen internal-root association to pso_root_pointer; match original PipelineLookup state_pointer to pso_pointer. Neither internal pointer is assumed equal to its COM raw, and neither is substituted into original args. Pending constructor children use actual creator CallID until the genuine owning output exists.",
+    "NoCrossDomainPromotion": "All above associations belong to one supplied SOURCE context and genuine original occurrences. They do not establish generic PE-to-Unix handle conversion, loaded-code/source equality, renderer owner, actual game input or current object identity. The17strong claims remain false. No old799/7987 device/ref semantics or reports are edited by this new contract."
+  },
+  "unavailable_fixed_projection_policy": {
+    "FixedFieldUnavailable": "A catalog row is retained ONLY when its required nonnullable original fixed fields were safely observed. If create_info_pointer0/unsafe struct projection/allocation prevents those observations, never fill s_type/flags/pointers/scalars with invented0 or publish a fake original row. Preserve actual known seen/return/drop/gap/fault accounting instead. This is a proposed future producer requirement, NOT an implemented/validated hook.",
+    "NoCounterRepair": "Original ENTRY/RETURN marks already allocated by the selected protocol never roll back, get recounted or renumbered to close a missing row. ScopeGap observer may be retained ONLY if its own row/mark/byte capacity is safely available. It is not an original delegate RETURN. A metadata fault still forwards the original exactly once with original arguments/outputs/return and cleanup; no mutex across original.",
+    "PartialArrays": "When the parent fixed struct was observed safely but its chosen original array/pNext projection is incomplete, preserve actual known count/pointer and safe bounded prefix with complete=false. Unknown tail/unrecognized legal route is unknown, not fake NULL/union/prefix normalization. Never read an over-cap tail or overwrite caller buffers.",
+    "PureInputMeaning": "The future pure analyzer does not attest supplied inputs. A typed input with create_info_pointer0 but a supplied fixed payload is causally inconsistent/unknown; it does not validate that those fields were actually read. Malformed types/keys/over-cap prefix/UTF8/bytes still ValueError. Do not confuse this unknown result with an implemented producer-safety guarantee.",
+    "CutNotSealLookup": "The mutable visible destination SRV history is evaluated at selected ExecuteENTRY; each copy-source logical version is independently frozen at its own original COPYENTRY. Seal occurs after actual ExecuteRETURN and only freezes retained facts. Any post-cut/reentrant mutation remains a later original row and cannot rewrite selected history or copy-source snapshots via current lookup or ID arithmetic. Pending/drop/gap input remains faithful unknown without repair."
+  }
+}

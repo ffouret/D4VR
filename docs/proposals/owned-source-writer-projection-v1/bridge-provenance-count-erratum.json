@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "purpose": "Narrow_documentary_marker_field_count_erratum",
+  "created_utc": "2026-10-28T05:39:02.221263+00:00",
+  "status": "FINAL_CANDIDATE_DOCUMENTARY_ONLY_REQUIRES_SEPARATE_ADMISSION_FOR_CODE",
+  "base": {
+    "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-additive-precode-20261028-1/bridge-provenance-contract.json",
+    "bytes": 44064,
+    "sha256": "05071a6a699964c381bef584fd683a077d44227d30db9095ea061b940fb16b33"
+  },
+  "addendum_checkpoint": {
+    "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-additive-precode-20261028-1/bridge-provenance-addendum.json",
+    "bytes": 9612,
+    "sha256": "3947db0a809db897b32b5a9f3c822c6690bb27bed08941e52c324b9dc69560da"
+  },
+  "override": {
+    "location": "bridge-provenance-addendum.json changes[A2_CLOSED_persistence].replacement",
+    "old_literal": "the unchanged eight identity/operand fields",
+    "new_literal": "the exact identity/operand fields listed in the base",
+    "exact_arithmetic": "Nine named fields: version/state are2U32=8B; context_cookie/context_epoch/root_creator_call/root_slot_generation/source_thread_cookie/expected_vk_device/expected_output_slot are7U64=56B. Total64B. No new field, byte, offset, signature, enum, scope, read, state transition or cap."
+  },
+  "attribution": "Stage and parent independently identified the textual eight/seven mismatch; the base field table was already64B and unchanged.3947 checkpoint preserved byte-exact.",
+  "admission": {
+    "code_or_test_or_compile_or_analyze_or_vendor_or_runtime": false
+  }
+}

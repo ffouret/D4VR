@@ -1,0 +1,165 @@
+{
+  "schema_version": 1,
+  "purpose": "owned_original_typed_copy_transport_and_readback",
+  "status": "owned_control_passed_not_game_input_provenance",
+  "sources": {
+    "native/core/typed_copy_transport.hpp": {
+      "bytes": 23333,
+      "sha256": "db0be21782dfb31173dc71cb4631b4d609f15f0857f9ed91fb79935a4e67ad14"
+    },
+    "native/tests/typed_copy_transport_tests.cpp": {
+      "bytes": 16370,
+      "sha256": "59bd90c49df7ef8cc0049786f75de335fe3a1bc089b32a4585b685243fbb5f13"
+    },
+    "native/tests/typed_descriptor_copy_fixture.cpp": {
+      "bytes": 48848,
+      "sha256": "bc0d9b2f935361b13bbb4c0201c4c04b17107af0c9f9a132aa52689b43fb84bf"
+    },
+    "tools/typed_copy_transport_validate.py": {
+      "bytes": 41078,
+      "sha256": "9425f20396d1b980e75a22f05cdf25cf6d4880ee516731b890cac5823b39a982"
+    },
+    "tests/test_typed_copy_transport_validate.py": {
+      "bytes": 26401,
+      "sha256": "186ae8979ad43d66a86a930d388935bffba76682597614e6bb95f511af445858"
+    },
+    "native/descriptor_query_diagnostic/CMakeLists.txt": {
+      "bytes": 7059,
+      "sha256": "a486b5805881411e11ad4d974c95ae42d4a03be594ba914a4ef8555ba080397b"
+    },
+    "tools/typed_descriptor_copy.py": {
+      "bytes": 28627,
+      "sha256": "7987ec83978a2909d023e93d66dde66a473154fef5a1767df8b036c5964c1953"
+    }
+  },
+  "private_authorities": {
+    "physical": {
+      "file": "typed-copy-owned-control-proof-20261027-1.json",
+      "bytes": 19401,
+      "sha256": "023690499135d56192b849bace9628f3eac12c2324dac6a5e90a9b7870a69804"
+    },
+    "prephysical": {
+      "file": "typed-copy-owned-source-freeze-20261027-1/freeze.json",
+      "bytes": 12711,
+      "sha256": "933cca13fe043ec2b3ab3b100a69885b78caa9ab57652977e1f4797fa3ee270c"
+    },
+    "parent_audit": {
+      "file": "typed-copy-owned-actual-audit-20261027-1.json",
+      "bytes": 55498,
+      "sha256": "4ebb96f36fd0d6d57a10f11ce1d1807d8e8ebd260e0917bb32845b82b9abf012"
+    },
+    "independent_literal_actual": {
+      "file": "typed-copy-owned-independent-actual-review-20261027-1/proof.json",
+      "bytes": 52443,
+      "sha256": "5237a3169cd96d0dec0f9f5ec891040af22ceea3c9db8c985c0d8532edd1b9a8"
+    },
+    "author_actual": {
+      "file": "typed-copy-owned-author-actual-review-20261027-1/proof.json",
+      "bytes": 2200,
+      "sha256": "769c583268b0c05cc83ae14beaa14a107033de56fb0b3d5d5efb265001e5947a"
+    },
+    "native_CPU": {
+      "file": "typed-copy-transport-independent-cpu-20261027-1/proof.json",
+      "bytes": 7437,
+      "sha256": "47ed257a338ec5c39c9cf9efcbb62d4711b91f67b0586f32b5e4a36ffe0c4b7e"
+    },
+    "adverse_CPU": {
+      "file": "typed-copy-transport-auditor-independent-review-20261027-1/proof.json",
+      "bytes": 15744,
+      "sha256": "616ccacda6debe77059d37cf033d1ca53cd0846ed112fe87a16a11463e917f17"
+    },
+    "runner_CPU": {
+      "file": "typed-copy-runner-review-20261027-1/proof.json",
+      "bytes": 5210,
+      "sha256": "fcad20cd1d7e9a29ddd181de33d753f70960adff6e204b7b4cc6a0791e9da4a3"
+    }
+  },
+  "private_final_authority": {
+    "file": "typed-copy-owned-final-proof-20261027-1.json",
+    "bytes": 2702,
+    "sha256": "4a746cdf77bb923df45a63488149f7db7975a22128f9f161d41a9215f64d4055"
+  },
+  "CPU": {
+    "Python_tests": 796,
+    "new_Python_auditor_tests": 22,
+    "native_cases": 29,
+    "native_assertions": 621,
+    "original_mock_calls": 16,
+    "native_wire_samples": 29,
+    "actual_snapshots_consumed_by_frozen_model": 27,
+    "positive_CPU_histories": 15,
+    "CMake_new_CPU_controls_passed": 2,
+    "Windows_native_objects_and_PE_compile_only": true
+  },
+  "physical": {
+    "wrapper_returns": [
+      0,
+      0
+    ],
+    "readbacks": 4,
+    "width": 256,
+    "height": 144,
+    "raw_bytes": 589824,
+    "pixel_mismatched_bytes": 0,
+    "off_on_exact_bytes_compared_once": 294912,
+    "original_calls_per_mode": 89,
+    "original_edges_per_mode": 178,
+    "ON_frozen_mutation_counts": [
+      3,
+      7
+    ],
+    "ON_wire_bytes": [
+      3954,
+      6096
+    ],
+    "ON_selected_history_known": [
+      true,
+      true
+    ],
+    "OFF_snapshots_available": [
+      false,
+      false
+    ],
+    "direct_late_BA_different_positions_per_mode": 73152,
+    "validation_non_sentinel_errors": 0,
+    "activation_sentinels": 2,
+    "warnings": {
+      "Vulkan_Loader": 40,
+      "validation_settings": 6,
+      "runtime_OpenXR_extension_queries": 4
+    },
+    "descriptor_access_complete_validation_proven": false,
+    "game_or_headset": false
+  },
+  "bounds": {
+    "shared_tickets": 4,
+    "slots_per_ticket": 3,
+    "mutations_per_ticket": 8,
+    "complete_wire_bytes_per_ticket": 16384,
+    "total_CPU_memory_bounded": false
+  },
+  "scope": {
+    "owned_callsite_producer": true,
+    "live_COM_or_game_or_translator_hook": false,
+    "descriptor_payloads_read": false,
+    "input_facts_attested": false,
+    "current_contents_at_draw_known": false,
+    "sampled_resource_GPU_read_proven": false,
+    "renderer_owner_known": false,
+    "loaded_module_backing_attested": false,
+    "generic_PE_Unix_mapping": false,
+    "global_API_absence_proven": false,
+    "old_gates_repaired": false,
+    "old_raw_or_certificates_rewritten": false
+  },
+  "independence_limits": {
+    "native_transport_author": true,
+    "historical_Python_model_author": true,
+    "new_native_fixture_author": false,
+    "physical_runner_author": false,
+    "production_join_auditor_author": false,
+    "principal_join_uses_production_helpers": false,
+    "third_party_validation_of_own_transport": false,
+    "pixel_reference": "isolated function from frozen earlier independent integer oracle"
+  }
+}

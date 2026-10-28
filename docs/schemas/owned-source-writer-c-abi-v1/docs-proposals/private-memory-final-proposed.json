@@ -1,0 +1,858 @@
+{
+  "status": "FINAL_PROPOSED_V1_THEORETICAL_MEMORY_NOT_COMPILED",
+  "layouts": {
+    "Pending": {
+      "C_name": "osw_pending_v1",
+      "sizeof_PROPOSED": 128,
+      "alignof_PROPOSED": 8,
+      "measured": false,
+      "fields": [
+        {
+          "name": "context_cookie",
+          "C_type": "uint64_t",
+          "offset": 0,
+          "size": 8
+        },
+        {
+          "name": "context_epoch",
+          "C_type": "uint64_t",
+          "offset": 8,
+          "size": 8
+        },
+        {
+          "name": "call_id",
+          "C_type": "uint64_t",
+          "offset": 16,
+          "size": 8
+        },
+        {
+          "name": "slot_generation",
+          "C_type": "uint64_t",
+          "offset": 24,
+          "size": 8
+        },
+        {
+          "name": "thread_cookie",
+          "C_type": "uint64_t",
+          "offset": 32,
+          "size": 8
+        },
+        {
+          "name": "record_index",
+          "C_type": "uint32_t",
+          "offset": 40,
+          "size": 4
+        },
+        {
+          "name": "event_tag",
+          "C_type": "uint32_t",
+          "offset": 44,
+          "size": 4
+        },
+        {
+          "name": "state",
+          "C_type": "uint32_t",
+          "offset": 48,
+          "size": 4
+        },
+        {
+          "name": "flags",
+          "C_type": "uint32_t",
+          "offset": 52,
+          "size": 4
+        },
+        {
+          "name": "reserved_generation",
+          "C_type": "uint64_t",
+          "offset": 56,
+          "size": 8
+        },
+        {
+          "name": "provisional_raw",
+          "C_type": "uint64_t",
+          "offset": 64,
+          "size": 8
+        },
+        {
+          "name": "provisional_interface",
+          "C_type": "uint64_t",
+          "offset": 72,
+          "size": 8
+        },
+        {
+          "name": "provisional_root",
+          "C_type": "uint64_t",
+          "offset": 80,
+          "size": 8
+        },
+        {
+          "name": "source_state_version",
+          "C_type": "uint64_t",
+          "offset": 88,
+          "size": 8
+        },
+        {
+          "name": "before_committed",
+          "C_type": "uint32_t",
+          "offset": 96,
+          "size": 4
+        },
+        {
+          "name": "after_committed",
+          "C_type": "uint32_t",
+          "offset": 100,
+          "size": 4
+        },
+        {
+          "name": "parent_slot",
+          "C_type": "uint32_t",
+          "offset": 104,
+          "size": 4
+        },
+        {
+          "name": "depth",
+          "C_type": "uint32_t",
+          "offset": 108,
+          "size": 4
+        },
+        {
+          "name": "reserved_zero",
+          "C_type": "uint8_t[16]",
+          "offset": 112,
+          "size": 16
+        }
+      ]
+    },
+    "Identity": {
+      "C_name": "osw_identity_v1",
+      "sizeof_PROPOSED": 128,
+      "alignof_PROPOSED": 8,
+      "measured": false,
+      "fields": [
+        {
+          "name": "kind",
+          "C_type": "uint32_t",
+          "offset": 0,
+          "size": 4
+        },
+        {
+          "name": "state",
+          "C_type": "uint32_t",
+          "offset": 4,
+          "size": 4
+        },
+        {
+          "name": "raw",
+          "C_type": "uint64_t",
+          "offset": 8,
+          "size": 8
+        },
+        {
+          "name": "generation",
+          "C_type": "uint64_t",
+          "offset": 16,
+          "size": 8
+        },
+        {
+          "name": "owner_index",
+          "C_type": "uint32_t",
+          "offset": 24,
+          "size": 4
+        },
+        {
+          "name": "creator_record_index",
+          "C_type": "uint32_t",
+          "offset": 28,
+          "size": 4
+        },
+        {
+          "name": "creator_call",
+          "C_type": "uint64_t",
+          "offset": 32,
+          "size": 8
+        },
+        {
+          "name": "create_entry",
+          "C_type": "uint64_t",
+          "offset": 40,
+          "size": 8
+        },
+        {
+          "name": "create_return",
+          "C_type": "uint64_t",
+          "offset": 48,
+          "size": 8
+        },
+        {
+          "name": "retire_entry",
+          "C_type": "uint64_t",
+          "offset": 56,
+          "size": 8
+        },
+        {
+          "name": "retire_return",
+          "C_type": "uint64_t",
+          "offset": 64,
+          "size": 8
+        },
+        {
+          "name": "internal_association",
+          "C_type": "uint64_t",
+          "offset": 72,
+          "size": 8
+        },
+        {
+          "name": "interface_association",
+          "C_type": "uint64_t",
+          "offset": 80,
+          "size": 8
+        },
+        {
+          "name": "root_association",
+          "C_type": "uint64_t",
+          "offset": 88,
+          "size": 8
+        },
+        {
+          "name": "reset_ordinal",
+          "C_type": "uint64_t",
+          "offset": 96,
+          "size": 8
+        },
+        {
+          "name": "reset_call",
+          "C_type": "uint64_t",
+          "offset": 104,
+          "size": 8
+        },
+        {
+          "name": "native_command_buffer",
+          "C_type": "uint64_t",
+          "offset": 112,
+          "size": 8
+        },
+        {
+          "name": "flags",
+          "C_type": "uint32_t",
+          "offset": 120,
+          "size": 4
+        },
+        {
+          "name": "reserved",
+          "C_type": "uint32_t",
+          "offset": 124,
+          "size": 4
+        }
+      ]
+    },
+    "PublicStatus": {
+      "C_name": "osw_status_v1",
+      "sizeof_PROPOSED": 192,
+      "alignof_PROPOSED": 8,
+      "measured": false,
+      "fields": [
+        {
+          "name": "abi_size",
+          "C_type": "uint32_t",
+          "offset": 0,
+          "size": 4
+        },
+        {
+          "name": "abi_version",
+          "C_type": "uint32_t",
+          "offset": 4,
+          "size": 4
+        },
+        {
+          "name": "phase",
+          "C_type": "uint32_t",
+          "offset": 8,
+          "size": 4
+        },
+        {
+          "name": "enabled",
+          "C_type": "uint32_t",
+          "offset": 12,
+          "size": 4
+        },
+        {
+          "name": "terminal_reason",
+          "C_type": "uint32_t",
+          "offset": 16,
+          "size": 4
+        },
+        {
+          "name": "faulted",
+          "C_type": "uint32_t",
+          "offset": 20,
+          "size": 4
+        },
+        {
+          "name": "gap",
+          "C_type": "uint32_t",
+          "offset": 24,
+          "size": 4
+        },
+        {
+          "name": "overflow",
+          "C_type": "uint32_t",
+          "offset": 28,
+          "size": 4
+        },
+        {
+          "name": "record_count",
+          "C_type": "uint32_t",
+          "offset": 32,
+          "size": 4
+        },
+        {
+          "name": "identity_count",
+          "C_type": "uint32_t",
+          "offset": 36,
+          "size": 4
+        },
+        {
+          "name": "external_owners",
+          "C_type": "uint32_t",
+          "offset": 40,
+          "size": 4
+        },
+        {
+          "name": "live_drain_pending",
+          "C_type": "uint32_t",
+          "offset": 44,
+          "size": 4
+        },
+        {
+          "name": "context_cookie",
+          "C_type": "uint64_t",
+          "offset": 48,
+          "size": 8
+        },
+        {
+          "name": "context_epoch",
+          "C_type": "uint64_t",
+          "offset": 56,
+          "size": 8
+        },
+        {
+          "name": "clock_at_boundary",
+          "C_type": "uint64_t",
+          "offset": 64,
+          "size": 8
+        },
+        {
+          "name": "calls_seen_at_boundary",
+          "C_type": "uint64_t",
+          "offset": 72,
+          "size": 8
+        },
+        {
+          "name": "returns_at_boundary",
+          "C_type": "uint64_t",
+          "offset": 80,
+          "size": 8
+        },
+        {
+          "name": "dropped_at_boundary",
+          "C_type": "uint64_t",
+          "offset": 88,
+          "size": 8
+        },
+        {
+          "name": "pending_at_boundary",
+          "C_type": "uint64_t",
+          "offset": 96,
+          "size": 8
+        },
+        {
+          "name": "selected_reset_call",
+          "C_type": "uint64_t",
+          "offset": 104,
+          "size": 8
+        },
+        {
+          "name": "first_draw_call",
+          "C_type": "uint64_t",
+          "offset": 112,
+          "size": 8
+        },
+        {
+          "name": "selected_execute_call",
+          "C_type": "uint64_t",
+          "offset": 120,
+          "size": 8
+        },
+        {
+          "name": "frame_generation",
+          "C_type": "uint64_t",
+          "offset": 128,
+          "size": 8
+        },
+        {
+          "name": "payload_bytes",
+          "C_type": "uint64_t",
+          "offset": 136,
+          "size": 8
+        },
+        {
+          "name": "next_alias_id",
+          "C_type": "uint64_t",
+          "offset": 144,
+          "size": 8
+        },
+        {
+          "name": "reserved_zero",
+          "C_type": "uint8_t[40]",
+          "offset": 152,
+          "size": 40
+        }
+      ]
+    },
+    "ContextHeader": {
+      "C_name": "osw_context_header_v1",
+      "sizeof_PROPOSED": 4096,
+      "alignof_PROPOSED": 8,
+      "measured": false,
+      "fields": [
+        {
+          "name": "magic",
+          "C_type": "uint64_t",
+          "offset": 0,
+          "size": 8
+        },
+        {
+          "name": "abi_version",
+          "C_type": "uint32_t",
+          "offset": 8,
+          "size": 4
+        },
+        {
+          "name": "phase",
+          "C_type": "uint32_t",
+          "offset": 12,
+          "size": 4
+        },
+        {
+          "name": "context_cookie",
+          "C_type": "uint64_t",
+          "offset": 16,
+          "size": 8
+        },
+        {
+          "name": "context_epoch",
+          "C_type": "uint64_t",
+          "offset": 24,
+          "size": 8
+        },
+        {
+          "name": "run_token",
+          "C_type": "uint64_t",
+          "offset": 32,
+          "size": 8
+        },
+        {
+          "name": "owner_thread_cookie",
+          "C_type": "uint64_t",
+          "offset": 40,
+          "size": 8
+        },
+        {
+          "name": "nonce",
+          "C_type": "uint8_t[32]",
+          "offset": 48,
+          "size": 32
+        },
+        {
+          "name": "try_lock",
+          "C_type": "uint32_t",
+          "offset": 80,
+          "size": 4
+        },
+        {
+          "name": "enabled",
+          "C_type": "uint32_t",
+          "offset": 84,
+          "size": 4
+        },
+        {
+          "name": "terminal_reason",
+          "C_type": "uint32_t",
+          "offset": 88,
+          "size": 4
+        },
+        {
+          "name": "flags",
+          "C_type": "uint32_t",
+          "offset": 92,
+          "size": 4
+        },
+        {
+          "name": "source_clock",
+          "C_type": "uint64_t",
+          "offset": 96,
+          "size": 8
+        },
+        {
+          "name": "next_call_id",
+          "C_type": "uint64_t",
+          "offset": 104,
+          "size": 8
+        },
+        {
+          "name": "calls_seen",
+          "C_type": "uint64_t",
+          "offset": 112,
+          "size": 8
+        },
+        {
+          "name": "original_returns",
+          "C_type": "uint64_t",
+          "offset": 120,
+          "size": 8
+        },
+        {
+          "name": "calls_dropped",
+          "C_type": "uint64_t",
+          "offset": 128,
+          "size": 8
+        },
+        {
+          "name": "next_owner_id",
+          "C_type": "uint64_t",
+          "offset": 136,
+          "size": 8
+        },
+        {
+          "name": "frame_generation",
+          "C_type": "uint64_t",
+          "offset": 144,
+          "size": 8
+        },
+        {
+          "name": "next_slot_generation",
+          "C_type": "uint64_t",
+          "offset": 152,
+          "size": 8
+        },
+        {
+          "name": "record_count",
+          "C_type": "uint32_t",
+          "offset": 160,
+          "size": 4
+        },
+        {
+          "name": "identity_count",
+          "C_type": "uint32_t",
+          "offset": 164,
+          "size": 4
+        },
+        {
+          "name": "live_drain_pending",
+          "C_type": "uint32_t",
+          "offset": 168,
+          "size": 4
+        },
+        {
+          "name": "top_pending_index",
+          "C_type": "uint32_t",
+          "offset": 172,
+          "size": 4
+        },
+        {
+          "name": "external_owners",
+          "C_type": "uint32_t",
+          "offset": 176,
+          "size": 4
+        },
+        {
+          "name": "seal_acquire_count",
+          "C_type": "uint32_t",
+          "offset": 180,
+          "size": 4
+        },
+        {
+          "name": "payload_bytes",
+          "C_type": "uint32_t",
+          "offset": 184,
+          "size": 4
+        },
+        {
+          "name": "serializer_state",
+          "C_type": "uint32_t",
+          "offset": 188,
+          "size": 4
+        },
+        {
+          "name": "selected_command_identity",
+          "C_type": "uint64_t",
+          "offset": 192,
+          "size": 8
+        },
+        {
+          "name": "selected_reset_call",
+          "C_type": "uint64_t",
+          "offset": 200,
+          "size": 8
+        },
+        {
+          "name": "first_draw_call",
+          "C_type": "uint64_t",
+          "offset": 208,
+          "size": 8
+        },
+        {
+          "name": "selected_close_call",
+          "C_type": "uint64_t",
+          "offset": 216,
+          "size": 8
+        },
+        {
+          "name": "selected_execute_call",
+          "C_type": "uint64_t",
+          "offset": 224,
+          "size": 8
+        },
+        {
+          "name": "setup_execute_call",
+          "C_type": "uint64_t",
+          "offset": 232,
+          "size": 8
+        },
+        {
+          "name": "source_reset_ordinal",
+          "C_type": "uint64_t",
+          "offset": 240,
+          "size": 8
+        },
+        {
+          "name": "last_original_site",
+          "C_type": "uint64_t",
+          "offset": 248,
+          "size": 8
+        },
+        {
+          "name": "generation_counters",
+          "C_type": "uint64_t[12]",
+          "offset": 256,
+          "size": 96
+        },
+        {
+          "name": "active_stack",
+          "C_type": "uint32_t[32]",
+          "offset": 352,
+          "size": 128
+        },
+        {
+          "name": "snapshot_status",
+          "C_type": "osw_status_v1",
+          "offset": 480,
+          "size": 192
+        },
+        {
+          "name": "snapshot_capture",
+          "C_type": "osw_capture_v1",
+          "offset": 672,
+          "size": 128
+        },
+        {
+          "name": "snapshot_ticket",
+          "C_type": "osw_ticket_v1",
+          "offset": 800,
+          "size": 40
+        },
+        {
+          "name": "serializer_private_scratch",
+          "C_type": "uint8_t[512]",
+          "offset": 840,
+          "size": 512
+        },
+        {
+          "name": "source_digest_state",
+          "C_type": "uint8_t[256]",
+          "offset": 1352,
+          "size": 256
+        },
+        {
+          "name": "reserved_zero",
+          "C_type": "uint8_t[2488]",
+          "offset": 1608,
+          "size": 2488
+        }
+      ]
+    },
+    "RootParseBridgeScratch": {
+      "C_name": "osw_rootparse_bridge_scratch_v1",
+      "sizeof_PROPOSED": 24,
+      "alignof_PROPOSED": 8,
+      "measured": false,
+      "fields": [
+        {
+          "name": "original_description_pointer",
+          "C_type": "uint64_t",
+          "offset": 0,
+          "size": 8
+        },
+        {
+          "name": "original_compatibility_hash_pointer",
+          "C_type": "uint64_t",
+          "offset": 8,
+          "size": 8
+        },
+        {
+          "name": "original_status_bits",
+          "C_type": "uint32_t",
+          "offset": 16,
+          "size": 4
+        },
+        {
+          "name": "reserved",
+          "C_type": "uint32_t",
+          "offset": 20,
+          "size": 4
+        }
+      ]
+    },
+    "CoreIssuer": {
+      "C_name": "osw_core_issuer_v1",
+      "sizeof_PROPOSED": 64,
+      "alignof_PROPOSED": 8,
+      "measured": false,
+      "fields": [
+        {
+          "name": "next_context_cookie",
+          "C_type": "uint64_t",
+          "offset": 0,
+          "size": 8
+        },
+        {
+          "name": "next_run_token",
+          "C_type": "uint64_t",
+          "offset": 8,
+          "size": 8
+        },
+        {
+          "name": "next_owner_id",
+          "C_type": "uint64_t",
+          "offset": 16,
+          "size": 8
+        },
+        {
+          "name": "next_thread_cookie",
+          "C_type": "uint64_t",
+          "offset": 24,
+          "size": 8
+        },
+        {
+          "name": "try_lock",
+          "C_type": "uint32_t",
+          "offset": 32,
+          "size": 4
+        },
+        {
+          "name": "exhausted_flags",
+          "C_type": "uint32_t",
+          "offset": 36,
+          "size": 4
+        },
+        {
+          "name": "reserved_zero",
+          "C_type": "uint8_t[24]",
+          "offset": 40,
+          "size": 24
+        }
+      ]
+    }
+  },
+  "arena_alignment": 8,
+  "arena_sections": [
+    {
+      "section": "ContextHeader",
+      "offset": 0,
+      "count": 1,
+      "stride": 4096,
+      "bytes": 4096
+    },
+    {
+      "section": "RecordSlot",
+      "offset": 4096,
+      "count": 64,
+      "stride": 4096,
+      "bytes": 262144
+    },
+    {
+      "section": "Pending",
+      "offset": 266240,
+      "count": 32,
+      "stride": 128,
+      "bytes": 4096
+    },
+    {
+      "section": "Identity",
+      "offset": 270336,
+      "count": 21,
+      "stride": 128,
+      "bytes": 2688
+    },
+    {
+      "section": "AliasSlot",
+      "offset": 273024,
+      "count": 8,
+      "stride": 32,
+      "bytes": 256
+    },
+    {
+      "section": "SerializerWorkspace",
+      "offset": 273280,
+      "count": 1,
+      "stride": 65536,
+      "bytes": 65536
+    },
+    {
+      "section": "ImmutablePayload",
+      "offset": 338816,
+      "count": 1,
+      "stride": 65536,
+      "bytes": 65536
+    }
+  ],
+  "arena_total_bytes": 404352,
+  "RecordSlot": {
+    "stride": 4096,
+    "typed_Call_bytes": 2504,
+    "reserved_zero_bytes": 1592,
+    "representation": "Typed struct { osw_call_v1 call; uint8_t reserved_zero[1592]; }, align8/sizeof4096 proposed. NOT bytearena cast to typed pointer."
+  },
+  "no_other_heap_arenas": true,
+  "outside_context": {
+    "SOURCE_TLS_cookie_per_thread_bytes": 8,
+    "SOURCE_helper_max_before_inline_POD": 1448,
+    "SOURCE_helper_max_after_inline_POD": 704,
+    "max_active_callback_wrappers": 32,
+    "wrapper_retained_token_plus_admission_bytes_each": 72,
+    "RootParse_extra_scalar_scratch_bytes": 24,
+    "digest_work_state_bytes": 256,
+    "limits": "Each Before/After helper owns at most its exact perAPI inlinePOD, source source-scalar scratch and stated256Bhashstate. Helper returns before original delegate, so BeforePOD is NOT retained across nested originals; only Token48+Admission24 (72bytes) wrapperlocals may spanoriginal. At most32trackedactivewrappers; unselected wrapper stillretains constanttoken/admissionlocals but no implied globalcallback/threadmemorycap. Afterhelper uses same max704 independently after originalreturn. Actual compilerstack/spills/threadTLS/foreignlibraries not sizeof-bounded here; future compilation/lifetimeproof gate.",
+    "SOURCE_entry_inline_POD_bytes": 56,
+    "tracked_wrapper_tokens_admissions_total_bytes": 2304,
+    "no_borrow_across_original": "A SOURCE helper may have SourceEntryInput56 plus Token/Admission caller spans; it returns before the original. Typed Before helper1448 maximum and After helper704 maximum have disjoint lifetimes. Before/After/Entry inline PODs are NOT retained in each nested wrapper; only32*(Token48+Admission24)=2304B across tracked originals, plus at most one metadata-helper POD at a time on the single selected thread. RootParse24 and source digest256 are separate stated maxima. C actual call frames/alignment/spills remain unmeasured; no stack/totalCPU assertion."
+  },
+  "no_report_or_execution_envelope": "No C model report, hex BEFORE/AFTER execution envelope or old512KiB envelope is allocated/admitted. Only raw UTF8 frame<=65536; model report262144 remains external pure-model cap.",
+  "arena_representation": "One typed context struct with members in arena_sections order: osw_context_header_v1 header; typedRecordSlot records[64]; osw_pending_v1 pending[32]; osw_identity_v1 identity[21]; osw_aliasslot_v1 aliases[8]; uint8_t serializer_workspace[65536]; uint8_t immutable_payload[65536]. Natural alignment8; no chararena effective-type casts.",
+  "core_issuer_bytes_separate": 64,
+  "new_core_total_static_bytes_PROPOSED": 404416,
+  "issuer_scope": "One64Bissuer static in loaded NEWcore, not one pertestcontext or shader/forwarder. Production exactlyone context; future isolatedCPU contexts use sameissuer for crosscontexttests. Monotone checkednonzero context/run/owner/thread identifiers; never reused within THIS loadedcore lifetime. No interprocess/multipleloadedcore/reload uniqueness/authorization claim. Context epoch1/noreset; ContextCookie unique fromissuer.",
+  "no_hidden_pools": "No second root/after/PODcache, objectmap, TLSstack or pendingperfamily arenas. ActiveStack32 and immutable snapshot are insideheader; scalar pending notes in128Bslots; originaltyped snapshots in64typedrecords only. MetadataJSONserialization/digest use statedworkspace/state. Runtime/compileroriginal allocations are outside this proposed observerstorage and not totalCPUbounded.",
+  "counter_authority": "Only CoreIssuer counters allocate IDs; each next_* field holds HIGHEST ISSUED checkedU64value, initially0, then checked+1 allocation. Header.next_owner_id and PublicStatus.next_alias_id are diagnostic CACHES of the highest owner counter observed from that issuer, initially0. They are NEVER local allocators, never a promise about the next returned alias. No local increment or raw token reuse.",
+  "atomic_backend": "Proposed GCC/Clang __atomic operations on naturally aligned private uint32_t try_lock/terminal_reason/flags (and issuer lock/flags) fields. No cast to a differently laid out _Atomic type, no atomicstruct/flexiblearray assumption. All concurrent accesses to a shared latch are atomic; regular context mutations happen under trylock. Four-byte lock/latch operations must be verified lockfree on future pinned target compilers; ABI/stack/link not measured here.",
+  "header_private_closure_semantics": {
+    "active_stack": "At most32 pending indices, parent/depth references index same32slots, no per-family/extra TLS stacks.",
+    "generation_counters": "12kind counters indexed kindtag-1; initially0, reservechecked+1 at actualcreatorENTRY; holes onfailedcreates allowed. Never generated from RETURN or outputrawnumerology.",
+    "snapshot_capture_and_ticket": "Copied once at actualselectedExecuteRETURN; pendingatboundary immutable, currentlive_drain_pending separate. No extra record/root caches.",
+    "serializer_private_scratch": "512B total: at most20 bounded traversal frames + numeric/UTF8escape bookkeeping; no root/POD replica; actual layout/algorithm future CPU code gate. Unused named bytes zero.",
+    "source_digest_state": "256B explicit reserved budget for fixed hash state; if projector uses its separately listed helperlocal256 instead, this header storage remains zero, never hiddenextraPODcache. No retained sourcecodepayload.",
+    "constructor_state": "Provisional raw/interface/root/onceflags live in pending128. Constructor Reset actual returned CB/ordinal is in its ORIGINAL retained record; baseCommand success can use that exact child CallID/interval at that time to initialize identity. No early commandBirth/liveRef, no synthetic Reset or second cache.",
+    "source_state_version": "Pending.source_state_version is reserved0 in V1 (not a user-specified or unbounded state cache). Parent/depth/event/entry fields already identify actual original scope.",
+    "unused_storage": "All namedreserved and inactive explicit closure budget bytes zero; no cast chararena typed aliases. No promise that all original vendor/compiler memory fits these bounds."
+  }
+}

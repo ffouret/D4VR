@@ -1,0 +1,58 @@
+#pragma once
+#include <vulkan/vulkan.h>
+#include <array>
+#include <functional>
+#include <memory>
+#include "dynamic_states.hpp"
+
+namespace d4vr::pipeline {
+// A lease keeps the private linked graph alive. The caller must retain it until
+// all GPU uses finish and release it before destroying the borrowed device.
+class LibraryNode {
+    struct Impl;
+    std::unique_ptr<Impl> impl;
+    explicit LibraryNode(std::unique_ptr<Impl>);
+    friend class LibraryVariants;
+public:
+    ~LibraryNode();
+    const std::array<VkPipeline,2>& handles() const;
+    uint32_t parts() const;
+    bool library() const;
+    bool stereoVertex() const;
+    // A known list describes declaration ownership only, never resource safety
+    // or replay eligibility. A complete static pipeline legitimately has no values.
+    const DynamicStates& dynamicStates() const;
+};
+enum class LibraryResult { registered,unsupported,unknownLibrary,unmarkedExecutable,budget,driverFailure,compileRequired,duplicateSource,unmarkedPreRaster };
+struct LibraryStats { uint64_t libraries=0,executables=0,rejected=0,driverFailures=0,compileRequired=0,budgetRejections=0;uint32_t liveNodes=0,creationAttempts=0; };
+
+// Synchronous pipeline adapter: observe() runs AFTER forwarding the original
+// create, before returning to its caller, while all input pointers/modules and
+// layouts are valid. It never calls the original create or destroy on behalf of
+// the application. Private creates use a null cache/allocator and omit writable
+// creation feedback. Unknown source libraries/ownership/extensions are refused.
+//
+// MarkedStage must identify an already-transformed stereo ABI 1 vertex module
+// or an explicitly marked fragment projection module. A marked fragment does
+// not substitute for the required marked pre-raster vertex in an executable.
+// or a verified identifier of that module. This class does not infer shader
+// identity from an arbitrary handle, catalog candidate or successful compile.
+// Successful registration is NOT a shader/resource audit or replay permission.
+class LibraryVariants {
+    struct Impl;
+    std::unique_ptr<Impl> impl;
+public:
+    static constexpr uint32_t maximumSupportedNodes=8192;
+    using Lease=std::shared_ptr<const LibraryNode>;
+    using MarkedStage=std::function<bool(const VkPipelineShaderStageCreateInfo&)>;
+    LibraryVariants(VkDevice,PFN_vkGetDeviceProcAddr,const std::array<VkDeviceAddress,2>&,
+                    MarkedStage,uint32_t maximumLiveNodes=512,uint32_t maximumCreations=4096);
+    ~LibraryVariants();
+    LibraryResult observe(VkPipeline original,const VkGraphicsPipelineCreateInfo&) noexcept;
+    Lease lookup(VkPipeline original) const;
+    // Erases only the registry association, never the application's pipeline.
+    // Previously returned leases and parents retain their private children.
+    void remove(VkPipeline original);
+    LibraryStats stats() const;
+};
+} // namespace d4vr::pipeline

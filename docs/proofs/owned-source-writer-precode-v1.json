@@ -1,0 +1,127 @@
+{
+  "schema_version": 1,
+  "purpose": "owned_first_SOURCE_writer_precode_contract_only",
+  "status": "frozen_exact_schema_before_separate_CPU_implementation",
+  "created_utc": "2026-10-27T23:34:21.760761+00:00",
+  "sources": [
+    {
+      "path": "docs/schemas/owned-source-writer-v1.json",
+      "bytes": 90039,
+      "sha256": "693021b27fbb12ed298b486ee38e3bdd3a5429c7478d47a3640158aa22011143"
+    },
+    {
+      "path": "docs/OWNED_SOURCE_WRITER_CONTRACT.md",
+      "bytes": 4810,
+      "sha256": "c364c766f761fd362e10663dff1b46447c26ea6bb98cf4b403508ab530a9fcf8"
+    }
+  ],
+  "admission": {
+    "admitted_next_stage": "new pure supplied-facts CPU calculation and mock harness with independent causal tests after this freeze; no implementation is included here",
+    "new_model_exists_at_creation": false,
+    "implementation_paths_observed_absent": [
+      "tools/owned_source_writer_validate.py",
+      "tests/test_owned_source_writer_validate.py",
+      "native/tests/owned_source_writer_fixture.cpp"
+    ],
+    "producer_CABI_source_hooks_admitted": false,
+    "private_vendor_build_admitted": false,
+    "Wine_GPU_game_headset_admitted": false,
+    "actual_runtime_branch_known": false,
+    "actual_game_applicability_known": false,
+    "schema_authoring_checkpoint_labels_preserved": true,
+    "schema_published_byte_exact_to_final4": false,
+    "five_wire_sections_value_identical_to_final4": true,
+    "prose_clarifications_only": [
+      "unavailable_fixed_projection_policy.NoCounterRepair",
+      "unavailable_fixed_projection_policy.CutNotSealLookup"
+    ]
+  },
+  "scope": {
+    "schema_types": 62,
+    "callback_projection_kinds": 46,
+    "stronger_claims_always_false": 17,
+    "unchanged_owned_profile": {
+      "resource_creations": 6,
+      "heaps": 4,
+      "getters": 8,
+      "root_parameters": 3,
+      "bound_heaps": 2,
+      "root": "SRVtable0, SAMPLERtable1 and PIXELconstants2; sampler heap type1 differs from range type3"
+    },
+    "window": "genuine cold origins through selected first-case Execute RETURN; constructor Reset retained; selected epoch is actual Reset CallID; warm second case unknown",
+    "positive_native_policy": "conditional supplied monolithic graphics history with one genuine graphics layout; actual descriptor_heap/GPL/cache route remains unknown",
+    "bounds": {
+      "raw_UTF8_input_bytes": 65536,
+      "value_container_nodes": 4096,
+      "depth_root0": 20,
+      "retained_records": 64,
+      "shared_edges_or_marks": 128,
+      "shared_pending": 32,
+      "tickets": 1,
+      "complete_report_bytes": 262144
+    },
+    "limits_are_not_total_CPU_memory": true
+  },
+  "documentary_quantities_not_executed_histories": {
+    "conditional_selected_callback_envelope": [
+      59,
+      63
+    ],
+    "conditional_selected_edge_envelope": [
+      118,
+      126
+    ],
+    "complete_shape_wide_U64_and_four_native_PSO_owners": {
+      "calls": 63,
+      "edges": 126,
+      "UTF8_bytes": 63934,
+      "nodes": 3106,
+      "depth": 11,
+      "byte_headroom": 1602
+    },
+    "complete_output_shape_with_input_once_and_64_diagnostics": {
+      "UTF8_bytes": 82994,
+      "nodes": 3923,
+      "depth": 12
+    },
+    "shape_examples_causally_validated": false,
+    "shape_examples_SOURCE_captures": false,
+    "universal_input_or_runtime_fit_proven": false,
+    "overflow_policy": "reject full frame/report without truncation, eviction or retagging; future producer must preserve original calls"
+  },
+  "review_evidence_retained_privately": {
+    "author_final4": {
+      "bytes": 5484,
+      "sha256": "9f58cabb55f985797e1ac84adeda8dfbec76346d16e214ce62b88b24a6dc2507"
+    },
+    "native_SOURCE_review_candidate3": {
+      "bytes": 15200,
+      "sha256": "1f43a66219485642663d1c255a2c867dc5428f1dc870cf338f5836a2b393a14d"
+    },
+    "quantitative_final4_review": {
+      "bytes": 10034,
+      "sha256": "4c12a348ed8e21b7e21f815f6ff6eb998128d9cf25e9573e5d7a92ad0c17b491"
+    },
+    "parent_literal_review": {
+      "bytes": 4822,
+      "sha256": "cf57db3d83b6aa875105e9997c71fa1e775e7d56e4d7d12d81f02f089a7b1dc9"
+    },
+    "native_SOURCE_review_final4_addendum": {
+      "bytes": 16099,
+      "sha256": "d005e9a2d39d3249736d6d206ce8634d35ed6b0cfb31cc1f0a3dc70c747c2749"
+    }
+  },
+  "review_scope": "Source review32checks and parent38literal checks are documentary, not model tests; five wire-shape sections are value-identical between reviewed candidate3 and final4. Quantitative examples are type/shape documents only, not passing histories or outputs of a nonexistent calculation. Review authors share earlier components; no third-party certification is claimed. Final4 additive source review and public prose clarifications agree on those two existing causal rules; no new API kind or wire field is introduced.",
+  "precode_ledger": "Candidate2 wide shape with four source PSO owners measured65611B, over64KiB by75. It is preserved privately. Only two NEW bookkeeping field names were shortened before code; all original facts and four native ownerRefs remain. Final4 clarifies original COM/internal mappings and unavailable fixed observations without adding keys, increasing caps or inventing zero values.",
+  "validation": {
+    "new_model_or_unit_tests_executed": false,
+    "unchanged_test_suites_repeated_locally": false,
+    "new_native_mock_harness_executed": false,
+    "new_vendor_or_PE_build": false,
+    "new_physical_execution": false,
+    "CI_for_this_change": "documentation-only precode publication; no implementation tests added or rerun",
+    "last_implementation_CI": "CI222/run40596153371 on cbae846c04904e891582ff07586e268eada191cf remains historical, not a test of this new contract"
+  },
+  "preservation": "Frozen models7987/799, original owned fixture6958, existing translator DLL pairs, original workloads/shaders/oracles and all game data remain unchanged. No raw game image, log or shader is published.",
+  "product_state": "Research/prototyping. Diablo rectangle/cutouts remain unresolved; actual input/writer/transforms and usable Quest presentation remain unknown."
+}

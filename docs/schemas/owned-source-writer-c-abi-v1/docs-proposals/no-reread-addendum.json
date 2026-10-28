@@ -1,0 +1,221 @@
+{
+  "schema_version": 1,
+  "purpose": "SOURCE_only_destruction_no_postdelegate_dereference_gate",
+  "relation_to_field_table": "Additive explicit strengthening of existing no-freed-receiver-read rule; no table origin/cut/schema change. per-callback-fields-v2 remains immutable.",
+  "original_COM_releases": [
+    {
+      "kind": "device",
+      "source": {
+        "file": "libs/vkd3d/device.c",
+        "line": 3870,
+        "symbol": "d3d12_device_Release",
+        "receiver_parameter": "d3d12_device_iface *iface"
+      },
+      "ENTRY": {
+        "actual_values": "original iface scalar; genuine canonical object/generation and owner associations detached by value before any original call",
+        "safe_read_expression": "device = impl_from_ID3D12Device(iface) before d3d12_device_release_common(device)",
+        "source_note": "Only source-known typed class at this exact wrapper/site; do not run QI, probe an arbitrary iface, or derive device through a freed pointer. Existing immutable registry association may supply the owner instead of another pointee read."
+      },
+      "RETURN": {
+        "actual_value": "actual ULONG return captured by value as U32",
+        "only_inputs": "same token/epoch/record identity and actual returned ULONG",
+        "forbidden_reads": [
+          "impl_from_iface(iface) or container reconstruction followed by a pointee read",
+          "object->device, object->refcount, vtable, raw pointer target, owner native device through original object",
+          "late raw lookup that retags to a replacement generation"
+        ]
+      },
+      "lifetime_semantics": "Any relevant Release ENTRY makes subsequent selected use unknown under conservative frozen model. ULONG0 commits public retirement only after actual RETURN; it does not prove physical free (internal/deferred references may remain). Nonfinal/pending Release cannot be promoted by later pointer equality."
+    },
+    {
+      "kind": "resource",
+      "source": {
+        "file": "libs/vkd3d/resource.c",
+        "line": 2395,
+        "symbol": "d3d12_resource_Release",
+        "receiver_parameter": "d3d12_resource_iface *iface"
+      },
+      "ENTRY": {
+        "actual_values": "original iface scalar; genuine canonical object/generation and owner associations detached by value before any original call",
+        "safe_read_expression": "resource = impl_from_ID3D12Resource2(iface), device = resource->device before decrement/destruction",
+        "source_note": "Only source-known typed class at this exact wrapper/site; do not run QI, probe an arbitrary iface, or derive device through a freed pointer. Existing immutable registry association may supply the owner instead of another pointee read."
+      },
+      "RETURN": {
+        "actual_value": "actual ULONG return captured by value as U32",
+        "only_inputs": "same token/epoch/record identity and actual returned ULONG",
+        "forbidden_reads": [
+          "impl_from_iface(iface) or container reconstruction followed by a pointee read",
+          "object->device, object->refcount, vtable, raw pointer target, owner native device through original object",
+          "late raw lookup that retags to a replacement generation"
+        ]
+      },
+      "lifetime_semantics": "Any relevant Release ENTRY makes subsequent selected use unknown under conservative frozen model. ULONG0 commits public retirement only after actual RETURN; it does not prove physical free (internal/deferred references may remain). Nonfinal/pending Release cannot be promoted by later pointer equality."
+    },
+    {
+      "kind": "heap",
+      "source": {
+        "file": "libs/vkd3d/resource.c",
+        "line": 9137,
+        "symbol": "d3d12_descriptor_heap_Release",
+        "receiver_parameter": "ID3D12DescriptorHeap *iface"
+      },
+      "ENTRY": {
+        "actual_values": "original iface scalar; genuine canonical object/generation and owner associations detached by value before any original call",
+        "safe_read_expression": "heap = impl_from_ID3D12DescriptorHeap(iface); SOURCE owner association captured while heap valid before original Release",
+        "source_note": "Only source-known typed class at this exact wrapper/site; do not run QI, probe an arbitrary iface, or derive device through a freed pointer. Existing immutable registry association may supply the owner instead of another pointee read."
+      },
+      "RETURN": {
+        "actual_value": "actual ULONG return captured by value as U32",
+        "only_inputs": "same token/epoch/record identity and actual returned ULONG",
+        "forbidden_reads": [
+          "impl_from_iface(iface) or container reconstruction followed by a pointee read",
+          "object->device, object->refcount, vtable, raw pointer target, owner native device through original object",
+          "late raw lookup that retags to a replacement generation"
+        ]
+      },
+      "lifetime_semantics": "Any relevant Release ENTRY makes subsequent selected use unknown under conservative frozen model. ULONG0 commits public retirement only after actual RETURN; it does not prove physical free (internal/deferred references may remain). Nonfinal/pending Release cannot be promoted by later pointer equality."
+    },
+    {
+      "kind": "allocator",
+      "source": {
+        "file": "libs/vkd3d/command.c",
+        "line": 2870,
+        "symbol": "d3d12_command_allocator_Release",
+        "receiver_parameter": "ID3D12CommandAllocator *iface"
+      },
+      "ENTRY": {
+        "actual_values": "original iface scalar; genuine canonical object/generation and owner associations detached by value before any original call",
+        "safe_read_expression": "allocator = impl_from_ID3D12CommandAllocator(iface); allocator->device only while entry-valid",
+        "source_note": "Only source-known typed class at this exact wrapper/site; do not run QI, probe an arbitrary iface, or derive device through a freed pointer. Existing immutable registry association may supply the owner instead of another pointee read."
+      },
+      "RETURN": {
+        "actual_value": "actual ULONG return captured by value as U32",
+        "only_inputs": "same token/epoch/record identity and actual returned ULONG",
+        "forbidden_reads": [
+          "impl_from_iface(iface) or container reconstruction followed by a pointee read",
+          "object->device, object->refcount, vtable, raw pointer target, owner native device through original object",
+          "late raw lookup that retags to a replacement generation"
+        ]
+      },
+      "lifetime_semantics": "Any relevant Release ENTRY makes subsequent selected use unknown under conservative frozen model. ULONG0 commits public retirement only after actual RETURN; it does not prove physical free (internal/deferred references may remain). Nonfinal/pending Release cannot be promoted by later pointer equality."
+    },
+    {
+      "kind": "command",
+      "source": {
+        "file": "libs/vkd3d/command.c",
+        "line": 6568,
+        "symbol": "d3d12_command_list_Release",
+        "receiver_parameter": "d3d12_command_list_iface *iface"
+      },
+      "ENTRY": {
+        "actual_values": "original iface scalar; genuine canonical object/generation and owner associations detached by value before any original call",
+        "safe_read_expression": "list = impl_from_ID3D12GraphicsCommandList(iface); list->device entry-valid, original may free_aligned(list)",
+        "source_note": "Only source-known typed class at this exact wrapper/site; do not run QI, probe an arbitrary iface, or derive device through a freed pointer. Existing immutable registry association may supply the owner instead of another pointee read."
+      },
+      "RETURN": {
+        "actual_value": "actual ULONG return captured by value as U32",
+        "only_inputs": "same token/epoch/record identity and actual returned ULONG",
+        "forbidden_reads": [
+          "impl_from_iface(iface) or container reconstruction followed by a pointee read",
+          "object->device, object->refcount, vtable, raw pointer target, owner native device through original object",
+          "late raw lookup that retags to a replacement generation"
+        ]
+      },
+      "lifetime_semantics": "Any relevant Release ENTRY makes subsequent selected use unknown under conservative frozen model. ULONG0 commits public retirement only after actual RETURN; it does not prove physical free (internal/deferred references may remain). Nonfinal/pending Release cannot be promoted by later pointer equality."
+    },
+    {
+      "kind": "queue",
+      "source": {
+        "file": "libs/vkd3d/command.c",
+        "line": 23227,
+        "symbol": "d3d12_command_queue_Release",
+        "receiver_parameter": "ID3D12CommandQueue *iface"
+      },
+      "ENTRY": {
+        "actual_values": "original iface scalar; genuine canonical object/generation and owner associations detached by value before any original call",
+        "safe_read_expression": "command_queue = impl_from_ID3D12CommandQueue(iface); command_queue->device entry-valid, original may stop threads/free queue",
+        "source_note": "Only source-known typed class at this exact wrapper/site; do not run QI, probe an arbitrary iface, or derive device through a freed pointer. Existing immutable registry association may supply the owner instead of another pointee read."
+      },
+      "RETURN": {
+        "actual_value": "actual ULONG return captured by value as U32",
+        "only_inputs": "same token/epoch/record identity and actual returned ULONG",
+        "forbidden_reads": [
+          "impl_from_iface(iface) or container reconstruction followed by a pointee read",
+          "object->device, object->refcount, vtable, raw pointer target, owner native device through original object",
+          "late raw lookup that retags to a replacement generation"
+        ]
+      },
+      "lifetime_semantics": "Any relevant Release ENTRY makes subsequent selected use unknown under conservative frozen model. ULONG0 commits public retirement only after actual RETURN; it does not prove physical free (internal/deferred references may remain). Nonfinal/pending Release cannot be promoted by later pointer equality."
+    },
+    {
+      "kind": "root",
+      "source": {
+        "file": "libs/vkd3d/state.c",
+        "line": 120,
+        "symbol": "d3d12_root_signature_Release",
+        "receiver_parameter": "ID3D12RootSignature *iface"
+      },
+      "ENTRY": {
+        "actual_values": "original iface scalar; genuine canonical object/generation and owner associations detached by value before any original call",
+        "safe_read_expression": "root_signature = impl_from_ID3D12RootSignature(iface), device = root_signature->device before dec_ref",
+        "source_note": "Only source-known typed class at this exact wrapper/site; do not run QI, probe an arbitrary iface, or derive device through a freed pointer. Existing immutable registry association may supply the owner instead of another pointee read."
+      },
+      "RETURN": {
+        "actual_value": "actual ULONG return captured by value as U32",
+        "only_inputs": "same token/epoch/record identity and actual returned ULONG",
+        "forbidden_reads": [
+          "impl_from_iface(iface) or container reconstruction followed by a pointee read",
+          "object->device, object->refcount, vtable, raw pointer target, owner native device through original object",
+          "late raw lookup that retags to a replacement generation"
+        ]
+      },
+      "lifetime_semantics": "Any relevant Release ENTRY makes subsequent selected use unknown under conservative frozen model. ULONG0 commits public retirement only after actual RETURN; it does not prove physical free (internal/deferred references may remain). Nonfinal/pending Release cannot be promoted by later pointer equality."
+    },
+    {
+      "kind": "pso",
+      "source": {
+        "file": "libs/vkd3d/state.c",
+        "line": 2915,
+        "symbol": "d3d12_pipeline_state_Release",
+        "receiver_parameter": "ID3D12PipelineState *iface"
+      },
+      "ENTRY": {
+        "actual_values": "original iface scalar; genuine canonical object/generation and owner associations detached by value before any original call",
+        "safe_read_expression": "state = impl_from_ID3D12PipelineState(iface), device = state->device before dec_ref",
+        "source_note": "Only source-known typed class at this exact wrapper/site; do not run QI, probe an arbitrary iface, or derive device through a freed pointer. Existing immutable registry association may supply the owner instead of another pointee read."
+      },
+      "RETURN": {
+        "actual_value": "actual ULONG return captured by value as U32",
+        "only_inputs": "same token/epoch/record identity and actual returned ULONG",
+        "forbidden_reads": [
+          "impl_from_iface(iface) or container reconstruction followed by a pointee read",
+          "object->device, object->refcount, vtable, raw pointer target, owner native device through original object",
+          "late raw lookup that retags to a replacement generation"
+        ]
+      },
+      "lifetime_semantics": "Any relevant Release ENTRY makes subsequent selected use unknown under conservative frozen model. ULONG0 commits public retirement only after actual RETURN; it does not prove physical free (internal/deferred references may remain). Nonfinal/pending Release cannot be promoted by later pointer equality."
+    }
+  ],
+  "native_destroy_rule": {
+    "callbacks": [
+      "ModuleDestroy",
+      "PipelineDestroy",
+      "PipelineLayoutDestroy"
+    ],
+    "originals": [
+      "vkDestroyShaderModule",
+      "vkDestroyPipeline",
+      "vkDestroyPipelineLayout"
+    ],
+    "ENTRY": "Capture original VkDevice scalar, original object scalar, original allocator pointer, actual kind/generation and owner association by value BEFORE delegate; membership for declared nonnull selected objects decided before tick. No native object memory read is required.",
+    "RETURN": "actual void/null, same token only; do not re-evaluate source expression device->vk_device or state->device after original, do not dereference native handle or original owner, do not manufacture ULONG0.",
+    "historical_policy": "A module can cease living after successful pipeline create while pipeline remains the historical emitted object. Pipeline/layout native lifetimes must satisfy actual relevant create/bind/emission/Execute cut. No lifetime/current Vulkan state query is inferred."
+  },
+  "postreturn_invariants": [
+    "Metadata AFTER routines accept frozen token and copied scalar/void only. No callback-specific lambda may rebuild receiver/owner fields from original object memory after delegate.",
+    "Freeze relevant SourceScope and class/owner fields at ENTRY; after only records returned scalar and changes observer state against the SAME immutable generation.",
+    "No original delegate is held under metadata mutex; observer error before/after never suppresses delegate/cleanup and cannot silently repair gap/drop/counters.",
+    "Lifetime of arguments does not imply storage remains alive throughout Release; the fixed callback field table must be interpreted with this destruction-specific exception.",
+    "None of these SOURCE observations establish current descriptor bytes, physical backing, owner of a renderer, or current GPU reads."
+  ]
+}

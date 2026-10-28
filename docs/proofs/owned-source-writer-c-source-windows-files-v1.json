@@ -1,0 +1,84 @@
+{
+  "schema": 1,
+  "purpose": "CPU-only reader Windows portability correction",
+  "created_utc": "2026-10-28T03:14:12.929427+00:00",
+  "status": "LOCAL_FAKE_TESTED_SOURCE_REVIEWED_WINDOWS_CI_PENDING",
+  "previous_commit": "64e76860e4276ba3f2ddea6a9338ab2d9f651487",
+  "prior_CI": {
+    "commit": "64e76860e4276ba3f2ddea6a9338ab2d9f651487",
+    "tree": "37bc226d91847ebcec2a7b73929875764229cf81",
+    "run_number": 226,
+    "run_id": 40623968346,
+    "status": "FAILURE_NEW_WINDOWS_READER_PORTABILITY",
+    "Windows_job": 122604368243,
+    "Windows_conclusion": "failure",
+    "Linux_job": 122604367887,
+    "Linux_conclusion": "cancelled_by_matrix_after_failure",
+    "Python_tests": 1162,
+    "existing_Windows_skips": 2,
+    "new_test_failure": "dangling symlink CRT O_EXCL did not refuse",
+    "new_test_error": "stat/lstat vs fstat identity paths differ on Windows Python3.12",
+    "new_CTest_steps": "NOT_EXECUTED; skipped after Python failure",
+    "decoded_log": {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-C-sink-parent-20261028-1/CI226-windows-failed-decoded.log",
+      "bytes": 244704,
+      "sha256": "9722bca7c52103df91a21efc18159714bfa074427775a63948b919d7753c7b6e"
+    },
+    "log_encoding": "UTF8 reencoding of connector decoded content, CRLF retained; not original HTTP/ZIP bytes",
+    "no_human_needed": true,
+    "fix_scope": "New CPU file reader Windows native leaf handle backend; no old model/core/vendor/Wine/GPU changes"
+  },
+  "changes": {
+    "Windows_leaf_IO": "CreateFileW native API; no CRT stat/fstat identity mixing or O_EXCL symlink assumption",
+    "identity": "FileIdInfo full 128-bit ID plus U64 volume; same family BasicInfo/Size; access time excluded only",
+    "input": "held read handle denies write/delete sharing; reparse/directory/non-disk refused; second path handle checked",
+    "output": "CREATE_NEW, no sharing, exact bounded writes and checked close",
+    "fallback": "unsupported query refuses; no 64-bit-ID or timestamp-tolerance fallback",
+    "unchanged": "POSIX nofollow/nonblocking path, all C core/ABI/mocks, frozen pure model, vendor and runtime"
+  },
+  "new_targeted_tests": {
+    "methods": 46,
+    "additional_Win32_fake_methods": 14,
+    "scope": "Fake ctypes API and portable temporary-file tests; no real Windows API locally, no actual model or child execution in these unit methods"
+  },
+  "parent_checks": {
+    "old_C_core_unchanged": true,
+    "old_model_unchanged": true
+  },
+  "files": [
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/tools/owned_source_writer_source_native_wire.py",
+      "bytes": 18152,
+      "sha256": "c083747e1dbc507bd93dee36e9090fbe5e721c4c87c256e1fda8c42c4937aebd"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/tools/owned_source_writer_source_winfiles.py",
+      "bytes": 6222,
+      "sha256": "229b0057c705260d15ff2aec36b3c3952ee5af862366690e5fee8ca42d47274a"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/tests/test_owned_source_writer_source.py",
+      "bytes": 31021,
+      "sha256": "a994c3f0698f7a4732ff36587aa54d9ef73f22f78a6c22b63edb04638bb1f9b7"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/docs/OWNED_SOURCE_WRITER_C_SOURCE.md",
+      "bytes": 7418,
+      "sha256": "4a9dad327a2e0ec81fffed77c7f92f5575ae23f57884ad9e4b24ff0fe9a0b016"
+    }
+  ],
+  "limitations": [
+    "Actual Windows invocation remains unverified until a new CI job succeeds.",
+    "These are owned CPU test-reader file observations, not vendor SOURCE, renderer runtime or game facts.",
+    "No nofollow guarantee for ancestor paths, absence of mapped writers, backing identity, loaded-memory identity or total CPU memory bound.",
+    "Old CI226 failure and all checkpoints remain intact."
+  ],
+  "sources": [
+    "https://raw.githubusercontent.com/python/cpython/v3.12.10/Modules/posixmodule.c",
+    "https://raw.githubusercontent.com/python/cpython/v3.12.10/Python/fileutils.c",
+    "https://learn.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilew",
+    "https://learn.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-getfileinformationbyhandleex",
+    "https://learn.microsoft.com/en-us/windows/win32/api/winbase/ns-winbase-file_id_info",
+    "https://learn.microsoft.com/en-us/windows/win32/api/winbase/ns-winbase-file_basic_info"
+  ]
+}

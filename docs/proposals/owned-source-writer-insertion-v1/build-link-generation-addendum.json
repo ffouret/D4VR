@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "purpose": "Required additive precision for the proposed generated shader target ownership; no code or build",
+  "applies_to_sha256": "037f768f8742d882fee039c485a58a5f88e6fb078227b33e2640b45be588ee26",
+  "base_unchanged": true,
+  "status": "DOCUMENTARY_PROPOSAL_NOT_CONFIGURED",
+  "finding": "Meson GeneratedList is processed per target. Factoring one glsl_generator.process(...) result into a variable and passing it to two static libraries does not establish one shared output rule.",
+  "proposal": "Use explicitly shared CustomTarget output objects with one declared owner for each named generated GLSL header. Both ordinary and observed proton variants reference those same CustomTarget outputs. Existing VCS CustomTarget outputs also remain single-owner. Do not claim that a shared GeneratedList variable implements this.",
+  "future_gate": "Exact target names, per-source command/outputs/include paths and generator dependencies must be pinned/reviewed before the separately admitted configuration/build. Generated compile/link plans must then confirm one output owner and no duplicate rules. None has been generated here.",
+  "unchanged": "Do not duplicate source shader payloads, force native pipeline routes, remove the ordinary shader variant from ordinary consumers, or weaken strict C flags. All G1–G5 source implementation gates remain open.",
+  "attribution": "Pressure review of parent build-link proposal, source read only. Same frozen core author, not third-party certification of that core.",
+  "source_pin": {
+    "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/tools/private-translator-20261027-1/meson/mesonbuild/backend/backends.py",
+    "bytes": 105515,
+    "sha256": "267556e3bf2106d1399fe7ed4af14376e9082925be1580451a888fe0dd82f4b8"
+  },
+  "code_or_tests_or_build_executed": false
+}

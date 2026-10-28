@@ -1,0 +1,130 @@
+{
+  "schema_version": 1,
+  "actual_game": "Diablo IV",
+  "mode": "fixed_monoscopic_no_xr_source_consumer_observation",
+  "layer_sha256": "0bf64d377da7c2466d3433fa62142c48d33212cf7902125b3517f4e5ea61d134",
+  "shader_bundle_reused_intact": true,
+  "shader_bundle_entries": 5379,
+  "new_shader_override_built": false,
+  "no_gpu_commands_added_by_new_consumer_observer": true,
+  "combined_color_depth_diagnostic_has_existing_gpu_work": true,
+  "depth_exports": 3,
+  "depth_format": "raw D24 low24 words",
+  "depth_dimensions": [
+    1707,
+    960
+  ],
+  "depth_bytes": 19664640,
+  "successive_monoscopic_color_pairs": 6,
+  "request_script_host_seconds": 17.92262036700049,
+  "hold_host_ms": [
+    5409,
+    5420,
+    5405
+  ],
+  "hold_present_intervals": [
+    780,
+    782,
+    780
+  ],
+  "depth_packet_revisions": [
+    2,
+    4,
+    6
+  ],
+  "color_measurement_packet_revisions": [
+    3,
+    5,
+    7
+  ],
+  "independent_cpu_audit_passed": true,
+  "independent_audit_sha256": "640a817110e0e5e1a0d9a8cf843a8cd978305c5352da413595b644d3d6d41626",
+  "exact_five_field_copy_bridges": 3,
+  "identity_scope": "All three COPY bridges, queries and observations belong to one process/device/SourceHistory observer. Equal counters or resource numbers from other sessions are not identity.",
+  "query_receipts": {
+    "unique_target_queries": 4,
+    "source_depth_queries": 2,
+    "source_stencil_queries": 1,
+    "destination_depth_queries": 1,
+    "type": "SAMPLED_IMAGE",
+    "layout": "GENERAL",
+    "opaque_bytes_each": 4,
+    "callback_outputs_complete": true,
+    "all_metadata_complete": false,
+    "cached_before_the_copy_observations": true,
+    "same_cached_receipts_in_each_mapping": true,
+    "not_four_consumers_or_four_reads_after_copy": true
+  },
+  "windows": {
+    "cpu_occurrences_each": 8,
+    "event_counts": [
+      114,
+      114,
+      75
+    ],
+    "closed": true,
+    "locally_truncated": false,
+    "query_windows_truncated": false,
+    "declared_color_events": [
+      13,
+      13,
+      12
+    ],
+    "unknown_events": [
+      18,
+      18,
+      9
+    ],
+    "retained_blit_events": [
+      0,
+      0,
+      0
+    ],
+    "absence_outside_window_inferred": false
+  },
+  "global_history": {
+    "last_observed_overflow": 5612508,
+    "all_prefixes_missing": true,
+    "faulted": false,
+    "serialization_truncated": false,
+    "overflow_scope": "Cumulative observer overflow without per-cause breakdown, not a GPU error count. Local window completeness does not repair missing global context."
+  },
+  "image_observation": {
+    "large_wide_cutouts_still_visible": true,
+    "wide_saturated_d24_words": 334333,
+    "reference_saturated_d24_words": 0,
+    "return_saturated_d24_words": 0,
+    "saturation_is_not_culling_or_initialization_proof": true,
+    "inter_session_exact_pixel_causality_claimed": false
+  },
+  "normal_ui_exit": true,
+  "launcher_exit_code": 0,
+  "all_owned_processes_exited": true,
+  "original_audit_unchanged": true,
+  "named_exports_checked": 262,
+  "game_khronos_used": false,
+  "original_game_pixels_compared_exactly": false,
+  "device_destroy_or_final_fence_lease_counts_observed": false,
+  "claims": {
+    "coverage_repaired": false,
+    "exact_sampled_consumer_proven": false,
+    "descriptor_slot_or_placement_known": false,
+    "presentation_color_receipt_resource_bridge_known": false,
+    "gpu_execution_order_known": false,
+    "last_gpu_writer_known": false,
+    "initialized_pixels_verified": false,
+    "whole_scene_verified": false,
+    "common_scene_time_known": false,
+    "xr_pose_known": false,
+    "game_image_sent_to_quest": false,
+    "continuous_immersive_vr": false
+  },
+  "limits": [
+    "Declared attachments and query encodings are concrete CPU observations, not executed shader reads.",
+    "Four query receipts precede COPY; repeating them in three windows is not twelve separate consumers.",
+    "View creation extensions remain incomplete; known lifetimes do not make their metadata complete.",
+    "Eight CPU occurrences do not reach a retained BLIT in this game; absent outside-window use cannot be inferred.",
+    "Global event overflow requires narrower recording before claiming broader coverage; no global resource graph or last writer is established.",
+    "Color receipt-to-image identity is still absent. No new fix to wide-field coverage or SteamVR submission is claimed."
+  ]
+}

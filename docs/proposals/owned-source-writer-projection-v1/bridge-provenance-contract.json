@@ -1,0 +1,540 @@
+{
+  "schema_version": 1,
+  "purpose": "R1_R2_additive_private_SOURCE_bridge_and_provenance_PRECODE_contract",
+  "created_utc": "2026-10-28T05:24:53.572376+00:00",
+  "status": "DRAFT_FOR_SOURCE_REVIEW_DOCUMENTATION_ONLY_NO_IMPLEMENTATION_ADMISSION",
+  "role_and_limits": {
+    "author": "blit_bridge; author of earlier CPU harness/foundations and current R1/R2 document, not an independent certifier of those components. Pressure advises frozen-core feasibility; Stage and parent independently review these new bytes.",
+    "no_execution": "No code/header/function body/patch, model calculation, unit test, ABI compilation, vendor build, process scan, Wine/GPU/game or OS-memory probe is performed or authorized here.",
+    "meaning": "A concrete future private implementation contract. Existing frozen e2/564/660 are unchanged; source prototypes and C ABI do not gain these functions merely because their declarations appear below."
+  },
+  "authority": {
+    "admission": {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-insertion-precode-20261028-1/next-precode-documentary-admission.json",
+      "bytes": 2921,
+      "sha256": "68ec6fb00e1b768e3a15a6231a8980729a8e32443f961f4a3f84dd4d8a04d79a"
+    },
+    "next_plan": {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-insertion-precode-20261028-1/next-precode-resolution-plan.json",
+      "bytes": 7815,
+      "sha256": "6f98ed777ad8b43c2d27373f4d51f2d1877b518034557df91f202e337572e33a"
+    },
+    "prior_sites": {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-insertion-precode-20261028-1/sites.json",
+      "bytes": 157527,
+      "sha256": "644357f943e0fa200e09e76b5b77e8aaab6ab64e9c316784cc25b3123b502250"
+    },
+    "prior_root_bridge": {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-insertion-precode-20261028-1/root-bridge.json",
+      "bytes": 8150,
+      "sha256": "841055b97448bb8e714145b2dd4421b2a81840c29f3836bbea5032fd4cf78924"
+    },
+    "inputs": [
+      {
+        "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-insertion-precode-20261028-1/next-precode-resolution-plan.json",
+        "bytes": 7815,
+        "sha256": "6f98ed777ad8b43c2d27373f4d51f2d1877b518034557df91f202e337572e33a"
+      },
+      {
+        "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-insertion-precode-20261028-1/next-precode-documentary-admission.json",
+        "bytes": 2921,
+        "sha256": "68ec6fb00e1b768e3a15a6231a8980729a8e32443f961f4a3f84dd4d8a04d79a"
+      },
+      {
+        "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-insertion-precode-20261028-1/sites.json",
+        "bytes": 157527,
+        "sha256": "644357f943e0fa200e09e76b5b77e8aaab6ab64e9c316784cc25b3123b502250"
+      },
+      {
+        "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-insertion-precode-20261028-1/root-bridge.json",
+        "bytes": 8150,
+        "sha256": "841055b97448bb8e714145b2dd4421b2a81840c29f3836bbea5032fd4cf78924"
+      },
+      {
+        "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-insertion-precode-20261028-1/build-link.json",
+        "bytes": 13767,
+        "sha256": "037f768f8742d882fee039c485a58a5f88e6fb078227b33e2640b45be588ee26"
+      },
+      {
+        "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-insertion-precode-20261028-1/build-link-generation-addendum.json",
+        "bytes": 1872,
+        "sha256": "6c2ffbba0983b4ef74526f9240f03f30a1d241b67e46ca9d1366b330b0db5221"
+      },
+      {
+        "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/native/owned_source_writer_source/owned_source_writer_source_v1.c",
+        "bytes": 52825,
+        "sha256": "e2f464bb2a6159ce88eac1c71bf4442c999856f4876a19c3f912dc07e8ea86b7"
+      },
+      {
+        "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/native/owned_source_writer_source/owned_source_writer_source_v1.h",
+        "bytes": 282735,
+        "sha256": "564e8955d9b97211e81b10defafc6e1a49b07291f57090e4e821fab454588583"
+      },
+      {
+        "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/native/owned_source_writer_source/owned_source_writer_private.inc",
+        "bytes": 11517,
+        "sha256": "d685202439744c77bcc9c52292570ddd424bd2b2c27ff8459679bae5b50cceec"
+      },
+      {
+        "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/native/owned_source_writer_source/owned_source_writer_metadata.inc",
+        "bytes": 53938,
+        "sha256": "1de6473d69de45593641db08a1256643fb3ce831664e9a0dad2282a1d1b08539"
+      },
+      {
+        "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/docs/schemas/owned-source-writer-c-abi-v1/normative-manifest.json",
+        "bytes": 1364,
+        "sha256": "ebee057ce52163760ec9c2ce92bf80d452bd557d002a143731f8988f4ea9268e"
+      },
+      {
+        "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/docs/schemas/owned-source-writer-c-abi-v1/contract-final-proposed.json",
+        "bytes": 48606,
+        "sha256": "989224c8388364d5c1c26b08549ca1bfd48cdbc87e61be170472c97e3961f599"
+      },
+      {
+        "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/docs/schemas/owned-source-writer-c-abi-v1/docs-proposals/private-memory-final-proposed.json",
+        "bytes": 24154,
+        "sha256": "5ed91cb4d56011f798038dfee39203604809f5708342cf6502fd96dd3c61b69e"
+      },
+      {
+        "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/docs/schemas/owned-source-writer-c-abi-v1/docs-proposals/source-protocol-final-proposed.json",
+        "bytes": 37201,
+        "sha256": "63c6989bd665204259be34df37f7dc713cc8e304e7b664b180c3122a5b94b720"
+      },
+      {
+        "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/tools/owned_source_writer_validate.py",
+        "bytes": 95467,
+        "sha256": "660623fb5da3cbec1ea7fbe2c6f1513beadd3950c97416a6126a71de119479bf"
+      },
+      {
+        "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/private-translator-derived-source-20261027-1/source/libs/vkd3d/state.c",
+        "bytes": 373876,
+        "sha256": "f3b17fc716c6adc013dc49ad25f01f26c18f87bfea74c426dc47dcbdd52b62a5"
+      },
+      {
+        "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/private-translator-derived-source-20261027-1/source/libs/vkd3d/command.c",
+        "bytes": 1163073,
+        "sha256": "45829650b34e6cfa5b2ecb4452f429d6489d70951ee6287d358ea5888a7417cb"
+      },
+      {
+        "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/private-translator-derived-source-20261027-1/source/libs/vkd3d-shader/vkd3d_shader_main.c",
+        "bytes": 33935,
+        "sha256": "7b32ea2e62aeb452481d80d24a05106c9521725c9b6900d83eb78113f7e97198"
+      },
+      {
+        "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-additive-precode-20261028-1/digest-storage-contract-v2.json",
+        "bytes": 34029,
+        "sha256": "0d50ba047a8902a1aeae06d7ff5966cb3b2f83f5bca39860ab34947e0fead9e9"
+      },
+      {
+        "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-additive-precode-20261028-1/diagnostic-read-contract.json",
+        "bytes": 58589,
+        "sha256": "1b13a9073ab1aaaf48705e331f345141832b2b5dcc3977906bfb6e2410f668ac"
+      }
+    ]
+  },
+  "precedence": [
+    "Only in a future separately admitted embedding profile: replace prior unresolved R1 access/query option with the composite operations below. No standalone eligibility boolean is sufficient authority to read borrowed parser input/output.",
+    "Only in that profile: adopt exactly record-slot bytes[2504,2568) for RootCreate marker metadata. This EXPLICITLY overrides the old all-reserved-zero rule for this span, this tag and these transient states only. Old frozen core, public header, CPU archives and proofs retain their old meaning and bytes.",
+    "All other reserved bits/bytes, tails, union arms, masks, identities, caps, owner issuer, source clock, raw wire grammar/schema and model660 rules remain unchanged. No positive requirement is added; honest well-typed nested SetPipeline(NULL)/constructor facts can yield the full unchanged660 unknown result.",
+    "R4-v2 owns Code hashing and its448B workspace. Known Code pointer/count with an unavailable hash remains incomplete Code, not an invented NULL or automatic NO_PAYLOAD. This document does not widen that utility."
+  ],
+  "embedding_and_link": {
+    "choice": "One future private C embedding translation unit includes the exact frozen owned_source_writer_source_v1.c once at file scope, then defines the private glue in that same TU. The included core sees its normal frozen header/metadata/private includes. Static current/find_token/pending_creator/identity helpers are accessible to subsequent private definitions by ordinary C translation-unit scope.",
+    "proposed_future_path": "native/owned_source_writer_source/owned_source_writer_source_embedding_v1.c",
+    "link_rule": "The new observed-core target compiles the embedding TU INSTEAD OF separately compiling frozen core.c. Never link a second e2 object, core copy, issuer, context, testing variant or ordinary observed archive into that closure. The ordinary/legacy profiles remain unchanged.",
+    "visibility": "Private C symbols with no PE export entry. Existing six control exports still have their sole definitions from the included frozen core; original54 SOURCE prototypes/PFNs and their calling conventions remain unchanged. No context pointer from the application, new public selector, extra TLS, global annotation table, issuer ID or new control namespace.",
+    "shader_bridge": "The stateless C bridge is compiled in the core-only shader static variant already required by build-link.json. That variant replaces the ordinary shader dependency transitively in the new proton/core closure; ordinary consumers retain their ordinary variant. Its references resolve to private definitions in the same one-core closure. No shader-side context or static core inclusion.",
+    "OFF": "Default OFF excludes new source helper evaluation/reference and the new observed variant/embedding; original parser, helper calls and exact arguments/returns remain. Old+new observer options are mutually exclusive. Future linker map, symbol/export and ABI checks remain mandatory, not performed by this contract.",
+    "private_access_not_body_patch": "Access to static helpers is obtained by same-TU inclusion, not a proposed extern for a static symbol or modification of e2 bodies. Including e2 does not automatically make existing controls aware of adopted marker semantics; the private helpers must implement the explicit protocol below."
+  },
+  "private_declarations_documentary_only": [
+    {
+      "declaration": "uint32_t d4vr_osw_rootparse_owned_enter_v1(osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "scope": "core embedding; stateless shader bridge calls it immediately before the actual generic3 parser. No parent, generation, code or root pointer input."
+    },
+    {
+      "declaration": "uint32_t d4vr_osw_rootparse_owned_return_admit_v1(const osw_token_v1 *token, osw_admission_v1 *admission_out);",
+      "scope": "core embedding; extra same-Root ancestor guard before original status0 output projection. It is not an original return or After callback."
+    },
+    {
+      "declaration": "uint32_t d4vr_osw_graphics_scope_probe_v1(void);",
+      "scope": "core embedding; marker-readonly preflight with explicit terminal faults on a conflicting active scope. No cookie or original mark."
+    },
+    {
+      "declaration": "uint32_t d4vr_osw_graphics_scope_begin_v1(uint64_t actual_root_internal, uint64_t actual_vk_device, uint64_t actual_output_slot, d4vr_osw_graphics_cookie_v1 *cookie_out);",
+      "scope": "literal root GRAPHICS caller only; scalar SOURCE operands, never application facts or borrowed descriptor pointers."
+    },
+    {
+      "declaration": "uint32_t d4vr_osw_graphics_layout_owned_enter_v1(uint64_t actual_vk_device, uint64_t actual_output_slot, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "scope": "at actual original vkCreatePipelineLayout invocation in the lower helper, not at outer helper ENTRY."
+    },
+    {
+      "declaration": "uint32_t d4vr_osw_graphics_scope_end_v1(const d4vr_osw_graphics_cookie_v1 *cookie);",
+      "scope": "after actual outer helper RETURN; operational marker cleanup only, no original return/counter."
+    },
+    {
+      "declaration": "uint32_t d4vr_osw_native_owned_enter_v1(uint32_t event_tag, const osw_sourceentryinput_v1 *actual_site_scalars, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "scope": "closed ModuleCreate/PipelineCreate/ModuleDestroy/PipelineDestroy source sites only. Input allowed observed/present bits are raw_receiver0, optional actual source_site4 and PipelineCreate-only actual pipeline_route5. Bits1/2/3 are not caller-injected lineage; helper derives them from retained genuine ancestors."
+    }
+  ],
+  "metadata_return_and_output_protocol": {
+    "return_domain": "All new helper returns are existing OSW U32 metadata statuses, distinct from original int/HRESULT/VkResult/VkPipeline/ULONG/void. They never replace an original result.",
+    "output_rules": "SOURCE owns all live typed token/admission/cookie objects. Validate alignment/end arithmetic and private_overlap/disjoint spans before writing outputs; do not cast raw U64 back to memory. Zero output token/admission before admission; invalid/unavailable grants cannot authorize any typed read. Real SOURCE borrow preconditions remain separate from these structural checks.",
+    "grant": "Selected projection requires OSW_OK AND event_tag exact AND SELECTED mode1 AND may_project_before1; output reads additionally require a FRESH OSW_OK/SELECTED/may_snapshot_defined_output1 AND the API-defined successful original result. Never carry the output flag from ENTRY across the original.",
+    "locking": "Existing context lock only; no original, callback, hash, borrowed-array copy, allocation, logging or user code while held. Do not call a frozen public API that reacquires the context lock while already holding it. New helpers do not recursively call another new helper with a second guard workspace.",
+    "fault_latch": "Merge existing terminal latch at every lock acquisition/admission as the frozen core does. A foreign concurrent fault may revoke commit/publication; it is not a retrospective claim that already started valid SOURCE reads did not occur."
+  },
+  "R1_pending_root_transaction": {
+    "actual_original": {
+      "path": "libs/vkd3d-shader/vkd3d_shader_main.c:615",
+      "declaration": "int vkd3d_shader_parse_root_signature(const struct vkd3d_shader_code *dxbc, struct vkd3d_versioned_root_signature_desc *root_signature, vkd3d_shader_hash_t *compatibility_hash);",
+      "expression": "vkd3d_shader_parse_root_signature(dxbc, &desc, compatibility_hash)",
+      "excluded": "The raw4-argument branch607, the converted outer1.2 helper result, standalone/deserializer parses and a pending PSO without genuine RootCreate are not this selected event."
+    },
+    "entry_steps": [
+      "Under existing source_lock, require OBSERVING, exact owner SOURCE thread/context/epoch, and find the genuine nearest selected RootCreate in the actual retained ancestor chain. Require pending.state=COMMITTED2 AND before_committed1, valid record_index/API/CallID/slot generation, and the same pending entry in active_stack. owner_call() alone is insufficient because it omits COMMITTED.",
+      "Do NOT require constructor Rootnote flag2, provisional root pointer, root allocation or live Root identity: generic parsing precedes Root calloc. Do not accept current PSO, matching bytecode/hash, arbitrary parent input or a different convenient Root.",
+      "Copy the expected genuine Root token identity into fixed local workspace. Unlock. Call frozen d4vr_osw_enter_v1(ROOTPARSE) with all SourceEntry fields/masks N/A0. No original, callback or typed/borrowed input read occurs between these metadata operations.",
+      "Reacquire the same lock, merge latch, validate the newly registered Parse token/record, its real parent graph and source_before.owner_creation_call against the exact copied Root identity; Root must still be COMMITTED and present on that actual ancestor chain. The immediate Call.parent need not equal Root if genuine selected intermediate originals exist. No new or changed ancestor is substituted.",
+      "Expose SELECTED/may_project_before only after this postcheck. Then unlock and the stateless SOURCE bridge may copy BeforeRootParse104 from actual dxbc->code/size and &desc, with R4 read rules and frozen masks. d4vr_osw_rootparse_before_v1 must commit it before invoking the exact original parser."
+    ],
+    "return_steps": [
+      "Invoke the original parser exactly once with its three actual arguments, with no metadata lock. Preserve the real int return before metadata. No metadata failure changes the subsequent transfer/conversion/free/original control flow.",
+      "Call rootparse_owned_return_admit only after that return and BEFORE ANY read of desc.version, union or owned arrays. It calls the frozen return_admit outside the lock, then under the lock checks the same registered Parse token remains COMMITTED and its immutable ENTRY source_before.owner_creation_call.",
+      "Resolve THAT exact Root CallID and actual Parse ancestor chain, not the current nearest Root or PSO. Require the same context/epoch/thread/slot identity, Root COMMITTED2+before_committed1 and still pending. A drained/returned/reused Root, reverse stale Parse return, changed ancestor or missing chain denies projection even if generic return_admit alone granted outputflag1.",
+      "Only if this fresh composite grant is SELECTED/outputflag1 AND real parser int status==0 may SOURCE copy the original desc.version/active union/counts/pointers and bounded values into AfterRootParse704. This MUST precede BOTH matching-version *out_desc=desc at623 and conversion628/free629. Version/tag/presence/count/copied_count and nullable rules stay those of the frozen annex; unsupported/unsafe mandatory observations cannot be filled with0.",
+      "RootParse After SourceAfterInput remains genuinely N/A. Use the actual original status even on failure, with undefined description absent. If DRAIN_ONLY/fault/unavailable grant, read no desc/array storage and drain the tracked token after original return, then continue original transfer/conversion/free. No Root object is reread at this point."
+    ],
+    "guard_failure_accounting": {
+      "no_root_before_enter": "Expected unselected membership: no RootParse record/mark/token, no borrowed reads, no second parse. The genuine original still runs. This absence is not global parser absence.",
+      "COMMITTED_mismatch_or_fault": "If a genuine pending Root exists but is not committed/consistent, fail observation explicitly, not a quiet unselected parse. A pre-entry observer fault allocates no fake original row or RETURN; coverage is unknown/NO_PAYLOAD.",
+      "registered_entry_postcheck_failure": "Keep the actual registered token. Clear admission grant; fault/NO_PAYLOAD using existing SOURCE_OWNER_MISSING or UNSAFE_FIXED_PROJECTION semantics as applicable. Do not before_commit, read borrowed fields or drain before the original. Invoke original once, then drain that exact token after return. No fake returned mark/counter is fabricated.",
+      "contention_or_quota": "Frozen enter may already fault/drop or return no token. Do not roll back counters/clock/generation reservations or invent a token. Always forward original. A valid tracked token uses existing drain after its actual return; no-token refusal is not passed as a fabricated After."
+    }
+  },
+  "R2_graphics_marker": {
+    "location": {
+      "record_slot_bytes": 4096,
+      "call_bytes": 2504,
+      "reserved_bytes_before": 1592,
+      "adopted_byte_interval": [
+        2504,
+        2568
+      ],
+      "adopted_bytes": 64,
+      "reserved_zero_bytes_remaining": 1528,
+      "kind": "Only actual RootCreate record slots in the separately admitted embedding profile. Other tags and all unused bytes retain mandatory zero."
+    },
+    "fields_proposed_not_measured": [
+      {
+        "name": "version",
+        "C_type": "uint32_t",
+        "offset": 0,
+        "bytes": 4
+      },
+      {
+        "name": "state",
+        "C_type": "uint32_t",
+        "offset": 4,
+        "bytes": 4
+      },
+      {
+        "name": "context_cookie",
+        "C_type": "uint64_t",
+        "offset": 8,
+        "bytes": 8
+      },
+      {
+        "name": "context_epoch",
+        "C_type": "uint64_t",
+        "offset": 16,
+        "bytes": 8
+      },
+      {
+        "name": "root_creator_call",
+        "C_type": "uint64_t",
+        "offset": 24,
+        "bytes": 8
+      },
+      {
+        "name": "root_slot_generation",
+        "C_type": "uint64_t",
+        "offset": 32,
+        "bytes": 8
+      },
+      {
+        "name": "source_thread_cookie",
+        "C_type": "uint64_t",
+        "offset": 40,
+        "bytes": 8
+      },
+      {
+        "name": "expected_vk_device",
+        "C_type": "uint64_t",
+        "offset": 48,
+        "bytes": 8
+      },
+      {
+        "name": "expected_output_slot",
+        "C_type": "uint64_t",
+        "offset": 56,
+        "bytes": 8
+      }
+    ],
+    "states": {
+      "0": "VIRGIN: static/recreated own bytes allzero, no scope yet.",
+      "1": "ACTIVE: exact literal GRAPHICS invocation selected, native call not yet consumed.",
+      "2": "CONSUMED: exactly one actual original native entry matched and registered.",
+      "3": "CLOSED: original helper returned or terminal operational cleanup; no reactivation for this Root call."
+    },
+    "representation": "Read/write owned reserved bytes using memcpy to/from an aligned local64-byte proposed POD. Never typed-overlay char storage or reinterpret opaque source objects. version becomes1 when activated; no magic/issuer/new counter. Root raw stays authoritative in the genuine pending Root constructor note, not inferred from the expected output address.",
+    "protection": "All64 bytes already lie inside contexts[] protected by existing private_overlap against control outputs. No extra global registry/range table is added. Marker metadata is not serialized: frozen snapshot/serializer read .call, not reserved bytes. Do not change .call, payload, workspace, wire clocks, generations, aliases or ready-frame bytes to open/close a marker.",
+    "single_active_scope": "Under the same context lock scan ONLY the bounded active_stack<=32 and the corresponding owned record metadata. At most one Root marker in ACTIVE or CONSUMED is allowed in the whole production context. A second genuine Root GRAPHICS invocation while another is active is an explicit observation conflict/fault, not silent DISABLED membership and not a suppressed original. Closed markers are not active and cannot be reopened for that same parent.",
+    "probe_and_cookie_lifetime": [
+      "The probe takes the context lock without allocating a cookie. It reads marker/parent metadata only; it may merge/fault terminal state on a conflict, so readonly describes marker writes, NOT absolute no-state-change. OSW_OK is only a preflight hint, never typed-read authority or a reservation.",
+      "If probe refuses, the SOURCE callsite invokes the original helper through its ordinary refusal branch without entering a block that declares a Cookie64. If probe allows, enter the cookie block and begin rechecks all conditions under lock before activation. No callback/original/typed projection occurs between probe and begin.",
+      "If begin refuses, cookie object lifetime ends BEFORE the refusal branch invokes the original. If begin succeeds, exactly one actual Cookie64 object remains alive until scope_end after the original helper returns. There is no callback between scope_end and block exit. This bounds live C object lifetimes conditionally; a compiler may reserve stack storage for untaken branches and no physical-stack measurement is claimed.",
+      "Cookie64 is a detached copy of the marker identity/operands at activation, retained only in actual SOURCE automatic storage. It is not a transferable lease, ID, application-supplied ticket or saved pointer in the sink. Cookie corruption/copy/stale reuse cannot authorize another consume; authoritative one-shot marker, context, parent and existing thread are revalidated."
+    ],
+    "begin_cut": {
+      "path": "libs/vkd3d/state.c:1981-1985",
+      "original_call": "vkd3d_create_pipeline_layout_for_stage_mask(device, root_signature->graphics.num_set_layouts, root_signature->set_layouts, &root_signature->graphics.push_constant_range, VK_SHADER_STAGE_ALL_GRAPHICS, &root_signature->graphics)",
+      "scalar_expressions": {
+        "actual_root_internal": "(uintptr_t)root_signature",
+        "actual_vk_device": "(uint64_t)device->vk_device",
+        "actual_output_slot": "(uintptr_t)&root_signature->graphics.vk_pipeline_layout"
+      },
+      "requirements": "Actual pending RootCreate COMMITTED on this owner thread; genuine existing constructor note flag2/provisional_raw equals actual_root_internal; constructor note is available here after calloc/init, unlike RootParse. Check live captured canonical/VkDevice identities and ownership as applicable. There is no requirement that a Root birth has returned yet. Scalar locals are detached while source-owned objects are valid; sink never dereferences U64."
+    },
+    "native_entry_cut": {
+      "path": "libs/vkd3d/state.c:353-354",
+      "expression": "VK_CALL(vkCreatePipelineLayout(device->vk_device, &pipeline_layout_info, NULL, pipeline_layout))",
+      "original_prototype": "PFN_vkCreatePipelineLayout unchanged; real VkResult captured and returned.",
+      "transaction": [
+        "Before typed create_info projection and exactly at this actual PFN callsite, layout_owned_enter reads the ACTIVE marker under lock. Require the genuine same committed Root ancestor/note/context/epoch/thread/slot, exact original actual_vk_device and output slot equal marker operands, and sole active scope. Not first helper call, output similarity, stage-mask guess or root hash.",
+        "Copy bounded parent identity/marker to local workspace; unlock; frozen enter(PIPELINELAYOUTCREATE) receives raw_receiver=actual VkDevice, root_internal_pointer from that genuine note and source_site=ROOT_GRAPHICS_LAYOUT13. observed/present bits0,3,4 are exactly25; other fields are N/A0. This is SOURCE metadata, not an original Vulkan argument.",
+        "Reacquire lock and validate actual new token/record/source_before.owner_creation_call and root/site against the same ancestor and ACTIVE marker. Recheck original operands and phase/latch; then set marker CONSUMED before exposing SELECTED BEFORE grant. No original/callback occurs between precheck/enter/postcheck. Failure after registration retains token and follows R1 registered-failure drain after original.",
+        "Only then copy native Before304 from actual original create_info and arrays under frozen count/pointer/read rules. No outer-helper early native ENTRY or fake native birth is emitted. Invoke actual PFN once, capture VkResult first; fresh frozen return_admit and VkResult0/output slot validity are required before reading the real defined VkPipelineLayout output. Native After104 remains exact."
+      ],
+      "non_graphics": "Compute/mesh/raygen layout helpers keep their original calls unchanged and outside this explicitly GRAPHICS membership. They do not consume this marker, gain fake RootGraphics tags or pause a selected clock. Missing/conflicting expected GRAPHICS provenance explicitly faults; it cannot be treated as a convenient unselected call."
+    },
+    "end_and_terminal_cleanup": [
+      "Call scope_end immediately after the actual outer helper RETURN, before RootCreate RETURN and before cookie block exit. Validate the detached identity against the authoritative marker under lock. CONSUMED becomes CLOSED, version1 and matching fields retained. No calls_seen, original_returns, mark, generation or next ID changes.",
+      "If still ACTIVE at helper RETURN, the helper may legitimately have returned before a PFN (e.g. original argument-limit E_INVALIDARG). Do not fabricate a native occurrence or infer success from the helper HRESULT. Close this marker and explicitly fault incomplete provenance/NO_PAYLOAD before any purported complete publication. No false API count is added.",
+      "After an already terminal fault/READY, scope_end may locate this exact record by immutable call ID plus marker context/epoch/slot/thread and close ONLY64 operational bytes even if pending parent has drained. It cannot reread root/device, rewrite .call/payload, revoke old receipt bytes or reclassify an old history. If lock contention prevents cleanup, leave terminal marker stale; deny new activation and do not busy-wait or keep a cookie past its scope.",
+      "Missing/duplicate/stale begin/consume/end while observing is terminal metadata failure, not another valid scope. No recovery/reset/public rearm exists. Production one-epoch cannot reuse a Root record. Future testing recreation is a separate historical test-only protocol, not this production lifecycle."
+    ]
+  },
+  "R2_native_command_and_epoch_provenance": {
+    "membership": "Only reviewed actual ModuleCreate/PipelineCreate/ModuleDestroy/PipelineDestroy callsites. Bind/Emit/WithCount with their own original typed list/source locals still use those actual locals; this contract does not replace them with a registry or reconstruct them from a Vulkan address.",
+    "allowed_input": "actual_site_scalars is caller-owned zeroed frozen SourceEntryInput56. It may contain exact original raw_receiver and original-source-site/route metadata from the selected lexical branch. No supplied generation, CallID, command/root/PSO pointer from the application. Preserve actual descriptor_heap/GPL/monolithic route, never choose a branch for eligibility.",
+    "modes": [
+      {
+        "name": "genuine_pending_PSO_constructor",
+        "rule": "Use actual committed pending PSOCreate ancestor and its genuine note3. Existing set_scope owner_creation_call is enough for native constructor children before PSO birth. No live PSO generation/command/selected epoch is invented; command/pipeline_owner refs can remain N/A. Module helper lacking a lexical state* alone is NOT a missing-origin finding."
+      },
+      {
+        "name": "genuine_Lookup_under_Draw",
+        "rule": "Identify the exact committed pending PipelineLookup along the actual parent chain, with an actual committed pending Draw ancestor on this owner thread. Read immutable retained ENTRY SourceScope and Lookup args.state_pointer from their .call records. This is the real Lookup at command.c7596/7599, with original list/state/dynamic pointers; not a later native handle lookup or nearest matching raw."
+      },
+      {
+        "name": "other_or_missing_origin",
+        "rule": "No new source fact is invented. A well-typed legal source site outside the positive scope may remain a complete diagnostic unknown with genuine N/A scope. If a required selected site must propagate a retained genuine scope but it is missing/unsafe/contradictory, register safe original scalars when possible then refuse Before projection and fault/drain; do not quietly drop the selected original or manufacture a healthy prefix."
+      }
+    ],
+    "Lookup_original_SOURCE_expressions": {
+      "command_interface_pointer": "(uintptr_t)&list->ID3D12GraphicsCommandList_iface",
+      "pso_internal_pointer": "(uintptr_t)list->state",
+      "raw_receiver": "(uintptr_t)list->state",
+      "state_pointer_argument": "(uintptr_t)list->state",
+      "dynamic_state_pointer": "(uintptr_t)&list->dynamic_state",
+      "dsv_format_pointer": "(uintptr_t)list->dsv.format",
+      "dynamic_flags_output_pointer": "(uintptr_t)&new_active_flags"
+    },
+    "pre_and_post_validation": [
+      "Under existing lock validate pending Lookup and Draw tokens/records as actual ancestors, COMMITTED2+before_committed1, same context/epoch/thread/slot identities and unmodified parent chain. Read only owned records/identities, no original native/COM object dereference.",
+      "Compare exact retained command raw AND generation against the corresponding still-live command identity (stateLIVE1, create_return defined, no retire_entry). Compare creator identity, reset_call, reset_ordinal, native_command_buffer against retained Draw/Lookup ENTRY reset/epoch and actual recorded Reset SourceAfter. A nested Reset/Release/raw reuse between parent ENTRY and native ENTRY denies the copied scope, even if current raw matches.",
+      "Compare retained PSO raw AND generation, its internal association to actual Lookup args.state_pointer, canonical device owner and captured root association/generation as applicable. Validate VkDevice owner generation separately from COM/internal device. Every consumed association must match the genuine retained origin; do not infer object identity from numerical equality across domains.",
+      "Unlock, enter frozen API with exact raw/site/route and the vetted command raw/pso internal scalar fields, then relock. Before exposing Before grant, recheck the same snapshot against still-live identities and validate the NEW record derived SourceBefore command generation/reset/epoch/pipeline_owner/owner_creator against those exact retained facts. Do not accept whatever latest generation frozen identity_find happened to resolve.",
+      "If a lineage mismatch is already known, still account for the actual selected original with scalar-only frozen enter where membership permits. Then deny the new grant and fault before typed reads/Before commit. Frozen scratch scope inferred internally is never promoted/serialized as complete; the observation is NO_PAYLOAD. Preserve the admitted token until the real original returns, then drain. If enter itself has no token due actual cap/fault, do not invent one or roll back its calls_dropped.",
+      "No metadata lock, private guard workspace, copied borrowed pointer or new scope registry spans the actual native original. After Module/Pipeline Destroy, token+void only; never reread destroyed object/device. Failed creates retain actual VkResult and leave undefined output absent. Module lifetime is required at PipelineCreate ENTRY, not falsely extended to Execute."
+    ],
+    "return_guard": "Frozen fresh return_admit remains mandatory for defined native output reads. The immutable SourceBefore is fixed at that native ENTRY; no parent/raw/gen lookup at Seal/Copy can retag it. A new parent failure after that ENTRY may make model scope unknown but cannot rewrite old ENTRY provenance or infer current GPU state."
+  },
+  "storage_proposal_not_compiled": {
+    "persistent_extra_bytes": 0,
+    "context_bytes_unchanged": 404352,
+    "issuer_bytes_unchanged": 64,
+    "total_static_existing": 404416,
+    "marker_capacity": "64 adopted bytes per possible RootCreate record slot inside existing arena, at most64 such record positions (4096B total reserved subspace, NOT4096 extra allocation). Only one ACTIVE/CONSUMED at a time; CLOSED may persist in several historical Root records. The remaining reserved bytes/other record tags stay0.",
+    "graphics_cookie": {
+      "size": 64,
+      "alignment": 8,
+      "fields": "Exact same field offsets as marker; only SOURCE-owned detached local image. Proposed layout, no sizeof/ABI check executed.",
+      "live_objects_max": 1,
+      "lifetime": "Only successful probe/begin branch, through actual helper RETURN/end. Failed begin block ends before original. No new global/TLS array."
+    },
+    "guard_workspace": {
+      "size": 320,
+      "alignment": 8,
+      "components": [
+        {
+          "name": "expected_parent_token",
+          "offset": 0,
+          "bytes": 48,
+          "type": "existing osw_token_v1 copied owned identity, not a newly issued token"
+        },
+        {
+          "name": "source_entry",
+          "offset": 48,
+          "bytes": 56,
+          "type": "existing osw_sourceentryinput_v1 local copy"
+        },
+        {
+          "name": "lineage_snapshot",
+          "offset": 104,
+          "bytes": 144,
+          "type": "18U64 fixed own metadata; no raw dereference",
+          "fields": [
+            {
+              "name": "parent_call",
+              "offset": 0,
+              "bytes": 8
+            },
+            {
+              "name": "parent_slot_generation",
+              "offset": 8,
+              "bytes": 8
+            },
+            {
+              "name": "draw_call",
+              "offset": 16,
+              "bytes": 8
+            },
+            {
+              "name": "draw_slot_generation",
+              "offset": 24,
+              "bytes": 8
+            },
+            {
+              "name": "command_raw",
+              "offset": 32,
+              "bytes": 8
+            },
+            {
+              "name": "command_generation",
+              "offset": 40,
+              "bytes": 8
+            },
+            {
+              "name": "reset_call",
+              "offset": 48,
+              "bytes": 8
+            },
+            {
+              "name": "reset_ordinal",
+              "offset": 56,
+              "bytes": 8
+            },
+            {
+              "name": "native_command_buffer",
+              "offset": 64,
+              "bytes": 8
+            },
+            {
+              "name": "pso_raw",
+              "offset": 72,
+              "bytes": 8
+            },
+            {
+              "name": "pso_generation",
+              "offset": 80,
+              "bytes": 8
+            },
+            {
+              "name": "pso_internal_pointer",
+              "offset": 88,
+              "bytes": 8
+            },
+            {
+              "name": "vk_device_raw",
+              "offset": 96,
+              "bytes": 8
+            },
+            {
+              "name": "vk_device_generation",
+              "offset": 104,
+              "bytes": 8
+            },
+            {
+              "name": "device_raw",
+              "offset": 112,
+              "bytes": 8
+            },
+            {
+              "name": "device_generation",
+              "offset": 120,
+              "bytes": 8
+            },
+            {
+              "name": "root_raw",
+              "offset": 128,
+              "bytes": 8
+            },
+            {
+              "name": "root_generation",
+              "offset": 136,
+              "bytes": 8
+            }
+          ]
+        },
+        {
+          "name": "marker_image",
+          "offset": 248,
+          "bytes": 64,
+          "type": "memcpy image, never typed arena overlay"
+        },
+        {
+          "name": "selector_and_status",
+          "offset": 312,
+          "bytes": 8,
+          "type": "2U32; private metadata only"
+        }
+      ],
+      "simultaneous_envelopes_max": 1,
+      "lifetime": "One private helper at a time on the owner SOURCE thread. No helper calls another private helper with a second320B envelope; use the frozen functions/static routines or one shared envelope. No original, borrowed copying, hash, callback or allocation under these private helpers; envelope lifetime ends before original invocation. This is a named-object budget, not compiler stack size."
+    },
+    "conservative_R5_sums": {
+      "largest_existing_helper_object_budget": 4224,
+      "existing_peak3_budget": 2136,
+      "added_guard": 320,
+      "added_cookie": 64,
+      "largest_sum": 4608,
+      "peak3_sum": 2520,
+      "qualification": "Conservative sums of proposed named C objects.320 may not overlap borrowed Before/After/hash helpers by protocol, but these sums deliberately add it anyway. Existing token/admission/scalar ceilings remain attributed to the earlier conditional budget. No recursion depth, untracked original callback stack, compiler spill/call frame, actual sizeof or whole-process memory bound follows."
+    },
+    "overflow": "32pending/64records/128marks/21identities/65536payload remain frozen. No new provenance ID counter, heap allocation, wait/retry or eviction. Scan<=32 pending/<=64 owned records; inconsistent counts/IDs or exhausted existing issuers fault as existing protocol. No wrap/recreate/rearm."
+  },
+  "future_validation_designs_NOT_RUN": [
+    "RootCreate entered but Before uncommitted: RootParse must not read input/desc; original still executes. Genuine committed Root preallocation parse succeeds without Rootnote. PSO-only and standalone parser stay unselected.",
+    "Reentrant or reverse return drains original Root ancestor after Parse ENTRY: even generic return_admit would grant, composite return guard refuses desc read and drains after original. Different current Root/hash cannot substitute.",
+    "GRAPHICS->lower helper->actual PFN consumes exactly one marker; compute/mesh/raygen originals remain forwarded. Duplicate native consume, stale cookie, second reentrant Root GRAPHICS, missing native call before helper return and failed output are explicit diagnostic/protocol cases.",
+    "Reentrant Execute freezes while Root marker live; subsequent scope_end modifies only reserved64 operational bytes. Compare complete receipt/raw before/after unchanged, counters unchanged, marker never reactivated.",
+    "Parent Draw/Lookup raw same but command generation/reset/nativeCB or PSO/root owner changes: reject copied scope before any borrowed native projection. No latest-generation retag; actual original and cleanup still execute once.",
+    "Control output aliases any adopted arena marker byte: existing private_overlap rejects. Invalid cookie/token/admission overlap, UINTPTR overflow, foreign thread, contention, raw cap and missing required lineage are exercised with real new CPU doubles only after separate admission.",
+    "Compile/link future embedding proves one core context/issuer/definitions, core-only shader replacement, no original54 prototype/PFN change, defaultOFF direct delegation and ON+old error. None of these checks has run in this documentary step."
+  ],
+  "remaining_implementation_limits": [
+    "This closes the proposed documentary mechanism, not evidence that the future source bridge exists, compiles, links, meets budgets or observes any real translator workload. Parent freeze, header/code admission and independent new CPU/ABI/link reviews are separate gates.",
+    "The unchanged660 contract cannot make the faithfully retained constructor/NULL SetPipeline profile positive. Full unknown report is expected and retained; no new model, source filtering or convenient native branch follows.",
+    "Actual code/hash/source-lifetime, pipeline/GPL/descriptor_heap/cache/async missing origins and real call/mark/node/raw budgets still follow frozen source tables, correlated budget and R3/R4/R5 addenda. This bridge never solves unsupported branches by dispatch changes.",
+    "No source writer/view, native image, current descriptor content, exclusive thread attribution, game route or GPU-read conclusion. Prior CPU/runtime milestones and proofs retain their explicit separate domains."
+  ],
+  "admission": {
+    "new_code_or_header_admitted": false,
+    "new_SOURCE_patch_admitted": false,
+    "vendor_build_ready": false,
+    "ready_to_launch": false,
+    "requires_independent_document_review": true
+  }
+}

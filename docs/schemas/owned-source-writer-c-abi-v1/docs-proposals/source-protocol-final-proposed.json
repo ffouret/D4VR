@@ -1,0 +1,391 @@
+{
+  "status": "FINAL_PROPOSED_V1_SOURCE_PROTOCOL_NO_CODE",
+  "source_entry_rows": [
+    {
+      "event": "DeviceCreate",
+      "before_typed_reads": true,
+      "raw_receiver": "unobserved: no device exists yet; actual internal factory candidate before NEW/singleton branch",
+      "source_owner": "none; first actual factory candidate fixes SOURCE thread",
+      "other_SourceEntry_fields": "All nonapplicable fields unobserved+absent. pso_internal_pointer/root_internal_pointer only actual safely available SOURCE locals/immutable original ancestor association, never offset guessing, a caller role or mutation at Seal. Input raw values can coincide numerically across different domains without merging them.",
+      "before_commit_receiver_field": null
+    },
+    {
+      "event": "VkDeviceCreate",
+      "before_typed_reads": true,
+      "raw_receiver": "actual VkPhysicalDevice argument scalar",
+      "source_owner": "actual pending DeviceCreate ancestor",
+      "other_SourceEntry_fields": "All nonapplicable fields unobserved+absent. pso_internal_pointer/root_internal_pointer only actual safely available SOURCE locals/immutable original ancestor association, never offset guessing, a caller role or mutation at Seal. Input raw values can coincide numerically across different domains without merging them.",
+      "before_commit_receiver_field": "args.physical_device_raw"
+    },
+    {
+      "event": "ResourceCreate",
+      "before_typed_reads": true,
+      "raw_receiver": "actual COM device receiver argument scalar",
+      "source_owner": "canonical internal device only through immutable genuine interface association; factory pending not a live device",
+      "other_SourceEntry_fields": "All nonapplicable fields unobserved+absent. pso_internal_pointer/root_internal_pointer only actual safely available SOURCE locals/immutable original ancestor association, never offset guessing, a caller role or mutation at Seal. Input raw values can coincide numerically across different domains without merging them.",
+      "before_commit_receiver_field": "args.device.raw"
+    },
+    {
+      "event": "HeapCreate",
+      "before_typed_reads": true,
+      "raw_receiver": "actual COM device receiver argument scalar",
+      "source_owner": "canonical internal device only through immutable genuine interface association; factory pending not a live device",
+      "other_SourceEntry_fields": "All nonapplicable fields unobserved+absent. pso_internal_pointer/root_internal_pointer only actual safely available SOURCE locals/immutable original ancestor association, never offset guessing, a caller role or mutation at Seal. Input raw values can coincide numerically across different domains without merging them.",
+      "before_commit_receiver_field": "args.device.raw"
+    },
+    {
+      "event": "AllocatorCreate",
+      "before_typed_reads": true,
+      "raw_receiver": "actual COM device receiver argument scalar",
+      "source_owner": "canonical internal device only through immutable genuine interface association; factory pending not a live device",
+      "other_SourceEntry_fields": "All nonapplicable fields unobserved+absent. pso_internal_pointer/root_internal_pointer only actual safely available SOURCE locals/immutable original ancestor association, never offset guessing, a caller role or mutation at Seal. Input raw values can coincide numerically across different domains without merging them.",
+      "before_commit_receiver_field": "args.device.raw"
+    },
+    {
+      "event": "QueueCreate",
+      "before_typed_reads": true,
+      "raw_receiver": "actual COM device receiver argument scalar",
+      "source_owner": "canonical internal device only through immutable genuine interface association; factory pending not a live device",
+      "other_SourceEntry_fields": "All nonapplicable fields unobserved+absent. pso_internal_pointer/root_internal_pointer only actual safely available SOURCE locals/immutable original ancestor association, never offset guessing, a caller role or mutation at Seal. Input raw values can coincide numerically across different domains without merging them.",
+      "before_commit_receiver_field": "args.device.raw"
+    },
+    {
+      "event": "CommandCreate",
+      "before_typed_reads": true,
+      "raw_receiver": "actual COM device receiver argument scalar",
+      "source_owner": "canonical internal device only through immutable genuine interface association; factory pending not a live device",
+      "other_SourceEntry_fields": "All nonapplicable fields unobserved+absent. pso_internal_pointer/root_internal_pointer only actual safely available SOURCE locals/immutable original ancestor association, never offset guessing, a caller role or mutation at Seal. Input raw values can coincide numerically across different domains without merging them.",
+      "before_commit_receiver_field": "args.device.raw"
+    },
+    {
+      "event": "RootCreate",
+      "before_typed_reads": true,
+      "raw_receiver": "actual COM device receiver argument scalar",
+      "source_owner": "canonical internal device only through immutable genuine interface association; factory pending not a live device",
+      "other_SourceEntry_fields": "All nonapplicable fields unobserved+absent. pso_internal_pointer/root_internal_pointer only actual safely available SOURCE locals/immutable original ancestor association, never offset guessing, a caller role or mutation at Seal. Input raw values can coincide numerically across different domains without merging them.",
+      "before_commit_receiver_field": "args.device.raw"
+    },
+    {
+      "event": "RootParse",
+      "before_typed_reads": true,
+      "raw_receiver": "unobserved: parser has no object receiver",
+      "source_owner": "actual pending RootCreate original ancestor from core stack, not a parser argument",
+      "other_SourceEntry_fields": "All nonapplicable fields unobserved+absent. pso_internal_pointer/root_internal_pointer only actual safely available SOURCE locals/immutable original ancestor association, never offset guessing, a caller role or mutation at Seal. Input raw values can coincide numerically across different domains without merging them.",
+      "before_commit_receiver_field": null
+    },
+    {
+      "event": "PSOCreate",
+      "before_typed_reads": true,
+      "raw_receiver": "actual COM device receiver argument scalar",
+      "source_owner": "canonical internal device only through immutable genuine interface association; factory pending not a live device",
+      "other_SourceEntry_fields": "All nonapplicable fields unobserved+absent. pso_internal_pointer/root_internal_pointer only actual safely available SOURCE locals/immutable original ancestor association, never offset guessing, a caller role or mutation at Seal. Input raw values can coincide numerically across different domains without merging them.",
+      "before_commit_receiver_field": "args.device.raw"
+    },
+    {
+      "event": "ModuleCreate",
+      "before_typed_reads": true,
+      "raw_receiver": "actual VkDevice argument scalar",
+      "source_owner": "actual pending PSO constructor or genuinely live PSO from original source state/ancestor Lookup; before any create-info read",
+      "other_SourceEntry_fields": "All nonapplicable fields unobserved+absent. pso_internal_pointer/root_internal_pointer only actual safely available SOURCE locals/immutable original ancestor association, never offset guessing, a caller role or mutation at Seal. Input raw values can coincide numerically across different domains without merging them.",
+      "before_commit_receiver_field": "args.device.raw"
+    },
+    {
+      "event": "PipelineLayoutCreate",
+      "before_typed_reads": true,
+      "raw_receiver": "actual VkDevice argument scalar",
+      "source_owner": "pending RootCreate; source_entry.root_internal_pointer safely observed actual helper root; source_site root_graphics_layout. Membership uses real GRAPHICS callsite, not array value or first layout.",
+      "other_SourceEntry_fields": "All nonapplicable fields unobserved+absent. pso_internal_pointer/root_internal_pointer only actual safely available SOURCE locals/immutable original ancestor association, never offset guessing, a caller role or mutation at Seal. Input raw values can coincide numerically across different domains without merging them.",
+      "before_commit_receiver_field": "args.device.raw"
+    },
+    {
+      "event": "PipelineCreate",
+      "before_typed_reads": true,
+      "raw_receiver": "actual VkDevice argument scalar",
+      "source_owner": "actual pending PSO constructor or genuinely live PSO from original source state/ancestor Lookup; before any create-info read",
+      "other_SourceEntry_fields": "All nonapplicable fields unobserved+absent. pso_internal_pointer/root_internal_pointer only actual safely available SOURCE locals/immutable original ancestor association, never offset guessing, a caller role or mutation at Seal. Input raw values can coincide numerically across different domains without merging them.",
+      "before_commit_receiver_field": "args.device.raw"
+    },
+    {
+      "event": "Increment",
+      "before_typed_reads": true,
+      "raw_receiver": "actual COM device receiver argument scalar",
+      "source_owner": "canonical internal device only through immutable genuine interface association; factory pending not a live device",
+      "other_SourceEntry_fields": "All nonapplicable fields unobserved+absent. pso_internal_pointer/root_internal_pointer only actual safely available SOURCE locals/immutable original ancestor association, never offset guessing, a caller role or mutation at Seal. Input raw values can coincide numerically across different domains without merging them.",
+      "before_commit_receiver_field": "args.device.raw"
+    },
+    {
+      "event": "CPUStart",
+      "before_typed_reads": true,
+      "raw_receiver": "actual COM descriptor heap receiver argument scalar",
+      "source_owner": "genuine retained heap/device owner at ENTRY; no output read yet",
+      "other_SourceEntry_fields": "All nonapplicable fields unobserved+absent. pso_internal_pointer/root_internal_pointer only actual safely available SOURCE locals/immutable original ancestor association, never offset guessing, a caller role or mutation at Seal. Input raw values can coincide numerically across different domains without merging them.",
+      "before_commit_receiver_field": "args.heap.raw"
+    },
+    {
+      "event": "GPUStart",
+      "before_typed_reads": true,
+      "raw_receiver": "actual COM descriptor heap receiver argument scalar",
+      "source_owner": "genuine retained heap/device owner at ENTRY; no output read yet",
+      "other_SourceEntry_fields": "All nonapplicable fields unobserved+absent. pso_internal_pointer/root_internal_pointer only actual safely available SOURCE locals/immutable original ancestor association, never offset guessing, a caller role or mutation at Seal. Input raw values can coincide numerically across different domains without merging them.",
+      "before_commit_receiver_field": "args.heap.raw"
+    },
+    {
+      "event": "CreateSRV",
+      "before_typed_reads": true,
+      "raw_receiver": "actual COM device receiver argument scalar",
+      "source_owner": "canonical internal device only through immutable genuine interface association; factory pending not a live device",
+      "other_SourceEntry_fields": "All nonapplicable fields unobserved+absent. pso_internal_pointer/root_internal_pointer only actual safely available SOURCE locals/immutable original ancestor association, never offset guessing, a caller role or mutation at Seal. Input raw values can coincide numerically across different domains without merging them.",
+      "before_commit_receiver_field": "args.device.raw"
+    },
+    {
+      "event": "CopySimple",
+      "before_typed_reads": true,
+      "raw_receiver": "actual COM device receiver argument scalar",
+      "source_owner": "canonical internal device only through immutable genuine interface association; factory pending not a live device",
+      "other_SourceEntry_fields": "All nonapplicable fields unobserved+absent. pso_internal_pointer/root_internal_pointer only actual safely available SOURCE locals/immutable original ancestor association, never offset guessing, a caller role or mutation at Seal. Input raw values can coincide numerically across different domains without merging them.",
+      "before_commit_receiver_field": "args.device.raw"
+    },
+    {
+      "event": "CopyRanges",
+      "before_typed_reads": true,
+      "raw_receiver": "actual COM device receiver argument scalar",
+      "source_owner": "canonical internal device only through immutable genuine interface association; factory pending not a live device",
+      "other_SourceEntry_fields": "All nonapplicable fields unobserved+absent. pso_internal_pointer/root_internal_pointer only actual safely available SOURCE locals/immutable original ancestor association, never offset guessing, a caller role or mutation at Seal. Input raw values can coincide numerically across different domains without merging them.",
+      "before_commit_receiver_field": "args.device.raw"
+    },
+    {
+      "event": "Reset",
+      "before_typed_reads": true,
+      "raw_receiver": "actual original COM graphics command receiver scalar",
+      "source_owner": "selected command; only constructor Reset can use genuine pending base creator note instead of a live command identity",
+      "other_SourceEntry_fields": "All nonapplicable fields unobserved+absent. pso_internal_pointer/root_internal_pointer only actual safely available SOURCE locals/immutable original ancestor association, never offset guessing, a caller role or mutation at Seal. Input raw values can coincide numerically across different domains without merging them.",
+      "before_commit_receiver_field": "args.command.raw"
+    },
+    {
+      "event": "Close",
+      "before_typed_reads": true,
+      "raw_receiver": "actual original COM graphics command receiver scalar",
+      "source_owner": "selected command; only constructor Reset can use genuine pending base creator note instead of a live command identity",
+      "other_SourceEntry_fields": "All nonapplicable fields unobserved+absent. pso_internal_pointer/root_internal_pointer only actual safely available SOURCE locals/immutable original ancestor association, never offset guessing, a caller role or mutation at Seal. Input raw values can coincide numerically across different domains without merging them.",
+      "before_commit_receiver_field": "args.command.raw"
+    },
+    {
+      "event": "ClearState",
+      "before_typed_reads": true,
+      "raw_receiver": "actual original COM graphics command receiver scalar",
+      "source_owner": "selected command; only constructor Reset can use genuine pending base creator note instead of a live command identity",
+      "other_SourceEntry_fields": "All nonapplicable fields unobserved+absent. pso_internal_pointer/root_internal_pointer only actual safely available SOURCE locals/immutable original ancestor association, never offset guessing, a caller role or mutation at Seal. Input raw values can coincide numerically across different domains without merging them.",
+      "before_commit_receiver_field": "args.command.raw"
+    },
+    {
+      "event": "SetPipeline",
+      "before_typed_reads": true,
+      "raw_receiver": "actual original COM graphics command receiver scalar",
+      "source_owner": "selected command; only constructor Reset can use genuine pending base creator note instead of a live command identity",
+      "other_SourceEntry_fields": "All nonapplicable fields unobserved+absent. pso_internal_pointer/root_internal_pointer only actual safely available SOURCE locals/immutable original ancestor association, never offset guessing, a caller role or mutation at Seal. Input raw values can coincide numerically across different domains without merging them.",
+      "before_commit_receiver_field": "args.command.raw"
+    },
+    {
+      "event": "SetRoot",
+      "before_typed_reads": true,
+      "raw_receiver": "actual original COM graphics command receiver scalar",
+      "source_owner": "selected command; only constructor Reset can use genuine pending base creator note instead of a live command identity",
+      "other_SourceEntry_fields": "All nonapplicable fields unobserved+absent. pso_internal_pointer/root_internal_pointer only actual safely available SOURCE locals/immutable original ancestor association, never offset guessing, a caller role or mutation at Seal. Input raw values can coincide numerically across different domains without merging them.",
+      "before_commit_receiver_field": "args.command.raw"
+    },
+    {
+      "event": "SetHeaps",
+      "before_typed_reads": true,
+      "raw_receiver": "actual original COM graphics command receiver scalar",
+      "source_owner": "selected command; only constructor Reset can use genuine pending base creator note instead of a live command identity",
+      "other_SourceEntry_fields": "All nonapplicable fields unobserved+absent. pso_internal_pointer/root_internal_pointer only actual safely available SOURCE locals/immutable original ancestor association, never offset guessing, a caller role or mutation at Seal. Input raw values can coincide numerically across different domains without merging them.",
+      "before_commit_receiver_field": "args.command.raw"
+    },
+    {
+      "event": "SetTable",
+      "before_typed_reads": true,
+      "raw_receiver": "actual original COM graphics command receiver scalar",
+      "source_owner": "selected command; only constructor Reset can use genuine pending base creator note instead of a live command identity",
+      "other_SourceEntry_fields": "All nonapplicable fields unobserved+absent. pso_internal_pointer/root_internal_pointer only actual safely available SOURCE locals/immutable original ancestor association, never offset guessing, a caller role or mutation at Seal. Input raw values can coincide numerically across different domains without merging them.",
+      "before_commit_receiver_field": "args.command.raw"
+    },
+    {
+      "event": "Viewports",
+      "before_typed_reads": true,
+      "raw_receiver": "actual original COM graphics command receiver scalar",
+      "source_owner": "selected command; only constructor Reset can use genuine pending base creator note instead of a live command identity",
+      "other_SourceEntry_fields": "All nonapplicable fields unobserved+absent. pso_internal_pointer/root_internal_pointer only actual safely available SOURCE locals/immutable original ancestor association, never offset guessing, a caller role or mutation at Seal. Input raw values can coincide numerically across different domains without merging them.",
+      "before_commit_receiver_field": "args.command.raw"
+    },
+    {
+      "event": "Scissors",
+      "before_typed_reads": true,
+      "raw_receiver": "actual original COM graphics command receiver scalar",
+      "source_owner": "selected command; only constructor Reset can use genuine pending base creator note instead of a live command identity",
+      "other_SourceEntry_fields": "All nonapplicable fields unobserved+absent. pso_internal_pointer/root_internal_pointer only actual safely available SOURCE locals/immutable original ancestor association, never offset guessing, a caller role or mutation at Seal. Input raw values can coincide numerically across different domains without merging them.",
+      "before_commit_receiver_field": "args.command.raw"
+    },
+    {
+      "event": "RTV",
+      "before_typed_reads": true,
+      "raw_receiver": "actual original COM graphics command receiver scalar",
+      "source_owner": "selected command; only constructor Reset can use genuine pending base creator note instead of a live command identity",
+      "other_SourceEntry_fields": "All nonapplicable fields unobserved+absent. pso_internal_pointer/root_internal_pointer only actual safely available SOURCE locals/immutable original ancestor association, never offset guessing, a caller role or mutation at Seal. Input raw values can coincide numerically across different domains without merging them.",
+      "before_commit_receiver_field": "args.command.raw"
+    },
+    {
+      "event": "Draw",
+      "before_typed_reads": true,
+      "raw_receiver": "actual original COM graphics command receiver scalar",
+      "source_owner": "selected command; only constructor Reset can use genuine pending base creator note instead of a live command identity",
+      "other_SourceEntry_fields": "All nonapplicable fields unobserved+absent. pso_internal_pointer/root_internal_pointer only actual safely available SOURCE locals/immutable original ancestor association, never offset guessing, a caller role or mutation at Seal. Input raw values can coincide numerically across different domains without merging them.",
+      "before_commit_receiver_field": "args.command.raw"
+    },
+    {
+      "event": "BindPipeline",
+      "before_typed_reads": true,
+      "raw_receiver": "actual VkCommandBuffer argument scalar",
+      "source_owner": "source_entry.command_interface_pointer from actual source-owned command; PSO association frozen at ENTRY or immutable genuine selected Draw/Lookup ancestor, never current seal state. Actual command/CB/epoch must join.",
+      "other_SourceEntry_fields": "All nonapplicable fields unobserved+absent. pso_internal_pointer/root_internal_pointer only actual safely available SOURCE locals/immutable original ancestor association, never offset guessing, a caller role or mutation at Seal. Input raw values can coincide numerically across different domains without merging them.",
+      "before_commit_receiver_field": "args.vk_command_buffer"
+    },
+    {
+      "event": "EmitDraw",
+      "before_typed_reads": true,
+      "raw_receiver": "actual VkCommandBuffer argument scalar",
+      "source_owner": "source_entry.command_interface_pointer from actual source-owned command; PSO association frozen at ENTRY or immutable genuine selected Draw/Lookup ancestor, never current seal state. Actual command/CB/epoch must join.",
+      "other_SourceEntry_fields": "All nonapplicable fields unobserved+absent. pso_internal_pointer/root_internal_pointer only actual safely available SOURCE locals/immutable original ancestor association, never offset guessing, a caller role or mutation at Seal. Input raw values can coincide numerically across different domains without merging them.",
+      "before_commit_receiver_field": "args.vk_command_buffer"
+    },
+    {
+      "event": "Execute",
+      "before_typed_reads": true,
+      "raw_receiver": "actual original COM queue receiver scalar",
+      "source_owner": "genuine queue; selected command list decided only from safely complete actual commands projection at before_commit",
+      "other_SourceEntry_fields": "All nonapplicable fields unobserved+absent. pso_internal_pointer/root_internal_pointer only actual safely available SOURCE locals/immutable original ancestor association, never offset guessing, a caller role or mutation at Seal. Input raw values can coincide numerically across different domains without merging them.",
+      "before_commit_receiver_field": "args.queue.raw"
+    },
+    {
+      "event": "Release",
+      "before_typed_reads": true,
+      "raw_receiver": "actual original COM interface pointer scalar",
+      "source_owner": "canonical identity and parents detached BEFORE original, never reconstructed at RETURN",
+      "other_SourceEntry_fields": "All nonapplicable fields unobserved+absent. pso_internal_pointer/root_internal_pointer only actual safely available SOURCE locals/immutable original ancestor association, never offset guessing, a caller role or mutation at Seal. Input raw values can coincide numerically across different domains without merging them.",
+      "before_commit_receiver_field": "args.object.raw"
+    },
+    {
+      "event": "AllocatorReset",
+      "before_typed_reads": true,
+      "raw_receiver": "actual COM allocator receiver scalar",
+      "source_owner": "genuine allocator",
+      "other_SourceEntry_fields": "All nonapplicable fields unobserved+absent. pso_internal_pointer/root_internal_pointer only actual safely available SOURCE locals/immutable original ancestor association, never offset guessing, a caller role or mutation at Seal. Input raw values can coincide numerically across different domains without merging them.",
+      "before_commit_receiver_field": "args.allocator.raw"
+    },
+    {
+      "event": "PipelineLookup",
+      "before_typed_reads": true,
+      "raw_receiver": "actual internal PSO state_pointer scalar",
+      "source_owner": "PSO by frozen successful internal association. source_site actual get/get_or_create; command_interface_pointer from actual enclosing source command local, no seal lookup.",
+      "other_SourceEntry_fields": "All nonapplicable fields unobserved+absent. pso_internal_pointer/root_internal_pointer only actual safely available SOURCE locals/immutable original ancestor association, never offset guessing, a caller role or mutation at Seal. Input raw values can coincide numerically across different domains without merging them.",
+      "before_commit_receiver_field": "args.state_pointer"
+    },
+    {
+      "event": "CreateSampler",
+      "before_typed_reads": true,
+      "raw_receiver": "actual COM device receiver argument scalar",
+      "source_owner": "canonical internal device only through immutable genuine interface association; factory pending not a live device",
+      "other_SourceEntry_fields": "All nonapplicable fields unobserved+absent. pso_internal_pointer/root_internal_pointer only actual safely available SOURCE locals/immutable original ancestor association, never offset guessing, a caller role or mutation at Seal. Input raw values can coincide numerically across different domains without merging them.",
+      "before_commit_receiver_field": "args.device.raw"
+    },
+    {
+      "event": "CreateRTV",
+      "before_typed_reads": true,
+      "raw_receiver": "actual COM device receiver argument scalar",
+      "source_owner": "canonical internal device only through immutable genuine interface association; factory pending not a live device",
+      "other_SourceEntry_fields": "All nonapplicable fields unobserved+absent. pso_internal_pointer/root_internal_pointer only actual safely available SOURCE locals/immutable original ancestor association, never offset guessing, a caller role or mutation at Seal. Input raw values can coincide numerically across different domains without merging them.",
+      "before_commit_receiver_field": "args.device.raw"
+    },
+    {
+      "event": "SetConstants",
+      "before_typed_reads": true,
+      "raw_receiver": "actual original COM graphics command receiver scalar",
+      "source_owner": "selected command; only constructor Reset can use genuine pending base creator note instead of a live command identity",
+      "other_SourceEntry_fields": "All nonapplicable fields unobserved+absent. pso_internal_pointer/root_internal_pointer only actual safely available SOURCE locals/immutable original ancestor association, never offset guessing, a caller role or mutation at Seal. Input raw values can coincide numerically across different domains without merging them.",
+      "before_commit_receiver_field": "args.command.raw"
+    },
+    {
+      "event": "Topology",
+      "before_typed_reads": true,
+      "raw_receiver": "actual original COM graphics command receiver scalar",
+      "source_owner": "selected command; only constructor Reset can use genuine pending base creator note instead of a live command identity",
+      "other_SourceEntry_fields": "All nonapplicable fields unobserved+absent. pso_internal_pointer/root_internal_pointer only actual safely available SOURCE locals/immutable original ancestor association, never offset guessing, a caller role or mutation at Seal. Input raw values can coincide numerically across different domains without merging them.",
+      "before_commit_receiver_field": "args.command.raw"
+    },
+    {
+      "event": "ModuleDestroy",
+      "before_typed_reads": true,
+      "raw_receiver": "actual opaque object handle to destroy, NOT args.device",
+      "source_owner": "matching retained object kind/generation and detached genuine owner; ModuleDestroy handle0 is outside membership before tick",
+      "other_SourceEntry_fields": "All nonapplicable fields unobserved+absent. pso_internal_pointer/root_internal_pointer only actual safely available SOURCE locals/immutable original ancestor association, never offset guessing, a caller role or mutation at Seal. Input raw values can coincide numerically across different domains without merging them.",
+      "before_commit_receiver_field": "args.object.raw"
+    },
+    {
+      "event": "PipelineDestroy",
+      "before_typed_reads": true,
+      "raw_receiver": "actual opaque object handle to destroy, NOT args.device",
+      "source_owner": "matching retained object kind/generation and detached genuine owner; ModuleDestroy handle0 is outside membership before tick",
+      "other_SourceEntry_fields": "All nonapplicable fields unobserved+absent. pso_internal_pointer/root_internal_pointer only actual safely available SOURCE locals/immutable original ancestor association, never offset guessing, a caller role or mutation at Seal. Input raw values can coincide numerically across different domains without merging them.",
+      "before_commit_receiver_field": "args.object.raw"
+    },
+    {
+      "event": "PipelineLayoutDestroy",
+      "before_typed_reads": true,
+      "raw_receiver": "actual opaque object handle to destroy, NOT args.device",
+      "source_owner": "matching retained object kind/generation and detached genuine owner; ModuleDestroy handle0 is outside membership before tick",
+      "other_SourceEntry_fields": "All nonapplicable fields unobserved+absent. pso_internal_pointer/root_internal_pointer only actual safely available SOURCE locals/immutable original ancestor association, never offset guessing, a caller role or mutation at Seal. Input raw values can coincide numerically across different domains without merging them.",
+      "before_commit_receiver_field": "args.object.raw"
+    },
+    {
+      "event": "ScopeGap",
+      "before_typed_reads": true,
+      "raw_receiver": "not applicable; one SOURCE observer mark",
+      "source_owner": "current selected stack if available; never an original RETURN",
+      "other_SourceEntry_fields": "All nonapplicable fields unobserved+absent. pso_internal_pointer/root_internal_pointer only actual safely available SOURCE locals/immutable original ancestor association, never offset guessing, a caller role or mutation at Seal. Input raw values can coincide numerically across different domains without merging them.",
+      "before_commit_receiver_field": null
+    },
+    {
+      "event": "VkViewportCount",
+      "before_typed_reads": true,
+      "raw_receiver": "actual VkCommandBuffer argument scalar",
+      "source_owner": "source_entry.command_interface_pointer from actual source-owned command; PSO association frozen at ENTRY or immutable genuine selected Draw/Lookup ancestor, never current seal state. Actual command/CB/epoch must join.",
+      "other_SourceEntry_fields": "All nonapplicable fields unobserved+absent. pso_internal_pointer/root_internal_pointer only actual safely available SOURCE locals/immutable original ancestor association, never offset guessing, a caller role or mutation at Seal. Input raw values can coincide numerically across different domains without merging them.",
+      "before_commit_receiver_field": "args.vk_command_buffer"
+    },
+    {
+      "event": "VkScissorCount",
+      "before_typed_reads": true,
+      "raw_receiver": "actual VkCommandBuffer argument scalar",
+      "source_owner": "source_entry.command_interface_pointer from actual source-owned command; PSO association frozen at ENTRY or immutable genuine selected Draw/Lookup ancestor, never current seal state. Actual command/CB/epoch must join.",
+      "other_SourceEntry_fields": "All nonapplicable fields unobserved+absent. pso_internal_pointer/root_internal_pointer only actual safely available SOURCE locals/immutable original ancestor association, never offset guessing, a caller role or mutation at Seal. Input raw values can coincide numerically across different domains without merging them.",
+      "before_commit_receiver_field": "args.vk_command_buffer"
+    }
+  ],
+  "signatures": {
+    "constructor_note_current": "uint32_t d4vr_osw_constructor_note_current_v1(uint32_t note_tag, uint64_t raw_object, uint64_t interface_pointer, uint64_t root_pointer);",
+    "return_admit": "uint32_t d4vr_osw_return_admit_v1(const osw_token_v1 *token, osw_admission_v1 *admission_out);",
+    "drain_return": "uint32_t d4vr_osw_drain_return_v1(osw_token_v1 *token);"
+  },
+  "constructor_note_current": "At exact trusted source site, core resolves bounded active-stack nearest genuine pending creator of the note_tag-required API (RootCreate tag2 or PSOCreate tag3). Must match actual current thread/context/ancestor interval and assigned-once association. Missing/conflicting/returned creator => terminal NO_PAYLOAD, no guessed token, no new mark or original argument. This solves state.c helper lexical scope without changing original prototypes. Token-specific note remains available for DeviceNEW tag1/baseCommand tag4 where wrapper token is actually in lexical scope.",
+  "return_protocol": [
+    "Original scalar return (HRESULT/int/VkResult/UINT/ULONG/returned pointer or void) is captured by value before invoking any metadata helper; original return to its caller never waits for metadata success.",
+    "For a nonvoid original requiring output/association reads, invoke return_admit AFTER the original returned and BEFORE reading its output/building the result POD. It validates context/thread/slot/token. A valid committed token in OBSERVING yields OK + SELECTED + may_snapshot_defined_output1. A valid token in a closed/fault/drain state yields OK + DRAIN_ONLY + flag0; OK alone NEVER authorizes a read. Before_commit must have returned OK. No mark/counter/slot allocated by this decision.",
+    "Even when return_admit permits, read only if original API defines storage on THAT actual return (profile exact status0 for creation/parse; hidden-sret returned_pointer==actual caller_output!=0; pipeline lookup value!=0 for dynamic flags; source-owned locals remain valid by exact site contract). Source fields cannot be inferred from nonNULL alone.",
+    "For original-output read authorization, this decision is linearized at return_admit. A foreign terminal-fault latch may race AFTER authorization; it cannot make a permitted API-defined owned storage read unsafe nor admit that result into a closed frame. after validates again; no promise that absolutely no metadata read can occur after a concurrent fault instant. No new source marks or fake API.",
+    "Release after accepts token+actual ULONG ONLY, Destroy/other void after token ONLY; never return_admit to reread identity/device. All owners/raw inputs came from before.",
+    "If return_admit yields DRAIN_ONLY/flag0, or a guarded after builder fails, do not dereference output or reconstruct SourceAfter. Invoke drain_return once with the registered token. In NO_PAYLOAD/CLOSING/READY it retires live pending only. If still OBSERVING because return projection failed, first latch terminal unsafe-projection NO_PAYLOAD, then drain; the frozen raw snapshot is not invented or repaired. No fake scalar/null/RETURN row.",
+    "Normal typed after retires matched pending and records exactly one actual RETURN, unless frame already closed in which case it drains only. drain_return and typed after are mutually exclusive completions enforced by shared pending slot; duplicate/copy/wrong context never increments return twice. A valid untracked zero token causes no drain/accounting claim."
+  ],
+  "SOURCE_lifetime": "No metadata before/after helper can retain a borrowed original pointer into sink storage. InputPOD is copied synchronously. Before helper lifetime ends before original; after helper lifetime ends before caller conversion/free/Release of API-defined storage. Return_admit authorizes only metadata attempt; it cannot prove object ownership beyond actual API/source preconditions.",
+  "before_receiver_consistency": "Before_commit MUST cross-check the SourceEntryInput.raw_receiver detached at Enter against the exact original receiver field listed by event below. Mismatch is terminal unknown/NO_PAYLOAD, never retagging to another valid object. Corresponding command/internalowner/source-site fields must likewise agree with actual safely captured source association. DeviceCreate/RootParse have no receiver and require that field unobserved. ScopeGap is observer-only.",
+  "raw_zero_scope": "Observed raw0 is preserved as original scalar0, never a valid ID/birth. Missing/unjoined relevant receiver/owner inside selected context gives unknown/NO_PAYLOAD, not a skipped state change. Only explicitly excluded NULL ModuleDestroy is outside selected membership before tick. Numerical coincidence across handle domains does not make an association."
+}

@@ -1,0 +1,454 @@
+{
+  "schema_version": 1,
+  "purpose": "R4 exact documentary choice for future C-only SOURCE full-span SHA-256 and R5 explicit local storage; no implementation admission",
+  "created_utc": "2026-10-28T05:10:09.495732+00:00",
+  "status": "PROPOSED_EXACT_PRECODE_DOCUMENT_REQUIRES_INDEPENDENT_REVIEW_AND_PARENT_FREEZE",
+  "authority": {
+    "next_plan": {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-insertion-precode-20261028-1/next-precode-resolution-plan.json",
+      "bytes": 7815,
+      "sha256": "6f98ed777ad8b43c2d27373f4d51f2d1877b518034557df91f202e337572e33a"
+    },
+    "documentary_admission": {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-insertion-precode-20261028-1/next-precode-documentary-admission.json",
+      "bytes": 2921,
+      "sha256": "68ec6fb00e1b768e3a15a6231a8980729a8e32443f961f4a3f84dd4d8a04d79a"
+    },
+    "latest_parent_proof": {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-insertion-precode-20261028-1/parent-final-proof.json",
+      "bytes": 6792,
+      "sha256": "d7e1b6fa73ae61ff3ac0768afbce36dfd61fc81309c26ebc4fa2c27129b2da8e"
+    }
+  },
+  "scope": {
+    "new_code_header_body_or_patch": false,
+    "model_tests_or_compiler_executed": false,
+    "new_source_capture_or_digest_binding_exists": false,
+    "vendor_build_or_runtime": false,
+    "frozen_core_schema_models_fixtures_unchanged": true,
+    "application_typed_facts": false
+  },
+  "decision": {
+    "choice": "One new private C-only, allocation-free, one-shot complete SHA-256 routine derived from the explicitly pinned ordinary-buffer C fixture algorithm; it is NOT the frozen fixture function renamed or designated production.",
+    "algorithm_reference": {
+      "pin": {
+        "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/native/tests/owned_source_writer_source_cpu.c",
+        "bytes": 85532,
+        "sha256": "28f6ca5f6ba9175fac87704129e2439a528472995e6e5a54ec7fdd3802de7d6a"
+      },
+      "lines": "26-41",
+      "symbols": [
+        "Hash",
+        "rr",
+        "block",
+        "hash_init",
+        "hash_add",
+        "hash_end",
+        "digest"
+      ],
+      "limited_reuse": "Reuse the literal standard SHA-256 initial words, 64 round constants, big-endian word loading, message schedule and compression/padding algorithm as the implementation reference. The fixture Hash size_t layout, unchecked accumulation/bit multiplication, by-value hash_end state copy and function bodies are NOT the new production contract."
+    },
+    "future_files": [
+      "native/owned_source_writer_source/owned_source_writer_sha256_v1.h",
+      "native/owned_source_writer_source/owned_source_writer_sha256_v1.c"
+    ],
+    "future_namespace": "d4vr_osw_source_sha256_v1 and d4vr_osw_sha256_workspace_v1; private C linkage, no PE export or application entry point.",
+    "link_ownership": "Compile the new utility C TU exactly once in the newly admitted observed-core closure. The observed proton projectors and observed shader bridge call the same private C routine. No second core/context or shader-library state; no inclusion of a fixture TU; no separately linked ordinary/legacy observer utility. This is a future link requirement, not a built target.",
+    "dependencies": "C11 stdint/stddef and the already frozen osw_sha256_v1 declaration only; no BCrypt/OpenSSL/provider/runtime API, allocator, filesystem, entropy, callback, logging, OS-memory probe or C++ runtime dependency for this utility.",
+    "not_claimed": [
+      "Existing fixture abc check is not independent production verification.",
+      "No cryptographic certification or source-to-binary equivalence.",
+      "No shader semantic, module identity, static binding usage or actual GPU read inferred from digest equality."
+    ]
+  },
+  "exact_private_API": {
+    "declaration": "uint32_t d4vr_osw_source_sha256_v1(const uint8_t *source, uint64_t source_bytes, d4vr_osw_sha256_workspace_v1 *workspace, osw_sha256_v1 *digest_out);",
+    "return_domain": "Metadata utility status U32, never original HRESULT/VkResult/BOOL/void. It cannot suppress, substitute or alter the original call or arguments.",
+    "statuses": [
+      {
+        "value": 0,
+        "name": "OSW_SHA256_OK",
+        "meaning": "Exactly source_bytes original bytes were consumed in order, one final padding sequence was applied, and all 32 output bytes were written."
+      },
+      {
+        "value": 1,
+        "name": "OSW_SHA256_INVALID",
+        "meaning": "Invalid structural NULL/alignment/pointer-address wrap or known overlap. No source byte read and no digest output write. Status alone does not claim a sink protocol fault."
+      },
+      {
+        "value": 2,
+        "name": "OSW_SHA256_LIMIT",
+        "meaning": "source_bytes exceeds1048576 or size_t/bit-length representation bound. No source byte read and no digest output write. Known original pointer/size may still be retained as incomplete Code."
+      },
+      {
+        "value": 3,
+        "name": "OSW_SHA256_INTERNAL",
+        "meaning": "Detected internal invariant inconsistency. No complete digest can be published; output unchanged. This is metadata failure and never an original failure return."
+      }
+    ],
+    "one_shot": "No public/private incremental init/update/final consumer API in this version. Internal block processing is streaming, but a caller cannot successfully finalize a prefix or reuse an accumulated state as a complete original span. Each invocation initializes its own workspace; no previous-frame/call hash cache.",
+    "output_atomicity": "Perform structural checks before the first workspace or output write. Compute fully into workspace state. Only after all requested bytes and final padding succeed, write the 32 digest bytes directly into caller-owned Before.Code.sha256. There is no intermediate output pointer publication and no prefix digest. The SOURCE helper sets Code presence/complete only after OK.",
+    "pointer_preconditions": "workspace must name an actually owned live, aligned8 writable 448-byte object and digest_out an actually owned live 32-byte output object (alignment1). These SOURCE-only ownership preconditions are not established by a NULL/nonNULL test or address arithmetic. source is a real typed C byte pointer from the retained original field, never an integer-U64 sink pointer cast back to memory.",
+    "structural_checks": "workspace/output must be actually owned live objects before entering the utility; structural checks do not prove that ownership. Before first writes or source reads, check their nonNULL/alignment and uintptr_t end additions, output/workspace disjointness, source_bytes limits and size_t representation. When source_bytes==0, take an explicit branch that performs NO source pointer arithmetic, conversion-to-dereference, subtraction, memcpy or source access, whether sourceNULL or a nonNULL observed unused value. When count>0, check source!=NULL, uintptr_t source+count nonwrapping and source span disjointness before any byte read. This is not a general memory readability test or exception-recovery promise.",
+    "original_nullable_vs_unknown": "Required original fixed operands pointer/count must be genuinely observed even when numeric0; unread fixed fields cannot be fabricated asNULL0. A safely observed Code.pointer and Code.bytes can be retained even if byte hashing is unsafe/oversize/unavailable. Its optional derived sha is then unknown and complete=false. sourceNULL,count0 is a known-empty utility input with no source arithmetic, not a substitute for missing observation. It adds no positive relation.",
+    "status_precedence": "First validate actual SOURCE-owned workspace/output object preconditions (these cannot be proved arithmetically); structural workspace/output NULL/alignment/wrap/overlap yieldsINVALID. Then source_bytes cap/representation yieldsLIMIT. Then, for count>0 only, sourceNULL/address-wrap/overlap yieldsINVALID. Count0 skips source arithmetic and every source dereference. OK is possible only after full hashing. INTERNAL only for a detected impossible algorithm invariant. No invalid output span is written."
+  },
+  "algorithm_behavior": {
+    "input_cap_bytes": 1048576,
+    "block_bytes": 64,
+    "digest_bytes": 32,
+    "rounds_per_block": 64,
+    "complete_span": "Consume bytes [source, source+source_bytes) exactly once in increasing order, including every byte of a non-multiple64 tail. No first256, sample, truncation, reinterpretation, SPIR-V decoding, DXBC checksum substitution or raw-payload retention.",
+    "maximum_padding_work": "At most source_bytes/64 full data blocks plus two final blocks. No padding byte contributes to original source_bytes. Final original-bit-length is source_bytes*8, checked before computation and encoded as 64-bit big-endian.",
+    "math": "uint32_t compression additions wrap modulo2^32. Rotation counts are fixed literal values in1..31; no shift by0 or32. Schedule indices remain0..63; block byte indices0..63; used is0..63 before appending. The fixture constants and initial words remain literal pinned algorithm inputs, not source provenance.",
+    "known_empty": "The utility may compute the SHA-256 empty-span digest without dereferencing source. Its exact raw digest is the algorithm empty-message result. No new root/module/shader-positive condition follows.",
+    "status_failure": "On non-OK, digest_out remains unchanged and no complete=true/sha-present claim may be made. If the actual original code pointer+size and enclosing fixed descriptor were safely observed, retain them unchanged as Code.complete=false, sha256=null; this is a valid diagnostic, not automatic NO_PAYLOAD. Only missing/unsafe mandatory fixed original fields or an actual sink/producer protocol fault require NO_PAYLOAD. Never alter original pointer/length or replay an original to obtain readable bytes.",
+    "no_hash_cache": "RootCreate and RootParse each hash their own actual retained original occurrence; PSO VS/PS each hash their own original span; every ModuleCreate hashes its actual code span. Same address/size/hash does not allow reusing a prior digest or joining origins. Observed mutable input changes can make histories inconsistent/unknown."
+  },
+  "source_read_order": {
+    "admission": "Compile-OFF evaluates no new utility call or borrowed field. ON first performs SOURCE membership/classification and successful selected enter admission with may_project_before1, before dereferencing descriptor/code operands. Hashing is part of that helper before before_commit and before its corresponding original delegate. No metadata lock is held during hashing or during the original.",
+    "lifetime": "The same SOURCE owner thread holds the source-specific valid stable-borrow precondition for the entire helper. No original or user callback is called by the digest routine. A concurrent terminal observer fault can revoke publication, not retroactively unread bytes; existing selected ENTRY authorization permits completion of this bounded source-owned helper while its borrow is valid. before_commit revalidates token/phase; refusal discards metadata. No promise that concurrent mutation of caller storage is made safe.",
+    "no_return_hash": "No Code bytes are read at original RETURN, after source owner free/release, during Seal/Acquire/Copy or from sink U64 fields. RootParse AFTER copies typed description through R1 fresh return admission before transfer/conversion/free; that is a separate bounded POD projection, not a delayed bytecode hash.",
+    "failure_inputs": "An original that later fails may still have valid observed BEFORE pointer/count and fixed descriptor fields. Their code-byte borrow may independently be unavailable. Known pointer/count with failed/oversize/unavailable digest stays Code.completefalse/shaunknown, without a payload fault solely for hash failure. Unsafe/missing fixed descriptor or pointer/count observation instead follows mandatory-projection NO_PAYLOAD. A later successful original is never used retrospectively as proof that an earlier typed read was safe.",
+    "original_invariance": "Metadata statuses are separate; every actual original, return value, output and cleanup remains exactly forwarded once. No dispatch mask, caller bytes, argument pointer/count or source lifetime is modified for capture."
+  },
+  "per_site_reads": [
+    {
+      "callback": "RootCreate",
+      "tag": 8,
+      "site": "libs/vkd3d/device.c:5598-5615",
+      "actual_span": "bytecode, bytecode_length",
+      "Code_field": "args.blob",
+      "cut": "BEFORE original CreateRootSignature body/delegate after selected enter, before before_commit.",
+      "safe_lifetime": "Reading the enclosing original pointer/length operands is distinct from reading blob bytes. Hash only when a stable valid API-input borrow covers the complete declared blob for this synchronous call. It is caller-owned, not readable merely because nonNULL. If byte-borrow safety is unavailable but pointer/length are genuinely observed, retain Code.completefalse/shaunknown. If required fixed pointer/count observation itself is missing/unsafe, NO_PAYLOAD. No address probe, later-success proof or added COM getter.",
+      "sizes": "Exact SIZE_T value projected as U64; cap/check before any byte read. No fabricated root typed description from the hash."
+    },
+    {
+      "callback": "RootParse",
+      "tag": 9,
+      "site": "libs/vkd3d-shader/vkd3d_shader_main.c:615",
+      "actual_span": "dxbc->code, dxbc->size",
+      "Code_field": "args.blob",
+      "cut": "Immediately BEFORE the real generic three-argument parser call, only through R1 genuine committed pending RootCreate eligibility/enter; raw four-argument branch607 excluded.",
+      "safe_lifetime": "The actual vkd3d_shader_code wrapper must be safely readable to observe code/size. A stable complete byte borrow is a separate hash precondition; it may still be the RootCreate API input borrow, not an allocated-ownership proof. Unavailable byte borrow alone gives incomplete Code with real pointer/size. Hash BEFORE parser; AFTER typeddesc copy through R1 must precede transfer624/conversion628/free629. Parser success later never retroactively validates an earlier byte read.",
+      "sizes": "Read actual struct pointer/size once for the selected POD; no second parse, no conversion version relabel, no compatibility_hash substitution."
+    },
+    {
+      "callback": "PSOCreate",
+      "tag": 10,
+      "site": "libs/vkd3d/device.c:4067-4086",
+      "actual_span": "desc->VS.{pShaderBytecode,BytecodeLength}; desc->PS.{pShaderBytecode,BytecodeLength}",
+      "Code_field": [
+        "args.vertex_bytecode",
+        "args.pixel_bytecode"
+      ],
+      "cut": "Selected BEFORE projection of the original graphics PSO descriptor, before descendant conversions/compilation.",
+      "safe_lifetime": "The actual original typed descriptor must be safely readable to observe the true VS/PS pointer/count pairs. Each complete stable byte borrow is separately required for that shader hash. If one byte borrow/cap is unavailable, retain that shader Code pointer/size with completefalse/shaunknown while the other can independently be complete. If descriptor or required pointer/count fields cannot be observed, NO_PAYLOAD. NonNULL or later original success is never a readability proof.",
+      "sizes": "Cap each shader span separately at1MiB. Reuse one workspace sequentially for VS thenPS. Two inline SHA32 outputs already exist in Before312; do not allocate two workspaces or merge DXIL hashes with SPIR-V hashes."
+    },
+    {
+      "callback": "ModuleCreate",
+      "tag": 11,
+      "site": "libs/vkd3d/state.c:2708-2721",
+      "actual_span": "shader_desc.pCode=code->code; shader_desc.codeSize=code->size",
+      "Code_field": "args.code",
+      "cut": "At the actual vkCreateShaderModule PFN entry after selected enter, after source-owned shader_desc has been populated and BEFORE the real PFN.",
+      "safe_lifetime": "The populated local VkShaderModuleCreateInfo and required code pointer/size fields must be safely observed. Hash only while the source vkd3d_shader_code owner span remains live/stable through the synchronous PFN borrow, under existing constructor/reader-lock ownership where required. Late free3452 follows the PFN; fallback6979..6980 is within original reader scope6969..6995. If owner-byte borrow is unproven but fixed fields known, retain incomplete Code; unobservable fixed fields require NO_PAYLOAD. No hash/raw-address inference of owner or worker safety.",
+      "sizes": "Hash actual byte count; no SPIR-V word decoding, no alignment-based readability inference, no metadata code->meta.hash, no added module query. Actual original module output is read only after fresh return admission and defined success."
+    }
+  ],
+  "workspace_layout_proposal": {
+    "profile": "Private C11 Windowsx64/CPU64 layout proposal, not measured sizeof or an extension of frozen274 public POD layouts. New header/assertions require a separately admitted implementation.",
+    "state": {
+      "size": 112,
+      "align": 8,
+      "fields": [
+        {
+          "name": "h",
+          "C_type": "uint32_t[8]",
+          "offset": 0,
+          "bytes": 32
+        },
+        {
+          "name": "original_bytes",
+          "C_type": "uint64_t",
+          "offset": 32,
+          "bytes": 8
+        },
+        {
+          "name": "block",
+          "C_type": "uint8_t[64]",
+          "offset": 40,
+          "bytes": 64
+        },
+        {
+          "name": "used",
+          "C_type": "uint32_t",
+          "offset": 104,
+          "bytes": 4
+        },
+        {
+          "name": "phase",
+          "C_type": "uint32_t",
+          "offset": 108,
+          "bytes": 4
+        }
+      ]
+    },
+    "schedule": {
+      "size": 304,
+      "align": 4,
+      "fields": [
+        {
+          "name": "w",
+          "C_type": "uint32_t[64]",
+          "offset": 0,
+          "bytes": 256
+        },
+        {
+          "name": "working",
+          "C_type": "uint32_t[8]",
+          "offset": 256,
+          "bytes": 32
+        },
+        {
+          "name": "t1",
+          "C_type": "uint32_t",
+          "offset": 288,
+          "bytes": 4
+        },
+        {
+          "name": "t2",
+          "C_type": "uint32_t",
+          "offset": 292,
+          "bytes": 4
+        },
+        {
+          "name": "cursor",
+          "C_type": "uint32_t",
+          "offset": 296,
+          "bytes": 4
+        },
+        {
+          "name": "reserved_zero",
+          "C_type": "uint32_t",
+          "offset": 300,
+          "bytes": 4
+        }
+      ]
+    },
+    "driver": {
+      "size": 32,
+      "align": 8,
+      "fields": [
+        {
+          "name": "source",
+          "C_type": "const uint8_t *",
+          "offset": 0,
+          "bytes": 8
+        },
+        {
+          "name": "source_bytes",
+          "C_type": "uint64_t",
+          "offset": 8,
+          "bytes": 8
+        },
+        {
+          "name": "consumed",
+          "C_type": "uint64_t",
+          "offset": 16,
+          "bytes": 8
+        },
+        {
+          "name": "status",
+          "C_type": "uint32_t",
+          "offset": 24,
+          "bytes": 4
+        },
+        {
+          "name": "reserved_zero",
+          "C_type": "uint32_t",
+          "offset": 28,
+          "bytes": 4
+        }
+      ]
+    },
+    "whole": {
+      "C_type": "d4vr_osw_sha256_workspace_v1",
+      "size": 448,
+      "align": 8,
+      "fields": [
+        {
+          "name": "state",
+          "offset": 0,
+          "bytes": 112
+        },
+        {
+          "name": "schedule",
+          "offset": 112,
+          "bytes": 304
+        },
+        {
+          "name": "driver",
+          "offset": 416,
+          "bytes": 32
+        }
+      ]
+    },
+    "phase_values": {
+      "0": "not initialized; never a completed digest",
+      "1": "processing exact span",
+      "2": "all bytes and final padding complete",
+      "3": "failed; no publication"
+    },
+    "ownership": "One stack/automatic SOURCE-helper-owned workspace per admitted projection helper, no static mutable storage, TLS slot, arena, historical map, issuer, registry or borrowed pointer retained after helper returns. The typed driver pointer is an actual C source pointer only inside this routine; never serialized or reconstructed from wire U64.",
+    "algorithm_object_inventory": "All schedule/working/temporary arithmetic scalars live in the explicit schedule/state/driver objects. No second w64 array, 64B local block, by-value Hash/state return, VLA, heap allocation, cloned final state or private dynamic buffer. Formal C parameters, expression temporaries, compiler spills/call ABI and actual compiled stack are not measured by these object sums.",
+    "digest_output": "Write directly into the selected Before.Code.sha25632B field already counted in its frozen BeforePOD. No additional local digest32 or charhex65 buffer in production projector. A future standalone unit test with its own output32 must count that additional object.",
+    "read_only_constants": {
+      "K_uint32_64_bytes": 256,
+      "IV_uint32_8_bytes": 32,
+      "total_bytes": 288,
+      "ownership": "one immutable static const copy in utility TU; rodata, not an observer context, mutable TLS or owned closure"
+    },
+    "hex": "Existing frozen serializer T_SHA atcore424 streams two hex chars directly into bounded rawworkspace. The new SOURCE utility returns32binarybytes only; it does not allocate or return a65char string."
+  },
+  "R5_storage_accounting": {
+    "frozen_retained_observer": {
+      "typed_arena_bytes": 404352,
+      "issuer_bytes": 64,
+      "total_bytes": 404416,
+      "unchanged": true
+    },
+    "frozen_TLS_separate": "Existing source_thread_cookie TLS uint64_t (8B per actually allocated thread variable, implementation TLS bookkeeping excluded) remains unchanged. Test-only selected_context TLS exists only under OSW_CPU_TESTING, not production. No new digest TLS.",
+    "replace_only_old_documentary_reserve": "The earlier sites.json digest_state_helper_only_cap256 was an unimplemented documentary placeholder, never a compiled SOURCE digest measurement. This proposal supersedes it with448B. It does not raise raw/call/node caps, change frozen coree2 or re-certify old CPU proofs.",
+    "conditional_named_SOURCE_objects_cap32": {
+      "formula": "32*(Token48+Admission24)+max(Before1448,After704,SourceEntry56)+RootParseScratch24+DigestWorkspace448",
+      "bytes": 4224
+    },
+    "conditional_synchronous_source_peak3": {
+      "formula": "3*(48+24)+1448+24+448",
+      "bytes": 2136
+    },
+    "conditions": [
+      "Before/After/SourceEntry helper alternatives share their lifetimes; no separate SourceEntry56 remains live alongside maximal Before/After unless newly counted.",
+      "All Before construction/digest helpers end before their original delegate; only token48+admission24 survive over a tracked original. Module/Root/PSO descendants thus do not inherit parent digest workspaces.",
+      "A single PSO helper reuses one digest workspace sequentially for its two shader fields.",
+      "No hash operation invokes an original or user callback, so it does not deliberately open a nested admitted helper while its workspace is live. Other threads and rejected/untracked recursive originals are not covered by this per-owner conditional object sum.",
+      "New R1/R2 transient marker/annotation scratch must be separately named and counted. If it reuses reserved bytes of the existing typed arena, that is an explicit new private profile, not old reserved-zero semantics silently unchanged."
+    ],
+    "not_CPU_total": "These are proposed named C objects conditional on the stated liveness design, not a measured compiled stack or total CPU/RAM cap. Add compiler stack/spills, original vendor locals, runtime TLS bookkeeping, original shader code allocations, immutable288B constants, any newly contracted source provenance locals, and other threads separately.",
+    "controls_alias": "No new static/TLS mutable digest region exists, so private_overlap still protects existing contexts[]+issuer. This does not claim arbitrary stack/borrowed caller memory is recognized by public controls. No workspace address is exposed or passed through a callback; no new app-facing API accepts a digest span.",
+    "work_read_bound": "Each invocation reads at most1048576 original bytes. With at most64 retained selected callbacks and at most2Code fields per callback, a deliberately loose finite bound is128MiB of authorized hash reads before hard admission closure; no new per-frame digest byte counter/cache is introduced. This is not an actual SOURCE workload count, timing or latency guarantee."
+  },
+  "presence_and_frame_failure": {
+    "success": "Only full OK permits Code.complete=true and a known SHA32 together with exact observed original pointer/size. Complete Code masks are observed=present=0xF. No raw shader payload retained in64KiB wire.",
+    "unknown": "When pointer/size and the enclosing required fixed descriptor are safely observed but full digest is oversize/unsafe/unavailable or utilityreturnsINVALID/LIMIT, retain actual Code.pointer/bytes, complete=false and unknown sha256. Exact Code masks: pointer/bytes/complete bits0,1,3 observed+present=0xB; derived sha bit2 unobserved+absent0/0, SHA storagezero. This serializes sha256null as an explicitly optional derived digest with completefalse, not as a fabricated original nullable operand. It is a valid diagnostic and does not by itself set context fault/gap or NO_PAYLOAD.",
+    "semantic_vs_transport": "A complete faithful diagnostic frame can still be READY and model660 unknown for true pending-command SetPipeline(NULL), unsupported branch or identity facts. Hash utility does not change that relation or automatically turn semantic unknown into transport failure.",
+    "OFF": "No new function/reference/borrowed field evaluation in compiledOFF. ON-but-disabled, closed, drain, refused-enter or no selected membership never hashes source bytes. Valid selected entry followed by a later observer failure can discard the helper result; original still returns exactly. No stale callback mutates a prior payload.",
+    "remaining_caps": "64records/128marks/32pending/21objects/raw65536/nodes4096/depth20/strings256 unchanged; complete raw/node fit remains an actual serializer gate, never a fixture/wide-witness theorem.",
+    "fixed_unavailable_or_protocol_fault": "Only required original pointer/count/enclosing fixed-field observation missing/unsafe, malformed metadata masks/tags/spans or other true producer/sink protocol fault closes admission according to the frozen rules. Never replace such fields with observed0/NULL. Algorithm INTERNAL or invalid SOURCE-owned output/workspace object is a true producer fault, not an incomplete-data waiver. Observer ScopeGap only if separately authorized by the original safe-capacity rules; it never manufactures an original RETURN.",
+    "hash_has_no_original_mark": "The private hash routine is not an original or ScopeGap catalog event. It allocates no SOURCE callID/generation/clock/edge and never repairs missing accounting. Incomplete optional digest alone does not require a synthetic ScopeGap."
+  },
+  "required_future_validation_not_run": [
+    "Review the exact new C diff and implementation against pinned constants/algorithm, failure semantics and named storage. No fixture-source label is evidence of a production utility.",
+    "Independent known-answer vectors for empty, abc, bytes0..255 and binary inputs with zeros; boundary lengths1/55/56/63/64/65/119/120/127/128 and1MiB. Compare full raw32 bytes against an independent implementation, not the same fixture helper.",
+    "CPU original-forwarding probes for selected valid borrowed input, OFF/disabled/fault/no admission, unsafe/NULLnonzero/overflow/limit/overlap and unchanged output on failure; mutation of a later source span must affect only that actual occurrence.",
+    "Strict C11 GCC/Clang and targetedWindowsGNUdriver compile-only layout/ABI checks after separate admission, with exact warnings preserved. Sanitizer runs only in an admitted working profile; no local broken-ASan retries.",
+    "Review single private utility TU and exactly one core context/linkclosure; no shader/forwarder context, no symbol exported beyond the existing six metadata controls.",
+    "Independent SOURCE cut/borrow review is still necessary before wrappers/vendorpatch; this document does not prove actual byte readability, compiler-produced SHA code or source-to-binary identity."
+  ],
+  "source_pins": [
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-insertion-precode-20261028-1/next-precode-resolution-plan.json",
+      "bytes": 7815,
+      "sha256": "6f98ed777ad8b43c2d27373f4d51f2d1877b518034557df91f202e337572e33a"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-insertion-precode-20261028-1/next-precode-documentary-admission.json",
+      "bytes": 2921,
+      "sha256": "68ec6fb00e1b768e3a15a6231a8980729a8e32443f961f4a3f84dd4d8a04d79a"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-insertion-precode-20261028-1/parent-final-proof.json",
+      "bytes": 6792,
+      "sha256": "d7e1b6fa73ae61ff3ac0768afbce36dfd61fc81309c26ebc4fa2c27129b2da8e"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-insertion-precode-20261028-1/sites.json",
+      "bytes": 157527,
+      "sha256": "644357f943e0fa200e09e76b5b77e8aaab6ab64e9c316784cc25b3123b502250"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/native/tests/owned_source_writer_source_cpu.c",
+      "bytes": 85532,
+      "sha256": "28f6ca5f6ba9175fac87704129e2439a528472995e6e5a54ec7fdd3802de7d6a"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/native/tests/sampled_writer_hash.hpp",
+      "bytes": 2830,
+      "sha256": "f6b59c3568c23d6f3198a8d952fbdcf8a4da85db945d311a0b369d15ae266f9e"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/native/owned_source_writer_source/owned_source_writer_source_v1.c",
+      "bytes": 52825,
+      "sha256": "e2f464bb2a6159ce88eac1c71bf4442c999856f4876a19c3f912dc07e8ea86b7"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/native/owned_source_writer_source/owned_source_writer_source_v1.h",
+      "bytes": 282735,
+      "sha256": "564e8955d9b97211e81b10defafc6e1a49b07291f57090e4e821fab454588583"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/native/owned_source_writer_source/owned_source_writer_private.inc",
+      "bytes": 11517,
+      "sha256": "d685202439744c77bcc9c52292570ddd424bd2b2c27ff8459679bae5b50cceec"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/private-translator-derived-source-20261027-1/source/libs/vkd3d/device.c",
+      "bytes": 498956,
+      "sha256": "895c66abf9dae7f9648c7063934f908511e38e8d8150ac570d2e25deb3d5231c"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/private-translator-derived-source-20261027-1/source/libs/vkd3d/state.c",
+      "bytes": 373876,
+      "sha256": "f3b17fc716c6adc013dc49ad25f01f26c18f87bfea74c426dc47dcbdd52b62a5"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/private-translator-derived-source-20261027-1/source/libs/vkd3d-shader/vkd3d_shader_main.c",
+      "bytes": 33935,
+      "sha256": "7b32ea2e62aeb452481d80d24a05106c9521725c9b6900d83eb78113f7e97198"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/docs/schemas/owned-source-writer-v1.json",
+      "bytes": 90039,
+      "sha256": "693021b27fbb12ed298b486ee38e3bdd3a5429c7478d47a3640158aa22011143"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/docs/schemas/owned-source-writer-c-abi-v1/contract-final-proposed.json",
+      "bytes": 48606,
+      "sha256": "989224c8388364d5c1c26b08549ca1bfd48cdbc87e61be170472c97e3961f599"
+    }
+  ],
+  "admission": {
+    "documentary_R4_choice_only": true,
+    "new_header_or_implementation_admitted": false,
+    "CPU_compile_tests_admitted_by_this_document": false,
+    "source_hook_vendor_build_or_launch_ready": false,
+    "model_or_old_certificate_changed": false
+  },
+  "revision": {
+    "version": 2,
+    "supersedes_for_new_precode": {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-additive-precode-20261028-1/digest-storage-contract.json",
+      "bytes": 29315,
+      "sha256": "3960c94005accb829cd7215ea929bfab3c37f038da09fef1e5770f8aa2cb9b4f"
+    },
+    "old_checkpoint_unchanged": true,
+    "basis": "Parent source/schema finding: optional derived digest failure is representable as Code.completefalse/shaunknown; only unavailable required fixed original fields or true protocol fault imply NO_PAYLOAD. Exact utility status precedence/NULLempty path also made explicit. No key/type/cap change to any frozen schema or code."
+  },
+  "schema_resolution": {
+    "Code_authority": "owned-source-writer-v1.json original_array_policy.Code and types.Code",
+    "presence_authority": "C-ABI contract field_presence.nullable_detail: Optional derived digest can be unknown only with Code.completefalse",
+    "distinction": "Required original fixed-field observation remains mandatory; actual pointed-to code payload digest is explicitly optional and incomplete forces semantic unknown. Existing model/schema/core unchanged."
+  }
+}

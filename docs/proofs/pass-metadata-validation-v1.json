@@ -1,0 +1,581 @@
+{
+  "schema_version": 1,
+  "scope": "original synthetic scene only",
+  "cases": [
+    {
+      "case": "native",
+      "exit_code": 0,
+      "validation_layer_loaded": false,
+      "intentional_sync_hazard_detected": false,
+      "intentional_wrong_compute_offset_detected": false,
+      "fixture": {
+        "stereo_mrt_fixture_passed": true,
+        "negative_sync_control": false,
+        "negative_compute_control": false,
+        "incorrect_compute_samples_detected": 0,
+        "clear_followed_by_load_verified": true,
+        "eye_rendering_passes": 24,
+        "recorded_graphics_replay_verified": true,
+        "captured_scopes_replayed": 12,
+        "captured_draw_copies": 24,
+        "original_state_commands_restored": 272,
+        "following_draw_reference_compared_bytes": 10485760,
+        "forwarded_original_reference_compared_bytes": 10485760,
+        "descriptor_buffer_replay_verified": true,
+        "following_compute_reference_words": 32,
+        "dynamic_state_replay_verified": true,
+        "declared_dynamic_states": 12,
+        "following_draw_depth_write_disabled_verified": true,
+        "frozen_scene_cases": 4,
+        "epochs_per_case": 2,
+        "eye_renderings": 16,
+        "submissions": 8,
+        "color_reference_different_bytes": 0,
+        "color_reference_compared_bytes": 16777216,
+        "depth_reference_compared_texels": 1048576,
+        "max_normalized_depth_difference": 0,
+        "stencil_reference_different_bytes": 0,
+        "stencil_reference_compared_bytes": 1048576,
+        "original_targets_preserved_defined_bytes": 31457280,
+        "disparity_pixels_depth_2": 7.293567536,
+        "disparity_pixels_depth_4": 3.641939687,
+        "binocular_disocclusion_texels": 2738,
+        "color_formats": [
+          44,
+          64,
+          44,
+          50
+        ],
+        "depth_stencil_format": 129,
+        "game_draw_replay_implemented": false,
+        "game_stereo_submitted": false
+      },
+      "frame_metadata": {
+        "bounded_capture_verified": true,
+        "monolithic_pipeline_count": 5,
+        "largest_dynamic_declaration": 12,
+        "clear_value_sets": 48,
+        "graphics_state_snapshot_complete": false
+      }
+    },
+    {
+      "case": "native-validation",
+      "exit_code": 0,
+      "validation_layer_loaded": true,
+      "intentional_sync_hazard_detected": false,
+      "intentional_wrong_compute_offset_detected": false,
+      "fixture": {
+        "stereo_mrt_fixture_passed": true,
+        "negative_sync_control": false,
+        "negative_compute_control": false,
+        "incorrect_compute_samples_detected": 0,
+        "clear_followed_by_load_verified": true,
+        "eye_rendering_passes": 24,
+        "recorded_graphics_replay_verified": true,
+        "captured_scopes_replayed": 12,
+        "captured_draw_copies": 24,
+        "original_state_commands_restored": 272,
+        "following_draw_reference_compared_bytes": 10485760,
+        "forwarded_original_reference_compared_bytes": 10485760,
+        "descriptor_buffer_replay_verified": true,
+        "following_compute_reference_words": 32,
+        "dynamic_state_replay_verified": true,
+        "declared_dynamic_states": 12,
+        "following_draw_depth_write_disabled_verified": true,
+        "frozen_scene_cases": 4,
+        "epochs_per_case": 2,
+        "eye_renderings": 16,
+        "submissions": 8,
+        "color_reference_different_bytes": 0,
+        "color_reference_compared_bytes": 16777216,
+        "depth_reference_compared_texels": 1048576,
+        "max_normalized_depth_difference": 0,
+        "stencil_reference_different_bytes": 0,
+        "stencil_reference_compared_bytes": 1048576,
+        "original_targets_preserved_defined_bytes": 31457280,
+        "disparity_pixels_depth_2": 7.293567536,
+        "disparity_pixels_depth_4": 3.641939687,
+        "binocular_disocclusion_texels": 2738,
+        "color_formats": [
+          44,
+          64,
+          44,
+          50
+        ],
+        "depth_stencil_format": 129,
+        "game_draw_replay_implemented": false,
+        "game_stereo_submitted": false
+      },
+      "frame_metadata": {
+        "bounded_capture_verified": true,
+        "monolithic_pipeline_count": 5,
+        "largest_dynamic_declaration": 12,
+        "clear_value_sets": 48,
+        "graphics_state_snapshot_complete": false
+      }
+    },
+    {
+      "case": "sync-negative-control",
+      "exit_code": 0,
+      "validation_layer_loaded": true,
+      "intentional_sync_hazard_detected": true,
+      "intentional_wrong_compute_offset_detected": false,
+      "fixture": {
+        "stereo_mrt_fixture_passed": false,
+        "negative_sync_control": true,
+        "negative_compute_control": false,
+        "incorrect_compute_samples_detected": 0,
+        "clear_followed_by_load_verified": true,
+        "eye_rendering_passes": 24,
+        "recorded_graphics_replay_verified": true,
+        "captured_scopes_replayed": 12,
+        "captured_draw_copies": 24,
+        "original_state_commands_restored": 272,
+        "following_draw_reference_compared_bytes": 10485760,
+        "forwarded_original_reference_compared_bytes": 10485760,
+        "descriptor_buffer_replay_verified": true,
+        "following_compute_reference_words": 32,
+        "dynamic_state_replay_verified": true,
+        "declared_dynamic_states": 12,
+        "following_draw_depth_write_disabled_verified": true,
+        "frozen_scene_cases": 4,
+        "epochs_per_case": 2,
+        "eye_renderings": 16,
+        "submissions": 8,
+        "color_reference_different_bytes": 0,
+        "color_reference_compared_bytes": 16777216,
+        "depth_reference_compared_texels": 1048576,
+        "max_normalized_depth_difference": 0,
+        "stencil_reference_different_bytes": 0,
+        "stencil_reference_compared_bytes": 1048576,
+        "original_targets_preserved_defined_bytes": 31457280,
+        "disparity_pixels_depth_2": 7.293567536,
+        "disparity_pixels_depth_4": 3.641939687,
+        "binocular_disocclusion_texels": 2738,
+        "color_formats": [
+          44,
+          64,
+          44,
+          50
+        ],
+        "depth_stencil_format": 129,
+        "game_draw_replay_implemented": false,
+        "game_stereo_submitted": false
+      },
+      "frame_metadata": {
+        "bounded_capture_verified": true,
+        "monolithic_pipeline_count": 5,
+        "largest_dynamic_declaration": 12,
+        "clear_value_sets": 48,
+        "graphics_state_snapshot_complete": false
+      }
+    },
+    {
+      "case": "descriptor-offset-negative-control",
+      "exit_code": 0,
+      "validation_layer_loaded": true,
+      "intentional_sync_hazard_detected": false,
+      "intentional_wrong_compute_offset_detected": true,
+      "fixture": {
+        "stereo_mrt_fixture_passed": false,
+        "negative_sync_control": false,
+        "negative_compute_control": true,
+        "incorrect_compute_samples_detected": 8,
+        "clear_followed_by_load_verified": true,
+        "eye_rendering_passes": 24,
+        "recorded_graphics_replay_verified": true,
+        "captured_scopes_replayed": 12,
+        "captured_draw_copies": 24,
+        "original_state_commands_restored": 272,
+        "following_draw_reference_compared_bytes": 10485760,
+        "forwarded_original_reference_compared_bytes": 10485760,
+        "descriptor_buffer_replay_verified": true,
+        "following_compute_reference_words": 32,
+        "dynamic_state_replay_verified": true,
+        "declared_dynamic_states": 12,
+        "following_draw_depth_write_disabled_verified": true,
+        "frozen_scene_cases": 4,
+        "epochs_per_case": 2,
+        "eye_renderings": 16,
+        "submissions": 8,
+        "color_reference_different_bytes": 0,
+        "color_reference_compared_bytes": 16777216,
+        "depth_reference_compared_texels": 1048576,
+        "max_normalized_depth_difference": 0,
+        "stencil_reference_different_bytes": 0,
+        "stencil_reference_compared_bytes": 1048576,
+        "original_targets_preserved_defined_bytes": 31457280,
+        "disparity_pixels_depth_2": 7.293567536,
+        "disparity_pixels_depth_4": 3.641939687,
+        "binocular_disocclusion_texels": 2738,
+        "color_formats": [
+          44,
+          64,
+          44,
+          50
+        ],
+        "depth_stencil_format": 129,
+        "game_draw_replay_implemented": false,
+        "game_stereo_submitted": false
+      },
+      "frame_metadata": {
+        "bounded_capture_verified": true,
+        "monolithic_pipeline_count": 5,
+        "largest_dynamic_declaration": 12,
+        "clear_value_sets": 48,
+        "graphics_state_snapshot_complete": false
+      }
+    },
+    {
+      "case": "metadata-disabled",
+      "exit_code": 0,
+      "validation_layer_loaded": true,
+      "intentional_sync_hazard_detected": false,
+      "intentional_wrong_compute_offset_detected": false,
+      "fixture": {
+        "stereo_mrt_fixture_passed": true,
+        "negative_sync_control": false,
+        "negative_compute_control": false,
+        "incorrect_compute_samples_detected": 0,
+        "clear_followed_by_load_verified": true,
+        "eye_rendering_passes": 24,
+        "recorded_graphics_replay_verified": true,
+        "captured_scopes_replayed": 12,
+        "captured_draw_copies": 24,
+        "original_state_commands_restored": 272,
+        "following_draw_reference_compared_bytes": 10485760,
+        "forwarded_original_reference_compared_bytes": 10485760,
+        "descriptor_buffer_replay_verified": true,
+        "following_compute_reference_words": 32,
+        "dynamic_state_replay_verified": true,
+        "declared_dynamic_states": 12,
+        "following_draw_depth_write_disabled_verified": true,
+        "frozen_scene_cases": 4,
+        "epochs_per_case": 2,
+        "eye_renderings": 16,
+        "submissions": 8,
+        "color_reference_different_bytes": 0,
+        "color_reference_compared_bytes": 16777216,
+        "depth_reference_compared_texels": 1048576,
+        "max_normalized_depth_difference": 0,
+        "stencil_reference_different_bytes": 0,
+        "stencil_reference_compared_bytes": 1048576,
+        "original_targets_preserved_defined_bytes": 31457280,
+        "disparity_pixels_depth_2": 7.293567536,
+        "disparity_pixels_depth_4": 3.641939687,
+        "binocular_disocclusion_texels": 2738,
+        "color_formats": [
+          44,
+          64,
+          44,
+          50
+        ],
+        "depth_stencil_format": 129,
+        "game_draw_replay_implemented": false,
+        "game_stereo_submitted": false
+      },
+      "frame_metadata": {
+        "disabled_capture_verified": true
+      }
+    },
+    {
+      "case": "steam-runtime-validation",
+      "exit_code": 0,
+      "validation_layer_loaded": true,
+      "intentional_sync_hazard_detected": false,
+      "intentional_wrong_compute_offset_detected": false,
+      "fixture": {
+        "stereo_mrt_fixture_passed": true,
+        "negative_sync_control": false,
+        "negative_compute_control": false,
+        "incorrect_compute_samples_detected": 0,
+        "clear_followed_by_load_verified": true,
+        "eye_rendering_passes": 24,
+        "recorded_graphics_replay_verified": true,
+        "captured_scopes_replayed": 12,
+        "captured_draw_copies": 24,
+        "original_state_commands_restored": 272,
+        "following_draw_reference_compared_bytes": 10485760,
+        "forwarded_original_reference_compared_bytes": 10485760,
+        "descriptor_buffer_replay_verified": true,
+        "following_compute_reference_words": 32,
+        "dynamic_state_replay_verified": true,
+        "declared_dynamic_states": 12,
+        "following_draw_depth_write_disabled_verified": true,
+        "frozen_scene_cases": 4,
+        "epochs_per_case": 2,
+        "eye_renderings": 16,
+        "submissions": 8,
+        "color_reference_different_bytes": 0,
+        "color_reference_compared_bytes": 16777216,
+        "depth_reference_compared_texels": 1048576,
+        "max_normalized_depth_difference": 0,
+        "stencil_reference_different_bytes": 0,
+        "stencil_reference_compared_bytes": 1048576,
+        "original_targets_preserved_defined_bytes": 31457280,
+        "disparity_pixels_depth_2": 7.293567536,
+        "disparity_pixels_depth_4": 3.641939687,
+        "binocular_disocclusion_texels": 2738,
+        "color_formats": [
+          44,
+          64,
+          44,
+          50
+        ],
+        "depth_stencil_format": 129,
+        "game_draw_replay_implemented": false,
+        "game_stereo_submitted": false
+      },
+      "frame_metadata": {
+        "bounded_capture_verified": true,
+        "monolithic_pipeline_count": 5,
+        "largest_dynamic_declaration": 12,
+        "clear_value_sets": 48,
+        "graphics_state_snapshot_complete": false
+      }
+    }
+  ],
+  "input_sha256": {
+    "dynamic_replay_vulkan": "57a7f4386ed5924a06e01cd4a397ffa65990400d4298fcb6989450fda2184cf6",
+    "stereo-mrt-vertex.vert.spv": "32e631b8c871342e2af0612cb64158b006c6fa87f49ccd1085906fc64a22973f",
+    "stereo-mrt-vertex.observed.vert.spv": "1b3160f48e1e5e233b27ad38234d2a15746303ef6475feda10889dcc20cae071",
+    "stereo-mrt.frag.spv": "cb53b181176dbe1ff1834eb025efa126ce634c1447cf23c8e0a7d413efcebc6a",
+    "descriptor-echo.spv": "48c7d03c99aaa655d38b3c5279cab4a88d51c6e15089b7e4cc79c8d741530030"
+  },
+  "sync_validation_negative_control_passed": true,
+  "game_draw_replay_implemented": false,
+  "game_stereo_submitted": false,
+  "trace_layer_sha256": "a53d1a015830ed076043e70ad013551ff85017c477761ba86305ae86f66bc185",
+  "source_sha256": {
+    "native/vulkan/frame_trace.hpp": "c60350993db0874d26d03d82ef05035560ddcef001b6e1e01f17423a18a1f50f",
+    "native/vulkan/trace_layer.cpp": "c967ed072ec10ededb211d3e6125e1470de7c8f190471cd3b01e6d54dd26800a",
+    "native/vulkan/eye_control.cpp": "fbac466b87082d18c697951ddc2bbf89e6d74d9f4c9b10959411b6ff6d964ff6",
+    "native/tests/frame_trace_tests.cpp": "e10e7325a6dcaf65a7f6b2305fb8b504e1bc8b5e40b70fa95a8f93033e9c310b",
+    "tools/frame_trace.py": "df8011627cfde4a874ef7bbb88ea258209ae1b2993102bd36d41799864b873da",
+    "tools/pass_dependencies.py": "b0c2c3ba280070450a12cc72180466a986544e76c8202fa9dbd8dd1d73a9ff2f",
+    "tools/stereo_mrt_validate.py": "17c577d7f4178278b1e64c13d4c457820e6764fdd28a9c0000b5e4e3d22b1c0d"
+  },
+  "repository_parent_commit": "92ca241d6334819156695da7c92aed05a9a3db9d",
+  "legacy_layer_regression": {
+    "schema_version": 1,
+    "layer_sha256": "a53d1a015830ed076043e70ad013551ff85017c477761ba86305ae86f66bc185",
+    "observer_pixels_unchanged": true,
+    "geometry_parallax_unchanged": true,
+    "loaded_trace_verified": true,
+    "steam_runtime_load_passed": true,
+    "forwarding_tests_passed": true,
+    "frame_trace_fixture_passed": true,
+    "shader_identifier_fixture_passed": true,
+    "metadata_unit_tests_passed": true,
+    "cases": [
+      {
+        "case": "classic-observer-baseline",
+        "pixel_fnv1a64": [
+          "dbbce250f33812b6",
+          "dbbce250f33812b6",
+          "dbbce250f33812b6",
+          "dbbce250f33812b6",
+          "dbbce250f33812b6"
+        ],
+        "exit_code": 0
+      },
+      {
+        "case": "classic-observer-loaded",
+        "pixel_fnv1a64": [
+          "dbbce250f33812b6",
+          "dbbce250f33812b6",
+          "dbbce250f33812b6",
+          "dbbce250f33812b6",
+          "dbbce250f33812b6"
+        ],
+        "exit_code": 0,
+        "frame_capture_passed": true,
+        "trace_loaded": true
+      },
+      {
+        "case": "classic-geometry-baseline",
+        "pixel_fnv1a64": [
+          "17050e1316e437e5",
+          "4c139b48e16c28a5",
+          "77688210bd7e57f5",
+          "55424e9dfdeceb16",
+          "55424e9dfdeceb16",
+          "55424e9dfdeceb16",
+          "55424e9dfdeceb16",
+          "c5b41a9c56cd0ee5",
+          "c5b41a9c56cd0ee5"
+        ],
+        "exit_code": 0
+      },
+      {
+        "case": "classic-geometry-loaded",
+        "pixel_fnv1a64": [
+          "17050e1316e437e5",
+          "4c139b48e16c28a5",
+          "77688210bd7e57f5",
+          "55424e9dfdeceb16",
+          "55424e9dfdeceb16",
+          "55424e9dfdeceb16",
+          "55424e9dfdeceb16",
+          "c5b41a9c56cd0ee5",
+          "c5b41a9c56cd0ee5"
+        ],
+        "exit_code": 0,
+        "frame_capture_passed": true,
+        "trace_loaded": true
+      },
+      {
+        "case": "dynamic-observer-baseline",
+        "pixel_fnv1a64": [
+          "dbbce250f33812b6",
+          "dbbce250f33812b6",
+          "dbbce250f33812b6",
+          "dbbce250f33812b6",
+          "dbbce250f33812b6"
+        ],
+        "exit_code": 0
+      },
+      {
+        "case": "dynamic-observer-loaded",
+        "pixel_fnv1a64": [
+          "dbbce250f33812b6",
+          "dbbce250f33812b6",
+          "dbbce250f33812b6",
+          "dbbce250f33812b6",
+          "dbbce250f33812b6"
+        ],
+        "exit_code": 0,
+        "frame_capture_passed": true,
+        "trace_loaded": true
+      },
+      {
+        "case": "dynamic-observer-loaded-runtime",
+        "pixel_fnv1a64": [
+          "dbbce250f33812b6",
+          "dbbce250f33812b6",
+          "dbbce250f33812b6",
+          "dbbce250f33812b6",
+          "dbbce250f33812b6"
+        ],
+        "exit_code": 0,
+        "frame_capture_passed": true,
+        "trace_loaded": true
+      },
+      {
+        "case": "dynamic-observer-loaded-identifiers",
+        "pixel_fnv1a64": [
+          "dbbce250f33812b6",
+          "dbbce250f33812b6",
+          "dbbce250f33812b6",
+          "dbbce250f33812b6",
+          "dbbce250f33812b6"
+        ],
+        "exit_code": 0,
+        "frame_capture_passed": true,
+        "trace_loaded": true
+      },
+      {
+        "case": "dynamic-observer-loaded-runtime-identifiers",
+        "pixel_fnv1a64": [
+          "dbbce250f33812b6",
+          "dbbce250f33812b6",
+          "dbbce250f33812b6",
+          "dbbce250f33812b6",
+          "dbbce250f33812b6"
+        ],
+        "exit_code": 0,
+        "frame_capture_passed": true,
+        "trace_loaded": true
+      },
+      {
+        "case": "dynamic-geometry-baseline",
+        "pixel_fnv1a64": [
+          "17050e1316e437e5",
+          "4c139b48e16c28a5",
+          "77688210bd7e57f5",
+          "55424e9dfdeceb16",
+          "55424e9dfdeceb16",
+          "55424e9dfdeceb16",
+          "55424e9dfdeceb16",
+          "c5b41a9c56cd0ee5",
+          "c5b41a9c56cd0ee5"
+        ],
+        "exit_code": 0
+      },
+      {
+        "case": "dynamic-geometry-loaded",
+        "pixel_fnv1a64": [
+          "17050e1316e437e5",
+          "4c139b48e16c28a5",
+          "77688210bd7e57f5",
+          "55424e9dfdeceb16",
+          "55424e9dfdeceb16",
+          "55424e9dfdeceb16",
+          "55424e9dfdeceb16",
+          "c5b41a9c56cd0ee5",
+          "c5b41a9c56cd0ee5"
+        ],
+        "exit_code": 0,
+        "frame_capture_passed": true,
+        "trace_loaded": true
+      },
+      {
+        "case": "dynamic-geometry-loaded-runtime",
+        "pixel_fnv1a64": [
+          "17050e1316e437e5",
+          "4c139b48e16c28a5",
+          "77688210bd7e57f5",
+          "55424e9dfdeceb16",
+          "55424e9dfdeceb16",
+          "55424e9dfdeceb16",
+          "55424e9dfdeceb16",
+          "c5b41a9c56cd0ee5",
+          "c5b41a9c56cd0ee5"
+        ],
+        "exit_code": 0,
+        "frame_capture_passed": true,
+        "trace_loaded": true
+      },
+      {
+        "case": "dynamic-geometry-loaded-identifiers",
+        "pixel_fnv1a64": [
+          "17050e1316e437e5",
+          "4c139b48e16c28a5",
+          "77688210bd7e57f5",
+          "55424e9dfdeceb16",
+          "55424e9dfdeceb16",
+          "55424e9dfdeceb16",
+          "55424e9dfdeceb16",
+          "c5b41a9c56cd0ee5",
+          "c5b41a9c56cd0ee5"
+        ],
+        "exit_code": 0,
+        "frame_capture_passed": true,
+        "trace_loaded": true
+      },
+      {
+        "case": "dynamic-geometry-loaded-runtime-identifiers",
+        "pixel_fnv1a64": [
+          "17050e1316e437e5",
+          "4c139b48e16c28a5",
+          "77688210bd7e57f5",
+          "55424e9dfdeceb16",
+          "55424e9dfdeceb16",
+          "55424e9dfdeceb16",
+          "55424e9dfdeceb16",
+          "c5b41a9c56cd0ee5",
+          "c5b41a9c56cd0ee5"
+        ],
+        "exit_code": 0,
+        "frame_capture_passed": true,
+        "trace_loaded": true
+      }
+    ],
+    "xr_binding_requested": false,
+    "game_stereo_submitted": false
+  },
+  "python_cases": 90,
+  "metadata_cpp_tests": "passed",
+  "forwarding_cpp_tests": "passed",
+  "game_pipeline_state_capture_performed": false
+}

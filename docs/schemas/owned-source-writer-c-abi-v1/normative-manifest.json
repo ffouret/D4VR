@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "purpose": "owned_SOURCE_writer_C_precode_normative_entry_manifest",
+  "status": "PROPOSED_FINAL_BUNDLE_V2_REQUIRES_PARENT_FREEZE",
+  "contract": {
+    "path": "contract-final-proposed.json",
+    "bytes": 48606,
+    "sha256": "989224c8388364d5c1c26b08549ca1bfd48cdbc87e61be170472c97e3961f599",
+    "path_base": "this_contract_bundle"
+  },
+  "required_addenda_in_order": [
+    {
+      "path": "lease-counter-addendum-v2.json",
+      "bytes": 4265,
+      "sha256": "b2f033b848f0dd14ef66f492b2544e41c710f0383cb7d849218d17d3b90bf0fe",
+      "path_base": "this_contract_bundle"
+    }
+  ],
+  "annex_resolution": "Load six contract bundle_documents relative to THIS manifest/contract directory. Required addendumV2 overrides only precise Seal diagnostic/allocation/lock-order prose. Its previous_checkpoint is historical provenance, not another required normative addendum. All bytes/hashes exact; no normalization or reserialization substitute.",
+  "publication": "This manifest plus contract, required addendum and all six exact bundle annexes form one normative entry, to be copied byte-exact into docs/schemas/owned-source-writer-c-abi-v1/ after parent freeze. Historical candidates are not part of the entry.",
+  "implementation_admitted": false,
+  "source_hooks_admitted": false,
+  "vendor_build_ready": false,
+  "runtime_ready": false
+}

@@ -1,0 +1,116 @@
+{
+  "schema_version": 1,
+  "actual_game": "Diablo IV",
+  "mode": "fixed_monoscopic_successive_capture_original_writer_cpu_state",
+  "layer_sha256": "557a352497814308da0a3cd7906e8672f2e185ca10782839afac7933b9ce3945",
+  "existing_shader_bundle_reused_intact": true,
+  "shader_overrides": 5379,
+  "new_shader_or_helper_built": false,
+  "state_observer_added_gpu_resources_commands_waits_or_submissions": false,
+  "existing_color_producer_and_consumer_gpu_operations_still_exist": true,
+  "successive_monoscopic_pairs": 6,
+  "delivered_eyes": 12,
+  "dimensions": [
+    2560,
+    1440
+  ],
+  "request_script_host_seconds": 17.475659059000463,
+  "measured_held_host_ms": [
+    5326,
+    5335,
+    5310
+  ],
+  "measured_held_present_intervals": [
+    770,
+    771,
+    767
+  ],
+  "host_ms_are_gpu_elapsed_time": false,
+  "measurement_color_packet_revisions": [
+    3,
+    5,
+    7
+  ],
+  "held_packet_revisions": [
+    2,
+    4,
+    6
+  ],
+  "depth_readback_requested": false,
+  "raw_depth_exports": 0,
+  "saved_lifecycle_pairs_exact": 12,
+  "available_prefixes": 12,
+  "nonempty_prefixes": 11,
+  "prefix_events": 66,
+  "empty_first_prefix_retained": true,
+  "exact_original_stage_pair_draws": 11,
+  "direct_three_vertex_draws": 11,
+  "target_writer_substituted": false,
+  "same_session_lifetimes_only": true,
+  "cross_session_integer_identity_join_used": false,
+  "live_stage_join": "FNV1a64 plus byte size and stage, uniquely matched to privately SHA-verified local originals; not a live cryptographic content hash",
+  "raw_fragment_push_bytes_observed_each_draw": 28,
+  "raw_push_byte_mask_hex": "0x0fffffff",
+  "fragment_update_stage_flags": 17,
+  "source_push_range_complete": true,
+  "source_push_range_offset_size": [
+    0,
+    28
+  ],
+  "raw_words_reinterpreted_as_verified_resource_indices": false,
+  "compatible_word_mask": 0,
+  "bound_layout_signature_known": false,
+  "pipeline_flags_hex": "0x20200000",
+  "unmodeled_pipeline_flag_hex": "0x00200000",
+  "unmodeled_pipeline_flag_sdk_name": "VK_PIPELINE_CREATE_RENDERING_FRAGMENT_SHADING_RATE_ATTACHMENT_BIT_KHR",
+  "viewport_declaration_modes": {
+    "unknown": 11
+  },
+  "scissor_declaration_modes": {
+    "unknown": 11
+  },
+  "independent_coverage_or_central_rect_classification_possible": false,
+  "requested_reference_wide_return_configs_decoded_exactly": true,
+  "saved_pose_text_requires_float32_reencoding": true,
+  "raw_saved_and_delivered_pose_text_identical": false,
+  "observed_declared_state_from_same_instrument_not_independent_game_call_reference": true,
+  "wide_field_cutouts_and_central_rectangle_persist_visually": true,
+  "coverage_repaired": false,
+  "normal_ui_exit": true,
+  "launcher_exit_code": 0,
+  "all_owned_processes_exited": true,
+  "original_audit_identical_before_after": true,
+  "original_named_exports_unchanged": 262,
+  "no_movement_combat_purchase_or_character_change": true,
+  "headset_or_openxr_used": false,
+  "khronos_in_game": false,
+  "device_destroy_or_final_global_fence_lease_counts_claimed": false,
+  "raw_logs_shaders_push_values_images_private": true,
+  "private_analysis_sha256": "4f532396e5239e9aa619d65d54940e962841730dc2ab5f7721c8c013e87976ec",
+  "private_findings_sha256": "68f77da485934f11e21a976a236c2b5b0d4a50b5883bca57c8924580ed60548f",
+  "claims": {
+    "sampled_image_identity_known": false,
+    "descriptor_placement_known": false,
+    "ubo_bytes_known": false,
+    "shader_read_proven": false,
+    "gpu_execution_order_known": false,
+    "last_gpu_writer_known": false,
+    "initialized_pixels_verified": false,
+    "whole_scene_verified": false,
+    "common_scene_time_known": false,
+    "xr_pose_known": false,
+    "xr_submission": false,
+    "physical_steamvr_certified": false,
+    "continuous_immersive_rendering": false
+  },
+  "limits": [
+    "The unmodeled pipeline flag is a sufficient reason for conservative incomplete pipeline state; it is not claimed to be the only missing declaration.",
+    "Known raw push bytes do not certify layout compatibility, decoded resource indices, descriptor placement, a shader read or the selected image.",
+    "The writer is in an earlier CPU submission and another recording. Its local draw ordinal is not compared numerically with the BLIT cutoff of that other recording; CPU ordering does not establish GPU execution order.",
+    "Eleven retained prefixes contain matching draws; the first prefix is empty and all retain earlier missing-prefix/admission gaps.",
+    "Viewport/scissor declarations remain unknown in these receipts; no full-screen or central-scissor conclusion is claimed.",
+    "The fixture proves independent original arguments and pixels only for owned scenes, separately from these same-instrument game observations.",
+    "Views remain successive and partial with their original pose, FOV, packet, capture, present and lease identifiers; no common scene instant is invented.",
+    "The existing fixed diagnostic bundle has no temporal history support. No physical SteamVR, native Windows D3D12/VR or continuous immersive cadence is established."
+  ]
+}

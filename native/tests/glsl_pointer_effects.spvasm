@@ -1,0 +1,37 @@
+; Modf/Frexp write SSBO pointers directly: no core OpStore to external memory.
+OpCapability Shader
+%glsl = OpExtInstImport "GLSL.std.450"
+OpMemoryModel Logical GLSL450
+OpEntryPoint Fragment %main "main" %color %buffer
+OpExecutionMode %main OriginUpperLeft
+OpDecorate %color Location 0
+OpDecorate %block Block
+OpMemberDecorate %block 0 Offset 0
+OpMemberDecorate %block 1 Offset 4
+OpDecorate %buffer DescriptorSet 0
+OpDecorate %buffer Binding 0
+%void = OpTypeVoid
+%fn = OpTypeFunction %void
+%float = OpTypeFloat 32
+%int = OpTypeInt 32 1
+%uint = OpTypeInt 32 0
+%block = OpTypeStruct %float %int
+%storage = OpTypePointer StorageBuffer %block
+%buffer = OpVariable %storage StorageBuffer
+%fp = OpTypePointer StorageBuffer %float
+%ip = OpTypePointer StorageBuffer %int
+%out = OpTypePointer Output %float
+%color = OpVariable %out Output
+%zero = OpConstant %uint 0
+%one = OpConstant %uint 1
+%x = OpConstant %float 1.75
+%main = OpFunction %void None %fn
+%entry = OpLabel
+%fptr = OpAccessChain %fp %buffer %zero
+%iptr = OpAccessChain %ip %buffer %one
+%a = OpExtInst %float %glsl Modf %x %fptr
+%b = OpExtInst %float %glsl Frexp %x %iptr
+%c = OpFAdd %float %a %b
+OpStore %color %c
+OpReturn
+OpFunctionEnd

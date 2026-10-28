@@ -1,0 +1,20 @@
+#version 460
+// Static audit controls only; never executed by the game or a GPU test.
+#ifdef D4VR_EFFECT_PHYSICAL
+#extension GL_EXT_buffer_reference : require
+layout(buffer_reference,std430,buffer_reference_align=4) buffer Physical { uint word; };
+layout(push_constant) uniform Address { Physical target; } address;
+#else
+layout(set=0,binding=0,std430) buffer Values { uint words[]; } values;
+layout(set=0,binding=1,rgba8) uniform writeonly image2D target;
+#endif
+layout(local_size_x=1) in;
+void main() {
+#ifdef D4VR_EFFECT_PHYSICAL
+    address.target.word=17u;
+#else
+    values.words[0]=19u;
+    atomicAdd(values.words[1],1u);
+    imageStore(target,ivec2(0),vec4(1));
+#endif
+}

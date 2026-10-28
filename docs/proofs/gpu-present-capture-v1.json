@@ -1,0 +1,238 @@
+{
+  "schema_version": 1,
+  "scope": "Bounded reusable GPU images from the original presentation BLIT, with explicit producer/consumer leases",
+  "game_images_sent_to_xr": false,
+  "tested_source_files_sha256": {
+    "native/vulkan/present_capture.hpp": "1d5b25f5b64728cca8461d83f48c92c64fa0501dd84ab670274fbc0cbf94f0e6",
+    "native/vulkan/present_capture.cpp": "c3b1e56c65b2246664f16416fc2476b666a00befdc2cf78dda8a21fa3fc61daf",
+    "native/vulkan/trace_layer.cpp": "a6f02f1c45795e592f26ef0d6e99d8cc80398e956cca6fd8206cfa0ca5b2e287",
+    "native/tests/gpu_capture_vulkan.cpp": "b16348a32bab38f2afa1cf9cd3c0bcf03381ea531e49387934964dbed534f477",
+    "native/tests/present_stream_tests.cpp": "ed99620891e962f357a818369622ceedfb69d2965054fcf07ac5ea085bcf3f78",
+    "tools/gpu_capture_validate.py": "1ee4f76f5c976e65e9e9aa2d2cbd26eebd48c7e1e6c4df615ec8cb718bb62099",
+    "tools/present_validate.py": "761ecd80cbb1f0e664d7d98a109d2d8d705503491960cd77988787bff2b5e78a",
+    "tools/paired_capture.py": "c990e0af6e07a893305165bd49a06f7df28daa2b5199cce3fe643dc17781af8c"
+  },
+  "strict_warnings_as_errors_build": true,
+  "python_tests_passed": 170,
+  "portable_ownership_test_included_in_windows_and_sanitizer_targets": true,
+  "isolated_synthetic_controls": {
+    "schema_version": 1,
+    "synthetic_scene": true,
+    "diablo_rendered": false,
+    "actual_steamvr_submission": false,
+    "validation_errors": 0,
+    "khronos_synchronization_validation_loaded": true,
+    "fixture_sha256": "ee582a5578325a3d7f96ffab722f7e61427f4ce2ca7c21310e951a82da2cabfc",
+    "layer_sha256": "019a3ea1e4d11f8ff2368b109d30abee35f15297c029c4f3df79071e7b744e7c",
+    "portable_ownership_passed": true,
+    "layer_forwarding_passed": true,
+    "gpu_cases": [
+      {
+        "case": "gpu-native",
+        "gpu_capture_fixture_passed": true,
+        "synthetic_scene": true,
+        "diablo_rendered": false,
+        "actual_steamvr_submission": false,
+        "leased_frames": 37,
+        "slots": 4,
+        "allocations": 4,
+        "reuses": 37,
+        "backpressure": 3,
+        "reserved_bytes": 262144,
+        "gpu_lease_exact_bytes": 1818624,
+        "source_preserved_bytes": 1818624,
+        "producer_readback_buffers": 0,
+        "producer_maps": 0,
+        "producer_readback_commands": 0,
+        "producer_and_consumer_pending_controls": true,
+        "command_reference_retirement_verified": true,
+        "stale_lease_refused": true,
+        "invalid_provenance_refused": 4
+      },
+      {
+        "case": "gpu-steam-runtime",
+        "gpu_capture_fixture_passed": true,
+        "synthetic_scene": true,
+        "diablo_rendered": false,
+        "actual_steamvr_submission": false,
+        "leased_frames": 37,
+        "slots": 4,
+        "allocations": 4,
+        "reuses": 37,
+        "backpressure": 3,
+        "reserved_bytes": 262144,
+        "gpu_lease_exact_bytes": 1818624,
+        "source_preserved_bytes": 1818624,
+        "producer_readback_buffers": 0,
+        "producer_maps": 0,
+        "producer_readback_commands": 0,
+        "producer_and_consumer_pending_controls": true,
+        "command_reference_retirement_verified": true,
+        "stale_lease_refused": true,
+        "invalid_provenance_refused": 4
+      }
+    ],
+    "legacy_cpu_case": {
+      "present_capture_fixture_passed": true,
+      "reference_equal_bytes": 49152,
+      "source_preserved_bytes": 49152,
+      "snapshot_after_reset_verified": true,
+      "game_stereo_submitted": false
+    },
+    "legacy_wsi": {
+      "purpose": "sequential_presentation_capture",
+      "schema_version": 1,
+      "layer_sha256": "019a3ea1e4d11f8ff2368b109d30abee35f15297c029c4f3df79071e7b744e7c",
+      "wsi_loader_capture_passed": true,
+      "original_pixels_restored": true,
+      "synthetic_scene": true,
+      "game_stereo_submitted": false,
+      "cases": [
+        {
+          "case": "native",
+          "reference_equal_bytes": 1048576,
+          "original_restored_bytes": 262144,
+          "disparities_pixels": [
+            14.607794894025403,
+            7.31257269928156
+          ],
+          "different_pixel_bytes": 3330,
+          "repeated_capture_frames": 4,
+          "sequential_quota_verified": true
+        },
+        {
+          "case": "disabled",
+          "disabled_capture_verified": true,
+          "original_restored_bytes": 262144
+        },
+        {
+          "case": "steam-runtime",
+          "reference_equal_bytes": 1048576,
+          "original_restored_bytes": 262144,
+          "disparities_pixels": [
+            14.607794894025403,
+            7.31257269928156
+          ],
+          "different_pixel_bytes": 3330,
+          "repeated_capture_frames": 4,
+          "sequential_quota_verified": true
+        }
+      ],
+      "forwarding_tests_passed": true
+    },
+    "gpu_wsi_dry_run": [
+      {
+        "case": "gpu-wsi-native",
+        "frames": 64,
+        "original_source_equal_bytes": 262144,
+        "leases": 56,
+        "eyes": [
+          0,
+          1
+        ],
+        "stats": {
+          "dry_run": true,
+          "game_images_read_by_consumer": false,
+          "xr_submission": false,
+          "slots": 2,
+          "reserved_bytes": 524288,
+          "allocations": 2,
+          "reuses": 54,
+          "backpressure": 0,
+          "leases_issued": 56,
+          "retire_submissions": 56,
+          "outstanding_leases": 0,
+          "retiring_leases": 2
+        },
+        "validation_errors": 0,
+        "original_application_submissions": 64,
+        "original_draw_commands": 128
+      },
+      {
+        "case": "gpu-wsi-steam-runtime",
+        "frames": 64,
+        "original_source_equal_bytes": 262144,
+        "leases": 56,
+        "eyes": [
+          0,
+          1
+        ],
+        "stats": {
+          "dry_run": true,
+          "game_images_read_by_consumer": false,
+          "xr_submission": false,
+          "slots": 2,
+          "reserved_bytes": 524288,
+          "allocations": 2,
+          "reuses": 54,
+          "backpressure": 0,
+          "leases_issued": 56,
+          "retire_submissions": 56,
+          "outstanding_leases": 0,
+          "retiring_leases": 2
+        },
+        "validation_errors": 0,
+        "original_application_submissions": 64,
+        "original_draw_commands": 128
+      }
+    ]
+  },
+  "actual_game_trial": {
+    "scope": "Actual Diablo IV producer and lease-retirement dry run, without image reads by any consumer",
+    "synthetic_scene": false,
+    "game_process_observed": true,
+    "game_version": "3.2.3.73883",
+    "render_extent": [
+      2560,
+      1440
+    ],
+    "leased_frames": 114,
+    "eyes": {
+      "left": 49,
+      "right": 65
+    },
+    "first_source_present": 24175,
+    "last_source_present": 24290,
+    "selected_draw_commands_range": [
+      664,
+      683
+    ],
+    "retirement_submissions_accepted": 114,
+    "out_of_order_deliveries_observed": 3,
+    "delivery_order_guaranteed": false,
+    "unique_capture_and_present_ids": true,
+    "consumer_reads_game_images": false,
+    "game_image_content_independently_read_back": false,
+    "xr_pose_known": false,
+    "same_instant_pair": false,
+    "actual_steamvr_submission": false,
+    "eye_selection_restored": true,
+    "all_launcher_and_game_processes_exited": true,
+    "original_game_and_vendor_files_and_exports_verified": true,
+    "named_exports": 262,
+    "device_destroy_trace_observed": false,
+    "in_game_final_pool_counters_measured": false,
+    "in_game_fence_completion_per_lease_measured": false,
+    "live_view_inspection": "Normal game UI remained rendered before and after selection; no user/HMD confirmation or pixel-equality claim",
+    "presentation_errors_observed": 0,
+    "vulkan_validation_enabled_in_game": false,
+    "layer_sha256": "019a3ea1e4d11f8ff2368b109d30abee35f15297c029c4f3df79071e7b744e7c",
+    "private_shader_bundle_sha256": "eec657b192baf48c912c414d2e2157b595fe3778ee118fa5318b0ebc3a13f76b"
+  },
+  "limits": [
+    "The game trial only issues and retires GPU-image leases; it does not read their pixels in a consumer or submit them to XR. Exact GPU pixels are verified in owned synthetic controls.",
+    "The trial has no vkDestroyDevice trace and does not directly measure final game pool counters or completion of each final retirement fence. All owned processes exited and game/vendor files were audited.",
+    "Four slots and 256 MiB are enforced by the component and tested in the portable/GPU controls. These are not measured whole-game GPU memory costs.",
+    "Ready leases are not guaranteed to be delivered in presentation order; 3 adjacent inversions were observed. A consumer must order/select by origin and retire/drop late frames rather than relabel them.",
+    "No requested XR pose/time is known for these immutable game eye packets; the left and right images are sequential, not a coherent same-instant pair.",
+    "Connecting to the projection session still requires safe XR pacing, resource ownership and either real requested-pose rendering or an explicit approximate temporal mode.",
+    "Prior real SteamVR internal validation errors remain unresolved. No new headset test, complete-world coverage or Windows D3D12 backend is claimed."
+  ],
+  "tested_source_commit": "c0f11323b4a1b3d8007fe4896c50a31408ee465e",
+  "portability_header_fix": {
+    "path": "native/vulkan/present_capture.cpp",
+    "sha256": "002181e889695eb3922cddae5e3147cb57ffeead49cbbf8e3e021ea657edeb4b",
+    "change": "Include <string> directly for MSVC std::to_string; no GPU lifecycle logic changed",
+    "strict_linux_portable_ownership_test_passed": true
+  }
+}

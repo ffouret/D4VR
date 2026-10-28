@@ -1,0 +1,78 @@
+# Exigences et faits déclarés, pas une configuration exécutable du mod.
+schema_version = 1
+recorded_on = "2026-10-24"
+evidence = "user_report"
+
+[game]
+title = "Diablo IV"
+store = "Battle.net"
+version = "3.2.3.73883"
+version_evidence = "active row in installed .build.info, read on 2026-10-24"
+
+[primary_pc]
+os = "Bazzite"
+launcher = "Lutris"
+gpu = "NVIDIA RTX 5090"
+vram_gb_reported = 32
+gpu_driver_version = "615.78.08"
+gpu_driver_evidence = "nvidia-smi on Bazzite host, 2026-10-24"
+lutris_runner = "GE-Proton via UMU (exported Lutris launch script)"
+probe_test_runner = "dwproton-11.0-14"
+access_from_this_chat = "installation_files_visible_from_development_container"
+
+[vr]
+headset = "Meta Quest 2"
+preferred_runtime = "SteamVR"
+transport_reported = "ALVR"
+working_reference = "Aeka0/Overlord for MW2 Campaign Remastered"
+reference_api_backend = "unknown"
+steamvr_version = "unknown"
+alvr_version = "unknown"
+
+[project]
+target_platforms = ["Linux via Bazzite and Lutris", "Windows"]
+experience = "elevated_stereoscopic_world_view"
+world_scale = "adjustable"
+vr_api_candidate = "OpenXR with SteamVR"
+diablo_integration_status = "unproven"
+initial_controls = "existing_game_controls_pending_confirmation"
+future_game_candidate = "Diablo III"
+
+[validation]
+reported_on = "2026-10-24"
+evidence = "user_report_in_project_chat"
+quest2_lab_display = "confirmed_by_user"
+user_feedback = "résultat parfait dans le quest"
+exact_tested_build = "not_separately_reported"
+individual_controller_tests = "not_separately_reported"
+frame_timings = "not_measured"
+windows_vr = "not_verified"
+diablo_iv_vr = "not_implemented"
+
+[renderer_probe]
+version = "0.2.0"
+candidate = "Streamline 2.12 camera constants and resource tags"
+forwarding_under_wine = "tested_with_synthetic_fixture"
+vendor_export_loading = "262_exports_resolved_outside_game"
+linux_and_windows_ci = "passed_run_40095580572"
+reference_pc_installation = "original_restored_hash_verified_probe_files_removed"
+in_game_observation = "relay_rejected_by_streamline_signature_check"
+next_integration_candidate = "D3D12_graphics_path"
+
+[shader_capture]
+captured_on = "2026-10-24"
+method = "VKD3D_SHADER_DUMP_PATH in one launcher session"
+vkd3d_version = "3.1.0"
+vkd3d_build = "0bb64c56c8f0dcc+"
+raw_files = 20631
+raw_bytes = 365534722
+dxil_files = 10249
+spirv_files = 10377
+root_signature_files = 5
+parsed_shader_files = 20626
+parse_errors = 0
+directx_vertex_files = 5784
+vertex_files_with_position_input = 5754
+world_geometry_shader_identified = false
+live_camera_values_captured = false
+native_stereo_proven = false

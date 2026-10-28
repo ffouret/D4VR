@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "actual_game": "Diablo IV",
+  "mode": "fixed_monoscopic_successive_capture_owned_source_prefixes",
+  "layer_sha256": "3b1eec6241cc0684c6f501e405d5f30e1baf46ddf0eb2a5920582e5742b096d4",
+  "existing_shader_bundle_reused_intact": true,
+  "shader_overrides": 5379,
+  "new_shader_or_helper_built": false,
+  "raw_depth_exports": 3,
+  "raw_depth_dimensions": [
+    1707,
+    960
+  ],
+  "raw_depth_bytes": 19664640,
+  "successive_monoscopic_pairs": 6,
+  "request_script_host_seconds": 17.64023151999936,
+  "measured_held_host_ms": [
+    5407,
+    5378,
+    5393
+  ],
+  "measured_held_present_intervals": [
+    780,
+    778,
+    779
+  ],
+  "host_ms_are_gpu_elapsed_time": false,
+  "depth_packet_revisions": [
+    2,
+    4,
+    6
+  ],
+  "measured_color_revisions": [
+    3,
+    5,
+    7
+  ],
+  "delivered_eyes": 12,
+  "saved_lifecycle_pairs_exact": 12,
+  "available_prefixes": 12,
+  "empty_first_prefix_retained_honestly": true,
+  "nonempty_prefixes": 11,
+  "prefix_events": 66,
+  "event_kinds": {
+    "barrier": 33,
+    "declared_color_attachment": 11,
+    "draw": 11,
+    "end_rendering": 11
+  },
+  "distinct_source_lifetimes_in_this_namespace": 3,
+  "declared_color_scope_extent": [
+    2560,
+    1440
+  ],
+  "declared_load_store": "LOAD/STORE",
+  "nonempty_prefixes_each_bind_explicit_same_source_draw": true,
+  "distinct_application_writer_pipelines_in_these_prefixes": 1,
+  "selected_application_pipeline_substituted": false,
+  "prefix_truncations": 0,
+  "all_missing_before_admission": true,
+  "all_prefix_missing": true,
+  "sampled_input_resource_identity_known": false,
+  "effective_viewport_scissor_and_write_state_verified": false,
+  "original_game_arguments_or_pixels_independently_referenced": false,
+  "evidence_scope": "Consistency of this same instrument from original hook and CPU submission to selected producer-complete image; original shader catalog metadata before private specialization. Independent app golden arguments and pixels exist only in owned WSI controls.",
+  "raw_logs_shaders_images_private": true,
+  "wide_field_cutouts_and_central_rectangle_persist": true,
+  "normal_ui_exit": true,
+  "launcher_exit_code": 0,
+  "all_owned_processes_exited": true,
+  "original_audit_identical_before_after": true,
+  "original_named_exports_unchanged": 262,
+  "headset_or_openxr_used": false,
+  "khronos_in_game": false,
+  "device_destroy_observed_or_final_global_fence_lease_counts_claimed": false,
+  "coverage_repaired": false,
+  "claims": {
+    "gpu_execution_order_known": false,
+    "last_gpu_writer_known": false,
+    "initialized_pixels_verified": false,
+    "whole_scene_verified": false,
+    "common_scene_time_known": false,
+    "xr_pose_known": false,
+    "xr_submission": false,
+    "continuous_immersive_rendering": false
+  },
+  "private_independent_analysis_sha256": "f7c3ae54e4eba0b4045e2db4aac9db8e2deef48f10da1a024c61cc04d19eee03",
+  "limits": [
+    "A declared LOAD/STORE attachment and draw membership do not establish the last GPU writer, initialization or effective write state.",
+    "The first prefix is empty and all retain missing-before-admission/prefix gaps; no earlier data was reconstructed.",
+    "Captured source labels and pipeline identities belong only to this process/observer. No cross-session integer join.",
+    "The sampled image, sampler, UV offset, viewport and scissor at the final draw remain unverified; no single cause for the rectangular defect is claimed.",
+    "Only CPU observations and the existing diagnostic producer fences tie these images together; the two eyes remain successive and partial.",
+    "No physical SteamVR compatibility, native Windows D3D12/VR or current headset pose is established."
+  ]
+}

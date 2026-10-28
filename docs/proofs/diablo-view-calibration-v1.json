@@ -1,0 +1,2362 @@
+{
+  "schema_version": 1,
+  "source_base_commit": "4babf618e6d9a18ff719b1173ca268b42dd1b0cf",
+  "source_sha256": {
+    "native/core/view_calibration.hpp": "4f3bd5fcbc88733e8592b6bc1099dec26a79d0c2077689238dede9bed37dbd47",
+    "native/core/eye_state.hpp": "a36f04c90337cc99827c412931ba817057839644683d73d5c1fab7a61ba46dec",
+    "native/core/pose_request.hpp": "6620af1d089711fba180e8fbf82d6ae3abd561b6fb26ddb1c9b6cde987dd1290",
+    "native/probe_gpu/stereo_transform.vert": "25104acb47576ee21a4a90c4b295a54ce01f3aca17d4d848589c27f771615f26",
+    "native/vulkan/trace_layer.cpp": "e2add33c852309da8acd8658ed40cba6e8edef5a0f4b634deeddc8b5d4ed2778",
+    "native/vulkan/cooperative_capture.cpp": "4335ff5b88534cd72bcbab70f8d8aa76c693c5e1d48bcf12d8a3ee66009354fc",
+    "native/tests/calibration_gpu_checks.hpp": "880a2768c51d26e6881d2c7d3b34da044fb95a57045ca4e147581538dceff049"
+  },
+  "layer_sha256": "a848bc3ce3232ab23bc2a44f5f0195fda98d0ea14c799bafa7c6a3ad9159adf1",
+  "packet_layout_bytes": 176,
+  "source_depth_packet_version": 2,
+  "continuous_immersive_game": false,
+  "actual_steamvr_submission": false,
+  "scope": "Actual stationary Diablo IV with external controlled pose samples, optical XY and scaled original pass depth. Successive partial views; no XR runtime.",
+  "synthetic_scene": false,
+  "game_version": "3.2.3.73883",
+  "render_extent": [
+    2560,
+    1440
+  ],
+  "private_shader_bundle_sha256": "e0d99e22c4a0bb23943fdd5b5b956acf4f95539548d119dba13a707df3cff84b",
+  "private_shader_count": 5378,
+  "meters_per_view_unit": 0.1,
+  "physical_scale_inferred": false,
+  "world_gravity_or_tabletop_anchor_calibrated": false,
+  "matching_fov_degrees": [
+    58.543981642165505,
+    34.99999795212239
+  ],
+  "wide_fov_degrees": [
+    91.67324722093173,
+    91.67324722093173
+  ],
+  "stereo_ipd_meters": 0.064,
+  "positive_camera_y_meters": 0.01,
+  "camera_updates": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+  ],
+  "pose_source": "external_diagnostic_sample",
+  "request_times_are_predicted_xr_times": false,
+  "actual_xr_pose_source": false,
+  "whole_scene_verified": false,
+  "same_instant_pair": false,
+  "common_scene_time_known": false,
+  "all_original_request_values_and_packet_values_verified": true,
+  "captures": [
+    {
+      "request": 1,
+      "role": "baseline",
+      "packet_sequence": 2,
+      "eyes": [
+        {
+          "eye": 0,
+          "capture_sequence": 46761,
+          "present": 46761,
+          "lease": 2,
+          "packet_sequence": 2,
+          "packet_version": 2,
+          "flags": 5,
+          "packet_sha256": "1653862c6d787e6c5560969ba67530dc8208861ef5fcc5b159bf7adb3b59d9f2",
+          "copy_and_selected_draw_packets_identical": true,
+          "all_expected_packet_values_verified": true
+        },
+        {
+          "eye": 1,
+          "capture_sequence": 46763,
+          "present": 46763,
+          "lease": 4,
+          "packet_sequence": 2,
+          "packet_version": 2,
+          "flags": 5,
+          "packet_sha256": "f38d35a50d7d72902e9c58450ab6addc943b0053b40d773264e4ff9b0973abf6",
+          "copy_and_selected_draw_packets_identical": true,
+          "all_expected_packet_values_verified": true
+        }
+      ],
+      "readback_bytes": 29491200,
+      "raw_private_pixels_sha256": "07366ef3e014b23abe3c844a58bdb94c1232db8bab1f9b8b8c5dc8e72c9ef833"
+    },
+    {
+      "request": 2,
+      "role": "stereo",
+      "packet_sequence": 3,
+      "eyes": [
+        {
+          "eye": 0,
+          "capture_sequence": 46845,
+          "present": 46845,
+          "lease": 6,
+          "packet_sequence": 3,
+          "packet_version": 2,
+          "flags": 5,
+          "packet_sha256": "8a312732574bc62c662b2bbf64818fcd99f110b0fdc4590b602458bf88a22af6",
+          "copy_and_selected_draw_packets_identical": true,
+          "all_expected_packet_values_verified": true
+        },
+        {
+          "eye": 1,
+          "capture_sequence": 46847,
+          "present": 46847,
+          "lease": 8,
+          "packet_sequence": 3,
+          "packet_version": 2,
+          "flags": 5,
+          "packet_sha256": "0ee6127e7cb8727abc0d0a870b1d2d96c06e973677f3b6005f04516aff54581f",
+          "copy_and_selected_draw_packets_identical": true,
+          "all_expected_packet_values_verified": true
+        }
+      ],
+      "readback_bytes": 29491200,
+      "raw_private_pixels_sha256": "20497d616fa28e89de5e39eeb8c8c73c759ea7f0a6bcb7d1a762651fa4723e36"
+    },
+    {
+      "request": 3,
+      "role": "restored",
+      "packet_sequence": 4,
+      "eyes": [
+        {
+          "eye": 0,
+          "capture_sequence": 46935,
+          "present": 46935,
+          "lease": 10,
+          "packet_sequence": 4,
+          "packet_version": 2,
+          "flags": 5,
+          "packet_sha256": "0510b8efdd688f9ef68b129ef2e5396b64372c0c9735394a1342fb182213ee04",
+          "copy_and_selected_draw_packets_identical": true,
+          "all_expected_packet_values_verified": true
+        },
+        {
+          "eye": 1,
+          "capture_sequence": 46937,
+          "present": 46937,
+          "lease": 12,
+          "packet_sequence": 4,
+          "packet_version": 2,
+          "flags": 5,
+          "packet_sha256": "6700f41d6fa8e4a676ce109934a5d65e99a94f5996b3d5d8f5cb2c41e6c4f4f0",
+          "copy_and_selected_draw_packets_identical": true,
+          "all_expected_packet_values_verified": true
+        }
+      ],
+      "readback_bytes": 29491200,
+      "raw_private_pixels_sha256": "aae2b489d0cc71ca06975f4e351f76289c598429ff6403e71d3d936f319e8401"
+    },
+    {
+      "request": 4,
+      "role": "positive_camera_y",
+      "packet_sequence": 5,
+      "eyes": [
+        {
+          "eye": 0,
+          "capture_sequence": 47028,
+          "present": 47028,
+          "lease": 14,
+          "packet_sequence": 5,
+          "packet_version": 2,
+          "flags": 5,
+          "packet_sha256": "473f384e575b0428c711f5b33c4d70e9b1350d7567a5d7cb14557fd041582e86",
+          "copy_and_selected_draw_packets_identical": true,
+          "all_expected_packet_values_verified": true
+        },
+        {
+          "eye": 1,
+          "capture_sequence": 47030,
+          "present": 47030,
+          "lease": 16,
+          "packet_sequence": 5,
+          "packet_version": 2,
+          "flags": 5,
+          "packet_sha256": "ef85a42e5f1c39c7b5c72ef4528cdb504c4e650146839e91cf3205a8f77fefc9",
+          "copy_and_selected_draw_packets_identical": true,
+          "all_expected_packet_values_verified": true
+        }
+      ],
+      "readback_bytes": 29491200,
+      "raw_private_pixels_sha256": "3a616743ad15e5c5df725f17a0fdeb553865e9be7dad3912214405434be2c05d"
+    },
+    {
+      "request": 5,
+      "role": "wide_coverage_failure",
+      "packet_sequence": 6,
+      "eyes": [
+        {
+          "eye": 0,
+          "capture_sequence": 47120,
+          "present": 47120,
+          "lease": 18,
+          "packet_sequence": 6,
+          "packet_version": 2,
+          "flags": 5,
+          "packet_sha256": "171b23b3b40bf2ba33289128bdf8fc9812fa7fb3422ddf26cb3dd2859a86a738",
+          "copy_and_selected_draw_packets_identical": true,
+          "all_expected_packet_values_verified": true
+        },
+        {
+          "eye": 1,
+          "capture_sequence": 47122,
+          "present": 47122,
+          "lease": 20,
+          "packet_sequence": 6,
+          "packet_version": 2,
+          "flags": 5,
+          "packet_sha256": "96ffbc959dd832a0097b8366fb47e5a2f20e817459e60a4865ee156b1e059ba4",
+          "copy_and_selected_draw_packets_identical": true,
+          "all_expected_packet_values_verified": true
+        }
+      ],
+      "readback_bytes": 29491200,
+      "raw_private_pixels_sha256": "b8e394690791af1a7bb6b9c74bdb5eeacd84a348066820d8196a61ea02a5c763"
+    },
+    {
+      "request": 6,
+      "role": "final_restored",
+      "packet_sequence": 7,
+      "eyes": [
+        {
+          "eye": 0,
+          "capture_sequence": 47213,
+          "present": 47213,
+          "lease": 22,
+          "packet_sequence": 7,
+          "packet_version": 2,
+          "flags": 5,
+          "packet_sha256": "8e1b769042ec546b12c69e60acef4d3ba77e20eb3b7209abb34ab08cfa8f8732",
+          "copy_and_selected_draw_packets_identical": true,
+          "all_expected_packet_values_verified": true
+        },
+        {
+          "eye": 1,
+          "capture_sequence": 47215,
+          "present": 47215,
+          "lease": 24,
+          "packet_sequence": 7,
+          "packet_version": 2,
+          "flags": 5,
+          "packet_sha256": "15427800e528d5f019b1976ad156236c699e3fb30cba28c34748ba8dbb228acf",
+          "copy_and_selected_draw_packets_identical": true,
+          "all_expected_packet_values_verified": true
+        }
+      ],
+      "readback_bytes": 29491200,
+      "raw_private_pixels_sha256": "7208a137f652bc073483b45ac63966a61ccde98f9dfc78d638108770c429095c"
+    }
+  ],
+  "patch_analysis": {
+    "summary": {
+      "analysis": "Mean-centered 49-sample local grayscale patches, downsampled 2x; fixed world ROI grid; acceptance only contrast/MAE/uniqueness, not expected motion. No full-scene guarantee.",
+      "contrasted_patches": 45,
+      "accepted_patches": 26,
+      "same_instant_pair": false,
+      "left": {
+        "median_dx": 38.0,
+        "dx_range": [
+          34,
+          44
+        ],
+        "median_dy": 0.0,
+        "dy_range": [
+          0,
+          0
+        ],
+        "nonzero_count": 26
+      },
+      "right": {
+        "median_dx": -40.0,
+        "dx_range": [
+          -44,
+          -34
+        ],
+        "median_dy": 0.0,
+        "dy_range": [
+          0,
+          0
+        ],
+        "nonzero_count": 26
+      },
+      "restore": {
+        "median_dx": 0.0,
+        "dx_range": [
+          0,
+          0
+        ],
+        "median_dy": 0.0,
+        "dy_range": [
+          0,
+          0
+        ],
+        "nonzero_count": 0
+      },
+      "final_restore": {
+        "median_dx": 0.0,
+        "dx_range": [
+          0,
+          0
+        ],
+        "median_dy": 0.0,
+        "dy_range": [
+          0,
+          0
+        ],
+        "nonzero_count": 0
+      },
+      "up": {
+        "median_dx": 0.0,
+        "dx_range": [
+          0,
+          0
+        ],
+        "median_dy": 12.0,
+        "dy_range": [
+          10,
+          14
+        ],
+        "nonzero_count": 26
+      },
+      "opposite_horizontal_disparity_count": 26,
+      "down_for_positive_view_camera_y_count": 26
+    },
+    "patches": [
+      {
+        "xy": [
+          1060,
+          320
+        ],
+        "matches": {
+          "left": {
+            "dx": 28,
+            "dy": 4,
+            "mae": 11.854227405247814,
+            "contrast": 21.407746772178264,
+            "uniqueness": 1.1267655119106177
+          },
+          "right": {
+            "dx": -32,
+            "dy": 0,
+            "mae": 3.567680133277801,
+            "contrast": 21.407746772178264,
+            "uniqueness": 2.275040859210834
+          },
+          "restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.5785089546022493,
+            "contrast": 21.407746772178264,
+            "uniqueness": 4.919261213720316
+          },
+          "final_restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.9258642232403163,
+            "contrast": 21.407746772178264,
+            "uniqueness": 3.998269896193772
+          },
+          "up": {
+            "dx": 0,
+            "dy": 10,
+            "mae": 4.628904623073721,
+            "contrast": 21.407746772178264,
+            "uniqueness": 1.7563433507288098
+          }
+        },
+        "accepted": false
+      },
+      {
+        "xy": [
+          1220,
+          320
+        ],
+        "matches": {
+          "left": {
+            "dx": 34,
+            "dy": 0,
+            "mae": 4.570595585172845,
+            "contrast": 8.903790087463557,
+            "uniqueness": 1.4284672863131036
+          },
+          "right": {
+            "dx": -34,
+            "dy": 0,
+            "mae": 4.183256976259893,
+            "contrast": 8.903790087463557,
+            "uniqueness": 1.4699322978892868
+          },
+          "restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.0878800499791783,
+            "contrast": 8.903790087463557,
+            "uniqueness": 6.094180704441024
+          },
+          "final_restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 0.9562682215743444,
+            "contrast": 8.903790087463557,
+            "uniqueness": 7.009581881533099
+          },
+          "up": {
+            "dx": 0,
+            "dy": 10,
+            "mae": 3.1270304039983343,
+            "contrast": 8.903790087463557,
+            "uniqueness": 1.974427277570591
+          }
+        },
+        "accepted": false
+      },
+      {
+        "xy": [
+          1380,
+          320
+        ],
+        "matches": {
+          "left": {
+            "dx": 34,
+            "dy": 0,
+            "mae": 3.8317367763431904,
+            "contrast": 7.253644314868805,
+            "uniqueness": 1.7967391304347826
+          },
+          "right": {
+            "dx": -34,
+            "dy": 0,
+            "mae": 2.978758850478966,
+            "contrast": 7.253644314868805,
+            "uniqueness": 2.0604026845637593
+          },
+          "restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.2028321532694706,
+            "contrast": 7.253644314868805,
+            "uniqueness": 6.639889196675903
+          },
+          "final_restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.2011661807580165,
+            "contrast": 7.253644314868805,
+            "uniqueness": 6.708737864077675
+          },
+          "up": {
+            "dx": 0,
+            "dy": 10,
+            "mae": 2.827155351936693,
+            "contrast": 7.253644314868805,
+            "uniqueness": 2.6193282262816737
+          }
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          1540,
+          320
+        ],
+        "matches": {
+          "left": {
+            "dx": 34,
+            "dy": 0,
+            "mae": 4.798000832986256,
+            "contrast": 6.1574344023323615,
+            "uniqueness": 1.1918402777777777
+          },
+          "right": {
+            "dx": -34,
+            "dy": 0,
+            "mae": 4.454810495626822,
+            "contrast": 6.1574344023323615,
+            "uniqueness": 1.3461106955871354
+          },
+          "restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 0.9096209912536437,
+            "contrast": 6.1574344023323615,
+            "uniqueness": 7.470695970695976
+          },
+          "final_restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 0.7221990837151169,
+            "contrast": 6.1574344023323615,
+            "uniqueness": 9.198385236447544
+          },
+          "up": {
+            "dx": 0,
+            "dy": 10,
+            "mae": 3.0412328196584757,
+            "contrast": 6.1574344023323615,
+            "uniqueness": 2.0041084634346755
+          }
+        },
+        "accepted": false
+      },
+      {
+        "xy": [
+          1700,
+          320
+        ],
+        "matches": {
+          "left": {
+            "dx": 34,
+            "dy": 0,
+            "mae": 3.9192003331945027,
+            "contrast": 9.081216159933362,
+            "uniqueness": 1.8167906482465461
+          },
+          "right": {
+            "dx": -34,
+            "dy": 0,
+            "mae": 2.6413994169096213,
+            "contrast": 9.081216159933362,
+            "uniqueness": 2.7603279722485023
+          },
+          "restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.844231570179091,
+            "contrast": 9.081216159933362,
+            "uniqueness": 5.579945799457999
+          },
+          "final_restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.7842565597667637,
+            "contrast": 9.081216159933362,
+            "uniqueness": 5.826330532212887
+          },
+          "up": {
+            "dx": 0,
+            "dy": 10,
+            "mae": 2.6189087880049975,
+            "contrast": 9.081216159933362,
+            "uniqueness": 2.961195928753181
+          }
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          1860,
+          320
+        ],
+        "matches": {
+          "left": {
+            "dx": 34,
+            "dy": 0,
+            "mae": 11.352769679300293,
+            "contrast": 13.494377342773843,
+            "uniqueness": 1.0154083204930662
+          },
+          "right": {
+            "dx": -34,
+            "dy": 0,
+            "mae": 5.318617242815493,
+            "contrast": 13.494377342773843,
+            "uniqueness": 2.3074393108848867
+          },
+          "restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.8284048313202856,
+            "contrast": 13.494377342773843,
+            "uniqueness": 6.370387243735754
+          },
+          "final_restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.900874635568514,
+            "contrast": 13.494377342773843,
+            "uniqueness": 6.31507449605609
+          },
+          "up": {
+            "dx": 0,
+            "dy": 10,
+            "mae": 2.6872136609745945,
+            "contrast": 13.494377342773843,
+            "uniqueness": 4.316181029138251
+          }
+        },
+        "accepted": false
+      },
+      {
+        "xy": [
+          900,
+          480
+        ],
+        "matches": {
+          "left": {
+            "dx": 14,
+            "dy": 0,
+            "mae": 1.5685131195335313,
+            "contrast": 2.593086214077465,
+            "uniqueness": 1.2310143388210257
+          },
+          "right": {
+            "dx": -102,
+            "dy": -8,
+            "mae": 2.0249895876717976,
+            "contrast": 2.593086214077465,
+            "uniqueness": 1.0143973673385454
+          },
+          "restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 0.8046647230320674,
+            "contrast": 2.593086214077465,
+            "uniqueness": 3.579710144927557
+          },
+          "final_restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 0.8329862557267796,
+            "contrast": 2.593086214077465,
+            "uniqueness": 3.577000000000004
+          },
+          "up": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.189504373177844,
+            "contrast": 2.593086214077465,
+            "uniqueness": 1.9999999999999984
+          }
+        },
+        "accepted": false
+      },
+      {
+        "xy": [
+          1060,
+          480
+        ],
+        "matches": {
+          "left": {
+            "dx": 34,
+            "dy": 0,
+            "mae": 2.8804664723032065,
+            "contrast": 6.882965431070386,
+            "uniqueness": 2.079236552920764
+          },
+          "right": {
+            "dx": -34,
+            "dy": 0,
+            "mae": 3.0112453144523115,
+            "contrast": 6.882965431070386,
+            "uniqueness": 1.7803596127247583
+          },
+          "restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.1911703456892944,
+            "contrast": 6.882965431070386,
+            "uniqueness": 6.456643356643366
+          },
+          "final_restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.161182840483131,
+            "contrast": 6.882965431070386,
+            "uniqueness": 6.670731707317079
+          },
+          "up": {
+            "dx": 0,
+            "dy": 10,
+            "mae": 2.7738442315701795,
+            "contrast": 6.882965431070386,
+            "uniqueness": 2.5207207207207203
+          }
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          1540,
+          480
+        ],
+        "matches": {
+          "left": {
+            "dx": 34,
+            "dy": 0,
+            "mae": 4.598084131611828,
+            "contrast": 11.655976676384839,
+            "uniqueness": 1.8748188405797102
+          },
+          "right": {
+            "dx": -36,
+            "dy": 0,
+            "mae": 3.7009579341940864,
+            "contrast": 11.655976676384839,
+            "uniqueness": 2.442043664190862
+          },
+          "restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.3144523115368596,
+            "contrast": 11.655976676384839,
+            "uniqueness": 8.338403041825096
+          },
+          "final_restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.3436068304872972,
+            "contrast": 11.655976676384839,
+            "uniqueness": 8.231246125232484
+          },
+          "up": {
+            "dx": 0,
+            "dy": 10,
+            "mae": 5.086214077467722,
+            "contrast": 11.655976676384839,
+            "uniqueness": 2.1680314444808384
+          }
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          1700,
+          480
+        ],
+        "matches": {
+          "left": {
+            "dx": 34,
+            "dy": 0,
+            "mae": 3.1137026239067063,
+            "contrast": 5.840066638900457,
+            "uniqueness": 2.0430711610486885
+          },
+          "right": {
+            "dx": -36,
+            "dy": 0,
+            "mae": 3.0237401082882136,
+            "contrast": 5.840066638900457,
+            "uniqueness": 1.9677685950413222
+          },
+          "restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.4810495626822153,
+            "contrast": 5.840066638900457,
+            "uniqueness": 4.413385826771655
+          },
+          "final_restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.5018742190753849,
+            "contrast": 5.840066638900457,
+            "uniqueness": 4.402662229617307
+          },
+          "up": {
+            "dx": 0,
+            "dy": 10,
+            "mae": 3.2369845897542686,
+            "contrast": 5.840066638900457,
+            "uniqueness": 1.6870818322182193
+          }
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          1860,
+          480
+        ],
+        "matches": {
+          "left": {
+            "dx": 34,
+            "dy": 0,
+            "mae": 5.610162432319867,
+            "contrast": 10.842149104539773,
+            "uniqueness": 1.6371195248700814
+          },
+          "right": {
+            "dx": -36,
+            "dy": 0,
+            "mae": 3.9991670137442723,
+            "contrast": 10.842149104539773,
+            "uniqueness": 2.3163924182461995
+          },
+          "restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.7734277384423178,
+            "contrast": 10.842149104539773,
+            "uniqueness": 7.103804603100038
+          },
+          "final_restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.8025822573927526,
+            "contrast": 10.842149104539773,
+            "uniqueness": 7.022181146025879
+          },
+          "up": {
+            "dx": 0,
+            "dy": 10,
+            "mae": 4.225739275301958,
+            "contrast": 10.842149104539773,
+            "uniqueness": 2.606938695052237
+          }
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          900,
+          640
+        ],
+        "matches": {
+          "left": {
+            "dx": 34,
+            "dy": -2,
+            "mae": 5.231153685964181,
+            "contrast": 37.30778842149105,
+            "uniqueness": 1.4125796178343943
+          },
+          "right": {
+            "dx": -30,
+            "dy": -4,
+            "mae": 7.6426488962932115,
+            "contrast": 37.30778842149105,
+            "uniqueness": 1.6455585831062667
+          },
+          "restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.2194918783840096,
+            "contrast": 37.30778842149105,
+            "uniqueness": 7.862021857923477
+          },
+          "final_restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.1120366513952515,
+            "contrast": 37.30778842149105,
+            "uniqueness": 8.578277153558055
+          },
+          "up": {
+            "dx": 0,
+            "dy": 10,
+            "mae": 2.726364014993752,
+            "contrast": 37.30778842149105,
+            "uniqueness": 3.515734799877789
+          }
+        },
+        "accepted": false
+      },
+      {
+        "xy": [
+          1060,
+          640
+        ],
+        "matches": {
+          "left": {
+            "dx": 36,
+            "dy": 0,
+            "mae": 4.341524364847979,
+            "contrast": 20.678050812161597,
+            "uniqueness": 1.8752877973906372
+          },
+          "right": {
+            "dx": -36,
+            "dy": 0,
+            "mae": 3.359433569346106,
+            "contrast": 20.678050812161597,
+            "uniqueness": 2.577981651376147
+          },
+          "restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.963348604748022,
+            "contrast": 20.678050812161597,
+            "uniqueness": 5.6979210861264304
+          },
+          "final_restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.876718034152437,
+            "contrast": 20.678050812161597,
+            "uniqueness": 5.9525077674212135
+          },
+          "up": {
+            "dx": 0,
+            "dy": 10,
+            "mae": 4.382340691378593,
+            "contrast": 20.678050812161597,
+            "uniqueness": 2.570233795856301
+          }
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          1540,
+          640
+        ],
+        "matches": {
+          "left": {
+            "dx": 36,
+            "dy": 0,
+            "mae": 4.498125780924615,
+            "contrast": 7.543523531861724,
+            "uniqueness": 1.5948148148148147
+          },
+          "right": {
+            "dx": -38,
+            "dy": 0,
+            "mae": 4.705539358600583,
+            "contrast": 7.543523531861724,
+            "uniqueness": 1.5896618870596566
+          },
+          "restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 2.02665556018326,
+            "contrast": 7.543523531861724,
+            "uniqueness": 4.862309905466495
+          },
+          "final_restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.980841316118283,
+            "contrast": 7.543523531861724,
+            "uniqueness": 5.0454163162321315
+          },
+          "up": {
+            "dx": 0,
+            "dy": 10,
+            "mae": 6.658059142024157,
+            "contrast": 7.543523531861724,
+            "uniqueness": 1.1044664081070936
+          }
+        },
+        "accepted": false
+      },
+      {
+        "xy": [
+          1700,
+          640
+        ],
+        "matches": {
+          "left": {
+            "dx": 36,
+            "dy": 0,
+            "mae": 6.769679300291545,
+            "contrast": 12.151603498542274,
+            "uniqueness": 1.5956687584594562
+          },
+          "right": {
+            "dx": -38,
+            "dy": 0,
+            "mae": 9.472719700124948,
+            "contrast": 12.151603498542274,
+            "uniqueness": 1.1296166021807947
+          },
+          "restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 2.7838400666389,
+            "contrast": 12.151603498542274,
+            "uniqueness": 4.682525433871935
+          },
+          "final_restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 2.7763431903373594,
+            "contrast": 12.151603498542274,
+            "uniqueness": 4.602460246024602
+          },
+          "up": {
+            "dx": 0,
+            "dy": 12,
+            "mae": 8.676384839650146,
+            "contrast": 12.151603498542274,
+            "uniqueness": 1.2379992319508448
+          }
+        },
+        "accepted": false
+      },
+      {
+        "xy": [
+          1860,
+          640
+        ],
+        "matches": {
+          "left": {
+            "dx": 36,
+            "dy": 0,
+            "mae": 4.577259475218659,
+            "contrast": 18.102457309454394,
+            "uniqueness": 2.913011828935396
+          },
+          "right": {
+            "dx": -38,
+            "dy": 0,
+            "mae": 4.177426072469805,
+            "contrast": 18.102457309454394,
+            "uniqueness": 3.2891326021934186
+          },
+          "restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.7484381507705127,
+            "contrast": 18.102457309454394,
+            "uniqueness": 9.716055264411624
+          },
+          "final_restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.8792169929196176,
+            "contrast": 18.102457309454394,
+            "uniqueness": 9.094858156028366
+          },
+          "up": {
+            "dx": 0,
+            "dy": 12,
+            "mae": 7.182007496876302,
+            "contrast": 18.102457309454394,
+            "uniqueness": 2.0126420784040824
+          }
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          2020,
+          640
+        ],
+        "matches": {
+          "left": {
+            "dx": 36,
+            "dy": 0,
+            "mae": 5.180341524364848,
+            "contrast": 17.840899625156183,
+            "uniqueness": 2.3913812510049848
+          },
+          "right": {
+            "dx": -38,
+            "dy": 0,
+            "mae": 4.468971261974177,
+            "contrast": 17.840899625156183,
+            "uniqueness": 3.0553588070829463
+          },
+          "restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 0.9629321116201612,
+            "contrast": 17.840899625156183,
+            "uniqueness": 19.5951557093425
+          },
+          "final_restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.1545189504373157,
+            "contrast": 17.840899625156183,
+            "uniqueness": 16.378787878787907
+          },
+          "up": {
+            "dx": 0,
+            "dy": 12,
+            "mae": 8.881299458558933,
+            "contrast": 17.840899625156183,
+            "uniqueness": 1.7902832489214033
+          }
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          2180,
+          640
+        ],
+        "matches": {
+          "left": {
+            "dx": 36,
+            "dy": 0,
+            "mae": 4.379008746355685,
+            "contrast": 7.866722199083717,
+            "uniqueness": 1.7740155982499526
+          },
+          "right": {
+            "dx": -38,
+            "dy": 0,
+            "mae": 3.501041232819658,
+            "contrast": 7.866722199083717,
+            "uniqueness": 2.0585296216987867
+          },
+          "restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 0.8679716784673069,
+            "contrast": 7.866722199083717,
+            "uniqueness": 10.897312859884817
+          },
+          "final_restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 0.8296543107038739,
+            "contrast": 7.866722199083717,
+            "uniqueness": 11.570281124497988
+          },
+          "up": {
+            "dx": 0,
+            "dy": 12,
+            "mae": 5.007080383173678,
+            "contrast": 7.866722199083717,
+            "uniqueness": 1.5942438862086172
+          }
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          900,
+          800
+        ],
+        "matches": {
+          "left": {
+            "dx": 60,
+            "dy": 12,
+            "mae": 1.821740941274469,
+            "contrast": 2.058309037900875,
+            "uniqueness": 1.0484682213077274
+          },
+          "right": {
+            "dx": -32,
+            "dy": 0,
+            "mae": 1.6076634735526865,
+            "contrast": 2.058309037900875,
+            "uniqueness": 1.115025906735751
+          },
+          "restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.5568513119533538,
+            "contrast": 2.058309037900875,
+            "uniqueness": 1.1824505082932042
+          },
+          "final_restore": {
+            "dx": -4,
+            "dy": -4,
+            "mae": 1.4635568513119577,
+            "contrast": 2.058309037900875,
+            "uniqueness": 1.2094479225953298
+          },
+          "up": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.5285297792586423,
+            "contrast": 2.058309037900875,
+            "uniqueness": 1.0070844686648506
+          }
+        },
+        "accepted": false
+      },
+      {
+        "xy": [
+          1060,
+          800
+        ],
+        "matches": {
+          "left": {
+            "dx": 38,
+            "dy": 0,
+            "mae": 5.047896709704288,
+            "contrast": 15.889212827988338,
+            "uniqueness": 1.8486798679867995
+          },
+          "right": {
+            "dx": -38,
+            "dy": 0,
+            "mae": 2.8396501457725942,
+            "contrast": 15.889212827988338,
+            "uniqueness": 2.2120856556174835
+          },
+          "restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.916701374427323,
+            "contrast": 15.889212827988338,
+            "uniqueness": 4.647109952194697
+          },
+          "final_restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 2.0191586838817153,
+            "contrast": 15.889212827988338,
+            "uniqueness": 4.411303630363039
+          },
+          "up": {
+            "dx": 0,
+            "dy": 10,
+            "mae": 4.213244481466056,
+            "contrast": 15.889212827988338,
+            "uniqueness": 1.9126136812969554
+          }
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          1220,
+          800
+        ],
+        "matches": {
+          "left": {
+            "dx": 8,
+            "dy": -10,
+            "mae": 3.53436068304873,
+            "contrast": 5.388588088296543,
+            "uniqueness": 1.0546782936601462
+          },
+          "right": {
+            "dx": 10,
+            "dy": -16,
+            "mae": 3.4752186588921283,
+            "contrast": 5.388588088296543,
+            "uniqueness": 1.4197027804410354
+          },
+          "restore": {
+            "dx": -2,
+            "dy": -4,
+            "mae": 3.905872553102874,
+            "contrast": 5.388588088296543,
+            "uniqueness": 1.0789080827468542
+          },
+          "final_restore": {
+            "dx": 2,
+            "dy": -10,
+            "mae": 3.227821740941275,
+            "contrast": 5.388588088296543,
+            "uniqueness": 1.576774193548387
+          },
+          "up": {
+            "dx": 8,
+            "dy": -26,
+            "mae": 3.2478134110787167,
+            "contrast": 5.388588088296543,
+            "uniqueness": 1.2190305206463201
+          }
+        },
+        "accepted": false
+      },
+      {
+        "xy": [
+          1380,
+          800
+        ],
+        "matches": {
+          "left": {
+            "dx": 38,
+            "dy": 0,
+            "mae": 3.4052478134110795,
+            "contrast": 7.750104123281965,
+            "uniqueness": 1.9390900195694711
+          },
+          "right": {
+            "dx": -38,
+            "dy": 0,
+            "mae": 3.3061224489795906,
+            "contrast": 7.750104123281965,
+            "uniqueness": 1.9367598891408424
+          },
+          "restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.6284881299458558,
+            "contrast": 7.750104123281965,
+            "uniqueness": 4.141176470588236
+          },
+          "final_restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.5260308204914619,
+            "contrast": 7.750104123281965,
+            "uniqueness": 4.429585152838428
+          },
+          "up": {
+            "dx": 0,
+            "dy": 12,
+            "mae": 3.349437734277385,
+            "contrast": 7.750104123281965,
+            "uniqueness": 1.8644615767222081
+          }
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          1540,
+          800
+        ],
+        "matches": {
+          "left": {
+            "dx": 38,
+            "dy": 0,
+            "mae": 3.3910870470637233,
+            "contrast": 6.48396501457726,
+            "uniqueness": 1.8870056497175143
+          },
+          "right": {
+            "dx": -40,
+            "dy": 0,
+            "mae": 3.5585172844648065,
+            "contrast": 6.48396501457726,
+            "uniqueness": 1.8394194756554305
+          },
+          "restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.6809662640566432,
+            "contrast": 6.48396501457726,
+            "uniqueness": 4.12784935579782
+          },
+          "final_restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.4743856726364013,
+            "contrast": 6.48396501457726,
+            "uniqueness": 4.667796610169493
+          },
+          "up": {
+            "dx": 0,
+            "dy": 12,
+            "mae": 3.8250728862973764,
+            "contrast": 6.48396501457726,
+            "uniqueness": 1.7486933797909407
+          }
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          1700,
+          800
+        ],
+        "matches": {
+          "left": {
+            "dx": 38,
+            "dy": 0,
+            "mae": 6.007496876301541,
+            "contrast": 16.945439400249896,
+            "uniqueness": 2.169301164725457
+          },
+          "right": {
+            "dx": -40,
+            "dy": 0,
+            "mae": 4.402332361516035,
+            "contrast": 16.945439400249896,
+            "uniqueness": 3.0274361400189216
+          },
+          "restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.960016659725115,
+            "contrast": 16.945439400249896,
+            "uniqueness": 8.124521886952826
+          },
+          "final_restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.9192003331945027,
+            "contrast": 16.945439400249896,
+            "uniqueness": 8.371527777777775
+          },
+          "up": {
+            "dx": 0,
+            "dy": 12,
+            "mae": 12.041649312786337,
+            "contrast": 16.945439400249896,
+            "uniqueness": 1.1604869950193695
+          }
+        },
+        "accepted": false
+      },
+      {
+        "xy": [
+          1860,
+          800
+        ],
+        "matches": {
+          "left": {
+            "dx": 38,
+            "dy": 0,
+            "mae": 6.554768846314036,
+            "contrast": 15.644314868804665,
+            "uniqueness": 2.0379972042190877
+          },
+          "right": {
+            "dx": -40,
+            "dy": 0,
+            "mae": 4.857975843398584,
+            "contrast": 15.644314868804665,
+            "uniqueness": 2.9336419753086416
+          },
+          "restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.6776343190337362,
+            "contrast": 15.644314868804665,
+            "uniqueness": 10.911122144985102
+          },
+          "final_restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.403581840899627,
+            "contrast": 15.644314868804665,
+            "uniqueness": 13.112759643916895
+          },
+          "up": {
+            "dx": 0,
+            "dy": 12,
+            "mae": 11.804248229904207,
+            "contrast": 15.644314868804665,
+            "uniqueness": 1.1980100204643285
+          }
+        },
+        "accepted": false
+      },
+      {
+        "xy": [
+          2020,
+          800
+        ],
+        "matches": {
+          "left": {
+            "dx": 38,
+            "dy": 0,
+            "mae": 3.2061640982923785,
+            "contrast": 17.665139525197834,
+            "uniqueness": 3.224473889321901
+          },
+          "right": {
+            "dx": -40,
+            "dy": 0,
+            "mae": 2.4648063306955437,
+            "contrast": 17.665139525197834,
+            "uniqueness": 3.9435620141939838
+          },
+          "restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 0.738858808829653,
+            "contrast": 17.665139525197834,
+            "uniqueness": 15.779030439684355
+          },
+          "final_restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 0.8329862557267811,
+            "contrast": 17.665139525197834,
+            "uniqueness": 13.97899999999999
+          },
+          "up": {
+            "dx": 0,
+            "dy": 12,
+            "mae": 8.333194502290713,
+            "contrast": 17.665139525197834,
+            "uniqueness": 1.5407836865253897
+          }
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          2180,
+          800
+        ],
+        "matches": {
+          "left": {
+            "dx": 40,
+            "dy": 0,
+            "mae": 4.08579758433986,
+            "contrast": 7.683465222823823,
+            "uniqueness": 1.6536187563710492
+          },
+          "right": {
+            "dx": -40,
+            "dy": 0,
+            "mae": 2.4523115368596415,
+            "contrast": 7.683465222823823,
+            "uniqueness": 2.449728260869564
+          },
+          "restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 0.7496876301541002,
+            "contrast": 7.683465222823823,
+            "uniqueness": 10.81777777777781
+          },
+          "final_restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 0.6430653894210687,
+            "contrast": 7.683465222823823,
+            "uniqueness": 12.608808290155554
+          },
+          "up": {
+            "dx": 0,
+            "dy": 12,
+            "mae": 3.77759266972095,
+            "contrast": 7.683465222823823,
+            "uniqueness": 1.6374862183020944
+          }
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          900,
+          960
+        ],
+        "matches": {
+          "left": {
+            "dx": 32,
+            "dy": 10,
+            "mae": 11.55018742190754,
+            "contrast": 24.8054977092878,
+            "uniqueness": 1.5064906966681098
+          },
+          "right": {
+            "dx": -40,
+            "dy": 2,
+            "mae": 10.083298625572674,
+            "contrast": 24.8054977092878,
+            "uniqueness": 1.119372160264354
+          },
+          "restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.6826322365680966,
+            "contrast": 24.8054977092878,
+            "uniqueness": 6.670792079207922
+          },
+          "final_restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.5193669304456467,
+            "contrast": 24.8054977092878,
+            "uniqueness": 7.356907894736846
+          },
+          "up": {
+            "dx": 0,
+            "dy": 12,
+            "mae": 3.745939192003332,
+            "contrast": 24.8054977092878,
+            "uniqueness": 2.9648654658661324
+          }
+        },
+        "accepted": false
+      },
+      {
+        "xy": [
+          1060,
+          960
+        ],
+        "matches": {
+          "left": {
+            "dx": 40,
+            "dy": 0,
+            "mae": 3.858392336526447,
+            "contrast": 7.533527696793003,
+            "uniqueness": 2.0090673575129534
+          },
+          "right": {
+            "dx": -40,
+            "dy": 0,
+            "mae": 3.956684714702207,
+            "contrast": 7.533527696793003,
+            "uniqueness": 1.7450526315789474
+          },
+          "restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.1470220741357773,
+            "contrast": 7.533527696793003,
+            "uniqueness": 7.188090050835145
+          },
+          "final_restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.1411911703456894,
+            "contrast": 7.533527696793003,
+            "uniqueness": 7.383211678832116
+          },
+          "up": {
+            "dx": 0,
+            "dy": 12,
+            "mae": 3.427738442315702,
+            "contrast": 7.533527696793003,
+            "uniqueness": 2.305710814094775
+          }
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          1220,
+          960
+        ],
+        "matches": {
+          "left": {
+            "dx": 40,
+            "dy": 0,
+            "mae": 3.9725114535610153,
+            "contrast": 7.810912119950022,
+            "uniqueness": 1.801845250576641
+          },
+          "right": {
+            "dx": -42,
+            "dy": 0,
+            "mae": 4.17076218242399,
+            "contrast": 7.810912119950022,
+            "uniqueness": 1.7271819452766124
+          },
+          "restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.439400249895877,
+            "contrast": 7.810912119950022,
+            "uniqueness": 6.690393518518517
+          },
+          "final_restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.2786339025406082,
+            "contrast": 7.810912119950022,
+            "uniqueness": 7.528990228013028
+          },
+          "up": {
+            "dx": 0,
+            "dy": 12,
+            "mae": 4.723865056226573,
+            "contrast": 7.810912119950022,
+            "uniqueness": 1.724210897548933
+          }
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          1380,
+          960
+        ],
+        "matches": {
+          "left": {
+            "dx": 40,
+            "dy": 0,
+            "mae": 3.477717617659309,
+            "contrast": 8.172428154935444,
+            "uniqueness": 2.1331736526946106
+          },
+          "right": {
+            "dx": -40,
+            "dy": 0,
+            "mae": 3.8708871303623495,
+            "contrast": 8.172428154935444,
+            "uniqueness": 1.7716806541854957
+          },
+          "restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 0.8688046647230323,
+            "contrast": 8.172428154935444,
+            "uniqueness": 10.651006711409392
+          },
+          "final_restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 0.9104539775093726,
+            "contrast": 8.172428154935444,
+            "uniqueness": 10.138151875571804
+          },
+          "up": {
+            "dx": 0,
+            "dy": 12,
+            "mae": 3.3494377342773842,
+            "contrast": 8.172428154935444,
+            "uniqueness": 1.9927878637154937
+          }
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          1540,
+          960
+        ],
+        "matches": {
+          "left": {
+            "dx": 40,
+            "dy": 0,
+            "mae": 3.119533527696793,
+            "contrast": 5.708454810495627,
+            "uniqueness": 1.8130841121495331
+          },
+          "right": {
+            "dx": -42,
+            "dy": 0,
+            "mae": 2.698042482299041,
+            "contrast": 5.708454810495627,
+            "uniqueness": 2.0805804260574257
+          },
+          "restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 0.8096626405664292,
+            "contrast": 5.708454810495627,
+            "uniqueness": 7.554526748971207
+          },
+          "final_restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 0.7930029154518928,
+            "contrast": 5.708454810495627,
+            "uniqueness": 7.695378151260526
+          },
+          "up": {
+            "dx": 0,
+            "dy": 12,
+            "mae": 3.236151603498542,
+            "contrast": 5.708454810495627,
+            "uniqueness": 1.6396396396396398
+          }
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          1700,
+          960
+        ],
+        "matches": {
+          "left": {
+            "dx": 40,
+            "dy": 0,
+            "mae": 4.823823406913786,
+            "contrast": 10.199916701374427,
+            "uniqueness": 1.7335520635468826
+          },
+          "right": {
+            "dx": -42,
+            "dy": 0,
+            "mae": 2.060807996668055,
+            "contrast": 10.199916701374427,
+            "uniqueness": 3.703718674211803
+          },
+          "restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 0.6155768429820911,
+            "contrast": 10.199916701374427,
+            "uniqueness": 17.502029769959396
+          },
+          "final_restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 0.5772594752186636,
+            "contrast": 10.199916701374427,
+            "uniqueness": 18.61183261183246
+          },
+          "up": {
+            "dx": 0,
+            "dy": 12,
+            "mae": 4.575593502707205,
+            "contrast": 10.199916701374427,
+            "uniqueness": 1.7636992535954854
+          }
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          1860,
+          960
+        ],
+        "matches": {
+          "left": {
+            "dx": 42,
+            "dy": 0,
+            "mae": 2.7805081216159957,
+            "contrast": 8.98042482299042,
+            "uniqueness": 2.789994008388254
+          },
+          "right": {
+            "dx": -42,
+            "dy": 0,
+            "mae": 1.8359017076218247,
+            "contrast": 8.98042482299042,
+            "uniqueness": 4.208257713248638
+          },
+          "restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 0.5605997501041269,
+            "contrast": 8.98042482299042,
+            "uniqueness": 15.34175334323913
+          },
+          "final_restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 0.5014577259475221,
+            "contrast": 8.98042482299042,
+            "uniqueness": 17.214285714285705
+          },
+          "up": {
+            "dx": 2,
+            "dy": 14,
+            "mae": 6.067471886713869,
+            "contrast": 8.98042482299042,
+            "uniqueness": 1.1412685337726525
+          }
+        },
+        "accepted": false
+      },
+      {
+        "xy": [
+          2020,
+          960
+        ],
+        "matches": {
+          "left": {
+            "dx": 42,
+            "dy": 0,
+            "mae": 2.5739275301957525,
+            "contrast": 4.5922532278217405,
+            "uniqueness": 1.7873786407766987
+          },
+          "right": {
+            "dx": -42,
+            "dy": 0,
+            "mae": 1.644314868804664,
+            "contrast": 4.5922532278217405,
+            "uniqueness": 2.7664640324214806
+          },
+          "restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 0.45231153685964454,
+            "contrast": 4.5922532278217405,
+            "uniqueness": 13.626151012891263
+          },
+          "final_restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 0.5206164098292366,
+            "contrast": 4.5922532278217405,
+            "uniqueness": 12.083200000000028
+          },
+          "up": {
+            "dx": 0,
+            "dy": 14,
+            "mae": 4.127446897126197,
+            "contrast": 4.5922532278217405,
+            "uniqueness": 1.02744702320888
+          }
+        },
+        "accepted": false
+      },
+      {
+        "xy": [
+          2180,
+          960
+        ],
+        "matches": {
+          "left": {
+            "dx": 42,
+            "dy": 0,
+            "mae": 3.3819241982507298,
+            "contrast": 8.602249062890463,
+            "uniqueness": 2.1896551724137927
+          },
+          "right": {
+            "dx": -42,
+            "dy": 0,
+            "mae": 2.134110787172011,
+            "contrast": 8.602249062890463,
+            "uniqueness": 3.380562060889931
+          },
+          "restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 0.6697209496043336,
+            "contrast": 8.602249062890463,
+            "uniqueness": 14.417910447761148
+          },
+          "final_restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 0.5364431486880448,
+            "contrast": 8.602249062890463,
+            "uniqueness": 18.010869565217455
+          },
+          "up": {
+            "dx": 0,
+            "dy": 12,
+            "mae": 5.890045814244066,
+            "contrast": 8.602249062890463,
+            "uniqueness": 1.2694102672889267
+          }
+        },
+        "accepted": false
+      },
+      {
+        "xy": [
+          900,
+          1120
+        ],
+        "matches": {
+          "left": {
+            "dx": 42,
+            "dy": 0,
+            "mae": 3.7051228654727195,
+            "contrast": 10.274052478134111,
+            "uniqueness": 2.2158273381294964
+          },
+          "right": {
+            "dx": -42,
+            "dy": 0,
+            "mae": 3.5876718034152435,
+            "contrast": 10.274052478134111,
+            "uniqueness": 2.1402368237752496
+          },
+          "restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 0.8879633486047518,
+            "contrast": 10.274052478134111,
+            "uniqueness": 10.791744840525283
+          },
+          "final_restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.0612244897959193,
+            "contrast": 10.274052478134111,
+            "uniqueness": 8.994505494505486
+          },
+          "up": {
+            "dx": 0,
+            "dy": 12,
+            "mae": 4.2274052478134125,
+            "contrast": 10.274052478134111,
+            "uniqueness": 1.9365517241379306
+          }
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          1060,
+          1120
+        ],
+        "matches": {
+          "left": {
+            "dx": 42,
+            "dy": 0,
+            "mae": 3.634319033735943,
+            "contrast": 10.436484798000834,
+            "uniqueness": 2.6007334402933764
+          },
+          "right": {
+            "dx": -42,
+            "dy": 0,
+            "mae": 4.148271553519367,
+            "contrast": 10.436484798000834,
+            "uniqueness": 2.30562248995984
+          },
+          "restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.3194502290712202,
+            "contrast": 10.436484798000834,
+            "uniqueness": 8.033459595959597
+          },
+          "final_restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.2703040399833403,
+            "contrast": 10.436484798000834,
+            "uniqueness": 8.238688524590165
+          },
+          "up": {
+            "dx": 0,
+            "dy": 12,
+            "mae": 4.588921282798834,
+            "contrast": 10.436484798000834,
+            "uniqueness": 2.1555636231620983
+          }
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          1220,
+          1120
+        ],
+        "matches": {
+          "left": {
+            "dx": 42,
+            "dy": 0,
+            "mae": 4.892128279883382,
+            "contrast": 9.655143690129112,
+            "uniqueness": 1.5647880129405758
+          },
+          "right": {
+            "dx": -44,
+            "dy": 0,
+            "mae": 2.7813411078717216,
+            "contrast": 9.655143690129112,
+            "uniqueness": 2.884995507637016
+          },
+          "restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.1345272802998747,
+            "contrast": 9.655143690129112,
+            "uniqueness": 8.563142437591779
+          },
+          "final_restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.1761765930862134,
+            "contrast": 9.655143690129112,
+            "uniqueness": 8.550283286118985
+          },
+          "up": {
+            "dx": 2,
+            "dy": 14,
+            "mae": 5.738442315701791,
+            "contrast": 9.655143690129112,
+            "uniqueness": 1.4515894904920885
+          }
+        },
+        "accepted": false
+      },
+      {
+        "xy": [
+          1380,
+          1120
+        ],
+        "matches": {
+          "left": {
+            "dx": 42,
+            "dy": 0,
+            "mae": 4.717201166180757,
+            "contrast": 7.745106205747605,
+            "uniqueness": 1.5421154864912594
+          },
+          "right": {
+            "dx": -44,
+            "dy": 0,
+            "mae": 2.7821740941274467,
+            "contrast": 7.745106205747605,
+            "uniqueness": 2.612574850299401
+          },
+          "restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.145356101624321,
+            "contrast": 7.745106205747605,
+            "uniqueness": 7.494545454545469
+          },
+          "final_restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.0478967097042882,
+            "contrast": 7.745106205747605,
+            "uniqueness": 8.302066772655023
+          },
+          "up": {
+            "dx": 0,
+            "dy": 14,
+            "mae": 4.342357351103708,
+            "contrast": 7.745106205747605,
+            "uniqueness": 1.7613658162286587
+          }
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          1540,
+          1120
+        ],
+        "matches": {
+          "left": {
+            "dx": 44,
+            "dy": 0,
+            "mae": 6.663890045814242,
+            "contrast": 12.060807996668055,
+            "uniqueness": 1.5146250000000006
+          },
+          "right": {
+            "dx": -44,
+            "dy": 0,
+            "mae": 5.169512703040403,
+            "contrast": 12.060807996668055,
+            "uniqueness": 1.951337415404446
+          },
+          "restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 1.1078717201166182,
+            "contrast": 12.060807996668055,
+            "uniqueness": 11.018045112781953
+          },
+          "final_restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 0.8896293211162041,
+            "contrast": 12.060807996668055,
+            "uniqueness": 13.656367041198465
+          },
+          "up": {
+            "dx": 0,
+            "dy": 14,
+            "mae": 6.052478134110787,
+            "contrast": 12.060807996668055,
+            "uniqueness": 1.7777319020093587
+          }
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          1700,
+          1120
+        ],
+        "matches": {
+          "left": {
+            "dx": -4,
+            "dy": 18,
+            "mae": 9.195335276967931,
+            "contrast": 10.686380674718867,
+            "uniqueness": 1.0702962224839205
+          },
+          "right": {
+            "dx": -44,
+            "dy": 0,
+            "mae": 1.9125364431486889,
+            "contrast": 10.686380674718867,
+            "uniqueness": 4.136324041811845
+          },
+          "restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 0.7880049979175359,
+            "contrast": 10.686380674718867,
+            "uniqueness": 15.364693446088769
+          },
+          "final_restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 0.7521865889212849,
+            "contrast": 10.686380674718867,
+            "uniqueness": 16.201550387596853
+          },
+          "up": {
+            "dx": 0,
+            "dy": 14,
+            "mae": 3.603498542274052,
+            "contrast": 10.686380674718867,
+            "uniqueness": 2.566805362921868
+          }
+        },
+        "accepted": false
+      },
+      {
+        "xy": [
+          1860,
+          1120
+        ],
+        "matches": {
+          "left": {
+            "dx": 44,
+            "dy": 0,
+            "mae": 2.3648479800083297,
+            "contrast": 8.52728029987505,
+            "uniqueness": 2.931666079605494
+          },
+          "right": {
+            "dx": -44,
+            "dy": 0,
+            "mae": 1.8234069137859232,
+            "contrast": 8.52728029987505,
+            "uniqueness": 3.4285061671996333
+          },
+          "restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 0.5864223240316504,
+            "contrast": 8.52728029987505,
+            "uniqueness": 11.335227272727328
+          },
+          "final_restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 0.40816326530612246,
+            "contrast": 8.52728029987505,
+            "uniqueness": 16.228571428571424
+          },
+          "up": {
+            "dx": 0,
+            "dy": 14,
+            "mae": 2.8046647230320705,
+            "contrast": 8.52728029987505,
+            "uniqueness": 2.4656964656964653
+          }
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          2020,
+          1120
+        ],
+        "matches": {
+          "left": {
+            "dx": 44,
+            "dy": 0,
+            "mae": 2.596418159100375,
+            "contrast": 7.191170345689296,
+            "uniqueness": 2.3294834777029196
+          },
+          "right": {
+            "dx": -44,
+            "dy": 0,
+            "mae": 2.3698458975426893,
+            "contrast": 7.191170345689296,
+            "uniqueness": 2.454833040421794
+          },
+          "restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 0.43065389421074823,
+            "contrast": 7.191170345689296,
+            "uniqueness": 14.700193423597588
+          },
+          "final_restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 0.31320283215327277,
+            "contrast": 7.191170345689296,
+            "uniqueness": 20.337765957446596
+          },
+          "up": {
+            "dx": 0,
+            "dy": 14,
+            "mae": 3.212827988338193,
+            "contrast": 7.191170345689296,
+            "uniqueness": 1.7438423645320194
+          }
+        },
+        "accepted": true
+      },
+      {
+        "xy": [
+          2180,
+          1120
+        ],
+        "matches": {
+          "left": {
+            "dx": 44,
+            "dy": 0,
+            "mae": 2.2332361516034975,
+            "contrast": 10.084964598084133,
+            "uniqueness": 3.564341663558375
+          },
+          "right": {
+            "dx": -44,
+            "dy": 0,
+            "mae": 2.908788004997915,
+            "contrast": 10.084964598084133,
+            "uniqueness": 2.537800687285226
+          },
+          "restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 0.5122865472719722,
+            "contrast": 10.084964598084133,
+            "uniqueness": 19.575609756097478
+          },
+          "final_restore": {
+            "dx": 0,
+            "dy": 0,
+            "mae": 0.5089546022490652,
+            "contrast": 10.084964598084133,
+            "uniqueness": 19.618657937806784
+          },
+          "up": {
+            "dx": 2,
+            "dy": 14,
+            "mae": 5.8192419825072905,
+            "contrast": 10.084964598084133,
+            "uniqueness": 1.4008016032064126
+          }
+        },
+        "accepted": false
+      }
+    ]
+  },
+  "wide_fov_coverage_passed": false,
+  "wide_fov_observation": "Visible missing/discontinuous regions; causes including original culling, unselected passes and screen-space dependencies remain unseparated.",
+  "observed_fullsize_viewport": {
+    "x": 0.0,
+    "y": 1440.0,
+    "width": 2560.0,
+    "height": -1440.0,
+    "min_depth": 0.0,
+    "max_depth": 1.0
+  },
+  "viewport_observation_budget": 32,
+  "viewport_attribution_per_selected_draw": false,
+  "enabled_device_features": {
+    "synchronization2": true,
+    "dynamic_rendering": true,
+    "timeline": true,
+    "buffer_device_address": true
+  },
+  "last_sampled_camera_stats": {
+    "updates": 6,
+    "packet_sequence": 7,
+    "registered_queues": 5,
+    "cross_queue_waits": 0,
+    "markers": 521746,
+    "busy_boundaries": 0,
+    "uncovered_boundaries": 0,
+    "marker_backpressure": 577324,
+    "write_holds": 0,
+    "inhibited_boundaries": 0,
+    "xr_pose_known": false
+  },
+  "in_game_khronos_validation": false,
+  "error_events_observed": 0,
+  "device_destroy_trace_observed": false,
+  "final_fence_accounting_proved": false,
+  "terminal_stop_written": true,
+  "all_owned_processes_exited": true,
+  "original_game_and_vendor_files_and_exports_verified": true,
+  "original_exports_count": 262,
+  "launcher_exit_code": 0,
+  "limits": [
+    "26 accepted local terrain correspondences out of 45 contrasted patches do not establish whole-scene coverage.",
+    "Wide optical projection is currently a visible coverage failure, not a usable immersive result.",
+    "No actual XR pose/time or headset image in this game trial; two successive presents per pair.",
+    "Chosen metric scale and identity VIEW basis do not calibrate physical world size, gravity, tabletop placement or comfort.",
+    "No game D32 readback; source-depth mathematical/GPU preservation is proved separately with owned scenes.",
+    "Five registered queues with zero cross-queue camera waits do not certify arbitrary asynchronous game/runtime access.",
+    "CPU diagnostic exports and marker backpressure do not validate headtracking cadence.",
+    "Physical SteamVR DRM/WAW errors remain unresolved; native Windows D3D12/VR integration absent."
+  ]
+}

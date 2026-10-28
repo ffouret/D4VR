@@ -1,0 +1,156 @@
+{
+  "schema_version": 1,
+  "purpose": "owned_SOURCE_writer_C_ABI_precode_publication",
+  "status": "REVIEWED_PRECODE_ONLY_NO_IMPLEMENTATION_OR_COMPILED_ABI",
+  "component_stage": "Documentation frozen before any new C header, producer or source hooks. Layout arithmetic and JSON generation are documentation work, not ABI execution.",
+  "normative_entry": {
+    "path": "docs/schemas/owned-source-writer-c-abi-v1/normative-manifest.json",
+    "bytes": 1364,
+    "sha256": "ebee057ce52163760ec9c2ce92bf80d452bd557d002a143731f8988f4ea9268e"
+  },
+  "exact_bundle": [
+    {
+      "path": "docs/schemas/owned-source-writer-c-abi-v1/normative-manifest.json",
+      "bytes": 1364,
+      "sha256": "ebee057ce52163760ec9c2ce92bf80d452bd557d002a143731f8988f4ea9268e"
+    },
+    {
+      "path": "docs/schemas/owned-source-writer-c-abi-v1/contract-final-proposed.json",
+      "bytes": 48606,
+      "sha256": "989224c8388364d5c1c26b08549ca1bfd48cdbc87e61be170472c97e3961f599"
+    },
+    {
+      "path": "docs/schemas/owned-source-writer-c-abi-v1/lease-counter-addendum-v2.json",
+      "bytes": 4265,
+      "sha256": "b2f033b848f0dd14ef66f492b2544e41c710f0383cb7d849218d17d3b90bf0fe"
+    },
+    {
+      "path": "docs/schemas/owned-source-writer-c-abi-v1/docs-proposals/pod-layouts-final-proposed.json",
+      "bytes": 293648,
+      "sha256": "6efc9f61f9cb66e57abc7c67d10909cb39b4cbe58c5aaa5ce35bf9c3dfbe608c"
+    },
+    {
+      "path": "docs/schemas/owned-source-writer-c-abi-v1/docs-proposals/private-memory-final-proposed.json",
+      "bytes": 24154,
+      "sha256": "5ed91cb4d56011f798038dfee39203604809f5708342cf6502fd96dd3c61b69e"
+    },
+    {
+      "path": "docs/schemas/owned-source-writer-c-abi-v1/docs-proposals/source-callbacks-final-proposed.json",
+      "bytes": 50536,
+      "sha256": "837f20a99202ee73a8cbdaefdabe469ff06069dc17892cc47f387bb60a13582d"
+    },
+    {
+      "path": "docs/schemas/owned-source-writer-c-abi-v1/docs-proposals/source-protocol-final-proposed.json",
+      "bytes": 37201,
+      "sha256": "63c6989bd665204259be34df37f7dc713cc8e304e7b664b180c3122a5b94b720"
+    },
+    {
+      "path": "docs/schemas/owned-source-writer-c-abi-v1/docs-proposals/source-callback-fields-final-proposed.json",
+      "bytes": 256790,
+      "sha256": "3a76ca68fee98ab892272ecc3b90e1cb28675e9349b3df9fe65fc18ed517443d"
+    },
+    {
+      "path": "docs/schemas/owned-source-writer-c-abi-v1/docs-proposals/no-reread-addendum.json",
+      "bytes": 15380,
+      "sha256": "732e92e886baef9c53995bbc0d7e9eb9c36356e45d3eec8352daa396991d312a"
+    }
+  ],
+  "preserved_authorities": {
+    "wire_schema": {
+      "path": "docs/schemas/owned-source-writer-v1.json",
+      "sha256": "693021b27fbb12ed298b486ee38e3bdd3a5429c7478d47a3640158aa22011143"
+    },
+    "pure_model": {
+      "path": "tools/owned_source_writer_validate.py",
+      "sha256": "660623fb5da3cbec1ea7fbe2c6f1513beadd3950c97416a6126a71de119479bf"
+    },
+    "previous_implemented_commit": "80d0808c9d17251405da65fac4fd05ed05a44c2a",
+    "previous_implemented_CI": {
+      "run_id": 40607661934,
+      "url": "https://github.com/ffouret/D4VR/actions/runs/40607661934",
+      "python_tests": 1130,
+      "new_in_previous_model": 72,
+      "scope": "Earlier implemented CPU model only. Python not sanitized; Windows mocks are not a vendor renderer run. No old checks repeated for this documentation."
+    }
+  },
+  "proposed_layout_requirements_not_compiler_measurements": {
+    "grammar_types": 62,
+    "callback_projections": 46,
+    "layouts": 274,
+    "private_layouts": 6,
+    "Call_bytes": 2504,
+    "max_Before_bytes": 1448,
+    "max_After_bytes": 704,
+    "context_arena_bytes": 404352,
+    "separate_core_issuer_bytes": 64,
+    "total_static_observer_bytes": 404416,
+    "tracked_callback_object_sum_conditional_bytes": 4032,
+    "not_a_compiler_stack_or_total_CPU_bound": true
+  },
+  "protocol": {
+    "one_new_core_context": true,
+    "public_controls": [
+      "D4VR_OwnedWriterBeginV1",
+      "D4VR_OwnedWriterSealV1",
+      "D4VR_OwnedWriterReceiptCopyV1",
+      "D4VR_OwnedWriterReceiptRetainV1",
+      "D4VR_OwnedWriterReceiptDropV1",
+      "D4VR_OwnedWriterStatusV1"
+    ],
+    "default_off_option": "owned_source_writer_observer",
+    "mutually_exclusive_existing_option": "enable_d4vr_typed_copy_source",
+    "immutable_payloads": 1,
+    "external_owner_aliases": 8,
+    "shared_pending": 32,
+    "records": 64,
+    "marks": 128,
+    "raw_frame_bytes": 65536,
+    "pure_model_full_report_bytes": 262144,
+    "new_execution_envelope_admitted": false,
+    "source_boundary": "First factory candidate and first cold Draw chosen before branch; healthy freeze at original selected Execute RETURN; no lookup at Seal.",
+    "data_policy": "Unknown original nullable operands cannot become observed NULL; exact zero/presence and actual return domains are separate.",
+    "RootParse": "Original generic parser return before conversion/free; stateless shader bridge to the sole core context, core-only transitive archive replacement."
+  },
+  "private_review_authorities": [
+    {
+      "role": "author",
+      "path": "work/owned-source-writer-C-ABI-precode-20261028-1/proof-author.json",
+      "bytes": 11467,
+      "sha256": "25ba91ac0a289d00dbf793af3bda1db7d1ffc83b6130543aed1605f87592adcc"
+    },
+    {
+      "role": "independent_bounds",
+      "path": "work/owned-source-writer-C-ABI-budget-precode-20261028-1/proof.json",
+      "bytes": 6806,
+      "sha256": "26a6008a145f1c475617d4c70c582f5bca99cbf8d54dc1b418cffc3ad668328c"
+    },
+    {
+      "role": "SOURCE_review",
+      "path": "work/owned-source-writer-C-ABI-source-review-20261028-1/proof-final-additive.json",
+      "bytes": 13351,
+      "sha256": "9aa47a4492a7051cff27d5c542bcc7d688e27a01c5f4c95b3b5072386e01eb62"
+    }
+  ],
+  "parent_document_verification": {
+    "path": "work/owned-source-writer-C-ABI-parent-precode-20261028-1/public-bundle-verification.json",
+    "bytes": 3340,
+    "sha256": "0ad3b28da35148541263256045a838f80f78a01291abff0ce7ae0fc3d16a3c2c"
+  },
+  "independence": "Internal peer review, with shared older models/fixtures and SOURCE tables. The new contract author, bounds reviewer and SOURCE reviewer are distinct roles; this is not third-party certification of their foundations or a producer. Review counts and design vectors overlap and are not tests.",
+  "precode_inquiries_preserved": [
+    "Candidate1 C reserved member, natural alignment and derived offsets corrected in later documents.",
+    "Private constructor access across source files uses the same core pending creator; no original ABI expansion.",
+    "Return read admission, receiver coherence and unavailable nullable operands closed before code.",
+    "Lease-only diagnostic saturation, owner quota before issuer allocation and shared-state checks under lock are explicit."
+  ],
+  "new_header_or_producer_implemented": false,
+  "new_C_ABI_compiled": false,
+  "new_SOURCE_hooks_implemented": false,
+  "new_vendor_build_or_runtime_executed": false,
+  "new_tests_or_model_analyze_for_this_documentation": false,
+  "new_game_or_headset_run": false,
+  "actual_SOURCE_writer_or_game_input_proven": false,
+  "usable_Diablo_VR_solution": false,
+  "publication_policy": "Documentation only, intentional [skip ci]. Previous CI evidence is historical; no new CI success is claimed. No private game captures, shaders, DLLs or logs are included.",
+  "next_gate": "A separate parent decision after this freeze may admit new C-only sink/mock/ABI CPU work. SOURCE patch, vendor build and physical execution remain later gates."
+}

@@ -1,0 +1,1209 @@
+{
+  "schema_version": 1,
+  "created_utc": "2026-10-25T07:03:06.428891+00:00",
+  "scope": "validated exclusion of non-output external writes, not pass replay permission; synthetic controls and aggregate static old candidate results",
+  "repository_parent_commit": "476db919ff437c45fbd93e3fc487309c5a4b7b31",
+  "source_sha256": {
+    "tools/shader_write_contract.py": "c5b0bc1926fda9e708676709e169de9e132f9267749275b37b342476496cd59b",
+    "tools/shader_write_validate.py": "05dfe1cebed504974a723ce35dc98b7319de750e2832cd5709eeddce86f918a4",
+    "tests/test_shader_write_contract.py": "a9155975d57005d889a2434da920e0a41df43582994b37f2ebb7ac5f01044446",
+    "native/tests/shader_write_copy.spvasm": "89ed3fc29bb1e44654a7456f5149d4aa601d432cfc4bf3eb62fdd3d0defefad0",
+    ".github/workflows/checks.yml": "62ce05ad3248b039331924d885bfaf76db0e4a8c316dacf57f29db8d42e1f5f5",
+    "README.md": "a8e9667de21ce20a7f4784b383bbf420d4a5d0e5a8ca6989200b392b71b2a888",
+    "docs/SHADER_EFFECTS.md": "10c9af4cff65b6634827f5526b82469cb84cbf476e27b4c96eb8d16a1ed65bf4",
+    "docs/SHADER_WRITE_CONTRACT.md": "44ed6469b05b7ecbe38a29c212ddf81eb1b33de9f529791e59fac3e1183f3af3",
+    "tools/glsl_effects.py": "f4b04140402f020d2facea1315c707658035278bb88f999fd95254c41bda66e5",
+    "tools/shader_effects.py": "cefc93ef2f3151d89cc1c00b591caad2520e8a8e78558a84881dbb3ee31ffa80",
+    "tools/stereo_helper.py": "69ed91352cb68fca3a839deb8caf051e05c7185da4f7be9be1f53feb76d81e06",
+    "tools/stereo_helper_validate.py": "dff36f1ba3fe3bbd0b4eb4c162d121a3af3506c078f3767570769503c408a5d5",
+    "tools/spirv_probe.py": "879b657f0ae2bd250a19dcb9589957885bfe12072e88a293c8f2809d164aae74"
+  },
+  "policy": "shader_non_output_writes_v1",
+  "reviewed_core_opcodes": {
+    "0": "OpNop",
+    "2": "OpSourceContinued",
+    "3": "OpSource",
+    "4": "OpSourceExtension",
+    "5": "OpName",
+    "6": "OpMemberName",
+    "7": "OpString",
+    "8": "OpLine",
+    "10": "OpExtension",
+    "11": "OpExtInstImport",
+    "12": "OpExtInst",
+    "14": "OpMemoryModel",
+    "15": "OpEntryPoint",
+    "16": "OpExecutionMode",
+    "17": "OpCapability",
+    "19": "OpTypeVoid",
+    "20": "OpTypeBool",
+    "21": "OpTypeInt",
+    "22": "OpTypeFloat",
+    "23": "OpTypeVector",
+    "24": "OpTypeMatrix",
+    "25": "OpTypeImage",
+    "26": "OpTypeSampler",
+    "27": "OpTypeSampledImage",
+    "28": "OpTypeArray",
+    "29": "OpTypeRuntimeArray",
+    "30": "OpTypeStruct",
+    "32": "OpTypePointer",
+    "33": "OpTypeFunction",
+    "39": "OpTypeForwardPointer",
+    "41": "OpConstantTrue",
+    "42": "OpConstantFalse",
+    "43": "OpConstant",
+    "44": "OpConstantComposite",
+    "46": "OpConstantNull",
+    "48": "OpSpecConstantTrue",
+    "49": "OpSpecConstantFalse",
+    "50": "OpSpecConstant",
+    "51": "OpSpecConstantComposite",
+    "52": "OpSpecConstantOp",
+    "54": "OpFunction",
+    "55": "OpFunctionParameter",
+    "56": "OpFunctionEnd",
+    "57": "OpFunctionCall",
+    "59": "OpVariable",
+    "61": "OpLoad",
+    "62": "OpStore",
+    "63": "OpCopyMemory",
+    "64": "OpCopyMemorySized",
+    "65": "OpAccessChain",
+    "66": "OpInBoundsAccessChain",
+    "67": "OpPtrAccessChain",
+    "68": "OpArrayLength",
+    "70": "OpInBoundsPtrAccessChain",
+    "71": "OpDecorate",
+    "72": "OpMemberDecorate",
+    "79": "OpVectorShuffle",
+    "80": "OpCompositeConstruct",
+    "81": "OpCompositeExtract",
+    "82": "OpCompositeInsert",
+    "83": "OpCopyObject",
+    "86": "OpSampledImage",
+    "87": "OpImageSampleImplicitLod",
+    "88": "OpImageSampleExplicitLod",
+    "95": "OpImageFetch",
+    "98": "OpImageRead",
+    "100": "OpImage",
+    "109": "OpConvertFToU",
+    "110": "OpConvertFToS",
+    "111": "OpConvertSToF",
+    "112": "OpConvertUToF",
+    "113": "OpUConvert",
+    "114": "OpSConvert",
+    "115": "OpFConvert",
+    "120": "OpConvertUToPtr",
+    "124": "OpBitcast",
+    "126": "OpSNegate",
+    "127": "OpFNegate",
+    "128": "OpIAdd",
+    "129": "OpFAdd",
+    "130": "OpISub",
+    "131": "OpFSub",
+    "132": "OpIMul",
+    "133": "OpFMul",
+    "134": "OpUDiv",
+    "135": "OpSDiv",
+    "136": "OpFDiv",
+    "137": "OpUMod",
+    "138": "OpSRem",
+    "139": "OpSMod",
+    "140": "OpFRem",
+    "141": "OpFMod",
+    "142": "OpVectorTimesScalar",
+    "143": "OpMatrixTimesScalar",
+    "144": "OpVectorTimesMatrix",
+    "145": "OpMatrixTimesVector",
+    "146": "OpMatrixTimesMatrix",
+    "147": "OpOuterProduct",
+    "148": "OpDot",
+    "164": "OpLogicalEqual",
+    "165": "OpLogicalNotEqual",
+    "166": "OpLogicalOr",
+    "167": "OpLogicalAnd",
+    "168": "OpLogicalNot",
+    "169": "OpSelect",
+    "170": "OpIEqual",
+    "171": "OpINotEqual",
+    "172": "OpUGreaterThan",
+    "173": "OpSGreaterThan",
+    "174": "OpUGreaterThanEqual",
+    "175": "OpSGreaterThanEqual",
+    "176": "OpULessThan",
+    "177": "OpSLessThan",
+    "178": "OpULessThanEqual",
+    "179": "OpSLessThanEqual",
+    "180": "OpFOrdEqual",
+    "181": "OpFUnordEqual",
+    "182": "OpFOrdNotEqual",
+    "183": "OpFUnordNotEqual",
+    "184": "OpFOrdLessThan",
+    "185": "OpFUnordLessThan",
+    "186": "OpFOrdGreaterThan",
+    "187": "OpFUnordGreaterThan",
+    "188": "OpFOrdLessThanEqual",
+    "189": "OpFUnordLessThanEqual",
+    "190": "OpFOrdGreaterThanEqual",
+    "191": "OpFUnordGreaterThanEqual",
+    "194": "OpShiftRightLogical",
+    "195": "OpShiftRightArithmetic",
+    "196": "OpShiftLeftLogical",
+    "197": "OpBitwiseOr",
+    "198": "OpBitwiseXor",
+    "199": "OpBitwiseAnd",
+    "200": "OpNot",
+    "207": "OpDPdx",
+    "208": "OpDPdy",
+    "209": "OpFwidth",
+    "210": "OpDPdxFine",
+    "211": "OpDPdyFine",
+    "212": "OpFwidthFine",
+    "213": "OpDPdxCoarse",
+    "214": "OpDPdyCoarse",
+    "215": "OpFwidthCoarse",
+    "245": "OpPhi",
+    "246": "OpLoopMerge",
+    "247": "OpSelectionMerge",
+    "248": "OpLabel",
+    "249": "OpBranch",
+    "250": "OpBranchConditional",
+    "251": "OpSwitch",
+    "252": "OpKill",
+    "253": "OpReturn",
+    "254": "OpReturnValue",
+    "255": "OpUnreachable",
+    "317": "OpNoLine",
+    "330": "OpModuleProcessed",
+    "5380": "OpDemoteToHelperInvocation"
+  },
+  "capabilities": [
+    1,
+    11,
+    40,
+    50,
+    51,
+    5302,
+    5347,
+    5379
+  ],
+  "decorations": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    11,
+    13,
+    14,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    23,
+    24,
+    25,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    42,
+    43,
+    5355,
+    5356
+  ],
+  "extensions": [
+    "SPV_EXT_demote_to_helper_invocation",
+    "SPV_EXT_descriptor_indexing",
+    "SPV_KHR_physical_storage_buffer",
+    "SPV_KHR_storage_buffer_storage_class"
+  ],
+  "grammar_sha256": "dd2a7c48d3131c9d0c78ad669ab4765048e6fd63e1fe277a0858f5458febdc68",
+  "glsl_grammar_sha256": "5d72e48247569f9b77a17a849db624350abc9d26f7f72b153bbcf15c37238239",
+  "validator_sha256": "20c5998a46f02310f56bf11be238c34d374bb50104b7ccf85bb909f9da883ff9",
+  "synthetic_cases": [
+    {
+      "case": "helper-diagnostic",
+      "expected_validated_write_exclusion": false,
+      "sha256": "4a2e7f41b546e706fdc7bdd70831221db52e9c9057b4337666174c062d25ae17",
+      "bytes": 14128,
+      "instructions": 837,
+      "functions": 3,
+      "execution_models": [
+        0
+      ],
+      "core_writes_by_storage": {
+        "Function": 46,
+        "Output": 1,
+        "PhysicalStorageBuffer": 9
+      },
+      "extended_writes_by_storage": {},
+      "blocking_reasons": {
+        "non_output_external_or_unresolved_write": 9,
+        "unreviewed_opcode:225": 2,
+        "unreviewed_opcode:234": 3
+      },
+      "static_non_output_external_writes_excluded": false,
+      "validated_non_output_external_writes_excluded": false,
+      "replay_allowed": false,
+      "module_validation_passed": true,
+      "census": {
+        "non_atomic_external_pointer_write_instructions": 9,
+        "image_write_instructions": 0,
+        "atomic_instructions": {
+          "OpAtomicIAdd": 3
+        },
+        "barrier_instructions": {
+          "OpMemoryBarrier": 2
+        },
+        "unmodeled_resource_instructions": {},
+        "unknown_opcodes": {}
+      }
+    },
+    {
+      "case": "probe-diagnostic",
+      "expected_validated_write_exclusion": false,
+      "sha256": "b2535351d310c4830eb9e3ff74c90e76cb1ab77b6fbea9eecb1f7fc6916a571c",
+      "bytes": 16772,
+      "instructions": 979,
+      "functions": 3,
+      "execution_models": [
+        0
+      ],
+      "core_writes_by_storage": {
+        "Function": 47,
+        "Output": 3,
+        "PhysicalStorageBuffer": 9
+      },
+      "extended_writes_by_storage": {},
+      "blocking_reasons": {
+        "non_output_external_or_unresolved_write": 9,
+        "unreviewed_opcode:225": 2,
+        "unreviewed_opcode:234": 3
+      },
+      "static_non_output_external_writes_excluded": false,
+      "validated_non_output_external_writes_excluded": false,
+      "replay_allowed": false,
+      "module_validation_passed": true,
+      "census": {
+        "non_atomic_external_pointer_write_instructions": 9,
+        "image_write_instructions": 0,
+        "atomic_instructions": {
+          "OpAtomicIAdd": 3
+        },
+        "barrier_instructions": {
+          "OpMemoryBarrier": 2
+        },
+        "unmodeled_resource_instructions": {},
+        "unknown_opcodes": {}
+      }
+    },
+    {
+      "case": "mrt-diagnostic",
+      "expected_validated_write_exclusion": false,
+      "sha256": "e1818869fd5f4860c28228fdd2b3d82f2760f2e891ee1f8af9b6cdb37a4981ab",
+      "bytes": 17316,
+      "instructions": 1009,
+      "functions": 3,
+      "execution_models": [
+        0
+      ],
+      "core_writes_by_storage": {
+        "Function": 47,
+        "Output": 4,
+        "PhysicalStorageBuffer": 9
+      },
+      "extended_writes_by_storage": {},
+      "blocking_reasons": {
+        "non_output_external_or_unresolved_write": 9,
+        "unreviewed_opcode:225": 2,
+        "unreviewed_opcode:234": 3
+      },
+      "static_non_output_external_writes_excluded": false,
+      "validated_non_output_external_writes_excluded": false,
+      "replay_allowed": false,
+      "module_validation_passed": true,
+      "census": {
+        "non_atomic_external_pointer_write_instructions": 9,
+        "image_write_instructions": 0,
+        "atomic_instructions": {
+          "OpAtomicIAdd": 3
+        },
+        "barrier_instructions": {
+          "OpMemoryBarrier": 2
+        },
+        "unmodeled_resource_instructions": {},
+        "unknown_opcodes": {}
+      }
+    },
+    {
+      "case": "mrt-vertex-diagnostic",
+      "expected_validated_write_exclusion": false,
+      "sha256": "1b3160f48e1e5e233b27ad38234d2a15746303ef6475feda10889dcc20cae071",
+      "bytes": 17104,
+      "instructions": 997,
+      "functions": 3,
+      "execution_models": [
+        0
+      ],
+      "core_writes_by_storage": {
+        "Function": 46,
+        "Output": 4,
+        "PhysicalStorageBuffer": 9
+      },
+      "extended_writes_by_storage": {},
+      "blocking_reasons": {
+        "non_output_external_or_unresolved_write": 9,
+        "unreviewed_opcode:225": 2,
+        "unreviewed_opcode:234": 3
+      },
+      "static_non_output_external_writes_excluded": false,
+      "validated_non_output_external_writes_excluded": false,
+      "replay_allowed": false,
+      "module_validation_passed": true,
+      "census": {
+        "non_atomic_external_pointer_write_instructions": 9,
+        "image_write_instructions": 0,
+        "atomic_instructions": {
+          "OpAtomicIAdd": 3
+        },
+        "barrier_instructions": {
+          "OpMemoryBarrier": 2
+        },
+        "unmodeled_resource_instructions": {},
+        "unknown_opcodes": {}
+      }
+    },
+    {
+      "case": "source-write-diagnostic",
+      "expected_validated_write_exclusion": false,
+      "sha256": "f9b7985cd4fdc683c1e55ee79c45880886a2ee8910f2eb748c3600b785d5964a",
+      "bytes": 16676,
+      "instructions": 976,
+      "functions": 3,
+      "execution_models": [
+        0
+      ],
+      "core_writes_by_storage": {
+        "Function": 46,
+        "Output": 3,
+        "PhysicalStorageBuffer": 9,
+        "StorageBuffer": 1
+      },
+      "extended_writes_by_storage": {},
+      "blocking_reasons": {
+        "non_output_external_or_unresolved_write": 10,
+        "unreviewed_opcode:225": 2,
+        "unreviewed_opcode:234": 3
+      },
+      "static_non_output_external_writes_excluded": false,
+      "validated_non_output_external_writes_excluded": false,
+      "replay_allowed": false,
+      "module_validation_passed": true,
+      "census": {
+        "non_atomic_external_pointer_write_instructions": 10,
+        "image_write_instructions": 0,
+        "atomic_instructions": {
+          "OpAtomicIAdd": 3
+        },
+        "barrier_instructions": {
+          "OpMemoryBarrier": 2
+        },
+        "unmodeled_resource_instructions": {},
+        "unknown_opcodes": {}
+      }
+    },
+    {
+      "case": "helper-no-telemetry",
+      "expected_validated_write_exclusion": true,
+      "sha256": "104c868b52025cb8c60b976ee891945cfba35ff859e23f2d2f71d023f385dd6e",
+      "bytes": 9060,
+      "instructions": 532,
+      "functions": 2,
+      "execution_models": [
+        0
+      ],
+      "core_writes_by_storage": {
+        "Function": 28,
+        "Output": 1
+      },
+      "extended_writes_by_storage": {},
+      "blocking_reasons": {},
+      "static_non_output_external_writes_excluded": true,
+      "validated_non_output_external_writes_excluded": true,
+      "replay_allowed": false,
+      "module_validation_passed": true,
+      "census": {
+        "non_atomic_external_pointer_write_instructions": 0,
+        "image_write_instructions": 0,
+        "atomic_instructions": {},
+        "barrier_instructions": {},
+        "unmodeled_resource_instructions": {},
+        "unknown_opcodes": {}
+      }
+    },
+    {
+      "case": "probe-no-telemetry",
+      "expected_validated_write_exclusion": true,
+      "sha256": "380fd798844ec2c0ad9c52cda92145b668b412f308b339162fecd07ff93738b1",
+      "bytes": 11736,
+      "instructions": 675,
+      "functions": 2,
+      "execution_models": [
+        0
+      ],
+      "core_writes_by_storage": {
+        "Function": 29,
+        "Output": 3
+      },
+      "extended_writes_by_storage": {},
+      "blocking_reasons": {},
+      "static_non_output_external_writes_excluded": true,
+      "validated_non_output_external_writes_excluded": true,
+      "replay_allowed": false,
+      "module_validation_passed": true,
+      "census": {
+        "non_atomic_external_pointer_write_instructions": 0,
+        "image_write_instructions": 0,
+        "atomic_instructions": {},
+        "barrier_instructions": {},
+        "unmodeled_resource_instructions": {},
+        "unknown_opcodes": {}
+      }
+    },
+    {
+      "case": "mrt-no-telemetry",
+      "expected_validated_write_exclusion": true,
+      "sha256": "c106c9910a0cf5a7424e134566837cf4cc8f9e1e117fbb1fb9b7897abdcc9782",
+      "bytes": 12280,
+      "instructions": 705,
+      "functions": 2,
+      "execution_models": [
+        0
+      ],
+      "core_writes_by_storage": {
+        "Function": 29,
+        "Output": 4
+      },
+      "extended_writes_by_storage": {},
+      "blocking_reasons": {},
+      "static_non_output_external_writes_excluded": true,
+      "validated_non_output_external_writes_excluded": true,
+      "replay_allowed": false,
+      "module_validation_passed": true,
+      "census": {
+        "non_atomic_external_pointer_write_instructions": 0,
+        "image_write_instructions": 0,
+        "atomic_instructions": {},
+        "barrier_instructions": {},
+        "unmodeled_resource_instructions": {},
+        "unknown_opcodes": {}
+      }
+    },
+    {
+      "case": "mrt-vertex-no-telemetry",
+      "expected_validated_write_exclusion": true,
+      "sha256": "d0fcb6abb6fe09fd99a63e56e3ed3fd4ed98db453024edf12dcd187e6adea9b3",
+      "bytes": 12068,
+      "instructions": 693,
+      "functions": 2,
+      "execution_models": [
+        0
+      ],
+      "core_writes_by_storage": {
+        "Function": 28,
+        "Output": 4
+      },
+      "extended_writes_by_storage": {},
+      "blocking_reasons": {},
+      "static_non_output_external_writes_excluded": true,
+      "validated_non_output_external_writes_excluded": true,
+      "replay_allowed": false,
+      "module_validation_passed": true,
+      "census": {
+        "non_atomic_external_pointer_write_instructions": 0,
+        "image_write_instructions": 0,
+        "atomic_instructions": {},
+        "barrier_instructions": {},
+        "unmodeled_resource_instructions": {},
+        "unknown_opcodes": {}
+      }
+    },
+    {
+      "case": "source-write-no-telemetry",
+      "expected_validated_write_exclusion": false,
+      "sha256": "07c360446a0900f074e50903ba34e6fac8b3d9e3dcdd5674603626f69a15e397",
+      "bytes": 11640,
+      "instructions": 672,
+      "functions": 2,
+      "execution_models": [
+        0
+      ],
+      "core_writes_by_storage": {
+        "Function": 28,
+        "Output": 3,
+        "StorageBuffer": 1
+      },
+      "extended_writes_by_storage": {},
+      "blocking_reasons": {
+        "non_output_external_or_unresolved_write": 1
+      },
+      "static_non_output_external_writes_excluded": false,
+      "validated_non_output_external_writes_excluded": false,
+      "replay_allowed": false,
+      "module_validation_passed": true,
+      "census": {
+        "non_atomic_external_pointer_write_instructions": 1,
+        "image_write_instructions": 0,
+        "atomic_instructions": {},
+        "barrier_instructions": {},
+        "unmodeled_resource_instructions": {},
+        "unknown_opcodes": {}
+      }
+    },
+    {
+      "case": "original-probe",
+      "expected_validated_write_exclusion": true,
+      "sha256": "4077a707cdf38d7c61c7f21458e24805b5b88748df815c4b1e2c3e38cddbdc69",
+      "bytes": 3080,
+      "instructions": 173,
+      "functions": 1,
+      "execution_models": [
+        0
+      ],
+      "core_writes_by_storage": {
+        "Function": 3,
+        "Output": 2
+      },
+      "extended_writes_by_storage": {},
+      "blocking_reasons": {},
+      "static_non_output_external_writes_excluded": true,
+      "validated_non_output_external_writes_excluded": true,
+      "replay_allowed": false,
+      "module_validation_passed": true,
+      "census": {
+        "non_atomic_external_pointer_write_instructions": 0,
+        "image_write_instructions": 0,
+        "atomic_instructions": {},
+        "barrier_instructions": {},
+        "unmodeled_resource_instructions": {},
+        "unknown_opcodes": {}
+      }
+    },
+    {
+      "case": "original-mrt",
+      "expected_validated_write_exclusion": true,
+      "sha256": "8f22dd63bc8bcd56e1b285079a98aa5d9e649774ff22dd8ce809e4a71f6fd5f7",
+      "bytes": 3624,
+      "instructions": 203,
+      "functions": 1,
+      "execution_models": [
+        0
+      ],
+      "core_writes_by_storage": {
+        "Function": 3,
+        "Output": 3
+      },
+      "extended_writes_by_storage": {},
+      "blocking_reasons": {},
+      "static_non_output_external_writes_excluded": true,
+      "validated_non_output_external_writes_excluded": true,
+      "replay_allowed": false,
+      "module_validation_passed": true,
+      "census": {
+        "non_atomic_external_pointer_write_instructions": 0,
+        "image_write_instructions": 0,
+        "atomic_instructions": {},
+        "barrier_instructions": {},
+        "unmodeled_resource_instructions": {},
+        "unknown_opcodes": {}
+      }
+    },
+    {
+      "case": "original-mrt-vertex",
+      "expected_validated_write_exclusion": true,
+      "sha256": "32e631b8c871342e2af0612cb64158b006c6fa87f49ccd1085906fc64a22973f",
+      "bytes": 3360,
+      "instructions": 188,
+      "functions": 1,
+      "execution_models": [
+        0
+      ],
+      "core_writes_by_storage": {
+        "Function": 2,
+        "Output": 3
+      },
+      "extended_writes_by_storage": {},
+      "blocking_reasons": {},
+      "static_non_output_external_writes_excluded": true,
+      "validated_non_output_external_writes_excluded": true,
+      "replay_allowed": false,
+      "module_validation_passed": true,
+      "census": {
+        "non_atomic_external_pointer_write_instructions": 0,
+        "image_write_instructions": 0,
+        "atomic_instructions": {},
+        "barrier_instructions": {},
+        "unmodeled_resource_instructions": {},
+        "unknown_opcodes": {}
+      }
+    },
+    {
+      "case": "original-source-write",
+      "expected_validated_write_exclusion": false,
+      "sha256": "6aab8b06d4f0f6ccd24c8a776e32ff25463d0feb610b53ac156f8d90fff20615",
+      "bytes": 2984,
+      "instructions": 170,
+      "functions": 1,
+      "execution_models": [
+        0
+      ],
+      "core_writes_by_storage": {
+        "Function": 2,
+        "Output": 2,
+        "StorageBuffer": 1
+      },
+      "extended_writes_by_storage": {},
+      "blocking_reasons": {
+        "non_output_external_or_unresolved_write": 1
+      },
+      "static_non_output_external_writes_excluded": false,
+      "validated_non_output_external_writes_excluded": false,
+      "replay_allowed": false,
+      "module_validation_passed": true,
+      "census": {
+        "non_atomic_external_pointer_write_instructions": 1,
+        "image_write_instructions": 0,
+        "atomic_instructions": {},
+        "barrier_instructions": {},
+        "unmodeled_resource_instructions": {},
+        "unknown_opcodes": {}
+      }
+    },
+    {
+      "case": "glsl-pure",
+      "expected_validated_write_exclusion": true,
+      "sha256": "3994ba4ce3543360296080d39a9f71c22ecf044ba0d301cb4498b35132b0cbdb",
+      "bytes": 676,
+      "instructions": 35,
+      "functions": 1,
+      "execution_models": [
+        4
+      ],
+      "core_writes_by_storage": {
+        "Output": 1
+      },
+      "extended_writes_by_storage": {},
+      "blocking_reasons": {},
+      "static_non_output_external_writes_excluded": true,
+      "validated_non_output_external_writes_excluded": true,
+      "replay_allowed": false,
+      "module_validation_passed": true,
+      "census": {
+        "non_atomic_external_pointer_write_instructions": 0,
+        "image_write_instructions": 0,
+        "atomic_instructions": {},
+        "barrier_instructions": {},
+        "unmodeled_resource_instructions": {},
+        "unknown_opcodes": {}
+      }
+    },
+    {
+      "case": "glsl-external-writes",
+      "expected_validated_write_exclusion": false,
+      "sha256": "2a9e7bf8b9922202507bdc05c17d8fb0ac61f9c3bd5e5eb18c64bd8460ba7c99",
+      "bytes": 592,
+      "instructions": 36,
+      "functions": 1,
+      "execution_models": [
+        4
+      ],
+      "core_writes_by_storage": {
+        "Output": 1
+      },
+      "extended_writes_by_storage": {
+        "StorageBuffer": 2
+      },
+      "blocking_reasons": {
+        "non_output_external_or_unresolved_write": 2
+      },
+      "static_non_output_external_writes_excluded": false,
+      "validated_non_output_external_writes_excluded": false,
+      "replay_allowed": false,
+      "module_validation_passed": true,
+      "census": {
+        "non_atomic_external_pointer_write_instructions": 2,
+        "image_write_instructions": 0,
+        "atomic_instructions": {},
+        "barrier_instructions": {},
+        "unmodeled_resource_instructions": {},
+        "unknown_opcodes": {}
+      }
+    },
+    {
+      "case": "glsl-local-writes",
+      "expected_validated_write_exclusion": true,
+      "sha256": "8d3eb5b4afb3b07241281099ef9c1e0a4b1e3ca86e1eb65ed668768dbbe51323",
+      "bytes": 404,
+      "instructions": 25,
+      "functions": 1,
+      "execution_models": [
+        4
+      ],
+      "core_writes_by_storage": {
+        "Output": 1
+      },
+      "extended_writes_by_storage": {
+        "Function": 1,
+        "Private": 1
+      },
+      "blocking_reasons": {},
+      "static_non_output_external_writes_excluded": true,
+      "validated_non_output_external_writes_excluded": true,
+      "replay_allowed": false,
+      "module_validation_passed": true,
+      "census": {
+        "non_atomic_external_pointer_write_instructions": 0,
+        "image_write_instructions": 0,
+        "atomic_instructions": {},
+        "barrier_instructions": {},
+        "unmodeled_resource_instructions": {},
+        "unknown_opcodes": {}
+      }
+    },
+    {
+      "case": "sampled-fragment",
+      "expected_validated_write_exclusion": true,
+      "sha256": "59a25a6873582a3aa79e1f3a9b43027a10be6f2aaa2e15110b318f0533433019",
+      "bytes": 532,
+      "instructions": 33,
+      "functions": 1,
+      "execution_models": [
+        4
+      ],
+      "core_writes_by_storage": {
+        "Output": 1
+      },
+      "extended_writes_by_storage": {},
+      "blocking_reasons": {},
+      "static_non_output_external_writes_excluded": true,
+      "validated_non_output_external_writes_excluded": true,
+      "replay_allowed": false,
+      "module_validation_passed": true,
+      "census": {
+        "non_atomic_external_pointer_write_instructions": 0,
+        "image_write_instructions": 0,
+        "atomic_instructions": {},
+        "barrier_instructions": {},
+        "unmodeled_resource_instructions": {},
+        "unknown_opcodes": {}
+      }
+    },
+    {
+      "case": "input-attachment",
+      "expected_validated_write_exclusion": true,
+      "sha256": "d02fb24863ac16077f1bcff9f0fac0355ec1e27453b9768813b63ff2969de50a",
+      "bytes": 536,
+      "instructions": 34,
+      "functions": 1,
+      "execution_models": [
+        4
+      ],
+      "core_writes_by_storage": {
+        "Output": 1
+      },
+      "extended_writes_by_storage": {},
+      "blocking_reasons": {},
+      "static_non_output_external_writes_excluded": true,
+      "validated_non_output_external_writes_excluded": true,
+      "replay_allowed": false,
+      "module_validation_passed": true,
+      "census": {
+        "non_atomic_external_pointer_write_instructions": 0,
+        "image_write_instructions": 0,
+        "atomic_instructions": {},
+        "barrier_instructions": {},
+        "unmodeled_resource_instructions": {},
+        "unknown_opcodes": {}
+      }
+    },
+    {
+      "case": "physical-write",
+      "expected_validated_write_exclusion": false,
+      "sha256": "f18466cd849e0c932ac869e386bcd02972af7aea1547f1b0319e8222388a4de9",
+      "bytes": 716,
+      "instructions": 44,
+      "functions": 1,
+      "execution_models": [
+        5
+      ],
+      "core_writes_by_storage": {
+        "PhysicalStorageBuffer": 1
+      },
+      "extended_writes_by_storage": {},
+      "blocking_reasons": {
+        "non_output_external_or_unresolved_write": 1,
+        "unreviewed_execution_mode": 1,
+        "unsupported_entry_points": 1
+      },
+      "static_non_output_external_writes_excluded": false,
+      "validated_non_output_external_writes_excluded": false,
+      "replay_allowed": false,
+      "module_validation_passed": true,
+      "census": {
+        "non_atomic_external_pointer_write_instructions": 1,
+        "image_write_instructions": 0,
+        "atomic_instructions": {},
+        "barrier_instructions": {},
+        "unmodeled_resource_instructions": {},
+        "unknown_opcodes": {}
+      }
+    },
+    {
+      "case": "buffer-image-atomic-write",
+      "expected_validated_write_exclusion": false,
+      "sha256": "7028494760684d234676a951669a1311d926e56fe117b131ea6c5e3b98e711ed",
+      "bytes": 928,
+      "instructions": 55,
+      "functions": 1,
+      "execution_models": [
+        5
+      ],
+      "core_writes_by_storage": {
+        "StorageBuffer": 1
+      },
+      "extended_writes_by_storage": {},
+      "blocking_reasons": {
+        "non_output_external_or_unresolved_write": 1,
+        "unreviewed_execution_mode": 1,
+        "unreviewed_opcode:234": 1,
+        "unreviewed_opcode:99": 1,
+        "unsupported_entry_points": 1
+      },
+      "static_non_output_external_writes_excluded": false,
+      "validated_non_output_external_writes_excluded": false,
+      "replay_allowed": false,
+      "module_validation_passed": true,
+      "census": {
+        "non_atomic_external_pointer_write_instructions": 1,
+        "image_write_instructions": 1,
+        "atomic_instructions": {
+          "OpAtomicIAdd": 1
+        },
+        "barrier_instructions": {},
+        "unmodeled_resource_instructions": {},
+        "unknown_opcodes": {}
+      }
+    },
+    {
+      "case": "debug-printf",
+      "expected_validated_write_exclusion": false,
+      "sha256": "f25104f771dcd7d9d1ac9fcecb2e0ceb9363a37ecc6a809e09ff3ce615039a96",
+      "bytes": 516,
+      "instructions": 30,
+      "functions": 1,
+      "execution_models": [
+        4
+      ],
+      "core_writes_by_storage": {
+        "Output": 1
+      },
+      "extended_writes_by_storage": {},
+      "blocking_reasons": {
+        "unreviewed_extended_instruction": 1,
+        "unreviewed_extended_set": 1,
+        "unreviewed_extension": 1
+      },
+      "static_non_output_external_writes_excluded": false,
+      "validated_non_output_external_writes_excluded": false,
+      "replay_allowed": false,
+      "module_validation_passed": true,
+      "census": {
+        "non_atomic_external_pointer_write_instructions": 0,
+        "image_write_instructions": 0,
+        "atomic_instructions": {},
+        "barrier_instructions": {},
+        "unmodeled_resource_instructions": {},
+        "unknown_opcodes": {}
+      }
+    },
+    {
+      "case": "uncalled-external-copy",
+      "expected_validated_write_exclusion": false,
+      "sha256": "ebd01015ef2e8815c80ea77cae2dc86180dd6e3f0c77fb60fcae879432c726eb",
+      "bytes": 488,
+      "instructions": 34,
+      "functions": 2,
+      "execution_models": [
+        4
+      ],
+      "core_writes_by_storage": {
+        "Function": 1,
+        "Output": 1,
+        "StorageBuffer": 1
+      },
+      "extended_writes_by_storage": {},
+      "blocking_reasons": {
+        "non_output_external_or_unresolved_write": 1
+      },
+      "static_non_output_external_writes_excluded": false,
+      "validated_non_output_external_writes_excluded": false,
+      "replay_allowed": false,
+      "module_validation_passed": true,
+      "census": {
+        "non_atomic_external_pointer_write_instructions": 1,
+        "image_write_instructions": 0,
+        "atomic_instructions": {},
+        "barrier_instructions": {},
+        "unmodeled_resource_instructions": {},
+        "unknown_opcodes": {}
+      }
+    },
+    {
+      "case": "uncalled-local-copy",
+      "expected_validated_write_exclusion": true,
+      "sha256": "3eb7bbca718489c6f89aeaccfd64522ac884c5369ea21a6a9dfb829cb6b73e99",
+      "bytes": 488,
+      "instructions": 34,
+      "functions": 2,
+      "execution_models": [
+        4
+      ],
+      "core_writes_by_storage": {
+        "Function": 2,
+        "Output": 1
+      },
+      "extended_writes_by_storage": {},
+      "blocking_reasons": {},
+      "static_non_output_external_writes_excluded": true,
+      "validated_non_output_external_writes_excluded": true,
+      "replay_allowed": false,
+      "module_validation_passed": true,
+      "census": {
+        "non_atomic_external_pointer_write_instructions": 0,
+        "image_write_instructions": 0,
+        "atomic_instructions": {},
+        "barrier_instructions": {},
+        "unmodeled_resource_instructions": {},
+        "unknown_opcodes": {}
+      }
+    },
+    {
+      "case": "uncalled-atomic",
+      "expected_validated_write_exclusion": false,
+      "sha256": "3875e0a6c775e4ce8b6c05a798df5ed60ec8b4c2a6b33a96c53d77c7b1d5d673",
+      "bytes": 504,
+      "instructions": 34,
+      "functions": 2,
+      "execution_models": [
+        4
+      ],
+      "core_writes_by_storage": {
+        "Function": 1,
+        "Output": 1
+      },
+      "extended_writes_by_storage": {},
+      "blocking_reasons": {
+        "unreviewed_opcode:234": 1
+      },
+      "static_non_output_external_writes_excluded": false,
+      "validated_non_output_external_writes_excluded": false,
+      "replay_allowed": false,
+      "module_validation_passed": true,
+      "census": {
+        "non_atomic_external_pointer_write_instructions": 0,
+        "image_write_instructions": 0,
+        "atomic_instructions": {
+          "OpAtomicIAdd": 1
+        },
+        "barrier_instructions": {},
+        "unmodeled_resource_instructions": {},
+        "unknown_opcodes": {}
+      }
+    },
+    {
+      "case": "uncalled-barrier",
+      "expected_validated_write_exclusion": false,
+      "sha256": "0b3868c4d8e4bd6cc67226515df6cde685ab66791c2b2364e232ca412bd9262b",
+      "bytes": 488,
+      "instructions": 34,
+      "functions": 2,
+      "execution_models": [
+        4
+      ],
+      "core_writes_by_storage": {
+        "Function": 1,
+        "Output": 1
+      },
+      "extended_writes_by_storage": {},
+      "blocking_reasons": {
+        "unreviewed_opcode:225": 1
+      },
+      "static_non_output_external_writes_excluded": false,
+      "validated_non_output_external_writes_excluded": false,
+      "replay_allowed": false,
+      "module_validation_passed": true,
+      "census": {
+        "non_atomic_external_pointer_write_instructions": 0,
+        "image_write_instructions": 0,
+        "atomic_instructions": {},
+        "barrier_instructions": {
+          "OpMemoryBarrier": 1
+        },
+        "unmodeled_resource_instructions": {},
+        "unknown_opcodes": {}
+      }
+    },
+    {
+      "case": "invalid-stage-covered-opcodes",
+      "expected_validated_write_exclusion": false,
+      "sha256": "c28aa325b579a3f2ba8f99c32a6889b9a085b6dc857ac203bd0dcfcce1a735c0",
+      "bytes": 12068,
+      "instructions": 693,
+      "functions": 2,
+      "execution_models": [
+        4
+      ],
+      "core_writes_by_storage": {
+        "Function": 28,
+        "Output": 4
+      },
+      "extended_writes_by_storage": {},
+      "blocking_reasons": {},
+      "static_non_output_external_writes_excluded": true,
+      "validated_non_output_external_writes_excluded": false,
+      "replay_allowed": false,
+      "module_validation_passed": false,
+      "census": {
+        "non_atomic_external_pointer_write_instructions": 0,
+        "image_write_instructions": 0,
+        "atomic_instructions": {},
+        "barrier_instructions": {},
+        "unmodeled_resource_instructions": {},
+        "unknown_opcodes": {}
+      }
+    },
+    {
+      "case": "reviewed-nop-helper",
+      "expected_validated_write_exclusion": true,
+      "sha256": "aee9c98aa9c3d01d28acb41cbcc2139c847304bf6cd5ac2651ebfade594bc4a3",
+      "bytes": 9064,
+      "instructions": 533,
+      "functions": 2,
+      "execution_models": [
+        0
+      ],
+      "core_writes_by_storage": {
+        "Function": 28,
+        "Output": 1
+      },
+      "extended_writes_by_storage": {},
+      "blocking_reasons": {},
+      "static_non_output_external_writes_excluded": true,
+      "validated_non_output_external_writes_excluded": true,
+      "replay_allowed": false,
+      "module_validation_passed": true,
+      "census": {
+        "non_atomic_external_pointer_write_instructions": 0,
+        "image_write_instructions": 0,
+        "atomic_instructions": {},
+        "barrier_instructions": {},
+        "unmodeled_resource_instructions": {},
+        "unknown_opcodes": {}
+      }
+    }
+  ],
+  "synthetic_full_private_report_sha256": "b85fc7facd59e3da57c78f32fa4d9bbfedb770cb3fa53104df61aa9f70d9dd56",
+  "synthetic_controls": 28,
+  "synthetic_controls_with_validated_write_exclusion": 13,
+  "synthetic_expected_refusals": 15,
+  "synthetic_modules_passing_spirv_val": 27,
+  "intentional_invalid_module_refused": true,
+  "old_candidate_analysis": {
+    "scope": "aggregate static results for old candidate modules only",
+    "private_report_sha256": "b6c151ab12c031ea34581210333ce4380458d391cb571c0fa1ee11e6487f3179",
+    "reports": [
+      {
+        "old_report": 1,
+        "candidate_modules": 17,
+        "vertex_candidates": 10,
+        "fragment_candidates": 7,
+        "transformation_rejections": 6,
+        "stage_associations": 20,
+        "validated_original_non_output_write_exclusions": 17,
+        "validated_transformed_vertex_non_output_write_exclusions": 4,
+        "unresolved_preparatory_LOADs": 2,
+        "live_byte_identity_proven": false,
+        "pass_replay_allowed": false
+      },
+      {
+        "old_report": 2,
+        "candidate_modules": 7,
+        "vertex_candidates": 4,
+        "fragment_candidates": 3,
+        "transformation_rejections": 0,
+        "stage_associations": 8,
+        "validated_original_non_output_write_exclusions": 7,
+        "validated_transformed_vertex_non_output_write_exclusions": 4,
+        "unresolved_preparatory_LOADs": 1,
+        "live_byte_identity_proven": false,
+        "pass_replay_allowed": false
+      }
+    ],
+    "unique_original_modules": 17,
+    "unique_transformed_vertex_modules": 4,
+    "unique_vertex_transformation_rejections": 6,
+    "transformation_rejection_reasons": {
+      "Expected one uniform buffer at the selected descriptor set/binding": 6
+    },
+    "all_built_modules_passed_validation_and_non_output_write_exclusion": true,
+    "overlapping_reports_do_not_sum": true,
+    "private_game_code_or_ids_published": false,
+    "new_game_or_gpu_run_performed": false,
+    "live_shader_byte_identity_proven": false,
+    "descriptors_aliases_or_GPU_dependencies_resolved": false,
+    "replay_allowed": false
+  },
+  "python_cases": 135,
+  "new_unit_tests": 10,
+  "original_game_and_nvidia_audit": {
+    "expected_game_version": "3.2.3.73883",
+    "expected_streamline_version": "2.12.0.0",
+    "original_library_matches": true,
+    "game_executable_matches": true,
+    "exports_match": true,
+    "named_exports": 262,
+    "machine": "0x8664",
+    "installation_allowed": false,
+    "deployment_status": "blocked_by_game_signature_check"
+  },
+  "frozen_layer_sha256": "7dff5be93ac887dd1b290a7a832032b807d49fd6dd0e9a467125d2a6dd6bbf57",
+  "new_runtime_or_layer_binary_built": false,
+  "new_gpu_or_game_or_headset_execution_performed": false,
+  "game_or_nvidia_binaries_changed": false,
+  "raw_game_shaders_or_logs_or_ids_included": false,
+  "live_game_module_identity_proven": false,
+  "descriptor_and_attachment_aliases_resolved": false,
+  "fixed_function_and_dependencies_audited": false,
+  "engine_eligibility_flags_populated": false,
+  "game_draw_replay_implemented": false,
+  "game_stereo_submitted": false,
+  "windows_native_d3d12_adapter_implemented": false,
+  "previous_GPL_anomalies_retried_or_resolved": false,
+  "references": [
+    "https://registry.khronos.org/SPIR-V/specs/unified1/SPIRV.html",
+    "https://github.com/KhronosGroup/SPIRV-Headers/tree/fbf86836a9b1966586faf7be7bb8a6440e156d62"
+  ],
+  "remaining_work": [
+    "Establish exact live module bytes and adapt the six rejected vertex candidates only with proven camera/descriptor data. The new conclusion concerns shader non-output writes only; output effects, descriptors and attachment aliases, fixed state, preparatory LOAD producers, barriers and GPU lifetimes remain unresolved.",
+    "Wire admissible real game passes and following processing, predicted poses and SteamVR image submission; implement native Windows D3D12 adapter."
+  ]
+}

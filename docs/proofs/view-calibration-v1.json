@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "source_base_commit": "4babf618e6d9a18ff719b1173ca268b42dd1b0cf",
+  "source_sha256": {
+    "native/core/view_calibration.hpp": "4f3bd5fcbc88733e8592b6bc1099dec26a79d0c2077689238dede9bed37dbd47",
+    "native/core/eye_state.hpp": "a36f04c90337cc99827c412931ba817057839644683d73d5c1fab7a61ba46dec",
+    "native/core/pose_request.hpp": "6620af1d089711fba180e8fbf82d6ae3abd561b6fb26ddb1c9b6cde987dd1290",
+    "native/probe_gpu/stereo_transform.vert": "25104acb47576ee21a4a90c4b295a54ce01f3aca17d4d848589c27f771615f26",
+    "native/vulkan/trace_layer.cpp": "e2add33c852309da8acd8658ed40cba6e8edef5a0f4b634deeddc8b5d4ed2778",
+    "native/vulkan/cooperative_capture.cpp": "4335ff5b88534cd72bcbab70f8d8aa76c693c5e1d48bcf12d8a3ee66009354fc",
+    "native/tests/calibration_gpu_checks.hpp": "880a2768c51d26e6881d2c7d3b34da044fb95a57045ca4e147581538dceff049"
+  },
+  "layer_sha256": "a848bc3ce3232ab23bc2a44f5f0195fda98d0ea14c799bafa7c6a3ad9159adf1",
+  "packet_layout_bytes": 176,
+  "source_depth_packet_version": 2,
+  "continuous_immersive_game": false,
+  "actual_steamvr_submission": false,
+  "scope": "Owned synthetic GPU depth/reference renders and metric version-2 real WSI/loader/producer/presenter controls with simulated XR. Separate from actual game evidence.",
+  "synthetic_scene": true,
+  "game_rendered": false,
+  "physical_runtime_tested": false,
+  "helper_sha256": "94df302388f8254213d8db805348a5ffd21c3eaa2893a07b33e17ade3b196c8b",
+  "portable_normalized_depth_cases": 72,
+  "gpu": {
+    "calibration_gpu_passed": true,
+    "synthetic_scene": true,
+    "independent_reference_cases": 48,
+    "color_reference_bytes": 12582912,
+    "d32_reference_texels": 651842,
+    "original_depth_preserved_texels": 229766,
+    "maximum_reference_depth_error": 1.78814e-07,
+    "maximum_original_depth_error": 5.96046e-08,
+    "wrong_fixed_depth_error": 0.499499,
+    "source_far_units": [
+      80,
+      200
+    ],
+    "metric_scales": [
+      0.05,
+      0.1,
+      1
+    ],
+    "game_rendered": false
+  },
+  "gpu_color_tolerance_bytes_per_case": 64,
+  "gpu_depth_tolerance": 2e-06,
+  "gpu_environments": [
+    "native",
+    "SteamLinuxRuntime_4"
+  ],
+  "gpu_khronos_synchronization_validation_loaded": true,
+  "gpu_validation_errors": 0,
+  "legacy_packet_v1_gpu": {
+    "stereo_gpu_fixture_passed": true,
+    "packet_gpu_updates_verified": true,
+    "independent_reference_images_verified": true,
+    "reference_cases": 11,
+    "telemetry_samples": 0,
+    "telemetry_disabled_and_buffers_preserved": true,
+    "max_reference_different_bytes": 0,
+    "eye_separation_view_units": 0.064,
+    "disparity_pixels_depth_2": 7.29788,
+    "disparity_pixels_depth_4": 3.65839,
+    "head_translation_rotation_verified": true,
+    "asymmetric_projection_verified": true,
+    "source_jitter_depth_changes_verified": true,
+    "inactive_and_non_target_unchanged": true,
+    "game_stereo_proven": false
+  },
+  "metric_wsi": {
+    "cases": 8,
+    "exact_original_image_bytes": 5242880,
+    "legacy_wsi_regressions": 3,
+    "validation_errors": 0,
+    "fixture_sha256": "40f648d83f54a6c7bf25e74dbfc0cc51afb26ee0ab935b04eef9dc6fbb3bacff"
+  },
+  "metric_cooperative": {
+    "cases": 16,
+    "fixture_sha256": "40f648d83f54a6c7bf25e74dbfc0cc51afb26ee0ab935b04eef9dc6fbb3bacff",
+    "mock_sha256": "64b92a8822760bd2193ce6dde46caaeba3ede72a5ef8864d2600fffdc784c499",
+    "exact_original_xr_bytes": 7864320,
+    "validation_errors": 0,
+    "runtime_simulated": true
+  },
+  "python_tests_passed": 170,
+  "receipt_depth_policy_mismatch_rejected": true,
+  "packet_v1_compatibility_preserved": true,
+  "uniform_similarity_required": true,
+  "unsupported_clip_families_rejected": true,
+  "limits": [
+    "Independent D32 references are owned synthetic scenes, not game depth readbacks.",
+    "Per-case color render comparison permits up to 64 boundary bytes; WSI source/consumer comparisons are exact.",
+    "Restricted runtime scope and foreign-queue fixture dependencies remain as documented in COOPERATIVE_LAYER_XR.md.",
+    "Physical runtime threading/dispatch behavior and previous SteamVR validation errors are not addressed by mock tests."
+  ]
+}

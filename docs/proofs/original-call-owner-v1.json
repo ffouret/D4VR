@@ -1,0 +1,140 @@
+{
+  "schema_version": 1,
+  "purpose": "owned_original_sampler_call_owner_control",
+  "status": "two_original_pairs_joined_strict_scope_completeness_refused",
+  "created_utc": "2026-10-27T07:13:42.746094+00:00",
+  "game_or_headset_launched": false,
+  "regular_trace_layer_changed": false,
+  "old_witness_gate_changed": false,
+  "native_or_fixture_modified_after_physical": false,
+  "auditor_delta_after_OFF": {
+    "original": "3b0a4b46c8a24e8da2dff97d92fa3259fcb02b37373847b216001faeea80658c",
+    "final": "09ab61ffb799266ede3eec3d15d79e84937f016b8bcd2291b5784b4791f26af5",
+    "test_original": "e3a4fdba018bf590678bc7c3d79876e38c6613709a4f6668b7e042eb9b4bcebe",
+    "test_final": "a29c757b3205b06cdba5d9a5722c68c4e52dbcd8d17bc1410b9530bc0b2f622e",
+    "change": "one stricter creation-lifetime predicate and three test lines; independent review additive; no native/PE/runner change",
+    "OFF_raw_or_original_freeze_rewritten": false,
+    "OFF_repeated": false
+  },
+  "runtime": {
+    "runs": 2,
+    "wrapper_returns": [
+      0,
+      0
+    ],
+    "original_PE_edges": 24,
+    "original_PE_sampler_queries": 4,
+    "original_PE_returned_bytes": 16,
+    "ON_native_marker_query_pairs_joined": 2,
+    "ON_original_query_bytes_exact": 8,
+    "pixel_readbacks": 0,
+    "instance_extension_count_PE_each": 6,
+    "device_extension_count_PE_each": 79,
+    "actual_sampler_descriptor_size_each": 4,
+    "same_controlled_sampler_device_parent_for_both_ON_pairs": true,
+    "target_sampler_device_parent_explicitly_destroyed": true,
+    "unrelated_instances_remaining_active_per_scope": [
+      1,
+      1
+    ],
+    "strict_original_call_owner_known": false,
+    "all_saved_scopes_complete": false,
+    "strict_reasons": [
+      "saved_scope_not_completely_closed_0",
+      "saved_scope_not_completely_closed_1"
+    ],
+    "query_record_drops": 0,
+    "owner_record_drops": 0,
+    "scope_errors": 0,
+    "OFF_schema": 2,
+    "ON_schema": 3,
+    "OFF_zero_not_absence": true
+  },
+  "validation": {
+    "non_sentinel_errors": 0,
+    "activation_markers": 2,
+    "loader_warning_lines": 40,
+    "settings_warning_lines": 6,
+    "OpenXR_extension_query_warning_lines": 4,
+    "no_rendering_or_submission_XR": true,
+    "all_diagnostic_events_absent": false
+  },
+  "CPU": {
+    "Python_tests": 705,
+    "new_auditor_tests": 24,
+    "activation_assertions": 43,
+    "new_native_owner_cases": 21,
+    "new_native_owner_assertions": 2000,
+    "legacy_forwarding_cases_per_mode": 25,
+    "legacy_forwarding_modes": 3,
+    "scope_lifetime_cases": 12,
+    "CMake_CTests": 6,
+    "Windows_local_compile_only": true
+  },
+  "source_sha256": {
+    "native/tests/original_call_owner.cpp": "36f24c954b5f31a2ad7395bfc763a4b03eac49db05c084f4d2a04427fef67acd",
+    "native/tests/original_call_owner_observer_tests.cpp": "1a9d77784fee4fd39bdb4aad8223fee0a9df451628884c8075101cc47de08333",
+    "native/vulkan/descriptor_query_observer.hpp": "c6f11e6ec5fa0c767c968836748f59a05badf0f3f94e2244c7381658bfbefd91",
+    "native/vulkan/descriptor_query_observer.cpp": "8511d5574d92331145c7028e92016901ce785bce5adf7cacf0c7120a4da474af",
+    "native/vulkan/descriptor_query_observer_layer.cpp": "f54a61b43c449277a5b839b494cba671c034c6d0ae2f4dad8b205265a1d32fe2",
+    "native/vulkan/descriptor_query_transport.hpp": "37e055ac85fe84d917a06ecc96f231ddabbd5bb13876f11466a1552a9f3522aa",
+    "native/vulkan/descriptor_query_transport.cpp": "021eaa86180777cef35991a575413fbd9ef7987d5412ceb3dd4f188ab3f797de",
+    "native/descriptor_query_diagnostic/CMakeLists.txt": "08953e46ae460a59138a7113887f06b2da4e2868ebb5117503866f85621c62ea",
+    "native/tests/sampled_writer_hash.hpp": "f6b59c3568c23d6f3198a8d952fbdcf8a4da85db945d311a0b369d15ae266f9e",
+    "tools/original_call_owner_validate.py": "09ab61ffb799266ede3eec3d15d79e84937f016b8bcd2291b5784b4791f26af5",
+    "tests/test_original_call_owner_validate.py": "a29c757b3205b06cdba5d9a5722c68c4e52dbcd8d17bc1410b9530bc0b2f622e",
+    "tools/query_scope_validate.py": "cacfd1a9206a99b504f8c1311b14d321e4d090f88f954ee290b241e54b073f1b",
+    ".github/workflows/checks.yml": "337c491ae91b437805745ae738368c6c2a8a829e4a852b9b67a3b3e64ef64f20"
+  },
+  "renderer_owner_known": false,
+  "module_backing_known": false,
+  "descriptor_placement_known": false,
+  "current_contents_known": false,
+  "sampled_resource_GPU_read_proven": false,
+  "global_query_absence_proven": false,
+  "coverage_repaired": false,
+  "game_sampled_input_identified": false,
+  "xr_submission": false,
+  "binary_sha256": {
+    "fixture": "9937c7f842a1fd7bc0c565e64eca9d50ecec9bf99f6b9890152a3a22756743b1",
+    "observer": "8c6e36253f7e06e8e7e94d418c1600b2a7a8cac6016d4018a60cb6be4a80d21e"
+  },
+  "private_control_authority_sha256": "40f94cbcfae3bcc0f04bf89d09ab8fbaf9ad12d441d83acb48f03596752bd926",
+  "proofs_sha256": {
+    "original-call-observer-cpu-20261027-3/proof.json": "af949b444d7f24c70cbdfe3ec4b8656c6ba2c8eb3f5ebf5ea5fb039cd16e8122",
+    "original-call-cmake-cpu-20261027-1/proof.json": "76276e70f49ab85988f48d18696c46b3c06427a408ec1fcc374f0815250c9b9c",
+    "original-call-fixture-build-20261027-1/final-proof.json": "1ec7695d501bee651ba88bcccc7281052b0568a3dab555b16cf7e844a9ff1bf4",
+    "call-owner-bridge-review-20261027-1/proof.json": "814fa7eea8f390145eb9a414aacd96fa4cb0fc7e0aefa3178fbc9c008dc8c669",
+    "call-owner-native-PE-review-20261027-1/proof.json": "4737fef71977fd8fccef271dc2f32d520acceb97c144d330f64677bd866f3f07",
+    "original-call-fixture-review-20261027-1/proof.json": "2359e9c82d1b607fb217dd66aa589c0ddf244b4d918e405a75535db0caea4afb",
+    "original-call-auditor-postOFF-review-20261027-1/proof.json": "0c461449b649cb37f8aa8d60eede5d4ede70b8b65b237d76cbcff03ceb47abb3",
+    "original-call-owner-auditor-cpu-20261027-2/proof.json": "e50fb2d8cde4142bbe235796ee9238dc0464435b4c263d097127c8686de60831",
+    "original-call-owner-source-freeze-20261027-1.json": "09b2b4155ada2af7cf3d61847c9b57ac5097f1f0e3a81e3e80d6195defb0fcb7",
+    "original-call-owner-source-freeze-20261027-2.json": "c72e6fd2315cad92561a5083d398bde1a4a94c621b9a9537c36902734c713b36",
+    "original-call-owner-validation-20261027-1-off/return.json": "77dde67817126bb37666a9271542ad219077b5abc911147d0f56815384592581",
+    "original-call-owner-validation-20261027-2-on/return.json": "be85905525790237bea6695eb2b4496ac05291219453dd5c9ee8054938ad9dad",
+    "original-call-owner-validation-20261027-2-on/audit.json": "bf0fe386c3846f074c542087a3c16b707f14647bd1243d20c22c93f3660d1b2e",
+    "original-call-owner-final-python-20261027-1.log": "77aca73895af8a630685c805cb97c994ab6148b471ffdadc7de22285035d55f4",
+    "original-call-owner-actual-cpu-review-20261027-1/proof.json": "ca396f75d184ad3523f9587f7f3059fb9a959362ff99e6337b779287765513fe",
+    "original-call-owner-independent-actual-20261027-1/checkpoint-15-exact.json": "46bf4e128886c21d4b8604227b3a80aba81662d88111645700994410d5303dbb",
+    "original-call-owner-independent-actual-20261027-1/final-proof.json": "779258c41dac30b67e0733b2ba0468a36e616cdb7de995b65b62c96395124eb9",
+    "original-call-owner-independent-actual-20261027-1/finalization.json": "ce1ddb1f12500cba1c673014fac8bb9f65b3185d81390bd42a35b165a22ab528"
+  },
+  "actual_author_auditor_review": {
+    "inputs_verified": 137,
+    "raw_OFF_schema2_and_ON_schema3_rebuilt_exact": true,
+    "author_of_parser_not_independent_join_oracle": true,
+    "no_new_runtime": true
+  },
+  "independent_actual_literal_review": {
+    "files_pinned": 111,
+    "all_unchanged": true,
+    "principal_join_uses_project_parsers": false,
+    "actual_mutations_refused": 26,
+    "checkpoint_prefixes_checked": 24,
+    "strict_refusal_preserved": true
+  },
+  "prefix_vulkan_1_historical_external_hash_known": false,
+  "prefix_vulkan_1_current_path_and_disk_digest_observed": true,
+  "private_final_aggregate_sha256": "d1f6fe6b3bb790b3d7d504039caf0ab76102b38f89d99a29ebaeabe2f098d2c3"
+}

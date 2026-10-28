@@ -1,0 +1,48 @@
+{
+  "schema": 1,
+  "purpose": "Raw nonce initializer portability for strict GCC15 CPU fixtures",
+  "created_utc": "2026-10-28T03:52:35.485201+00:00",
+  "status": "LOCAL_CLANG_NATIVE_CHECKS_PASS_WINDOWS_GCC15_CI_PENDING",
+  "parent_commit": "1fcea3e41c12449c48fcddd5774cd02f0f44dede",
+  "previous_CI": {
+    "run": 40627870143,
+    "number": 230,
+    "Linux": "success, GNU13.3 normal plus ASan/UBSan five new CTest",
+    "Windows": "GNU15.2 compiled both C core libraries then refused raw32byte string initializers before new CTest",
+    "Python": "1176 both, two existing Windows skips"
+  },
+  "change": "Exactly three nonce[32] initializers become explicit lists of the same32byte values. No new terminator, byte33, nonstring attribute, warning suppression, ABI/runtime function change or changed typed facts.",
+  "literal_check": {
+    "path": "work/owned-C-sink-parent-20261028-1/CI230-nonce-fix-incremental/parent-literal-identity.json",
+    "bytes": 714,
+    "sha256": "89aa883fc24f4aa1ccbe5a34c5deedbedcf02b47c343ae02a0bd6f0d2013000b"
+  },
+  "local_incremental_validation": {
+    "compiler": "Existing pinned Zig/Clang GNU driver; not GCC15",
+    "build_return": 0,
+    "new_native_CTest_controls": 3,
+    "CTest_return": 0,
+    "dependencies_before_after_equal": 23,
+    "actual_model_runs": 0,
+    "wire_bridge_runs": 0,
+    "new_Ccore_or_ABI_builds": 0
+  },
+  "files": [
+    {
+      "path": "D4VR/native/tests/owned_source_writer_source_cpu.c",
+      "bytes": 85532,
+      "sha256": "28f6ca5f6ba9175fac87704129e2439a528472995e6e5a54ec7fdd3802de7d6a"
+    },
+    {
+      "path": "D4VR/native/tests/owned_source_writer_source_independent_cpu.c",
+      "bytes": 29202,
+      "sha256": "b9b3aa2f10b65273cdeb2ef4a1a1791884f00d0e054267b18a9c156b0d0b24bc"
+    }
+  ],
+  "limitations": [
+    "Full Windows GCC15 fixture compilation/execution awaits a new CI. Linux success in prior CI230 remains historical evidence, not success of this new commit.",
+    "No core/header/model/reader/vendor/source-hook/renderer/Wine/GPU/game/headset changes.",
+    "CPU mocks and their supplied histories do not attest actual SOURCE input, current contents, GPU reads, ownership, backing, game UV or VR.",
+    "Prior proofs and failing decoded logs remain intact."
+  ]
+}

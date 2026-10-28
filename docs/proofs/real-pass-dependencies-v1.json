@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "scope": "aggregated analysis of prior real-game metadata; no game images or shaders",
+  "captures": [
+    {
+      "capture": 1,
+      "requested_candidate_scopes": 3,
+      "candidate_draw_commands": 171,
+      "possible_chain_scopes": 9,
+      "possible_clear_roots": 2,
+      "loads_without_observed_clear": 2,
+      "clear_values_recorded": false,
+      "pipeline_declarations_recorded": 0,
+      "private_derived_report_sha256": "7ac6d3004275cff4b9bed1111a52e7229681542667be9a92de3a40717fd5b91a"
+    },
+    {
+      "capture": 2,
+      "requested_candidate_scopes": 3,
+      "candidate_draw_commands": 65,
+      "possible_chain_scopes": 8,
+      "possible_clear_roots": 2,
+      "loads_without_observed_clear": 1,
+      "clear_values_recorded": false,
+      "pipeline_declarations_recorded": 0,
+      "private_derived_report_sha256": "31a0623d8527b9b902eafd1d916d177e8a9c1275ebd4af3253ee3b326d543fa3"
+    }
+  ],
+  "clear_order_observed_in_cpu_metadata": [
+    "depth/stencil clear in an earlier pass",
+    "four color clears in a later pass",
+    "candidate geometry scopes with LOAD"
+  ],
+  "preparatory_color_loads_unresolved": true,
+  "gpu_dependency_proven": false,
+  "scene_role_proven": false,
+  "replay_allowed": false,
+  "game_stereo_submitted": false,
+  "raw_game_logs_included": false
+}

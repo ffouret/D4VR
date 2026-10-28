@@ -1,0 +1,213 @@
+{
+  "schema_version": 1,
+  "purpose": "owned_SOURCE_writer_supplied_history_CPU_model_v1",
+  "created_utc": "2026-10-28T00:12:53.478589+00:00",
+  "status": "IMPLEMENTED_NEW_CPU_CALCULATION_AND_MOCKS_REVIEWED_CI_PENDING_AT_CREATION",
+  "product_status": "Research/prototyping. No usable Diablo VR; actual game input, writer and useful transforms remain unknown. This milestone has no visible game result.",
+  "precode": {
+    "commit": "0f5e136001db09fd297a2689f550edaa053fe2bb",
+    "tree": "4ff8a3a400e5b8d606af55544e9f2038204680de",
+    "schema": {
+      "path": "docs/schemas/owned-source-writer-v1.json",
+      "bytes": 90039,
+      "sha256": "693021b27fbb12ed298b486ee38e3bdd3a5429c7478d47a3640158aa22011143"
+    },
+    "prior_public_proof": {
+      "path": "docs/proofs/owned-source-writer-precode-v1.json",
+      "bytes": 6054,
+      "sha256": "730a4c7e8c5a99b6b1422aefb071f70cc57df37faf8c5574fbc68f13695a1a04"
+    },
+    "remote_publication_preceded_new_implementation": true,
+    "old_precode_documentary_shapes_not_positive_seeds": true
+  },
+  "implementation": [
+    {
+      "path": "tools/owned_source_writer_validate.py",
+      "bytes": 95467,
+      "sha256": "660623fb5da3cbec1ea7fbe2c6f1513beadd3950c97416a6126a71de119479bf"
+    },
+    {
+      "path": "tests/test_owned_source_writer_validate.py",
+      "bytes": 54825,
+      "sha256": "1159c082bfc9de65511f904bf976856690f9e1269080448d43e2b0fc34699193"
+    },
+    {
+      "path": "native/tests/owned_source_writer_fixture.cpp",
+      "bytes": 65453,
+      "sha256": "c45bb0d4c669e20ef4f9567dec7aa023067b935d9430284abeb3966a725ae9d0"
+    },
+    {
+      "path": "native/owned_source_writer_diagnostic/CMakeLists.txt",
+      "bytes": 903,
+      "sha256": "4d1528b977ef14239cded7f35b7feb7c582e4793cadccdec8c6f03066d3d74bf"
+    },
+    {
+      "path": "tools/owned_source_writer_native_wire.py",
+      "bytes": 5552,
+      "sha256": "7b4f94b3b7f2247d89694fa8a8ca3b7d45e430055400c6cf4ba4573545f6ea72"
+    },
+    {
+      "path": ".github/workflows/checks.yml",
+      "bytes": 23572,
+      "sha256": "526c9e79d0a863ecb8ab35ab0c4613169a3babf96efced7a19b141a45afddcbe"
+    },
+    {
+      "path": "docs/OWNED_SOURCE_WRITER_RELATION.md",
+      "bytes": 7547,
+      "sha256": "c4ce2df4791b2f76d1a73c423ea928535c96930ca29ef63a48471a65127d2b26"
+    }
+  ],
+  "calculation": {
+    "api": "analyze(bytes|str)->fresh complete dict",
+    "pure_supplied_facts_only": true,
+    "exact_types": 62,
+    "exact_callback_projections": 46,
+    "canonical_COM_internal_and_native_associations_explicit": true,
+    "scope": "one cold first writer, six resources/four heaps/eight getters, three root parameters including sampler and PIXEL constants, actual constructor Reset and selected Reset CallID",
+    "source_version_cut": "each original COPY ENTRY",
+    "visible_history_cut": "original Execute ENTRY; snapshot includes actual Execute RETURN",
+    "warm_Reset3": "unknown; never rebirth or hydrate old origins at seal",
+    "native_route": "conditional genuine monolithic only; unsupported GPL/descriptor_heap/cache-without-birth/async/internal routes unknown",
+    "actual_runtime_route_established_by_this_milestone": false
+  },
+  "limits": {
+    "input_UTF8_bytes": 65536,
+    "value_container_nodes": 4096,
+    "root0_depth": 20,
+    "string_UTF8_bytes": 256,
+    "call_records": 64,
+    "retained_edges_marks": 128,
+    "pending": 32,
+    "retained_ticket": 1,
+    "retained_first_epoch": 1,
+    "complete_report_UTF8_bytes": 262144,
+    "not_total_CPU_memory": true,
+    "no_truncation_eviction_or_retagging": true
+  },
+  "new_local_CPU_controls": {
+    "independent_Python_methods": 72,
+    "original_independent_methods": 68,
+    "attributed_regression_methods": 4,
+    "failures": 0,
+    "errors": 0,
+    "new_CTests_passed": 2,
+    "CTest_names": [
+      "owned_source_writer_forwarding_cpu",
+      "owned_source_writer_native_wire"
+    ],
+    "native_fixture_assertions_per_invocation": 674,
+    "workload_mock_delegates_across_three_modes": 303,
+    "cleanup_subset_of_workload": 48,
+    "separate_guard_delegates": 76,
+    "same_process_original_projected_trace_off_on_faulted_equal": true,
+    "actual_wire_texts_consumed_by_model_per_bridge": 6,
+    "analyze_once_per_wire_and_full_results_retained": true,
+    "decisions_in_on_cold_warm_off_cold_warm_faulted_cold_warm_order": [
+      true,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    "cold_ON": {
+      "rows": 61,
+      "marks": 122,
+      "wire_bytes": 52323,
+      "nodes": 2936,
+      "depth": 11
+    },
+    "warm_ON": {
+      "rows_retained": 64,
+      "originals_seen": 85,
+      "original_returns_seen": 85,
+      "dropped": 21,
+      "last_observer_mark_allocated": 128,
+      "wire_bytes": 54461,
+      "fault_gap_overflow": true,
+      "not_complete_170_transition_clock": true
+    },
+    "off_zero_rows_do_not_prove_original_absence": true,
+    "typed_POD_mocks_not_vendor_ABI": true,
+    "caller_allocations_and_delegate_exceptions_outside_metadata_guard": true,
+    "old_local_suites_or_physical_controls_repeated": false,
+    "local_ASan_retry_or_new_tools": false,
+    "counts_author_reviewer_fixture_overlap_not_additive": true
+  },
+  "review": {
+    "independent_tests_and_native_source_review_sha256": "a2f7c01b4a6cf1cf019ca567a52b7f0ac9dc8d00598b36a9476ff0edc3083a1c",
+    "additional_model_review_sha256": "6f8664b30d95b8e0f47032ea601325882a9563fd1783d3e3ea63e859b368e9f2",
+    "additional_model_review_decisions": 22,
+    "native_author_checkpoint_sha256": "47abdc3dae0c364dfb852ca9fda425e7fb29a8b6a070e38759dadc83b6512dab",
+    "native_checkpoint_used_earlier_model3688_not_claimed_final": true,
+    "roles": "Independent new tests authored by Stage; model author reused those seeds with attribution. Additional model reviewer authored new mock fixture and older native policy foundations. Parent and author findings overlap. No exhaustive proof or third-party certification of own producer.",
+    "prepublication_ledger": [
+      "HeapProperties extra zero requirements removed; retained original values, no schema change.",
+      "Failed PSO/Root creation after-associations rejected; actual failed original without new facts remains preserved.",
+      "COM Release cannot retire Vulkan object kinds, including after Execute ENTRY.",
+      "Native retirements with live PSO require original owner metadata, including after cut; valid owner preserves historical cut.",
+      "Mock Reset state originally depended on metadata completion; moved to original delegate before final fixture freeze.",
+      "Reviewer getter-mismatch classification refined to ValueError when a supposedly defined output contradicts pointers; unknown null-value mismatch remains unknown."
+    ],
+    "original_checkpoints_and_inquiries_preserved": true,
+    "model_author_final_sha256": "b11f059d7048f5a21d50b42131268ca1bd2bae6dd01880b61835a629bb643192",
+    "author_shared_checks_nonadditive": 80,
+    "native_author_final_sha256": "5d8c663e7bc301c26fecfb92e040468a870651072c70f7b485e4e6496b6f301b"
+  },
+  "CI": {
+    "status_at_creation": "PENDING_NEW_IMPLEMENTATION_COMMIT",
+    "configured_profiles": [
+      "Linux new Python suite through unittest discovery",
+      "Windows new Python suite through unittest discovery",
+      "Linux two new standalone CTest normal and native ASan/UBSan",
+      "Windows two new standalone CTest normal"
+    ],
+    "Python_sanitized": false,
+    "CI_runs_new_vendor_or_renderer_PE": false,
+    "future_result_is_separate_evidence_not_rewritten_checkpoint": true
+  },
+  "unchanged": {
+    "minimal_model799": {
+      "path": "tools/source_emitted_writer_validate.py",
+      "bytes": 69924,
+      "sha256": "799f755337940adc66056e265a005eebd7c3d8082480b2b8e91f76ac58a92ae7"
+    },
+    "typed_model7987": {
+      "path": "tools/typed_descriptor_copy.py",
+      "bytes": 28627,
+      "sha256": "7987ec83978a2909d023e93d66dde66a473154fef5a1767df8b036c5964c1953"
+    },
+    "owned_workload6958": {
+      "path": "native/tests/private_translator_runtime_owned.cpp",
+      "bytes": 58239,
+      "sha256": "695836203c4821e7d429460ef5b672359d6fb10b77f0132a3a77e323aad7b6f2"
+    },
+    "old_fixture": {
+      "path": "native/tests/source_emitted_writer_fixture.cpp",
+      "bytes": 41524,
+      "sha256": "120a3e594b0e01752879429ccdb681bff0a24361388828b62c1fd4a6fbda405a"
+    },
+    "no_new_CABI_SOURCE_producer_hooks_vendor_Wine_GPU_game_headset": true,
+    "old_shaders_helpers_DLLs_game_bundles_unchanged": true
+  },
+  "all17strong_claims_always_false": [
+    "input_facts_attested",
+    "source_runtime_coverage_proven",
+    "actual_sampled_input_identity_known",
+    "shader_uses_selected_binding_proven",
+    "sampled_resource_GPU_read_proven",
+    "current_descriptor_contents_known",
+    "current_input_texels_known",
+    "sampler_known",
+    "game_numeric_UV_known",
+    "renderer_owner_known",
+    "backing_known",
+    "loaded_binary_source_equivalence_proven",
+    "generic_PE_to_Unix_mapping_known",
+    "global_API_absence_proven",
+    "VR_solution_proven",
+    "native_descriptor_or_image_view_binding_proven",
+    "public_device_factory_result_known"
+  ],
+  "next_gate": "Separately review a new C-only SOURCE sink/admission/transport and real original ownership/RootParse-before-conversion routes before hooks, private vendor changes, rebuild or physical execution. This CPU proof authorizes none of those actions."
+}

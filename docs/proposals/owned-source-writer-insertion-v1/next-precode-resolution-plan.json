@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "purpose": "Next separately reviewable PRECODE resolution plan following actual SOURCE gaps; no implementation admission",
+  "created_utc": "2026-10-28T04:40:22.539188+00:00",
+  "status": "PROPOSAL_FOR_SOURCE_READS_AND_DOCUMENTATION_ONLY",
+  "product": "Research/prototyping. No change to the last Diablo rectangle/cutouts, unknown sampled input/writer/transforms, or absence of established Quest imagery/continuous immersive rendering.",
+  "direction": {
+    "choice": "Preserve a faithful diagnostic SOURCE frame and the complete unchanged660 model result, even when it is unknown.",
+    "why": "Actual nested SetPipeline(NULL) originals contradict the old positive profile. Do not rebuild/reimplement a validated model, suppress genuine calls or forge births to recover a positive. Raw original SOURCE facts may still guide later view/writer research, but require their own future execution provenance.",
+    "not_admitted": "This direction is not a new model/schema, a relaxation of the old positive contract, input attestation, or permission to implement wrappers. Its precise frame/diagnostic boundaries must be reviewed first."
+  },
+  "ordered_documentary_work": [
+    {
+      "id": "R1",
+      "deliverable": "A small additive private bridge contract with exact C declarations, one-core implementation access and query/enter ordering.",
+      "must_close": [
+        "RootParse eligible only under the genuine committed pending RootCreate on the SOURCE owner thread, never PSO alone or an application-supplied parent.",
+        "Actual generic parse ENTRY/RETURN and defined success output; copy before matching-version transfer/conversion/free. No second parse, no desc1.2 relabel, no new public export.",
+        "Readonly pending eligibility query is not currently present. Choose an explicit future implementation linkage for the frozen static core helpers without compiling two contexts; do not claim naming a signature solves access.",
+        "Cross-thread fault or stale/reentrant callback between eligibility and enter must not permit unadmitted typed reads. Precise source-owned memory lifetime remains independent of a NULL/nonNULL test."
+      ]
+    },
+    {
+      "id": "R2",
+      "deliverable": "Exact SOURCE-local provenance transport for the GRAPHICS layout static callsite to the actual native PFN entry, including any additional transient storage.",
+      "must_close": [
+        "Keep all original function/PFN signatures, dispatch and argument evaluation exactly once. Source outer helper ENTRY cannot impersonate inner vkCreatePipelineLayout ENTRY.",
+        "Carry the actual root/internal/COM domains and the literal GRAPHICS source site; no inference from stage mask, first handle, hash, address proximity or APP typed facts.",
+        "For modules/pipelines first use existing genuine pendingPSO/Lookup owner propagation where valid. Do not add a new API solely because the lexical helper lacks a PSO pointer.",
+        "If lazy native calls under Draw require command/epoch provenance unavailable in the helper, declare a finite transport or remain unknown; no hidden TLS or second registry.",
+        "Choose and bound any temporary annotation stack/slot, cookie issuance, concurrency/reentry, drain/unwind/fault/overflow, storage lifetime and exact OFF behavior before code. Proposed extra storage is not part of the already measured404416 B."
+      ]
+    },
+    {
+      "id": "R3",
+      "deliverable": "Explicit diagnostic-only admission policy for the true constructor/case Reset nested SetPipeline originals.",
+      "must_close": [
+        "Keep observed NULL and generationNULL faithfully, with true pending nesting and original counts; never fake an early command birth.",
+        "Old model660 remains byte-exact and its full unknown result is preserved as a calculation on supplied facts. No filtering/renumbering/retagging to make it positive.",
+        "An unknown analysis is distinct from NO_PAYLOAD. Only actual sink admission/quota/fault/serialization rules can close the payload; diagnostic semantics alone must not invent a transport failure.",
+        "If a later task needs a stronger model, it requires a separately scoped contract and decision; not a repair of this frozen model or any historical certificate."
+      ]
+    },
+    {
+      "id": "R4",
+      "deliverable": "Bounded production SOURCE shader-byte SHA256 read utility plan, cuts and local memory.",
+      "must_close": [
+        "Hash exactly the source-owned original code span only when its defined lifetime/size and fixed safe-read policy are satisfied; otherwise presence unknown/NO_PAYLOAD according to contract.",
+        "Pin an explicit C-only implementation or existing verified dependency, complete-byte behavior, streaming state/workspace and overflow bounds before implementation.",
+        "Current sink accepts a supplied Code.sha256; test-only fixture hash functions are not a production utility or a real SOURCE binding. DXBC checksums or matching shader hashes cannot substitute for observed origins.",
+        "No general mapped-memory scan, opaque payload read, added shader getter/query or app-provided typed descriptor."
+      ]
+    },
+    {
+      "id": "R5",
+      "deliverable": "Finish per-site safe-read mapping and diagnostic budget for the selected first real branch; review the proposed isolated strict-C target graph.",
+      "must_close": [
+        "Genuine source paths, including both possible vkCreateDevice attempts and correlated native retry/module destruction/lookups; do not multiply impossible choices into a claimed witness.",
+        "Fixed caps64records/128marks/32pending/21objects/raw65536/nodes4096/depth20/strings256 remain. An actual over-cap boundary closes admission with NO_PAYLOAD while original calls continue, never truncation/eviction or a larger cap. Separately, a semantic unknown report may accompany a READY payload if capture closure and all serialization bounds pass.",
+        "Define raw/node fit as a runtime serialization gate unless a whole-frame upper bound is actually established from closed projections. Neither old61 mocks nor documentary63934-byte shape proves actual SOURCE fit.",
+        "Account for exact caller locals, hash state and temporary provenance storage separately from the frozen sink arena. No total-CPU-memory claim.",
+        "Strict C11 sink in one core, isolated from vendor C90-only declaration style warnings without weakening -Wall/-Wextra/-Werror/-pedantic. One core-only instrumented shader variant must replace its ordinary transitive dependency.",
+        "DefaultOFF and old+newON configure error; forwarder stateless, original functions unchanged, controls only nonce/enabled/tokens/capacities. No build/configure in this documentary step."
+      ]
+    }
+  ],
+  "review_and_freeze": "Independent source/cut/bounds review of exact new documents, then immutable freeze. Only after that a separate parent decision may admit CPU wrapper implementation and compile-only probes. Publication alone is not implementation admission.",
+  "unchanged_success_criterion": "Future real progress is newly emitted original SOURCE view/bind/writer facts from the actual translator, with honest uncertainty. Old pixels or another mock positive do not establish that.",
+  "gates": {
+    "header_or_projector_code": false,
+    "CPU_wrapper_implementation": false,
+    "source_hooks_or_patch": false,
+    "new_vendor_tree_or_configure": false,
+    "vendor_build": false,
+    "renderer_PE": false,
+    "Wine_GPU_game_headset": false,
+    "human_required": false,
+    "technical_progress_without_human": true
+  },
+  "preservation": "Keep all frozen components, existing DLL pairs, tools, old evidence and game originals intact; no old model/ABI/tests/physical replay or tool acquisition."
+}

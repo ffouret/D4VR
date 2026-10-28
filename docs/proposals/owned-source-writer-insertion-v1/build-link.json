@@ -1,0 +1,229 @@
+{
+  "schema_version": 1,
+  "purpose": "Owned SOURCE insertion build and link PRECODE proposal; source reads only",
+  "created_utc": "2026-10-28T04:35:02.566018+00:00",
+  "status": "PROPOSED_TARGET_GRAPH_NOT_CONFIGURED_OR_BUILT; overall SOURCE insertion gates remain open",
+  "scope": {
+    "production_edits": false,
+    "patch_applied": false,
+    "configure_or_build": false,
+    "compiler_or_model_executed": false,
+    "vendor_runtime": false,
+    "human_required": false
+  },
+  "base": {
+    "choice": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/private-translator-derived-source-20261027-1/source",
+    "reason": "Reuse the already applied private source, preserving the legacy observer option and existing provenance. No intake recopy, patch recreation, or full tree reinventory.",
+    "original_commit": "0bb64c56c8f0dcc11ecc0f6c56e00e4f7bd8d506",
+    "original_tree": "57371a386d1298ef80fc6b348b73703886aa3555",
+    "prior_derived_proof": {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/private-translator-derived-source-20261027-1/proof.json",
+      "bytes": 3477,
+      "sha256": "5d59bbd93927fe640aee018cfbfef9b6904c2189912a3808f5cae29808614897"
+    },
+    "prior_manifest": {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/private-translator-derived-source-20261027-1/source-manifest.json",
+      "bytes": 2382776,
+      "sha256": "92a63002f380eeb2f8a94c0ebe0b350583ccba3fdcd6987dddbf4e1acf0346ff"
+    },
+    "manifest_usage": "Pin the existing manifest bytes as authority; do not rescan all 11493 files in this precode. Targeted files below were actually read.",
+    "future_source_gate": "A future separate patch/application decision needs new exact deltas and pins against this base; this document changes none."
+  },
+  "switch": {
+    "option": "owned_source_writer_observer",
+    "type": "boolean",
+    "default": false,
+    "mutual_exclusion": "At top-level option intake, error if owned_source_writer_observer AND enable_d4vr_typed_copy_source; before target creation. Never silently disable either.",
+    "first_vendor_profile": "Windows x86_64 GNU driver with the already pinned LLVM-MinGW toolchain. Unsupported platform, 32-bit, MSVC or clang-cl must fail explicitly before new targets; CPU component tests have their separate existing profiles.",
+    "OFF": "Existing source functions, argument evaluation, return values and cleanup unchanged; no new projector/read, sink archive, bridge reference, observer macro or export in the core closure.",
+    "ON": "Only the new core closure uses the new source observer. Legacy adapter C++ files are excluded because the two options cannot both be ON."
+  },
+  "target_graph": [
+    {
+      "name": "vkd3d-shader",
+      "dependency": "vkd3d_shader_dep",
+      "policy": "Existing ordinary static shader archive and consumers unchanged, without new observer macros."
+    },
+    {
+      "name": "vkd3d-proton",
+      "dependency": "vkd3d_dep",
+      "policy": "Existing ordinary proton archive keeps the ordinary shader dependency; ordinary tests/programs remain outside the new observed core closure."
+    },
+    {
+      "name": "d4vr-owned-source-sink",
+      "dependency": "d4vr_owned_source_sink_dep",
+      "kind": "proposed local static C-only subproject, no wrap/download",
+      "inputs": "Exactly the frozen e2 core C, 564 header, generated field/descriptor includes from the current freeze; no OSW_CPU_TESTING and no duplicate standalone compilation of core C elsewhere.",
+      "isolation": "A local subproject gives this strict C11 target its own Meson project arguments. The parent vendor C90-style -Wdeclaration-after-statement and permissive -Wno-* settings are not inherited as project arguments. Cross-file/global arguments still apply and must be pinned/checked in the future compile commands.",
+      "strict_flags": [
+        "-std=c11",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-pedantic"
+      ],
+      "guarantees": "Do not remove the uint32 lock-free assertion, suppress a contract warning, change core source, or claim that this proposal has compiled. New private bridge eligibility access is a separate unresolved source/API gate."
+    },
+    {
+      "name": "vkd3d-shader-owned-source",
+      "dependency": "vkd3d_owned_source_shader_dep",
+      "kind": "new static variant",
+      "sources": "Same checksum/dxil/dxbc/vkd3d_shader_main/md5 source list, with a future admitted stateless C bridge at the exact generic parser return cut.",
+      "dependencies": [
+        "vkd3d_common_dep",
+        "dxil_spirv_dep"
+      ],
+      "policy": "The new shader dependency REPLACES the ordinary shader dependency in the new proton closure. Never link both parser archives into the new core. Shader bridge owns no context/issuer/registry."
+    },
+    {
+      "name": "vkd3d-owned-source",
+      "dependency": "vkd3d_owned_source_dep",
+      "kind": "new static variant",
+      "sources": "Same pinned proton source list and shared generated header/shader outputs; future admitted SOURCE insertions only.",
+      "dependencies": [
+        "vkd3d_common_dep",
+        "vkd3d_owned_source_shader_dep",
+        "vkd3d_extra_libs"
+      ],
+      "policy": "Replace vkd3d_shader_dep rather than adding the new dep beside it. Generate each named GLSL/VCS output once and share that generated target list, avoiding duplicate output rules."
+    },
+    {
+      "name": "d3d12core",
+      "kind": "existing shared target with explicit conditional dependency selection",
+      "ON_dependencies": [
+        "vkd3d_owned_source_dep",
+        "d4vr_owned_source_sink_dep",
+        "lib_gdi32",
+        "lib_dxgi"
+      ],
+      "OFF_dependencies": [
+        "vkd3d_dep",
+        "lib_gdi32",
+        "lib_dxgi"
+      ],
+      "policy": "Exactly one proton variant, exactly one shader/parser variant, exactly one sink C translation unit/context/issuer. No legacy C++ observer sources or test-only context selectors. No second context in an export shim."
+    },
+    {
+      "name": "d3d12",
+      "kind": "unchanged forwarder",
+      "dependencies": [
+        "vkd3d_common_dep",
+        "lib_gdi32",
+        "lib_dxgi"
+      ],
+      "policy": "No sink, observer context, bridge, new control exports, or new typed inputs. Existing forwarder implementation remains unchanged."
+    }
+  ],
+  "new_core_exports": {
+    "proposed_def": "d3d12core-owned-source.def",
+    "base": [
+      "D3D12GetInterface",
+      "D3D12SDKVersion DATA PRIVATE"
+    ],
+    "controls": [
+      "D4VR_OwnedWriterBeginV1",
+      "D4VR_OwnedWriterSealV1",
+      "D4VR_OwnedWriterReceiptCopyV1",
+      "D4VR_OwnedWriterReceiptRetainV1",
+      "D4VR_OwnedWriterReceiptDropV1",
+      "D4VR_OwnedWriterStatusV1"
+    ],
+    "private": "All d4vr_osw_* and source/RootParse helper symbols remain private to the static link, no extra PE exports.",
+    "calling_convention": "Frozen header C declarations (extern C for C++ consumers), x64 ABI only; no x86 decoration claim.",
+    "not_created": true
+  },
+  "parser_ownership": {
+    "exact_cut": "Actual three-argument generic parse RETURN succeeds under genuine pending RootCreate; copy before same-version transfer and before convert/free. PendingPSO alone never admits RootParse.",
+    "one_definition": "The instrumented CORE-ONLY shader variant substitutes its ordinary transitive dependency; no duplicated generic parser or sink definition.",
+    "unresolved": "Frozen public/private header has no readonly pending-Root eligibility query. A proposed new query needs separately admitted exact implementation access, lock/atomicity/lifetime and linkage; naming it does not make it exist."
+  },
+  "Meson_source_evidence": {
+    "project_args_are_target_project_scoped": "Pinned mesonbuild/build.py:get_project_args selects target.build_project.project_args; interpreter func_add_project_arguments writes current_build_project arguments.",
+    "future_verification": "Inspect generated compile_commands, archive members, link map/duplicate symbols and actual exports after a separately admitted build. No generated commands, link or ABI validation for this proposal were run."
+  },
+  "recipe_boundary": {
+    "reuse_authority": {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/private-translator-bound-recipe-20261027-1/recipe.json",
+      "bytes": 16973,
+      "sha256": "18c9c8400471827cf342f2ace9b5164516c7f57f59616f2ca3ac9fadb61659d3"
+    },
+    "reuse_tools": "Already acquired LLVM-MinGW/WIDL/Meson/Ninja/glslang/Python; no reacquisition, old ABI rerun or vendor build in this task.",
+    "new_recipe_required": "Before any future configure: pin exact new source/deltas/target graph, flags/env/cwd/sysroot/runtime, generated VCS policy, headers/generators/dependencies and export definitions. Before launch separately pin both output DLLs/imports/exports/dependencies.",
+    "C_only_scope": "Observer and stateless bridge C-only does not mean the entire vendor/DXIL dependency closure has no C++ runtime.",
+    "VCS": "Existing fallback strings 12345678/301000 are deliberate labels, not source commit identities; no ambient git describe or invented Git metadata."
+  },
+  "open_gates": [
+    "RootParse pending-Root-only eligibility through one real core context must be implementable without invented existing API or second state.",
+    "GRAPHICS static callsite classification must reach the actual native helper call before tick without value/ordinal inference; no transport is currently implemented/admitted.",
+    "Both actual nested SetPipeline(NULL) calls must remain in the SOURCE trace; frozen 660 model cannot make them a positive supplied history.",
+    "Actual complete projected SOURCE raw/node/local-storage fit has not been established. Conditional count arithmetic is not a capture or fit theorem."
+  ],
+  "no_stronger_claim": "This is a proposed dependency graph and source inspection, not configured Meson behavior, compiled ABI, a SOURCE producer, executed vendor route, game evidence or VR result.",
+  "targeted_pins": [
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/private-translator-derived-source-20261027-1/source/meson.build",
+      "bytes": 8619,
+      "sha256": "8a611b0883db235a91c2f976685041e2c26d073f3dac50f8211bfdad4acaac38"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/private-translator-derived-source-20261027-1/source/meson_options.txt",
+      "bytes": 691,
+      "sha256": "f8d7ef0a4fcbbd8f8636da9fcfe48a1a5044684a5d7067a22e4b62b9f9bc839e"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/private-translator-derived-source-20261027-1/source/libs/meson.build",
+      "bytes": 98,
+      "sha256": "7f375b4518cd6af20bbb997c48b16296f2bdd2c2c8ef04e9549b3c4c81150c2d"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/private-translator-derived-source-20261027-1/source/libs/vkd3d-shader/meson.build",
+      "bytes": 462,
+      "sha256": "2e59dbd2786213860fb3ba1c8ffa131991e750b5f6b088ed07c56411e514eb88"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/private-translator-derived-source-20261027-1/source/libs/vkd3d/meson.build",
+      "bytes": 4008,
+      "sha256": "b457243dcec2a18d45156745e52f21984994bd333c00cbe6e0a578f5d746ce42"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/private-translator-derived-source-20261027-1/source/libs/d3d12core/meson.build",
+      "bytes": 1667,
+      "sha256": "1efd48c44fed51edf29adf8b66120193d23f98765916bf2f50c1886e35796002"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/private-translator-derived-source-20261027-1/source/libs/d3d12core/d3d12core.def",
+      "bytes": 86,
+      "sha256": "93d548375436f7016c9f37802ec8e713ab2feb9910de619fce281fbbe37a05ae"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/private-translator-derived-source-20261027-1/source/libs/d3d12/meson.build",
+      "bytes": 1264,
+      "sha256": "4336ead67815c9951f0dc6637d7630d0c02f976fefb40bb46ed1bd9f33c76b18"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/tools/private-translator-20261027-1/meson/mesonbuild/build.py",
+      "bytes": 157853,
+      "sha256": "4e816399b9129623aaccab5673b6028bbe00e08ef7a874029d551ed2ff6a0498"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/tools/private-translator-20261027-1/meson/mesonbuild/interpreter/interpreter.py",
+      "bytes": 214757,
+      "sha256": "a8242279d2f589634d5dd8d35c8878a4c28e312018371f0742644f002d387872"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/tools/private-translator-20261027-1/meson/mesonbuild/backend/backends.py",
+      "bytes": 105515,
+      "sha256": "267556e3bf2106d1399fe7ed4af14376e9082925be1580451a888fe0dd82f4b8"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/native/owned_source_writer_source/owned_source_writer_source_v1.c",
+      "bytes": 52825,
+      "sha256": "e2f464bb2a6159ce88eac1c71bf4442c999856f4876a19c3f912dc07e8ea86b7"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/native/owned_source_writer_source/owned_source_writer_source_v1.h",
+      "bytes": 282735,
+      "sha256": "564e8955d9b97211e81b10defafc6e1a49b07291f57090e4e821fab454588583"
+    }
+  ]
+}

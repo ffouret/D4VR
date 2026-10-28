@@ -1,0 +1,319 @@
+name: Prototype checks
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify launcher and file discovery
+        run: python -m unittest discover -s tests -v
+      - name: Prepare verified Godot runtime
+        run: python tools/d4vr.py setup
+      - name: Verify camera transforms and serialized XR bindings
+        run: python tools/d4vr.py test
+      - name: Load complete synthetic scene
+        run: python tools/d4vr.py smoke
+      - name: Configure native observation tests
+        run: cmake -S native -B work/native-ci
+      - name: Build native components
+        run: cmake --build work/native-ci --config Release
+      - name: Test observation and Windows forwarding
+        run: ctest --test-dir work/native-ci -C Release --output-on-failure
+      - name: Compile native XR and validate diagnostic shaders without a headset
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends libopenxr-dev libvulkan-dev glslang-tools spirv-tools
+          cmake -S native -B work/native-xr-ci -DD4VR_BUILD_XR_READINESS=ON -DD4VR_BUILD_GPU_PROBE_FIXTURE=ON -DD4VR_BUILD_VULKAN_TRACE=ON -DD4VR_TRACE_WITH_XR_BINDING=ON -DD4VR_TRACE_WITH_COOPERATIVE_XR=ON -DD4VR_BUILD_LAYER_REPLAY_POC=ON
+          cmake --build work/native-xr-ci --parallel 2
+          ctest --test-dir work/native-xr-ci --output-on-failure
+          spirv-val --target-env vulkan1.2 work/native-xr-ci/scene.vert.spv
+          spirv-val --target-env vulkan1.2 work/native-xr-ci/scene.frag.spv
+          spirv-val --target-env vulkan1.2 work/native-xr-ci/buffer-readback.comp.spv
+          spirv-val --target-env vulkan1.2 work/native-xr-ci/eye_updates.vert.spv
+          spirv-val --target-env vulkan1.2 work/native-xr-ci/present_eye.frag.spv
+          glslangValidator -V --target-env vulkan1.1 -Od native/probe_gpu/geometry_shift.vert -o work/native-xr-ci/geometry.spv
+          glslangValidator -V --target-env vulkan1.1 native/tests/probe_fixture.vert -o work/native-xr-ci/fixture.spv
+          python tools/spirv_probe.py work/native-xr-ci/fixture.spv --helper work/native-xr-ci/geometry.spv --tools /usr/bin --output work/native-xr-ci/instrumented.spv --geometry
+          glslangValidator -V --target-env vulkan1.1 -Od native/probe_gpu/stereo_transform.vert -o work/native-xr-ci/stereo-transform.spv
+          python tools/spirv_probe.py work/native-xr-ci/fixture.spv --helper work/native-xr-ci/stereo-transform.spv --tools /usr/bin --output work/native-xr-ci/stereo-instrumented.spv --stereo
+          glslangValidator -V --target-env vulkan1.1 native/tests/stereo_mrt.vert -o work/native-xr-ci/mrt.vert.spv
+          glslangValidator -V --target-env vulkan1.1 native/tests/stereo_mrt.frag -o work/native-xr-ci/mrt.frag.spv
+          glslangValidator -V --target-env vulkan1.3 native/tests/depth_copy.vert -o work/native-xr-ci/depth-copy.vert.spv
+          glslangValidator -V --target-env vulkan1.3 native/tests/depth_copy.frag -o work/native-xr-ci/depth-copy.frag.spv
+          spirv-val --target-env vulkan1.3 work/native-xr-ci/depth-copy.vert.spv
+          spirv-val --target-env vulkan1.3 work/native-xr-ci/depth-copy.frag.spv
+          glslangValidator -V --target-env vulkan1.2 native/tests/descriptor_echo.comp -o work/native-xr-ci/descriptor-echo.spv
+          spirv-val --target-env vulkan1.2 work/native-xr-ci/descriptor-echo.spv
+          python tools/spirv_probe.py work/native-xr-ci/mrt.vert.spv --helper work/native-xr-ci/stereo-transform.spv --tools /usr/bin --output work/native-xr-ci/mrt-instrumented.spv --stereo
+          glslangValidator -V --target-env vulkan1.1 native/tests/stereo_mrt_vertex.vert -o work/native-xr-ci/mrt-vertex.spv
+          python tools/spirv_probe.py work/native-xr-ci/mrt-vertex.spv --helper work/native-xr-ci/stereo-transform.spv --tools /usr/bin --output work/native-xr-ci/mrt-vertex-instrumented.spv --stereo
+      - name: Check pipeline graphs and layer forwarding with ASan and UBSan
+        # No GPU or game is involved in this CPU ownership test.
+        if: runner.os == 'Linux'
+        run: |
+          cmake -S native -B work/recipe-sanitized-ci -DD4VR_BUILD_STEREO_TARGET_TESTS=ON -DD4VR_BUILD_VULKAN_TRACE=ON -DCMAKE_BUILD_TYPE=Debug "-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer"
+          cmake --build work/recipe-sanitized-ci --target d4vr_sampled_writer_state_tests d4vr_source_writer_state_tests d4vr_source_history_tests d4vr_source_consumer_tests d4vr_captured_writer_tests d4vr_held_depth_mode_tests d4vr_depth_copy_tests d4vr_depth_transfer_tests d4vr_depth_audit_tests d4vr_depth_readback_tests d4vr_capture_projection d4vr_cooperative_capture d4vr_diagnostic_capture d4vr_diagnostic_pose_tests d4vr_fixed_view_hold_tests d4vr_view_calibration_tests d4vr_camera_provenance_tests d4vr_pose_mailbox_tests d4vr_pipeline_recipe_tests d4vr_library_variants_tests d4vr_present_stream_tests d4vr_eye_updates_tests d4vr_projection_source_tests d4vr_dynamic_states_tests d4vr_graphics_replay_tests d4vr_replay_specialization_tests d4vr_vulkan_trace_tests d4vr_frame_trace_tests d4vr_buffer_readback_tests --parallel 2
+          ctest --test-dir work/recipe-sanitized-ci -R "sampled_writer_state|source_writer_state|source_history_observation|source_consumer_observation|captured_writer_prefix|held_depth_mode_validation|depth_copy_ownership|depth_transfer_observation|depth_audit_observation|depth_readback_ownership|camera_provenance_validation|pose_mailbox_validation|diagnostic_pose_validation|fixed_view_hold_validation|view_calibration_validation|pipeline_recipe_ownership|library_variant_ownership|presentation_gpu_lease_ownership|eye_update_queue_ownership|projection_image_coherence|gpl_dynamic_state_ownership|graphics_state_replay|replay_specialization_ownership|vulkan_trace_forwarding|vulkan_frame_metadata|buffer_readback_bounds" --output-on-failure
+      - name: Fetch pinned SPIR-V grammar for static audit controls
+        if: runner.os == 'Linux'
+        uses: actions/checkout@v4
+        with:
+          repository: KhronosGroup/SPIRV-Headers
+          ref: fbf86836a9b1966586faf7be7bb8a6440e156d62
+          path: work/spirv-headers
+      - name: Verify static shader audit with validated write controls
+        if: runner.os == 'Linux'
+        run: python tools/shader_effects_validate.py --compiler /usr/bin/glslangValidator --assembler /usr/bin/spirv-as --validator /usr/bin/spirv-val --grammar work/spirv-headers/include/spirv/unified1/spirv.core.grammar.json --glsl-grammar work/spirv-headers/include/spirv/unified1/extinst.glsl.std.450.grammar.json --output-directory work/shader-effects-ci
+      - name: Verify telemetry-free helper and preserved source writes
+        if: runner.os == 'Linux'
+        run: python tools/stereo_helper_validate.py --compiler /usr/bin/glslangValidator --tools /usr/bin --grammar work/spirv-headers/include/spirv/unified1/spirv.core.grammar.json --glsl-grammar work/spirv-headers/include/spirv/unified1/extinst.glsl.std.450.grammar.json --output-directory work/stereo-helper-ci
+      - name: Verify full-module non-output write contract
+        if: runner.os == 'Linux'
+        run: python tools/shader_write_validate.py --compiler /usr/bin/glslangValidator --tools /usr/bin --grammar work/spirv-headers/include/spirv/unified1/spirv.core.grammar.json --glsl-grammar work/spirv-headers/include/spirv/unified1/extinst.glsl.std.450.grammar.json --output-directory work/shader-write-ci
+      - name: Verify projection-only helper with absent secondary descriptors
+        if: runner.os == 'Linux'
+        run: python tools/projection_helper_validate.py --compiler /usr/bin/glslangValidator --tools /usr/bin --grammar work/spirv-headers/include/spirv/unified1/spirv.core.grammar.json --glsl-grammar work/spirv-headers/include/spirv/unified1/extinst.glsl.std.450.grammar.json --output-directory work/projection-helper-ci
+      - name: Verify projection input construction and conservative refusals
+        if: runner.os == 'Linux'
+        run: python tools/projection_input_validate.py --compiler /usr/bin/glslangValidator --tools /usr/bin --helper work/stereo-helper-ci/helper-no-telemetry.spv --output work/projection-input-ci
+      - name: Verify closed post-projection depth suffix constructions
+        if: runner.os == 'Linux'
+        # Static construction only; the owned GPU certificate is produced separately.
+        run: python tools/post_depth_validate.py --compiler /usr/bin/glslangValidator --tools /usr/bin --helper work/stereo-helper-ci/helper-source-clip-units.spv --naive-helper work/stereo-helper-ci/helper-no-telemetry.spv --grammar work/spirv-headers/include/spirv/unified1/spirv.core.grammar.json --glsl-grammar work/spirv-headers/include/spirv/unified1/extinst.glsl.std.450.grammar.json --output work/post-depth-ci
+      - name: Verify closed sampled-UV construction with owned SPIR-V controls
+        if: runner.os == 'Linux'
+        # Static construction and valid refusals; private originals and GPU are absent.
+        run: python tests/test_sampled_uv_probe.py --validate-owned --validator /usr/bin/spirv-val --grammar work/spirv-headers/include/spirv/unified1/spirv.core.grammar.json --glsl-grammar work/spirv-headers/include/spirv/unified1/extinst.glsl.std.450.grammar.json --output work/sampled-uv-static-ci
+      - name: Verify bounded camera neighborhood observer construction
+        if: runner.os == 'Linux'
+        run: python tools/camera_block_validate.py --compiler /usr/bin/glslangValidator --tools /usr/bin --output work/camera-block-ci
+      - name: Verify partner projection and closed SSA route controls
+        if: runner.os == 'Linux'
+        run: python tools/camera_partner_validate.py --compiler /usr/bin/glslangValidator --tools /usr/bin --helper work/stereo-helper-ci/helper-no-telemetry.spv --grammar work/spirv-headers/include/spirv/unified1/spirv.core.grammar.json --glsl-grammar work/spirv-headers/include/spirv/unified1/extinst.glsl.std.450.grammar.json --output work/camera-partner-ci
+      - name: Verify fragment projection admission and selected output slices
+        if: runner.os == 'Linux'
+        run: python tools/fragment_projection_validate.py --compiler /usr/bin/glslangValidator --tools /usr/bin --helper work/stereo-helper-ci/helper-no-telemetry.spv --grammar work/spirv-headers/include/spirv/unified1/spirv.core.grammar.json --glsl-grammar work/spirv-headers/include/spirv/unified1/extinst.glsl.std.450.grammar.json --output work/fragment-projection-ci
+      - name: Verify every Windows export name, ordinal and forwarder
+        if: runner.os == 'Windows'
+        run: python -c "import pathlib,sys; sys.path.insert(0,'tools'); import probe; probe.validate_probe(pathlib.Path('work/native-ci/probe/Release/sl.interposer.dll'),probe.profile())"
+      - name: Fetch pinned Vulkan headers for Windows common component tests
+        if: runner.os == 'Windows'
+        uses: actions/checkout@v4
+        with:
+          repository: KhronosGroup/Vulkan-Headers
+          ref: v1.3.275
+          path: work/vulkan-headers
+      - name: Test Vulkan targets and graphics replay on Windows without a driver
+        if: runner.os == 'Windows'
+        run: |
+          cmake -S native -B work/stereo-targets-ci -DD4VR_BUILD_STEREO_TARGET_TESTS=ON "-DD4VR_VULKAN_INCLUDE_DIR=${{ github.workspace }}/work/vulkan-headers/include"
+          cmake --build work/stereo-targets-ci --config Release --target d4vr_sampled_writer_state_tests d4vr_source_writer_state_tests d4vr_source_history_tests d4vr_source_consumer_tests d4vr_captured_writer_tests d4vr_held_depth_mode_tests d4vr_depth_copy_tests d4vr_depth_transfer_tests d4vr_depth_audit_tests d4vr_depth_readback_tests d4vr_capture_projection d4vr_cooperative_capture d4vr_diagnostic_capture d4vr_diagnostic_pose_tests d4vr_fixed_view_hold_tests d4vr_view_calibration_tests d4vr_stereo_targets_tests d4vr_graphics_replay_tests d4vr_frame_trace_tests d4vr_camera_provenance_tests d4vr_pose_mailbox_tests d4vr_pipeline_recipe_tests d4vr_library_variants_tests d4vr_present_stream_tests d4vr_eye_updates_tests d4vr_projection_source_tests d4vr_dynamic_states_tests d4vr_replay_specialization_tests
+          ctest --test-dir work/stereo-targets-ci -C Release -R "sampled_writer_state|source_writer_state|source_history_observation|source_consumer_observation|captured_writer_prefix|held_depth_mode_validation|depth_copy_ownership|depth_transfer_observation|depth_audit_observation|depth_readback_ownership|stereo_target_ownership|graphics_state_replay|vulkan_frame_metadata|camera_provenance_validation|pose_mailbox_validation|diagnostic_pose_validation|fixed_view_hold_validation|view_calibration_validation|pipeline_recipe_ownership|library_variant_ownership|presentation_gpu_lease_ownership|eye_update_queue_ownership|projection_image_coherence|gpl_dynamic_state_ownership|replay_specialization_ownership" --output-on-failure
+      - name: Check bounded original descriptor queries without a GPU on Linux
+        if: runner.os == 'Linux'
+        run: |
+          cmake -S native/descriptor_query_diagnostic -B work/descriptor-query-ci
+          cmake --build work/descriptor-query-ci --parallel 2
+          ctest --test-dir work/descriptor-query-ci --output-on-failure
+          cmake -S native/descriptor_query_diagnostic -B work/descriptor-query-sanitized-ci -DCMAKE_BUILD_TYPE=Debug "-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer"
+          cmake --build work/descriptor-query-sanitized-ci --parallel 2
+          ctest --test-dir work/descriptor-query-sanitized-ci --output-on-failure
+      - name: Check bounded original descriptor queries without a GPU on Windows
+        if: runner.os == 'Windows'
+        run: |
+          cmake -S native/descriptor_query_diagnostic -B work/descriptor-query-ci "-DD4VR_VULKAN_INCLUDE_DIR=${{ github.workspace }}/work/vulkan-headers/include"
+          cmake --build work/descriptor-query-ci --config Release
+          ctest --test-dir work/descriptor-query-ci -C Release --output-on-failure
+      - name: Check typed source adapter and original wrappers without vendor or GPU on Linux
+        if: runner.os == 'Linux'
+        run: |
+          cmake -S native/translator_diagnostic -B work/typed-source-ci
+          cmake --build work/typed-source-ci --parallel 2
+          ctest --test-dir work/typed-source-ci --output-on-failure
+          cmake -S native/translator_diagnostic -B work/typed-source-sanitized-ci -DCMAKE_BUILD_TYPE=Debug "-DCMAKE_C_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer" "-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer"
+          cmake --build work/typed-source-sanitized-ci --parallel 2
+          ctest --test-dir work/typed-source-sanitized-ci --output-on-failure
+      - name: Check typed source adapter and original wrappers without vendor or GPU on Windows
+        if: runner.os == 'Windows'
+        run: |
+          cmake -S native/translator_diagnostic -B work/typed-source-ci
+          cmake --build work/typed-source-ci --config Release
+          ctest --test-dir work/typed-source-ci -C Release --output-on-failure
+      - name: Check immutable original getter receipts without vendor or GPU on Linux
+        if: runner.os == 'Linux'
+        run: |
+          cmake -S native/translator_getter_diagnostic -B work/typed-getter-ci
+          cmake --build work/typed-getter-ci --parallel 2
+          ctest --test-dir work/typed-getter-ci --output-on-failure
+          cmake -S native/translator_getter_diagnostic -B work/typed-getter-sanitized-ci -DCMAKE_BUILD_TYPE=Debug "-DCMAKE_C_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer" "-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer"
+          cmake --build work/typed-getter-sanitized-ci --parallel 2
+          ctest --test-dir work/typed-getter-sanitized-ci --output-on-failure
+      - name: Check immutable original getter receipts without vendor or GPU on Windows
+        if: runner.os == 'Windows'
+        run: |
+          cmake -S native/translator_getter_diagnostic -B work/typed-getter-ci
+          cmake --build work/typed-getter-ci --config Release
+          ctest --test-dir work/typed-getter-ci -C Release --output-on-failure
+      - name: Check original getter bind relations without vendor or GPU on Linux
+        if: runner.os == 'Linux'
+        run: |
+          cmake -S native/translator_bind_diagnostic -B work/typed-bind-ci
+          cmake --build work/typed-bind-ci --parallel 2
+          ctest --test-dir work/typed-bind-ci --output-on-failure
+          cmake -S native/translator_bind_diagnostic -B work/typed-bind-sanitized-ci -DCMAKE_BUILD_TYPE=Debug "-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer"
+          cmake --build work/typed-bind-sanitized-ci --parallel 2
+          ctest --test-dir work/typed-bind-sanitized-ci --output-on-failure
+      - name: Check original getter bind relations without vendor or GPU on Windows
+        if: runner.os == 'Windows'
+        run: |
+          cmake -S native/translator_bind_diagnostic -B work/typed-bind-ci
+          cmake --build work/typed-bind-ci --config Release
+          ctest --test-dir work/typed-bind-ci -C Release --output-on-failure
+      - name: Check private source admission and ownership controls without vendor or GPU on Linux
+        if: runner.os == 'Linux'
+        run: |
+          cmake -S native/translator_private_diagnostic -B work/private-source-control-ci
+          cmake --build work/private-source-control-ci --parallel 2
+          ctest --test-dir work/private-source-control-ci --output-on-failure
+          cmake -S native/translator_private_diagnostic -B work/private-source-control-sanitized-ci -DCMAKE_BUILD_TYPE=Debug "-DCMAKE_C_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer" "-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer"
+          cmake --build work/private-source-control-sanitized-ci --parallel 2
+          ctest --test-dir work/private-source-control-sanitized-ci --output-on-failure
+      - name: Check private source admission and ownership controls without vendor or GPU on Windows
+        if: runner.os == 'Windows'
+        run: |
+          cmake -S native/translator_private_diagnostic -B work/private-source-control-ci
+          cmake --build work/private-source-control-ci --config Release
+          ctest --test-dir work/private-source-control-ci -C Release --output-on-failure
+      - name: Check exact private receipt copies and original APP joins on Linux without a driver
+        if: runner.os == 'Linux'
+        run: |
+          cmake -S native/translator_runtime_diagnostic -B work/private-runtime-cpu-ci
+          cmake --build work/private-runtime-cpu-ci --parallel 2
+          ctest --test-dir work/private-runtime-cpu-ci --output-on-failure
+          cmake -S native/translator_runtime_diagnostic -B work/private-runtime-cpu-sanitized-ci -DCMAKE_BUILD_TYPE=Debug "-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer"
+          cmake --build work/private-runtime-cpu-sanitized-ci --parallel 2
+          ctest --test-dir work/private-runtime-cpu-sanitized-ci --output-on-failure
+      - name: Check exact private receipt copies and original APP joins on Windows without a driver
+        if: runner.os == 'Windows'
+        run: |
+          cmake -S native/translator_runtime_diagnostic -B work/private-runtime-cpu-ci
+          cmake --build work/private-runtime-cpu-ci --config Release
+          ctest --test-dir work/private-runtime-cpu-ci -C Release --output-on-failure
+      - name: Check new owned APP metadata protocol on Linux without a driver
+        if: runner.os == 'Linux'
+        run: |
+          cmake -S native/translator_runtime_owned_diagnostic -B work/private-runtime-owned-cpu-ci
+          cmake --build work/private-runtime-owned-cpu-ci --parallel 2
+          ctest --test-dir work/private-runtime-owned-cpu-ci --output-on-failure
+          cmake -S native/translator_runtime_owned_diagnostic -B work/private-runtime-owned-cpu-sanitized-ci -DCMAKE_BUILD_TYPE=Debug "-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer"
+          cmake --build work/private-runtime-owned-cpu-sanitized-ci --parallel 2
+          ctest --test-dir work/private-runtime-owned-cpu-sanitized-ci --output-on-failure
+      - name: Check new owned APP metadata protocol on Windows without a driver
+        if: runner.os == 'Windows'
+        run: |
+          cmake -S native/translator_runtime_owned_diagnostic -B work/private-runtime-owned-cpu-ci
+          cmake --build work/private-runtime-owned-cpu-ci --config Release
+          ctest --test-dir work/private-runtime-owned-cpu-ci -C Release --output-on-failure
+      - name: Check supplied SOURCE emitted-writer callbacks on Linux without a driver
+        if: runner.os == 'Linux'
+        run: |
+          cmake -S native/source_emitted_writer_diagnostic -B work/source-emitted-writer-ci
+          cmake --build work/source-emitted-writer-ci --parallel 2
+          ctest --test-dir work/source-emitted-writer-ci --output-on-failure
+          cmake -S native/source_emitted_writer_diagnostic -B work/source-emitted-writer-sanitized-ci -DCMAKE_BUILD_TYPE=Debug "-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer"
+          cmake --build work/source-emitted-writer-sanitized-ci --parallel 2
+          ctest --test-dir work/source-emitted-writer-sanitized-ci --output-on-failure
+      - name: Check supplied SOURCE emitted-writer callbacks on Windows without a driver
+        if: runner.os == 'Windows'
+        run: |
+          cmake -S native/source_emitted_writer_diagnostic -B work/source-emitted-writer-ci
+          cmake --build work/source-emitted-writer-ci --config Release
+          ctest --test-dir work/source-emitted-writer-ci -C Release --output-on-failure
+      - name: Check the exact owned SOURCE writer profile on Linux without a driver
+        if: runner.os == 'Linux'
+        run: |
+          cmake -S native/owned_source_writer_diagnostic -B work/owned-source-writer-ci
+          cmake --build work/owned-source-writer-ci --parallel 2
+          ctest --test-dir work/owned-source-writer-ci --output-on-failure
+          cmake -S native/owned_source_writer_diagnostic -B work/owned-source-writer-sanitized-ci -DCMAKE_BUILD_TYPE=Debug "-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer"
+          cmake --build work/owned-source-writer-sanitized-ci --parallel 2
+          ctest --test-dir work/owned-source-writer-sanitized-ci --output-on-failure
+      - name: Check the exact owned SOURCE writer profile on Windows without a driver
+        if: runner.os == 'Windows'
+        run: |
+          cmake -S native/owned_source_writer_diagnostic -B work/owned-source-writer-ci
+          cmake --build work/owned-source-writer-ci --config Release
+          ctest --test-dir work/owned-source-writer-ci -C Release --output-on-failure
+      - name: Check the new C SOURCE sink and bounded CPU wire on Linux
+        if: runner.os == 'Linux'
+        run: |
+          cmake -S native/owned_source_writer_source -B work/owned-C-source-ci -DOSW_BUILD_CPU_TEST_SUPPORT=ON
+          cmake --build work/owned-C-source-ci --parallel 2
+          ctest --test-dir work/owned-C-source-ci --output-on-failure
+          cmake -S native/owned_source_writer_source -B work/owned-C-source-sanitized-ci -DOSW_BUILD_CPU_TEST_SUPPORT=ON -DCMAKE_BUILD_TYPE=Debug "-DCMAKE_C_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer" "-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer"
+          cmake --build work/owned-C-source-sanitized-ci --parallel 2
+          ctest --test-dir work/owned-C-source-sanitized-ci --output-on-failure
+      - name: Check the new C SOURCE sink on Windows with the explicit GNU driver
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $gcc = (Get-Command gcc -ErrorAction Stop).Source
+          $gnuBin = Split-Path $gcc
+          $gxx = Join-Path $gnuBin 'g++.exe'
+          if (!(Test-Path $gxx)) { throw 'Matching GNU C++ compiler unavailable' }
+          $target = & $gcc -dumpmachine
+          if ($LASTEXITCODE -ne 0 -or $target.Trim() -ne 'x86_64-w64-mingw32') { throw "Unsupported new C sink compiler target: $target" }
+          $env:PATH = "$gnuBin;$env:PATH"
+          cmake -S native/owned_source_writer_source -B work/owned-C-source-ci -G Ninja -DOSW_BUILD_CPU_TEST_SUPPORT=ON "-DCMAKE_C_COMPILER=$gcc" "-DCMAKE_CXX_COMPILER=$gxx"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cmake --build work/owned-C-source-ci --parallel 2
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ctest --test-dir work/owned-C-source-ci --output-on-failure
+      - name: Check the private SOURCE bridge and digest CPU protocol on Linux
+        if: runner.os == 'Linux'
+        run: |
+          cmake -S native/owned_source_writer_projection -B work/owned-source-projection-ci
+          cmake --build work/owned-source-projection-ci --parallel 2
+          ctest --test-dir work/owned-source-projection-ci --output-on-failure
+          cmake -S native/owned_source_writer_projection -B work/owned-source-projection-sanitized-ci -DCMAKE_BUILD_TYPE=Debug "-DCMAKE_C_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer" "-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer"
+          cmake --build work/owned-source-projection-sanitized-ci --parallel 2
+          ctest --test-dir work/owned-source-projection-sanitized-ci --output-on-failure
+      - name: Check the private SOURCE bridge on Windows with the explicit GNU driver
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $gcc = (Get-Command gcc -ErrorAction Stop).Source
+          $gnuBin = Split-Path $gcc
+          $gxx = Join-Path $gnuBin 'g++.exe'
+          if (!(Test-Path $gxx)) { throw 'Matching GNU C++ compiler unavailable' }
+          $target = & $gcc -dumpmachine
+          if ($LASTEXITCODE -ne 0 -or $target.Trim() -ne 'x86_64-w64-mingw32') { throw "Unsupported private bridge compiler target: $target" }
+          $env:PATH = "$gnuBin;$env:PATH"
+          cmake -S native/owned_source_writer_projection -B work/owned-source-projection-ci -G Ninja "-DCMAKE_C_COMPILER=$gcc" "-DCMAKE_CXX_COMPILER=$gxx"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cmake --build work/owned-source-projection-ci --parallel 2
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ctest --test-dir work/owned-source-projection-ci --output-on-failure
+      - name: Upload Windows probe without vendor or test libraries
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: d4vr-streamline-probe-windows-x64
+          path: work/native-ci/probe/Release/sl.interposer.dll
+          if-no-files-found: error

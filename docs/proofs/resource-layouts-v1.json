@@ -1,0 +1,346 @@
+{
+  "schema_version": 1,
+  "scope": "passive descriptor layout observations on the original synthetic fixture",
+  "synthetic_scene": true,
+  "diablo_rendered": false,
+  "game_resource_admission": false,
+  "descriptor_contents_captured": false,
+  "buffer_contents_read_or_written": false,
+  "resource_aliases_excluded": false,
+  "new_human_headset_trial": false,
+  "owned_metadata": [
+    "generation identity for successfully created set and pipeline layouts",
+    "binding arrays, binding flags and push ranges",
+    "driver-returned layout size and binding offsets",
+    "immutable query revisions retained after reset, destruction and handle reuse"
+  ],
+  "unsupported_remains_explicit": [
+    "unknown creation chains",
+    "immutable sampler definitions",
+    "mutable descriptor type lists",
+    "effective linked GPL layout compatibility",
+    "descriptor contents and physical memory provenance"
+  ],
+  "cpu_checks": {
+    "python_tests": 145,
+    "strict_frame_metadata_tests": "passed",
+    "strict_forwarding_tests": "passed",
+    "local_sanitizers": "runtime unavailable; CI runs frame metadata and forwarding under ASan/UBSan"
+  },
+  "source_sha256": {
+    "native/vulkan/descriptor_layouts.hpp": "87c06f3248249ab2520b4a0dcc2e9ce7c7f5ec455726db18165ab07c9398504d",
+    "native/vulkan/frame_trace.hpp": "adbe991a4c7b53f72c7c53c21f99eb6c6ea234ae8254d436325e17e16a2a04b9",
+    "native/vulkan/trace_layer.cpp": "deab7e3957a723705f21b9cf4db574373864d0f1466c494a768d75140b8248d1",
+    "native/tests/frame_trace_tests.cpp": "d58a19dfd43cb5df3402ac38aa48904cdf060f1f2732ddab40ef6bccec19aa65",
+    "native/tests/vulkan_trace_tests.cpp": "ca8e46989936b16b6197fbff06f27da0a64599b1c8b0faae71eae8328b0907dd",
+    "tools/frame_trace.py": "c3943b6671362f287a5a4fd79e007972ce4e04bb2003e6a7edd5b5b5fee3d5bb",
+    "tools/stereo_mrt_validate.py": "6bea5a8f7db7403aa2af16e5ee8f8c944f8596078098c0f0625d22b9cd5eda1d",
+    "tests/test_frame_trace.py": "8e612f31f173025207f2602296ff24789dac75371a403986b334b7fa8371f0ce"
+  },
+  "layer_sha256": "2c506852262f2264013e9bf46526395b7204db233b210567fb0bf686fa7182c1",
+  "gpu_controls": [
+    {
+      "case": "native",
+      "exit_code": 0,
+      "validation_layer_loaded": false,
+      "intentional_sync_hazard_detected": false,
+      "intentional_wrong_compute_offset_detected": false,
+      "frame_metadata": {
+        "bounded_capture_verified": true,
+        "monolithic_pipeline_count": 4,
+        "linked_pipeline_count": 0,
+        "largest_dynamic_declaration": 3,
+        "clear_value_sets": 48,
+        "graphics_state_snapshot_complete": false,
+        "resource_observation_counts": {
+          "descriptor_buffers": 4,
+          "descriptor_offsets": 8,
+          "draw": 8,
+          "dispatch": 1,
+          "classic_descriptors": 4
+        },
+        "buffer_address_status_counts": {
+          "unique_observed_range": 4
+        },
+        "layout_observation_counts": {
+          "descriptor_offsets": 8,
+          "classic_descriptors": 4
+        },
+        "descriptor_layout_query_counts": {
+          "sizes": 1,
+          "binding_offsets": 2
+        },
+        "observed_pipeline_layouts": 2,
+        "observed_set_layouts": 8
+      },
+      "reference_checks": {
+        "color_reference_different_bytes": 0,
+        "depth_reference_compared_texels": 1048576,
+        "max_normalized_depth_difference": 0,
+        "stencil_reference_different_bytes": 0,
+        "following_compute_reference_words": 32,
+        "incorrect_compute_samples_detected": 0,
+        "original_targets_preserved_defined_bytes": 31457280
+      }
+    },
+    {
+      "case": "native-validation",
+      "exit_code": 0,
+      "validation_layer_loaded": true,
+      "intentional_sync_hazard_detected": false,
+      "intentional_wrong_compute_offset_detected": false,
+      "frame_metadata": {
+        "bounded_capture_verified": true,
+        "monolithic_pipeline_count": 4,
+        "linked_pipeline_count": 0,
+        "largest_dynamic_declaration": 3,
+        "clear_value_sets": 48,
+        "graphics_state_snapshot_complete": false,
+        "resource_observation_counts": {
+          "descriptor_buffers": 4,
+          "descriptor_offsets": 8,
+          "draw": 8,
+          "dispatch": 1,
+          "classic_descriptors": 4
+        },
+        "buffer_address_status_counts": {
+          "unique_observed_range": 4
+        },
+        "layout_observation_counts": {
+          "descriptor_offsets": 8,
+          "classic_descriptors": 4
+        },
+        "descriptor_layout_query_counts": {
+          "sizes": 1,
+          "binding_offsets": 2
+        },
+        "observed_pipeline_layouts": 2,
+        "observed_set_layouts": 8
+      },
+      "reference_checks": {
+        "color_reference_different_bytes": 0,
+        "depth_reference_compared_texels": 1048576,
+        "max_normalized_depth_difference": 0,
+        "stencil_reference_different_bytes": 0,
+        "following_compute_reference_words": 32,
+        "incorrect_compute_samples_detected": 0,
+        "original_targets_preserved_defined_bytes": 31457280
+      }
+    },
+    {
+      "case": "sync-negative-control",
+      "exit_code": 0,
+      "validation_layer_loaded": true,
+      "intentional_sync_hazard_detected": true,
+      "intentional_wrong_compute_offset_detected": false,
+      "frame_metadata": {
+        "bounded_capture_verified": true,
+        "monolithic_pipeline_count": 4,
+        "linked_pipeline_count": 0,
+        "largest_dynamic_declaration": 3,
+        "clear_value_sets": 48,
+        "graphics_state_snapshot_complete": false,
+        "resource_observation_counts": {
+          "descriptor_buffers": 4,
+          "descriptor_offsets": 8,
+          "draw": 8,
+          "dispatch": 1,
+          "classic_descriptors": 4
+        },
+        "buffer_address_status_counts": {
+          "unique_observed_range": 4
+        },
+        "layout_observation_counts": {
+          "descriptor_offsets": 8,
+          "classic_descriptors": 4
+        },
+        "descriptor_layout_query_counts": {
+          "sizes": 1,
+          "binding_offsets": 2
+        },
+        "observed_pipeline_layouts": 2,
+        "observed_set_layouts": 8
+      },
+      "reference_checks": {
+        "color_reference_different_bytes": 0,
+        "depth_reference_compared_texels": 1048576,
+        "max_normalized_depth_difference": 0,
+        "stencil_reference_different_bytes": 0,
+        "following_compute_reference_words": 32,
+        "incorrect_compute_samples_detected": 0,
+        "original_targets_preserved_defined_bytes": 31457280
+      }
+    },
+    {
+      "case": "descriptor-offset-negative-control",
+      "exit_code": 0,
+      "validation_layer_loaded": true,
+      "intentional_sync_hazard_detected": false,
+      "intentional_wrong_compute_offset_detected": true,
+      "frame_metadata": {
+        "bounded_capture_verified": true,
+        "monolithic_pipeline_count": 4,
+        "linked_pipeline_count": 0,
+        "largest_dynamic_declaration": 3,
+        "clear_value_sets": 48,
+        "graphics_state_snapshot_complete": false,
+        "resource_observation_counts": {
+          "descriptor_buffers": 4,
+          "descriptor_offsets": 9,
+          "draw": 8,
+          "dispatch": 1,
+          "classic_descriptors": 4
+        },
+        "buffer_address_status_counts": {
+          "unique_observed_range": 4
+        },
+        "layout_observation_counts": {
+          "descriptor_offsets": 9,
+          "classic_descriptors": 4
+        },
+        "descriptor_layout_query_counts": {
+          "sizes": 1,
+          "binding_offsets": 2
+        },
+        "observed_pipeline_layouts": 2,
+        "observed_set_layouts": 8
+      },
+      "reference_checks": {
+        "color_reference_different_bytes": 0,
+        "depth_reference_compared_texels": 1048576,
+        "max_normalized_depth_difference": 0,
+        "stencil_reference_different_bytes": 0,
+        "following_compute_reference_words": 32,
+        "incorrect_compute_samples_detected": 8,
+        "original_targets_preserved_defined_bytes": 31457280
+      }
+    },
+    {
+      "case": "metadata-disabled",
+      "exit_code": 0,
+      "validation_layer_loaded": true,
+      "intentional_sync_hazard_detected": false,
+      "intentional_wrong_compute_offset_detected": false,
+      "frame_metadata": {
+        "disabled_capture_verified": true
+      },
+      "reference_checks": {
+        "color_reference_different_bytes": 0,
+        "depth_reference_compared_texels": 1048576,
+        "max_normalized_depth_difference": 0,
+        "stencil_reference_different_bytes": 0,
+        "following_compute_reference_words": 32,
+        "incorrect_compute_samples_detected": 0,
+        "original_targets_preserved_defined_bytes": 31457280
+      }
+    },
+    {
+      "case": "steam-runtime-validation",
+      "exit_code": 0,
+      "validation_layer_loaded": true,
+      "intentional_sync_hazard_detected": false,
+      "intentional_wrong_compute_offset_detected": false,
+      "frame_metadata": {
+        "bounded_capture_verified": true,
+        "monolithic_pipeline_count": 4,
+        "linked_pipeline_count": 0,
+        "largest_dynamic_declaration": 3,
+        "clear_value_sets": 48,
+        "graphics_state_snapshot_complete": false,
+        "resource_observation_counts": {
+          "descriptor_buffers": 4,
+          "descriptor_offsets": 8,
+          "draw": 8,
+          "dispatch": 1,
+          "classic_descriptors": 4
+        },
+        "buffer_address_status_counts": {
+          "unique_observed_range": 4
+        },
+        "layout_observation_counts": {
+          "descriptor_offsets": 8,
+          "classic_descriptors": 4
+        },
+        "descriptor_layout_query_counts": {
+          "sizes": 1,
+          "binding_offsets": 2
+        },
+        "observed_pipeline_layouts": 2,
+        "observed_set_layouts": 8
+      },
+      "reference_checks": {
+        "color_reference_different_bytes": 0,
+        "depth_reference_compared_texels": 1048576,
+        "max_normalized_depth_difference": 0,
+        "stencil_reference_different_bytes": 0,
+        "following_compute_reference_words": 32,
+        "incorrect_compute_samples_detected": 0,
+        "original_targets_preserved_defined_bytes": 31457280
+      }
+    }
+  ],
+  "closed_replay_regression": {
+    "render_extent": [
+      1024,
+      1024
+    ],
+    "layer_sha256": "88e7ecafc929d0100046763c730fd056eacafa5441ac6cf282a8f8079209bfb1",
+    "cases": [
+      {
+        "name": "positive",
+        "returncode": 0,
+        "validation_errors": 0
+      },
+      {
+        "name": "unsupported-command",
+        "returncode": 0,
+        "validation_errors": 0
+      },
+      {
+        "name": "unrecognized-shader",
+        "returncode": 0,
+        "validation_errors": 0
+      },
+      {
+        "name": "disabled",
+        "returncode": 0,
+        "validation_errors": 0
+      },
+      {
+        "name": "wrong-client",
+        "returncode": 0,
+        "validation_errors": 0
+      },
+      {
+        "name": "xr-loader-unavailable",
+        "returncode": 0,
+        "validation_errors": 0
+      },
+      {
+        "name": "steam-runtime",
+        "returncode": 0,
+        "validation_errors": 0
+      },
+      {
+        "name": "xr-mock-session-failure",
+        "returncode": 0,
+        "validation_errors": 0
+      },
+      {
+        "name": "xr-mock-preflight",
+        "returncode": 0,
+        "validation_errors": 0
+      },
+      {
+        "name": "xr-mock-frames",
+        "returncode": 0,
+        "validation_errors": 0
+      },
+      {
+        "name": "xr-mock-steam-runtime",
+        "returncode": 0,
+        "validation_errors": 0
+      }
+    ]
+  }
+}

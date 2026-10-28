@@ -1,0 +1,95 @@
+cmake_minimum_required(VERSION 3.20)
+project(d4vr_descriptor_query_diagnostic LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+enable_testing()
+find_package(Threads REQUIRED)
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
+add_executable(d4vr_typed_copy_transport_tests ../tests/typed_copy_transport_tests.cpp)
+target_link_libraries(d4vr_typed_copy_transport_tests PRIVATE Threads::Threads)
+add_test(NAME typed_copy_transport_cpu COMMAND d4vr_typed_copy_transport_tests)
+add_test(NAME typed_copy_native_wire
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/../../tests/test_typed_copy_transport_validate.py
+        --native-wire $<TARGET_FILE:d4vr_typed_copy_transport_tests>)
+find_path(D4VR_VULKAN_INCLUDE_DIR vulkan/vulkan.h REQUIRED)
+set(query_core ../vulkan/descriptor_query_observer.cpp)
+set(scope_inputs
+    ../vulkan/descriptor_query_observer.hpp
+    ../vulkan/descriptor_query_observer.cpp
+    ../vulkan/descriptor_query_observer_layer.cpp
+    ../vulkan/descriptor_query_transport.hpp
+    ../vulkan/descriptor_query_transport.cpp)
+set(scope_hashes "")
+foreach(input IN LISTS scope_inputs)
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/${input}")
+    file(SHA256 "${CMAKE_CURRENT_SOURCE_DIR}/${input}" input_hash)
+    string(APPEND scope_hashes "${input_hash}")
+endforeach()
+string(SHA256 scope_build_id "${scope_hashes}")
+add_executable(d4vr_descriptor_query_observer_tests
+    ../tests/descriptor_query_observer_tests.cpp ${query_core})
+target_include_directories(d4vr_descriptor_query_observer_tests PRIVATE ${D4VR_VULKAN_INCLUDE_DIR})
+target_link_libraries(d4vr_descriptor_query_observer_tests PRIVATE Threads::Threads)
+add_test(NAME descriptor_query_original_forwarding COMMAND d4vr_descriptor_query_observer_tests)
+add_executable(d4vr_original_call_owner_observer_tests ../tests/original_call_owner_observer_tests.cpp ${query_core})
+target_include_directories(d4vr_original_call_owner_observer_tests PRIVATE ${D4VR_VULKAN_INCLUDE_DIR})
+target_link_libraries(d4vr_original_call_owner_observer_tests PRIVATE Threads::Threads)
+add_test(NAME original_call_owner_original_forwarding COMMAND d4vr_original_call_owner_observer_tests)
+add_executable(d4vr_original_call_owner_cpu ../tests/original_call_owner.cpp)
+target_compile_definitions(d4vr_original_call_owner_cpu PRIVATE D4VR_ORIGINAL_OWNER_CPU_TEST)
+target_include_directories(d4vr_original_call_owner_cpu PRIVATE ${D4VR_VULKAN_INCLUDE_DIR})
+add_test(NAME original_call_owner_activation_cpu COMMAND d4vr_original_call_owner_cpu self-test)
+add_executable(d4vr_translated_owner_gate_tests ../tests/translated_owner_scope.cpp)
+target_compile_definitions(d4vr_translated_owner_gate_tests PRIVATE D4VR_OWNER_GATE_CPU_TEST)
+add_test(NAME translated_owner_gate_protocol COMMAND d4vr_translated_owner_gate_tests self-test)
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    # No private pins in CI: run only pure parsing/hash/budget self-controls.
+    add_executable(d4vr_exact_backing_control ../tests/exact_backing_control.cpp)
+    add_test(NAME exact_backing_metadata_cpu COMMAND d4vr_exact_backing_control --self-test)
+endif()
+if(WIN32)
+    # New two-case receipt transport fixture: compile only, no graphics in CI.
+    add_executable(d4vr_typed_descriptor_copy_fixture ../tests/typed_descriptor_copy_fixture.cpp)
+    target_link_libraries(d4vr_typed_descriptor_copy_fixture PRIVATE ole32 uuid)
+    # Compile the owned D3D12 probe only. DXIL is supplied at runtime by its
+    # separate builder; CI never starts the executable or needs a graphics driver.
+    add_executable(d4vr_translated_descriptor_copy_fixture ../tests/translated_descriptor_copy.cpp)
+    target_link_libraries(d4vr_translated_descriptor_copy_fixture PRIVATE ole32 uuid)
+    add_executable(d4vr_translated_owner_scope_fixture ../tests/translated_owner_scope.cpp)
+    target_include_directories(d4vr_translated_owner_scope_fixture PRIVATE ${D4VR_VULKAN_INCLUDE_DIR})
+    target_link_libraries(d4vr_translated_owner_scope_fixture PRIVATE ole32 uuid)
+    add_executable(d4vr_original_call_owner_fixture ../tests/original_call_owner.cpp)
+    target_include_directories(d4vr_original_call_owner_fixture PRIVATE ${D4VR_VULKAN_INCLUDE_DIR})
+    target_link_libraries(d4vr_original_call_owner_fixture PRIVATE ole32 uuid)
+    # File-attribute preparation only; no D3D12/Vulkan include or execution.
+    add_executable(d4vr_translated_gate_inspect ../tests/translated_gate_inspect.cpp)
+endif()
+if(UNIX AND NOT APPLE)
+    target_sources(d4vr_descriptor_query_observer_tests PRIVATE ../vulkan/descriptor_query_transport.cpp)
+    target_sources(d4vr_original_call_owner_observer_tests PRIVATE ../vulkan/descriptor_query_transport.cpp)
+    target_compile_definitions(d4vr_descriptor_query_observer_tests PRIVATE D4VR_QUERY_OBSERVER_BUILD_ID="${scope_build_id}")
+    add_library(d4vr_descriptor_query_observer SHARED
+        ../vulkan/descriptor_query_observer_layer.cpp ../vulkan/descriptor_query_transport.cpp ${query_core})
+    target_include_directories(d4vr_descriptor_query_observer PRIVATE ${D4VR_VULKAN_INCLUDE_DIR})
+    target_link_libraries(d4vr_descriptor_query_observer PRIVATE Threads::Threads)
+    target_compile_definitions(d4vr_descriptor_query_observer PRIVATE D4VR_QUERY_OBSERVER_BUILD_ID="${scope_build_id}")
+    add_executable(d4vr_descriptor_query_scope_tests ../tests/descriptor_query_scope_tests.cpp ../vulkan/descriptor_query_transport.cpp)
+    target_include_directories(d4vr_descriptor_query_scope_tests PRIVATE ${D4VR_VULKAN_INCLUDE_DIR})
+    target_link_libraries(d4vr_descriptor_query_scope_tests PRIVATE Threads::Threads ${CMAKE_DL_LIBS})
+    target_compile_definitions(d4vr_descriptor_query_scope_tests PRIVATE D4VR_QUERY_OBSERVER_BUILD_ID="${scope_build_id}")
+    # A new dlmopen namespace cannot reuse the initial namespace's ASan runtime.
+    # The ordinary run tests it; sanitizer runs keep the other lifetime controls.
+    set(scope_namespace_flag "")
+    if("${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG} ${CMAKE_CXX_FLAGS_RELEASE}" MATCHES "fsanitize=[^ ]*address")
+        set(scope_namespace_flag --no-new-namespaces)
+    endif()
+    add_test(NAME descriptor_query_scope_lifetimes
+        COMMAND d4vr_descriptor_query_scope_tests --library $<TARGET_FILE:d4vr_descriptor_query_observer> ${scope_namespace_flag})
+    # Compile only: an actual loader/device query is a separately pinned owned run.
+    find_library(D4VR_QUERY_VULKAN_LOADER NAMES vulkan libvulkan.so.1 REQUIRED)
+    add_executable(d4vr_query_scope_loader ../tests/query_scope_loader.cpp)
+    target_include_directories(d4vr_query_scope_loader PRIVATE ${D4VR_VULKAN_INCLUDE_DIR})
+    target_link_libraries(d4vr_query_scope_loader PRIVATE ${D4VR_QUERY_VULKAN_LOADER} ${CMAKE_DL_LIBS})
+    set(D4VR_QUERY_OBSERVER_LIBRARY "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}d4vr_descriptor_query_observer${CMAKE_SHARED_LIBRARY_SUFFIX}")
+    configure_file(../vulkan/VkLayer_D4VR_query_observer.json.in VkLayer_D4VR_query_observer.json @ONLY)
+endif()

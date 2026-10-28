@@ -1,0 +1,210 @@
+{
+  "schema_version": 1,
+  "actual_diablo_observation": true,
+  "game_process_owned_and_observed": true,
+  "normal_ui_entry_selected_character_unchanged": true,
+  "movement_combat_purchase_character_change_performed": false,
+  "normal_ui_quit": true,
+  "launcher_exit_code": 0,
+  "all_owned_processes_exited": true,
+  "originals_before_after_equal": true,
+  "named_exports_equal": 262,
+  "visually_normal_original_world_observed": true,
+  "pixel_equality_or_ingame_khronos_claimed": false,
+  "gpu_depth_pixels_captured": false,
+  "camera_modified": false,
+  "shaders_overridden": false,
+  "xr_submission": false,
+  "diablo_images_sent_to_quest": false,
+  "wide_fov_coverage_fixed": false,
+  "layer_sha256": "1988b2c6ade3d28f749d6f2fd4b349ed5539021c285127c40d0edac59ea7a4f7",
+  "source_sha256": {
+    "native/vulkan/depth_audit.hpp": "430c67755eb76a875fec010e0b24b137f03e897d69511723bb623f757f596c77",
+    "native/vulkan/depth_audit.cpp": "4e8dc4f11695fbaf7894ae84b1d031b6e2ee3145a7f943656982164aba537c95",
+    "native/vulkan/depth_readback.hpp": "b02ee21265b98a407971143eaf758147f10b5a9b626eb8500db9740d2deddd89",
+    "native/vulkan/depth_readback.cpp": "c3a9cba161d30ee37283567b5d9f8ae7f0621284fb64833da5313a62c78cb9db",
+    "native/vulkan/trace_layer.cpp": "c8745cb81d605deb605a72d279a62eb363bc01f6b2b88f6a8e3812e6bd78640f",
+    "native/tests/depth_audit_tests.cpp": "2a0bdcc7d67a51aed2b47433731c0fcda84f63e862656511476b1b0f3049b402",
+    "native/tests/present_layer_vulkan.cpp": "e1d8ab3b279553aeb3445d2cade9fa0620d2bad8bef55c74dc0e4d67b7843ed2",
+    "native/tests/vulkan_trace_tests.cpp": "6d647a49111c7807f156771853591d3377e1387dced0720a07dc560de7495e6e",
+    "tools/depth_audit_validate.py": "25b30ba095cf94e95648a61bbeef8e375136ba79c497c7e7ec8cbfc6b4176a5d"
+  },
+  "world_snapshots": [
+    {
+      "submissions": 236287,
+      "successful_calls": 236287,
+      "failed_calls": 0,
+      "unsupported_attempts": 222731,
+      "successful_unsupported": 222731,
+      "legacy_calls": 0,
+      "submit2_calls": 236287,
+      "sparse_calls": 0,
+      "submit2_wait_masks": [
+        {
+          "value": 65536,
+          "count": 209201
+        },
+        {
+          "value": 17179870208,
+          "count": 13557
+        }
+      ],
+      "submit2_signal_masks": [
+        {
+          "value": 0,
+          "count": 13557
+        },
+        {
+          "value": 65536,
+          "count": 442679
+        },
+        {
+          "value": 4294967296,
+          "count": 4104
+        }
+      ],
+      "device_masks": [
+        {
+          "value": 0,
+          "count": 237058
+        }
+      ],
+      "device_indices": [
+        {
+          "value": 0,
+          "count": 683098
+        }
+      ],
+      "submit_flags": [
+        {
+          "value": 0,
+          "count": 251166
+        }
+      ],
+      "registry_overflow": 0,
+      "scope_overflow": 0,
+      "histogram_overflow": 0,
+      "input_truncated": 0,
+      "unknown_queues": 0,
+      "unknown_depth_views": 0,
+      "request": 1,
+      "observed_present_boundary": 13557,
+      "report_sequence": 15,
+      "report_sha256": "efeb92a3cc897193f10aefbf17a103b7cc1f4e22c6a82fc96d90c4075614fe89",
+      "registered_queues": 13,
+      "registered_families": [
+        0,
+        1,
+        2,
+        5
+      ],
+      "depth_scope_descriptions": 35,
+      "reader_eligible_descriptions": 0,
+      "depth_recorded_ends": 833742,
+      "depth_successful_submit_observations": 833678,
+      "repeated_submissions_proven_by_count_excess": false
+    },
+    {
+      "submissions": 400573,
+      "successful_calls": 400573,
+      "failed_calls": 0,
+      "unsupported_attempts": 377890,
+      "successful_unsupported": 377890,
+      "legacy_calls": 0,
+      "submit2_calls": 400573,
+      "sparse_calls": 0,
+      "submit2_wait_masks": [
+        {
+          "value": 65536,
+          "count": 355080
+        },
+        {
+          "value": 17179870208,
+          "count": 22684
+        }
+      ],
+      "submit2_signal_masks": [
+        {
+          "value": 0,
+          "count": 22684
+        },
+        {
+          "value": 65536,
+          "count": 752997
+        },
+        {
+          "value": 4294967296,
+          "count": 4104
+        }
+      ],
+      "device_masks": [
+        {
+          "value": 0,
+          "count": 401344
+        }
+      ],
+      "device_indices": [
+        {
+          "value": 0,
+          "count": 1157549
+        }
+      ],
+      "submit_flags": [
+        {
+          "value": 0,
+          "count": 424579
+        }
+      ],
+      "registry_overflow": 0,
+      "scope_overflow": 0,
+      "histogram_overflow": 0,
+      "input_truncated": 0,
+      "unknown_queues": 0,
+      "unknown_depth_views": 0,
+      "request": 2,
+      "observed_present_boundary": 22684,
+      "report_sequence": 17,
+      "report_sha256": "f07f24f34fc453c088f5eccdca0d83c27c060efb3f1dfef513edad21159ae80c",
+      "registered_queues": 13,
+      "registered_families": [
+        0,
+        1,
+        2,
+        5
+      ],
+      "depth_scope_descriptions": 35,
+      "reader_eligible_descriptions": 0,
+      "depth_recorded_ends": 1417870,
+      "depth_successful_submit_observations": 1417806,
+      "repeated_submissions_proven_by_count_excess": false
+    }
+  ],
+  "reader_admitted": false,
+  "policy_mismatches": {
+    "original_scope_masks_not_all_commands": true,
+    "command_usage_flags_observed": [
+      0
+    ],
+    "one_time_submission_guarantee": false,
+    "actual_cb_replay_proven": false,
+    "image_flags_observed": [
+      4194304,
+      4194320
+    ],
+    "depth_view_first_next_type": 1000117002,
+    "view_usage_chain_contents_not_sampled": true,
+    "device_masks_observed": [
+      0
+    ],
+    "zero_device_mask_is_not_an_api_error": true
+  },
+  "limits": [
+    "CPU observations of public intercepted calls, not GPU completion or scene/frame provenance.",
+    "The policy mismatch does not establish invalid Vulkan application usage.",
+    "No depth bytes have been read in Diablo. The exact depth pass and initialized pixels remain unknown.",
+    "The source depth-readback requires a different proven access route; do not widen application masks or promise one-time CB use.",
+    "Registered queues are not proof of all hidden/downstream or external work.",
+    "No inference about culling, later color passes, camera roles or continuous VR from this audit."
+  ],
+  "next": "Observe original depth transfer reads (COPY/BLIT) and their source footprint/CB usage before a bounded duplicate-read producer. Do not repeat this unchanged scope audit or enable the strict EndRendering reader."
+}

@@ -1,0 +1,45 @@
+#pragma once
+// Original application commands only. Known clear depth, not geometry/scene depth.
+inline void depthTransferFixture(Fixture& f,const std::filesystem::path& directory){
+    const bool copyReadback=std::getenv("D4VR_DEPTH_COPY_FIXTURE");
+    if(copyReadback){text(directory/"depth-copy.request","D4VR_DEPTH_1 1 8 8 126 1\n");std::this_thread::sleep_for(std::chrono::milliseconds(30));}
+    VkFormatProperties properties{};vkGetPhysicalDeviceFormatProperties(f.physical,VK_FORMAT_D32_SFLOAT,&properties);
+    const auto required=VK_FORMAT_FEATURE_BLIT_SRC_BIT|VK_FORMAT_FEATURE_BLIT_DST_BIT;
+    if((properties.optimalTilingFeatures&required)!=required)throw std::runtime_error("D32 blit control unsupported");
+    VkImageCreateInfo imageInfo{VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};imageInfo.imageType=VK_IMAGE_TYPE_2D;imageInfo.format=VK_FORMAT_D32_SFLOAT;imageInfo.extent={8,8,1};imageInfo.mipLevels=imageInfo.arrayLayers=1;imageInfo.samples=VK_SAMPLE_COUNT_1_BIT;imageInfo.tiling=VK_IMAGE_TILING_OPTIMAL;imageInfo.usage=VK_IMAGE_USAGE_TRANSFER_SRC_BIT|VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    std::array<VkImage,2> images{};std::array<VkDeviceMemory,2> memory{};
+    for(unsigned i=0;i<2;++i){check(vkCreateImage(f.device,&imageInfo,nullptr,&images[i]));VkMemoryRequirements mr{};vkGetImageMemoryRequirements(f.device,images[i],&mr);VkMemoryAllocateInfo ai{VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};ai.allocationSize=mr.size;ai.memoryTypeIndex=f.type(mr.memoryTypeBits,VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);check(vkAllocateMemory(f.device,&ai,nullptr,&memory[i]));check(vkBindImageMemory(f.device,images[i],memory[i],0));}
+    auto buffer=f.buffer(768,VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+    VkCommandPoolCreateInfo poolInfo{VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};poolInfo.queueFamilyIndex=f.family;VkCommandPool pool{};check(vkCreateCommandPool(f.device,&poolInfo,nullptr,&pool));
+    VkCommandBufferAllocateInfo allocate{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};allocate.commandPool=pool;allocate.level=VK_COMMAND_BUFFER_LEVEL_PRIMARY;allocate.commandBufferCount=1;VkCommandBuffer cb{};check(vkAllocateCommandBuffers(f.device,&allocate,&cb));
+    VkCommandBufferBeginInfo begin{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};check(vkBeginCommandBuffer(cb,&begin)); // flags zero: the SAME recording is submitted twice.
+    auto barrier=[&](VkImage image,VkImageLayout old,VkAccessFlags2 from,VkAccessFlags2 to,VkPipelineStageFlags2 a,VkPipelineStageFlags2 b){VkImageMemoryBarrier2 v{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2};v.image=image;v.oldLayout=old;v.newLayout=VK_IMAGE_LAYOUT_GENERAL;v.srcStageMask=a;v.dstStageMask=b;v.srcAccessMask=from;v.dstAccessMask=to;v.srcQueueFamilyIndex=v.dstQueueFamilyIndex=VK_QUEUE_FAMILY_IGNORED;v.subresourceRange={VK_IMAGE_ASPECT_DEPTH_BIT,0,1,0,1};VkDependencyInfo dep{VK_STRUCTURE_TYPE_DEPENDENCY_INFO};dep.imageMemoryBarrierCount=1;dep.pImageMemoryBarriers=&v;vkCmdPipelineBarrier2(cb,&dep);};
+    barrier(images[0],VK_IMAGE_LAYOUT_UNDEFINED,0,VK_ACCESS_2_TRANSFER_WRITE_BIT,VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,VK_PIPELINE_STAGE_2_CLEAR_BIT);
+    barrier(images[1],VK_IMAGE_LAYOUT_UNDEFINED,0,VK_ACCESS_2_TRANSFER_WRITE_BIT,VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,VK_PIPELINE_STAGE_2_COPY_BIT);
+    VkClearDepthStencilValue clear{.25f,0};VkImageSubresourceRange range{VK_IMAGE_ASPECT_DEPTH_BIT,0,1,0,1};vkCmdClearDepthStencilImage(cb,images[0],VK_IMAGE_LAYOUT_GENERAL,&clear,1,&range);
+    barrier(images[0],VK_IMAGE_LAYOUT_GENERAL,VK_ACCESS_2_TRANSFER_WRITE_BIT,VK_ACCESS_2_TRANSFER_READ_BIT,VK_PIPELINE_STAGE_2_CLEAR_BIT,VK_PIPELINE_STAGE_2_COPY_BIT|VK_PIPELINE_STAGE_2_BLIT_BIT);
+    VkImageCopy copy{};copy.srcSubresource=copy.dstSubresource={VK_IMAGE_ASPECT_DEPTH_BIT,0,0,1};copy.extent={8,8,1};vkCmdCopyImage(cb,images[0],VK_IMAGE_LAYOUT_GENERAL,images[1],VK_IMAGE_LAYOUT_GENERAL,1,&copy);
+    barrier(images[1],VK_IMAGE_LAYOUT_GENERAL,VK_ACCESS_2_TRANSFER_WRITE_BIT,VK_ACCESS_2_TRANSFER_WRITE_BIT,VK_PIPELINE_STAGE_2_COPY_BIT,VK_PIPELINE_STAGE_2_COPY_BIT);
+    VkImageCopy2 c2{VK_STRUCTURE_TYPE_IMAGE_COPY_2};c2.srcSubresource=copy.srcSubresource;c2.dstSubresource=copy.dstSubresource;c2.extent=copy.extent;VkCopyImageInfo2 ci{VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2};ci.srcImage=images[0];ci.dstImage=images[1];ci.srcImageLayout=ci.dstImageLayout=VK_IMAGE_LAYOUT_GENERAL;ci.regionCount=1;ci.pRegions=&c2;vkCmdCopyImage2(cb,&ci);
+    VkBufferImageCopy read{};read.imageSubresource=copy.srcSubresource;read.imageExtent=copy.extent;vkCmdCopyImageToBuffer(cb,images[0],VK_IMAGE_LAYOUT_GENERAL,buffer.handle,1,&read);
+    VkBufferImageCopy2 r2{VK_STRUCTURE_TYPE_BUFFER_IMAGE_COPY_2};r2.bufferOffset=256;r2.imageSubresource=copy.srcSubresource;r2.imageExtent=copy.extent;VkCopyImageToBufferInfo2 ri{VK_STRUCTURE_TYPE_COPY_IMAGE_TO_BUFFER_INFO_2};ri.srcImage=images[0];ri.srcImageLayout=VK_IMAGE_LAYOUT_GENERAL;ri.dstBuffer=buffer.handle;ri.regionCount=1;ri.pRegions=&r2;vkCmdCopyImageToBuffer2(cb,&ri);
+    barrier(images[1],VK_IMAGE_LAYOUT_GENERAL,VK_ACCESS_2_TRANSFER_WRITE_BIT,VK_ACCESS_2_TRANSFER_WRITE_BIT,VK_PIPELINE_STAGE_2_COPY_BIT,VK_PIPELINE_STAGE_2_BLIT_BIT);
+    VkImageBlit blit{};blit.srcSubresource=blit.dstSubresource=copy.srcSubresource;blit.srcOffsets[1]=blit.dstOffsets[1]={8,8,1};vkCmdBlitImage(cb,images[0],VK_IMAGE_LAYOUT_GENERAL,images[1],VK_IMAGE_LAYOUT_GENERAL,1,&blit,VK_FILTER_NEAREST);
+    barrier(images[1],VK_IMAGE_LAYOUT_GENERAL,VK_ACCESS_2_TRANSFER_WRITE_BIT,VK_ACCESS_2_TRANSFER_WRITE_BIT,VK_PIPELINE_STAGE_2_BLIT_BIT,VK_PIPELINE_STAGE_2_BLIT_BIT);
+    VkImageBlit2 b2{VK_STRUCTURE_TYPE_IMAGE_BLIT_2};b2.srcSubresource=blit.srcSubresource;b2.dstSubresource=blit.dstSubresource;std::copy(blit.srcOffsets,blit.srcOffsets+2,b2.srcOffsets);std::copy(blit.dstOffsets,blit.dstOffsets+2,b2.dstOffsets);VkBlitImageInfo2 bi{VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2};bi.srcImage=images[0];bi.dstImage=images[1];bi.srcImageLayout=bi.dstImageLayout=VK_IMAGE_LAYOUT_GENERAL;bi.regionCount=1;bi.pRegions=&b2;bi.filter=VK_FILTER_NEAREST;vkCmdBlitImage2(cb,&bi);
+    barrier(images[1],VK_IMAGE_LAYOUT_GENERAL,VK_ACCESS_2_TRANSFER_WRITE_BIT,VK_ACCESS_2_TRANSFER_READ_BIT,VK_PIPELINE_STAGE_2_BLIT_BIT,VK_PIPELINE_STAGE_2_COPY_BIT);
+    read.bufferOffset=512;vkCmdCopyImageToBuffer(cb,images[1],VK_IMAGE_LAYOUT_GENERAL,buffer.handle,1,&read);
+    VkMemoryBarrier2 host{VK_STRUCTURE_TYPE_MEMORY_BARRIER_2};host.srcStageMask=VK_PIPELINE_STAGE_2_COPY_BIT;host.srcAccessMask=VK_ACCESS_2_TRANSFER_WRITE_BIT;host.dstStageMask=VK_PIPELINE_STAGE_2_HOST_BIT;host.dstAccessMask=VK_ACCESS_2_HOST_READ_BIT;VkDependencyInfo dep{VK_STRUCTURE_TYPE_DEPENDENCY_INFO};dep.memoryBarrierCount=1;dep.pMemoryBarriers=&host;vkCmdPipelineBarrier2(cb,&dep);check(vkEndCommandBuffer(cb));
+    VkSemaphoreTypeCreateInfo type{VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO};type.semaphoreType=VK_SEMAPHORE_TYPE_TIMELINE;VkSemaphoreCreateInfo si{VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};si.pNext=&type;VkSemaphore timeline{};check(vkCreateSemaphore(f.device,&si,nullptr,&timeline));VkFenceCreateInfo fi{VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};VkFence fence{};check(vkCreateFence(f.device,&fi,nullptr,&fence));
+    VkCommandBufferSubmitInfo command{VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO};command.commandBuffer=cb;command.deviceMask=0;
+    VkSemaphoreSubmitInfo signal{VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO};signal.semaphore=timeline;signal.stageMask=VK_PIPELINE_STAGE_2_COPY_BIT|VK_PIPELINE_STAGE_2_BLIT_BIT;
+    VkSubmitInfo2 submit{VK_STRUCTURE_TYPE_SUBMIT_INFO_2};submit.commandBufferInfoCount=1;submit.pCommandBufferInfos=&command;submit.signalSemaphoreInfoCount=1;submit.pSignalSemaphoreInfos=&signal;
+    for(unsigned pass=1;pass<=2;++pass){signal.value=pass;check(vkQueueSubmit2(f.queue,1,&submit,copyReadback?VK_NULL_HANDLE:fence));
+        if(copyReadback){uint64_t target=pass;VkSemaphoreWaitInfo w{VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO};w.semaphoreCount=1;w.pSemaphores=&timeline;w.pValues=&target;check(vkWaitSemaphores(f.device,&w,30'000'000'000ull));check(vkQueueWaitIdle(f.queue));}
+        else{check(vkWaitForFences(f.device,1,&fence,VK_TRUE,30'000'000'000ull));check(vkResetFences(f.device,1,&fence));}
+        uint64_t value=0;check(vkGetSemaphoreCounterValue(f.device,timeline,&value));if(value!=pass)throw std::runtime_error("Original transfer signal changed");
+        auto words=static_cast<const uint32_t*>(buffer.mapped);for(unsigned k=0;k<192;++k)if(words[k]!=0x3e800000u)throw std::runtime_error("Original depth transfer pixels changed");std::ofstream out(directory/("transfer-original-"+std::to_string(pass)+".pixels"),std::ios::binary);out.write(static_cast<const char*>(buffer.mapped),768);}
+    vkDestroyFence(f.device,fence,nullptr);vkDestroySemaphore(f.device,timeline,nullptr);vkDestroyCommandPool(f.device,pool,nullptr);
+    vkUnmapMemory(f.device,buffer.memory);vkDestroyBuffer(f.device,buffer.handle,nullptr);vkFreeMemory(f.device,buffer.memory,nullptr);
+    for(unsigned i=0;i<2;++i){vkDestroyImage(f.device,images[i],nullptr);vkFreeMemory(f.device,memory[i],nullptr);}
+}

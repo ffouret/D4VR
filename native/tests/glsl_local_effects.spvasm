@@ -1,0 +1,26 @@
+; Pointer forms write local Function and Private storage, still inventoried.
+OpCapability Shader
+%glsl = OpExtInstImport "GLSL.std.450"
+OpMemoryModel Logical GLSL450
+OpEntryPoint Fragment %main "main" %color %integer
+OpExecutionMode %main OriginUpperLeft
+OpDecorate %color Location 0
+%void = OpTypeVoid
+%fn = OpTypeFunction %void
+%float = OpTypeFloat 32
+%int = OpTypeInt 32 1
+%fp = OpTypePointer Function %float
+%ip = OpTypePointer Private %int
+%integer = OpVariable %ip Private
+%out = OpTypePointer Output %float
+%color = OpVariable %out Output
+%x = OpConstant %float 1.75
+%main = OpFunction %void None %fn
+%entry = OpLabel
+%fraction = OpVariable %fp Function
+%a = OpExtInst %float %glsl Modf %x %fraction
+%b = OpExtInst %float %glsl Frexp %x %integer
+%c = OpFAdd %float %a %b
+OpStore %color %c
+OpReturn
+OpFunctionEnd

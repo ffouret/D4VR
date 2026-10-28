@@ -1,0 +1,102 @@
+{
+  "schema": 1,
+  "purpose": "Strict ISO C11 lock-free capability assertion portability correction",
+  "created_utc": "2026-10-28T03:33:32.398970+00:00",
+  "status": "LOCAL_CLANG_CHECKED_REAL_GCC_CI_PENDING",
+  "parent_commit": "13a051eb0e2435ea0dcc838f3fea00608bdf1b8f",
+  "actual_previous_CI": {
+    "commit": "13a051eb0e2435ea0dcc838f3fea00608bdf1b8f",
+    "tree": "4fcc42d76d5551d373289a55da0fc4ed247a6d21",
+    "run_id": 40625837224,
+    "run_number": 228,
+    "conclusion": "failure",
+    "Linux": {
+      "job": 122610400711,
+      "conclusion": "failure",
+      "step": 45,
+      "stage": "NORMAL_C11_COMPILE_BEFORE_NEW_CTEST",
+      "error": "core line28 __atomic_always_lock_free builtin is not an ISO C11 integer constant expression under GCC13.3 -pedantic -Werror"
+    },
+    "Windows": {
+      "job": 122610400503,
+      "conclusion": "cancelled_by_matrix",
+      "new_CTest": "not_run",
+      "real_Win32_reader_python_tests": "passed as part1176Python; no skip added"
+    },
+    "logs": {
+      "Linux": {
+        "path": "work/owned-C-sink-parent-20261028-1/CI228-linux-failed-decoded.log",
+        "bytes": 481049,
+        "sha256": "f199138c424d2c063b16330e46fc2f4a0e0d91f4f9ed7bfd1fbe3b15487839fe",
+        "Python": [
+          [
+            "1176",
+            "62.579"
+          ]
+        ],
+        "existing_skips": 0
+      },
+      "Windows": {
+        "path": "work/owned-C-sink-parent-20261028-1/CI228-windows-cancelled-decoded.log",
+        "bytes": 318725,
+        "sha256": "b3124e825f6ea2493c3b4a2bc4e30e50b3a2080c611692b0743573be9fea1b9b",
+        "Python": [
+          [
+            "1176",
+            "162.614"
+          ]
+        ],
+        "existing_skips": 2
+      }
+    },
+    "encoding": "Connector decoded text reencodedUTF8. BOM/newline forms retained, not HTTP/ZIP bytes.",
+    "fix_scope": "Single constant lock-free capability assertion, preserve true guarantee and -pedantic -Werror. New CPUcore only, no originalmodel/reader/vendor/runtime change."
+  },
+  "delta": {
+    "core": "Only the compile-time assertion expression changes. C11 _Generic selects the compiler LOCK_FREE constant for the actual underlying unsigned type of uint32_t; exactly2 required, default0 refuses. No runtime function body or layout changes.",
+    "warning_policy": "-std=c11 -pedantic -Werror retained; no warning suppression, libatomic or runtime fallback.",
+    "CI": "strategy.fail-fast:false preserves independent Linux and Windows outcomes after prior cancellations; no check or failure criterion removed.",
+    "reader": "Windows file helper229b/readerc083/tests a994 remain unchanged."
+  },
+  "local_checks": {
+    "compiler": "Existing pinned Zig/Clang GNU driver; not actual GCC",
+    "exact_core_C11_compile_return": 0,
+    "small_constant_alignment_probe_return": 0,
+    "selected_capability_0_and_1": "Both exact-core compiles refuse specifically at lock-free latch assertion; simulated capability values, not real targets.",
+    "fresh_CMake_configure_build": 0,
+    "new_CTest_controls": 5,
+    "CTest_return": 0,
+    "new_primary_calculations": 5,
+    "old_raw_reanalyzed": false,
+    "dependencies_pinned_before_after": 23,
+    "complete_results_retained": true
+  },
+  "files": [
+    {
+      "path": "D4VR/native/owned_source_writer_source/owned_source_writer_source_v1.c",
+      "bytes": 52825,
+      "sha256": "e2f464bb2a6159ce88eac1c71bf4442c999856f4876a19c3f912dc07e8ea86b7"
+    },
+    {
+      "path": "D4VR/.github/workflows/checks.yml",
+      "bytes": 25413,
+      "sha256": "5bebed9b797e4bb9f200bc0c9fc53455c39ff4eb15739dcef57f1d6bb7cf312b"
+    },
+    {
+      "path": "D4VR/docs/OWNED_SOURCE_WRITER_C_SOURCE.md",
+      "bytes": 7777,
+      "sha256": "397f5e754b498de17d7dbc355dc46da77776116233b26d9f3d216606932820e5"
+    }
+  ],
+  "author_additive_proof": {
+    "path": "work/owned-C-sink-author-20261028-1/ci228-atomic-ice-1/proof.json",
+    "bytes": 6348,
+    "sha256": "715bcb0b03384314d7764d166f2f180b64447f6e539275aa61fedafc88ec7003"
+  },
+  "limitations": [
+    "Actual GCC, Windows full new CTest and Linux sanitizer success await new CI. CI226/228 failures remain intact.",
+    "New C-only CPU mocks and fresh supplied-history calculations are not vendor SOURCE or runtime execution.",
+    "No old model/ABI/header/fixtures/vendor/pair/runtime or game originals changed; no SOURCE hooks, vendor build, PE renderer, Wine/GPU/game/headset.",
+    "All seventeen stronger claims remain false. Retained C storage is not whole-process CPU memory."
+  ]
+}

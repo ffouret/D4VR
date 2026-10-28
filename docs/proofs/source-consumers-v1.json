@@ -1,0 +1,118 @@
+{
+  "schema_version": 1,
+  "scope": "Owned X11/WSI and CPU contract proof, not Diablo or SteamVR",
+  "observation_only": true,
+  "new_observer_gpu_commands_resources_waits_or_submissions": 0,
+  "application_calls_rejected": 0,
+  "layer_sha256": "0bf64d377da7c2466d3433fa62142c48d33212cf7902125b3517f4e5ea61d134",
+  "fixture_sha256": "eadfa11300e78f9b2d807493762e0fcc8aea6d162ab2855b05ae1cb35c61885c",
+  "independent_audit_sha256": "eec59ba3b3b8195adc5ae15cf5a6e9211e2417887a2775f3faf15db4e881bd3f",
+  "unit": {
+    "source_consumer_observation_passed": true,
+    "cases": 11,
+    "assertions": 718861,
+    "gpu_dispatch_waits_or_rejections": 0
+  },
+  "portable_python_tests": 266,
+  "physical_wsi_runs": 4,
+  "environments": [
+    "native",
+    "Steam Runtime"
+  ],
+  "khronos_sync_validation_errors": 0,
+  "original_reference_bytes": 134217728,
+  "original_bytes_compared_off_on": 67108864,
+  "same_environment_original_counts_and_bytes_equal": true,
+  "originals_per_run": {
+    "presents": 64,
+    "submissions": 320,
+    "command_buffers": 64,
+    "draws": 128,
+    "descriptor_image_queries": 8
+  },
+  "original_driver_query_output_bytes_per_run": 32,
+  "query_original_outputs_compared_only_within_the_same_run": true,
+  "unique_target_query_receipts_on_runs": 4,
+  "unique_target_query_output_bytes_on_runs": 16,
+  "target_query_references_in_windows": 8,
+  "target_query_reference_bytes_in_windows": 32,
+  "unique_forward_windows": 4,
+  "forward_window_controls": {
+    "cpu_occurrences_each": 8,
+    "retained_events_each": 26,
+    "closed": true,
+    "truncated": false,
+    "subsequent_source_clears_each": 2,
+    "subsequent_declared_color_associations_each": 1,
+    "directed_color_to_swapchain_blits_each": 2
+  },
+  "query_twin_lifetimes_excluded_from_target_windows": true,
+  "forced_handle_reuse_tested_only_in_cpu_controls": true,
+  "new_hook_forwarding": {
+    "modes": [
+      "absent",
+      "active",
+      "faulted"
+    ],
+    "descriptor_queries": 3,
+    "blits_legacy_core_khr": 9,
+    "swapchain_create_enumerate_destroy": 9,
+    "uncovered_dispatches": 6,
+    "original_arguments_outputs_and_results_preserved": true
+  },
+  "runtime_limits": {
+    "reports": 3,
+    "prefix_events_each": 512,
+    "forward_events_each": 512,
+    "forward_cpu_occurrences_each": 8,
+    "query_cache": 64,
+    "query_receipts_per_report": 16,
+    "opaque_bytes_per_query": 256,
+    "live_event_nodes": 8192,
+    "snapshot_references": 32768,
+    "serialized_bytes": 8388608
+  },
+  "claims": {
+    "game_rendered": false,
+    "xr_submission": false,
+    "game_image_sent_to_quest": false,
+    "coverage_repaired": false,
+    "sampled_consumer_proven": false,
+    "descriptor_placement_or_selected_slot_known": false,
+    "gpu_execution_order_known": false,
+    "last_gpu_writer_known": false,
+    "initialized_pixels_verified": false,
+    "whole_scene_verified": false,
+    "common_scene_time_known": false,
+    "presentation_capture_receipt_has_resource_bridge": false
+  },
+  "source_sha256": {
+    "native/tests/present_layer_vulkan.cpp": "9b8771d0fa1d7905099bc5360039ba07190306779e3d101ce21f3901207e45d7",
+    "native/tests/held_depth_fixture.hpp": "08fe63333f2ab9b5d0e82dbfb8ff13e558c2f7f2151b87e62ab7a8ed58db3808",
+    "native/tests/present_eye.vert": "cb8f7898c8e2f65a0245eeaf9247838ec7b35501931859e8b21af77b5d8e2257",
+    "native/tests/present_eye.frag": "93eea131bfdeb6d05a97b7b477fe8a60476551af985d6fdb303572aa2dd3063f",
+    "native/vulkan/trace_layer.cpp": "7064b459026528fcca2a654210e92feb8438e98f2eec77a1b0ccb6ad36785f18",
+    "native/vulkan/source_history.hpp": "688c6313d11be57d7df0320b813dfeb8054c9ac80b67d7f8dca5efcc2a244d16",
+    "native/vulkan/source_history.cpp": "924cf8b12b283e3125be44a331a6c1cf923674b3b7bfe939a9ceb9684e00ff0b",
+    "native/core/source_history_id.hpp": "991bd69bc736a8a025edaae21a32bc22afe9f26f768607c7adbeef06828586c2",
+    "native/tests/source_history_tests.cpp": "b99b33254d5afa95866e50d7d0f3da9e1f9f20d1f95cdc38dd88f22c95923737",
+    "native/vulkan/frame_trace.hpp": "ee67603816d152e2117e4e82932259ac63b8191a51c7dde635551990782ee734",
+    "native/vulkan/depth_copy_readback.hpp": "bf0530d6781aade400c758fadcef7851b290ac94b1af024b15442b382c1bdce8",
+    "native/vulkan/depth_copy_readback.cpp": "31546d34e22053393db3970983f882cf262cbad5bf5232d70754a1cfa54c69dd",
+    "tools/source_history_validate.py": "7bc33ab9dc520aedd69ca620e1445516aa22abec2cc6930e16c28851d6ebfd2e",
+    "tools/held_depth_validate.py": "f1ab9adeb99933d57e27341cd65c5323d34f336a6f9685a36324d9cb9a4933fb",
+    "native/tests/source_consumer_fixture.hpp": "6b0aec06768d30d9b947bdfd820733e0de1162402af350e5dc7d587fe0e8f87a",
+    "tools/source_consumer_run.py": "653cde32a060c1cde09c1b8998c0dc10292215bcf911f2247981ed200d77aac6",
+    "native/tests/vulkan_trace_tests.cpp": "76153716d13c0be5adb9453fc8c099e8a4e51b6babacd820bce286a1377cf951",
+    "tools/source_consumer_validate.py": "1820da3c4bed8612d08c2aaecea81140b3c73498cd180219533e0b51b5ecab52"
+  },
+  "limits": [
+    "Opaque query receipts are not descriptor placement, selected slots or executed shader reads.",
+    "Forward windows describe CPU BEFORE order and exact AFTER status, not GPU order.",
+    "Declared color/depth association and directed transfer endpoints are candidates, not a complete sampled path.",
+    "Exported color receipts still lack the explicit resource bridge.",
+    "Separate stencil/depth resolve, classic descriptor updates, compute resource use, aliasing and hidden dispatch remain unknown.",
+    "Fixture DeviceWaitIdle belongs to the application, not a demonstrated game cadence.",
+    "Local ASan runtime unavailable; sanitizer and Windows execution are checked in CI separately."
+  ]
+}

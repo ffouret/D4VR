@@ -1,0 +1,205 @@
+{
+  "schema_version": 1,
+  "synthetic_scene": true,
+  "diablo_rendered": false,
+  "actual_steamvr_submission": false,
+  "xr_pose_applied": false,
+  "khronos_synchronization_validation_loaded": true,
+  "validation_errors": 0,
+  "fixture_sha256": "650a46a405eed63c9743b5d74283126c22c4ff33abea6adfdfe50a82fcda073e",
+  "layer_sha256": "468e25ceddc8e758fe4dd843d6d03e9999dbbf907ea0b6fb9d5d7b6bf3670e6b",
+  "ownership": {
+    "eye_update_ownership_passed": true,
+    "bounded_graphics_queues": 2,
+    "updates": 5,
+    "late_frames_rejected": true
+  },
+  "gpu_cases": [
+    {
+      "case": "gpu-native",
+      "eye_updates_gpu_passed": true,
+      "synthetic": true,
+      "graphics_queues": 5,
+      "poses_rendered": 9,
+      "eyes_per_pose": 2,
+      "exact_reference_bytes": 5898240,
+      "distinct_images": 18,
+      "updates": 9,
+      "cross_queue_waits": 32,
+      "busy_reader_deferred": true,
+      "fixed_addresses_and_pipelines": true,
+      "boundary_max_ms": 1.00731,
+      "busy_boundary_ms": 0.008716,
+      "diablo_rendered": false,
+      "xr_pose_applied": false
+    },
+    {
+      "case": "gpu-steam-runtime",
+      "eye_updates_gpu_passed": true,
+      "synthetic": true,
+      "graphics_queues": 5,
+      "poses_rendered": 9,
+      "eyes_per_pose": 2,
+      "exact_reference_bytes": 5898240,
+      "distinct_images": 18,
+      "updates": 9,
+      "cross_queue_waits": 32,
+      "busy_reader_deferred": true,
+      "fixed_addresses_and_pipelines": true,
+      "boundary_max_ms": 0.817779,
+      "busy_boundary_ms": 0.008186,
+      "diablo_rendered": false,
+      "xr_pose_applied": false
+    }
+  ],
+  "real_wsi_hooks": [
+    {
+      "case": "camera-wsi-native",
+      "updates": 3,
+      "packet_sequences": [
+        2,
+        3,
+        4
+      ],
+      "graphics_queues": 5,
+      "original_draws": 128,
+      "original_submissions": 320,
+      "original_restored_equal_bytes": 262144,
+      "centroid_shifts_pixels": {
+        "+translation": [
+          14.265995128312639,
+          7.141823526730775
+        ],
+        "-translation": [
+          -14.268041486120978,
+          -7.131363657080357
+        ],
+        "restore_right": [
+          -14.281652849245205,
+          -7.154227591948256
+        ]
+      },
+      "expected_absolute_shift_pixels": [
+        14.272176,
+        7.136088
+      ],
+      "stats": {
+        "updates": 3,
+        "packet_sequence": 4,
+        "registered_queues": 5,
+        "cross_queue_waits": 12,
+        "markers": 384,
+        "busy_boundaries": 0,
+        "uncovered_boundaries": 0,
+        "marker_backpressure": 0,
+        "xr_pose_known": false
+      },
+      "validation_errors": 0
+    },
+    {
+      "case": "camera-wsi-steam-runtime",
+      "updates": 3,
+      "packet_sequences": [
+        2,
+        3,
+        4
+      ],
+      "graphics_queues": 5,
+      "original_draws": 128,
+      "original_submissions": 320,
+      "original_restored_equal_bytes": 262144,
+      "centroid_shifts_pixels": {
+        "+translation": [
+          14.265995128312639,
+          7.141823526730775
+        ],
+        "-translation": [
+          -14.268041486120978,
+          -7.131363657080357
+        ],
+        "restore_right": [
+          -14.281652849245205,
+          -7.154227591948256
+        ]
+      },
+      "expected_absolute_shift_pixels": [
+        14.272176,
+        7.136088
+      ],
+      "stats": {
+        "updates": 3,
+        "packet_sequence": 4,
+        "registered_queues": 5,
+        "cross_queue_waits": 12,
+        "markers": 384,
+        "busy_boundaries": 0,
+        "uncovered_boundaries": 0,
+        "marker_backpressure": 0,
+        "xr_pose_known": false
+      },
+      "validation_errors": 0
+    }
+  ],
+  "legacy_wsi": {
+    "purpose": "sequential_presentation_capture",
+    "schema_version": 1,
+    "layer_sha256": "468e25ceddc8e758fe4dd843d6d03e9999dbbf907ea0b6fb9d5d7b6bf3670e6b",
+    "wsi_loader_capture_passed": true,
+    "original_pixels_restored": true,
+    "synthetic_scene": true,
+    "game_stereo_submitted": false,
+    "cases": [
+      {
+        "case": "native",
+        "reference_equal_bytes": 1048576,
+        "original_restored_bytes": 262144,
+        "disparities_pixels": [
+          14.607794894025403,
+          7.31257269928156
+        ],
+        "different_pixel_bytes": 3330,
+        "repeated_capture_frames": 4,
+        "sequential_quota_verified": true
+      },
+      {
+        "case": "disabled",
+        "disabled_capture_verified": true,
+        "original_restored_bytes": 262144
+      },
+      {
+        "case": "steam-runtime",
+        "reference_equal_bytes": 1048576,
+        "original_restored_bytes": 262144,
+        "disparities_pixels": [
+          14.607794894025403,
+          7.31257269928156
+        ],
+        "different_pixel_bytes": 3330,
+        "repeated_capture_frames": 4,
+        "sequential_quota_verified": true
+      }
+    ],
+    "forwarding_tests_passed": true
+  },
+  "source_sha256": {
+    "native/vulkan/boundary_updates.cpp": "9ddb0ef5a10e74b8940a1371276d2d40fc6189e9dc4760ea2171bcdc10854346",
+    "native/vulkan/boundary_updates.hpp": "6df946de9d867b27d9cd1ccc27ffde4d4c60d13415db3e4bbc9b59c389e39453",
+    "native/vulkan/eye_packet_update.hpp": "70e962c0c8b45d77407e68a568f8b11e2165345ff76f9e79adcfa9d74530890a",
+    "native/core/frame_order.hpp": "87626aa69a3978f09bedebce099a510bc396b9af9669ee3f86f3bf8c62d08596",
+    "native/vulkan/eye_control.cpp": "63f3e1c9374d32a6a78048948a5138b05e303591f3bd1b1158ef35aa2d8fdd96",
+    "native/vulkan/trace_layer.cpp": "bd656e2f5c3da22e62f433be3221a996b006959fa63266dc82bdbda3c70b0e23",
+    "native/tests/eye_updates_tests.cpp": "39db4d69c509b62961ee4b4f6ff65694e81d4a47114d2469201f367cda0f422c",
+    "native/tests/eye_updates_vulkan.cpp": "f186dbe0902bcde007363721f33eaaed28ebe9c13e759a38c5a056e28830ca57",
+    "native/tests/eye_updates.vert": "0636d5a81a95ff7e6c4f304a3bfa98020ab5eabfd68068a9f591f978c3d1e494",
+    "native/tests/present_layer_vulkan.cpp": "bb1a6a444f07737fa46ee767902393cf2e8131363dd701aeb917b448fd5987d7",
+    "tools/eye_updates_validate.py": "43aeca34f0ae40575be9adda4bb154b06ad0bc53aa068a9d7b77ebf58c017ed2"
+  },
+  "limits": [
+    "Synthetic fixtures; no Diablo imagery or SteamVR submission in these controls.",
+    "Camera requests are explicit diagnostic packets, not XR poses.",
+    "Idle boundary policy may defer indefinitely under a continuously busy game workload.",
+    "Queued packet history is not applied-pose/whole-scene provenance of a captured image.",
+    "Successive eyes remain temporally different; continuous immersive stereo is not implemented.",
+    "Native Windows D3D12 path remains unimplemented."
+  ]
+}

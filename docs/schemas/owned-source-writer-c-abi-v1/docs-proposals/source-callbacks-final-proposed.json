@@ -1,0 +1,975 @@
+{
+  "status": "FINAL_PROPOSED_V1_C_SIGNATURES_NOT_A_HEADER_NOT_COMPILED",
+  "event_count": 46,
+  "events": [
+    {
+      "tag": 1,
+      "api": "DeviceCreate",
+      "domain": "source_original",
+      "original_return_kind": "HRESULT_internal",
+      "before_layout": "Before_DeviceCreate",
+      "args_wire_mapping": {
+        "output_pointer": "U64"
+      },
+      "result_wire_mapping": {
+        "hresult": "I32",
+        "output_raw": "U64|null"
+      },
+      "result_layout": "Result_DeviceCreate",
+      "after_layout": "After_DeviceCreate",
+      "SOURCE_entry": "uint32_t d4vr_osw_enter_v1(uint32_t event_tag, const osw_sourceentryinput_v1 *source_entry, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "before_commit": "uint32_t d4vr_osw_devicecreate_before_v1(osw_token_v1 *token, const osw_before_devicecreate_v1 *before);",
+      "after": "uint32_t d4vr_osw_devicecreate_after_v1(osw_token_v1 *token, const osw_after_devicecreate_v1 *after);",
+      "output_layout_applicability": "Only SourceAfterInput fields permitted by frozen field_applicability can be observed; IDs, generations, births and epochs are sink-derived, never source/app input."
+    },
+    {
+      "tag": 2,
+      "api": "VkDeviceCreate",
+      "domain": "Vulkan_original",
+      "original_return_kind": "VkResult",
+      "before_layout": "Before_VkDeviceCreate",
+      "args_wire_mapping": {
+        "physical_device_raw": "U64",
+        "output_pointer": "U64"
+      },
+      "result_wire_mapping": {
+        "vk_result": "I32",
+        "output_raw": "U64|null"
+      },
+      "result_layout": "Result_VkDeviceCreate",
+      "after_layout": "After_VkDeviceCreate",
+      "SOURCE_entry": "uint32_t d4vr_osw_enter_v1(uint32_t event_tag, const osw_sourceentryinput_v1 *source_entry, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "before_commit": "uint32_t d4vr_osw_vkdevicecreate_before_v1(osw_token_v1 *token, const osw_before_vkdevicecreate_v1 *before);",
+      "after": "uint32_t d4vr_osw_vkdevicecreate_after_v1(osw_token_v1 *token, const osw_after_vkdevicecreate_v1 *after);",
+      "output_layout_applicability": "Only SourceAfterInput fields permitted by frozen field_applicability can be observed; IDs, generations, births and epochs are sink-derived, never source/app input."
+    },
+    {
+      "tag": 3,
+      "api": "ResourceCreate",
+      "domain": "COM_original",
+      "original_return_kind": "HRESULT",
+      "before_layout": "Before_ResourceCreate",
+      "args_wire_mapping": {
+        "device": "ObjectArg",
+        "heap_properties_pointer": "U64",
+        "heap_properties": "HeapProperties|null",
+        "heap_flags": "U32",
+        "description_pointer": "U64",
+        "description": "ResourceDesc|null",
+        "initial_state": "U32",
+        "clear_value_pointer": "U64",
+        "requested_iid": "GUID|null",
+        "output_pointer": "U64"
+      },
+      "result_wire_mapping": {
+        "hresult": "I32",
+        "output_raw": "U64|null"
+      },
+      "result_layout": "Result_ResourceCreate",
+      "after_layout": "After_ResourceCreate",
+      "SOURCE_entry": "uint32_t d4vr_osw_enter_v1(uint32_t event_tag, const osw_sourceentryinput_v1 *source_entry, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "before_commit": "uint32_t d4vr_osw_resourcecreate_before_v1(osw_token_v1 *token, const osw_before_resourcecreate_v1 *before);",
+      "after": "uint32_t d4vr_osw_resourcecreate_after_v1(osw_token_v1 *token, const osw_after_resourcecreate_v1 *after);",
+      "output_layout_applicability": "Only SourceAfterInput fields permitted by frozen field_applicability can be observed; IDs, generations, births and epochs are sink-derived, never source/app input."
+    },
+    {
+      "tag": 4,
+      "api": "HeapCreate",
+      "domain": "COM_original",
+      "original_return_kind": "HRESULT",
+      "before_layout": "Before_HeapCreate",
+      "args_wire_mapping": {
+        "device": "ObjectArg",
+        "description": "HeapDesc",
+        "output_pointer": "U64",
+        "description_pointer": "U64",
+        "requested_iid": "GUID|null"
+      },
+      "result_wire_mapping": {
+        "hresult": "I32",
+        "output_raw": "U64|null"
+      },
+      "result_layout": "Result_HeapCreate",
+      "after_layout": "After_HeapCreate",
+      "SOURCE_entry": "uint32_t d4vr_osw_enter_v1(uint32_t event_tag, const osw_sourceentryinput_v1 *source_entry, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "before_commit": "uint32_t d4vr_osw_heapcreate_before_v1(osw_token_v1 *token, const osw_before_heapcreate_v1 *before);",
+      "after": "uint32_t d4vr_osw_heapcreate_after_v1(osw_token_v1 *token, const osw_after_heapcreate_v1 *after);",
+      "output_layout_applicability": "Only SourceAfterInput fields permitted by frozen field_applicability can be observed; IDs, generations, births and epochs are sink-derived, never source/app input."
+    },
+    {
+      "tag": 5,
+      "api": "AllocatorCreate",
+      "domain": "COM_original",
+      "original_return_kind": "HRESULT",
+      "before_layout": "Before_AllocatorCreate",
+      "args_wire_mapping": {
+        "device": "ObjectArg",
+        "output_pointer": "U64",
+        "type": "Enum32"
+      },
+      "result_wire_mapping": {
+        "hresult": "I32",
+        "output_raw": "U64|null"
+      },
+      "result_layout": "Result_AllocatorCreate",
+      "after_layout": "After_AllocatorCreate",
+      "SOURCE_entry": "uint32_t d4vr_osw_enter_v1(uint32_t event_tag, const osw_sourceentryinput_v1 *source_entry, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "before_commit": "uint32_t d4vr_osw_allocatorcreate_before_v1(osw_token_v1 *token, const osw_before_allocatorcreate_v1 *before);",
+      "after": "uint32_t d4vr_osw_allocatorcreate_after_v1(osw_token_v1 *token, const osw_after_allocatorcreate_v1 *after);",
+      "output_layout_applicability": "Only SourceAfterInput fields permitted by frozen field_applicability can be observed; IDs, generations, births and epochs are sink-derived, never source/app input."
+    },
+    {
+      "tag": 6,
+      "api": "QueueCreate",
+      "domain": "COM_original",
+      "original_return_kind": "HRESULT",
+      "before_layout": "Before_QueueCreate",
+      "args_wire_mapping": {
+        "device": "ObjectArg",
+        "output_pointer": "U64",
+        "type": "Enum32"
+      },
+      "result_wire_mapping": {
+        "hresult": "I32",
+        "output_raw": "U64|null"
+      },
+      "result_layout": "Result_QueueCreate",
+      "after_layout": "After_QueueCreate",
+      "SOURCE_entry": "uint32_t d4vr_osw_enter_v1(uint32_t event_tag, const osw_sourceentryinput_v1 *source_entry, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "before_commit": "uint32_t d4vr_osw_queuecreate_before_v1(osw_token_v1 *token, const osw_before_queuecreate_v1 *before);",
+      "after": "uint32_t d4vr_osw_queuecreate_after_v1(osw_token_v1 *token, const osw_after_queuecreate_v1 *after);",
+      "output_layout_applicability": "Only SourceAfterInput fields permitted by frozen field_applicability can be observed; IDs, generations, births and epochs are sink-derived, never source/app input."
+    },
+    {
+      "tag": 7,
+      "api": "CommandCreate",
+      "domain": "COM_original",
+      "original_return_kind": "HRESULT",
+      "before_layout": "Before_CommandCreate",
+      "args_wire_mapping": {
+        "device": "ObjectArg",
+        "allocator": "ObjectArg|null",
+        "initial_pipeline": "ObjectArg|null",
+        "output_pointer": "U64",
+        "node_mask": "U32",
+        "type": "Enum32",
+        "requested_iid": "GUID|null"
+      },
+      "result_wire_mapping": {
+        "hresult": "I32",
+        "output_raw": "U64|null"
+      },
+      "result_layout": "Result_CommandCreate",
+      "after_layout": "After_CommandCreate",
+      "SOURCE_entry": "uint32_t d4vr_osw_enter_v1(uint32_t event_tag, const osw_sourceentryinput_v1 *source_entry, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "before_commit": "uint32_t d4vr_osw_commandcreate_before_v1(osw_token_v1 *token, const osw_before_commandcreate_v1 *before);",
+      "after": "uint32_t d4vr_osw_commandcreate_after_v1(osw_token_v1 *token, const osw_after_commandcreate_v1 *after);",
+      "output_layout_applicability": "Only SourceAfterInput fields permitted by frozen field_applicability can be observed; IDs, generations, births and epochs are sink-derived, never source/app input."
+    },
+    {
+      "tag": 8,
+      "api": "RootCreate",
+      "domain": "COM_original",
+      "original_return_kind": "HRESULT",
+      "before_layout": "Before_RootCreate",
+      "args_wire_mapping": {
+        "device": "ObjectArg",
+        "blob": "Code",
+        "output_pointer": "U64",
+        "node_mask": "U32"
+      },
+      "result_wire_mapping": {
+        "hresult": "I32",
+        "output_raw": "U64|null"
+      },
+      "result_layout": "Result_RootCreate",
+      "after_layout": "After_RootCreate",
+      "SOURCE_entry": "uint32_t d4vr_osw_enter_v1(uint32_t event_tag, const osw_sourceentryinput_v1 *source_entry, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "before_commit": "uint32_t d4vr_osw_rootcreate_before_v1(osw_token_v1 *token, const osw_before_rootcreate_v1 *before);",
+      "after": "uint32_t d4vr_osw_rootcreate_after_v1(osw_token_v1 *token, const osw_after_rootcreate_v1 *after);",
+      "output_layout_applicability": "Only SourceAfterInput fields permitted by frozen field_applicability can be observed; IDs, generations, births and epochs are sink-derived, never source/app input."
+    },
+    {
+      "tag": 9,
+      "api": "RootParse",
+      "domain": "source_original",
+      "original_return_kind": "vkd3d_status",
+      "before_layout": "Before_RootParse",
+      "args_wire_mapping": {
+        "blob": "Code",
+        "description_output_pointer": "U64"
+      },
+      "result_wire_mapping": {
+        "status": "I32",
+        "description": "RootDesc|null"
+      },
+      "result_layout": "Result_RootParse",
+      "after_layout": "After_RootParse",
+      "SOURCE_entry": "uint32_t d4vr_osw_enter_v1(uint32_t event_tag, const osw_sourceentryinput_v1 *source_entry, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "before_commit": "uint32_t d4vr_osw_rootparse_before_v1(osw_token_v1 *token, const osw_before_rootparse_v1 *before);",
+      "after": "uint32_t d4vr_osw_rootparse_after_v1(osw_token_v1 *token, const osw_after_rootparse_v1 *after);",
+      "output_layout_applicability": "Only SourceAfterInput fields permitted by frozen field_applicability can be observed; IDs, generations, births and epochs are sink-derived, never source/app input."
+    },
+    {
+      "tag": 10,
+      "api": "PSOCreate",
+      "domain": "COM_original",
+      "original_return_kind": "HRESULT",
+      "before_layout": "Before_PSOCreate",
+      "args_wire_mapping": {
+        "device": "ObjectArg",
+        "root": "ObjectArg",
+        "vertex_bytecode": "Code",
+        "pixel_bytecode": "Code",
+        "output_pointer": "U64",
+        "rtv_formats": "SpanFormats",
+        "sample_count": "U32",
+        "sample_quality": "U32"
+      },
+      "result_wire_mapping": {
+        "hresult": "I32",
+        "output_raw": "U64|null"
+      },
+      "result_layout": "Result_PSOCreate",
+      "after_layout": "After_PSOCreate",
+      "SOURCE_entry": "uint32_t d4vr_osw_enter_v1(uint32_t event_tag, const osw_sourceentryinput_v1 *source_entry, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "before_commit": "uint32_t d4vr_osw_psocreate_before_v1(osw_token_v1 *token, const osw_before_psocreate_v1 *before);",
+      "after": "uint32_t d4vr_osw_psocreate_after_v1(osw_token_v1 *token, const osw_after_psocreate_v1 *after);",
+      "output_layout_applicability": "Only SourceAfterInput fields permitted by frozen field_applicability can be observed; IDs, generations, births and epochs are sink-derived, never source/app input."
+    },
+    {
+      "tag": 11,
+      "api": "ModuleCreate",
+      "domain": "Vulkan_original",
+      "original_return_kind": "VkResult",
+      "before_layout": "Before_ModuleCreate",
+      "args_wire_mapping": {
+        "device": "ObjectArg",
+        "create_info_pointer": "U64",
+        "s_type": "Enum32",
+        "p_next": "U64",
+        "flags": "U32",
+        "code": "Code",
+        "allocator_pointer": "U64",
+        "output_pointer": "U64"
+      },
+      "result_wire_mapping": {
+        "vk_result": "I32",
+        "output_raw": "U64|null"
+      },
+      "result_layout": "Result_ModuleCreate",
+      "after_layout": "After_ModuleCreate",
+      "SOURCE_entry": "uint32_t d4vr_osw_enter_v1(uint32_t event_tag, const osw_sourceentryinput_v1 *source_entry, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "before_commit": "uint32_t d4vr_osw_modulecreate_before_v1(osw_token_v1 *token, const osw_before_modulecreate_v1 *before);",
+      "after": "uint32_t d4vr_osw_modulecreate_after_v1(osw_token_v1 *token, const osw_after_modulecreate_v1 *after);",
+      "output_layout_applicability": "Only SourceAfterInput fields permitted by frozen field_applicability can be observed; IDs, generations, births and epochs are sink-derived, never source/app input."
+    },
+    {
+      "tag": 12,
+      "api": "PipelineLayoutCreate",
+      "domain": "Vulkan_original",
+      "original_return_kind": "VkResult",
+      "before_layout": "Before_PipelineLayoutCreate",
+      "args_wire_mapping": {
+        "device": "ObjectArg",
+        "create_info_pointer": "U64",
+        "s_type": "Enum32",
+        "p_next": "U64",
+        "flags": "U32",
+        "set_layout_raws": "SpanSetLayouts",
+        "push_constant_ranges": "SpanPushRanges",
+        "allocator_pointer": "U64",
+        "output_pointer": "U64"
+      },
+      "result_wire_mapping": {
+        "vk_result": "I32",
+        "output_raw": "U64|null"
+      },
+      "result_layout": "Result_PipelineLayoutCreate",
+      "after_layout": "After_PipelineLayoutCreate",
+      "SOURCE_entry": "uint32_t d4vr_osw_enter_v1(uint32_t event_tag, const osw_sourceentryinput_v1 *source_entry, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "before_commit": "uint32_t d4vr_osw_pipelinelayoutcreate_before_v1(osw_token_v1 *token, const osw_before_pipelinelayoutcreate_v1 *before);",
+      "after": "uint32_t d4vr_osw_pipelinelayoutcreate_after_v1(osw_token_v1 *token, const osw_after_pipelinelayoutcreate_v1 *after);",
+      "output_layout_applicability": "Only SourceAfterInput fields permitted by frozen field_applicability can be observed; IDs, generations, births and epochs are sink-derived, never source/app input."
+    },
+    {
+      "tag": 13,
+      "api": "PipelineCreate",
+      "domain": "Vulkan_original",
+      "original_return_kind": "VkResult",
+      "before_layout": "Before_PipelineCreate",
+      "args_wire_mapping": {
+        "device": "ObjectArg",
+        "cache_raw": "U64",
+        "create_info_count": "U32",
+        "create_info_pointer": "U64",
+        "create_info_complete": "Bool",
+        "s_type": "Enum32",
+        "flags": "U32",
+        "p_next": "PipelineNext",
+        "library_info": "LibraryProjection|null",
+        "layout": "ObjectArg|null",
+        "render_pass_raw": "U64",
+        "subpass": "U32",
+        "base_pipeline_raw": "U64",
+        "base_pipeline_index": "I32",
+        "stages": "SpanStages",
+        "allocator_pointer": "U64",
+        "output_pointer": "U64",
+        "state_pointers": "PipelineStatePointers"
+      },
+      "result_wire_mapping": {
+        "vk_result": "I32",
+        "output_raw": "U64|null"
+      },
+      "result_layout": "Result_PipelineCreate",
+      "after_layout": "After_PipelineCreate",
+      "SOURCE_entry": "uint32_t d4vr_osw_enter_v1(uint32_t event_tag, const osw_sourceentryinput_v1 *source_entry, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "before_commit": "uint32_t d4vr_osw_pipelinecreate_before_v1(osw_token_v1 *token, const osw_before_pipelinecreate_v1 *before);",
+      "after": "uint32_t d4vr_osw_pipelinecreate_after_v1(osw_token_v1 *token, const osw_after_pipelinecreate_v1 *after);",
+      "output_layout_applicability": "Only SourceAfterInput fields permitted by frozen field_applicability can be observed; IDs, generations, births and epochs are sink-derived, never source/app input."
+    },
+    {
+      "tag": 14,
+      "api": "Increment",
+      "domain": "COM_original",
+      "original_return_kind": "uint32",
+      "before_layout": "Before_Increment",
+      "args_wire_mapping": {
+        "device": "ObjectArg",
+        "heap_type": "Enum32"
+      },
+      "result_wire_mapping": {
+        "value": "U32"
+      },
+      "result_layout": "Result_Increment",
+      "after_layout": "After_Increment",
+      "SOURCE_entry": "uint32_t d4vr_osw_enter_v1(uint32_t event_tag, const osw_sourceentryinput_v1 *source_entry, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "before_commit": "uint32_t d4vr_osw_increment_before_v1(osw_token_v1 *token, const osw_before_increment_v1 *before);",
+      "after": "uint32_t d4vr_osw_increment_after_v1(osw_token_v1 *token, const osw_after_increment_v1 *after);",
+      "output_layout_applicability": "Only SourceAfterInput fields permitted by frozen field_applicability can be observed; IDs, generations, births and epochs are sink-derived, never source/app input."
+    },
+    {
+      "tag": 15,
+      "api": "CPUStart",
+      "domain": "source_original",
+      "original_return_kind": "original_pointer",
+      "before_layout": "Before_CPUStart",
+      "args_wire_mapping": {
+        "heap": "ObjectArg",
+        "output_pointer": "U64"
+      },
+      "result_wire_mapping": {
+        "returned_pointer": "U64",
+        "value": "U64|null"
+      },
+      "result_layout": "Result_CPUStart",
+      "after_layout": "After_CPUStart",
+      "SOURCE_entry": "uint32_t d4vr_osw_enter_v1(uint32_t event_tag, const osw_sourceentryinput_v1 *source_entry, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "before_commit": "uint32_t d4vr_osw_cpustart_before_v1(osw_token_v1 *token, const osw_before_cpustart_v1 *before);",
+      "after": "uint32_t d4vr_osw_cpustart_after_v1(osw_token_v1 *token, const osw_after_cpustart_v1 *after);",
+      "output_layout_applicability": "Only SourceAfterInput fields permitted by frozen field_applicability can be observed; IDs, generations, births and epochs are sink-derived, never source/app input."
+    },
+    {
+      "tag": 16,
+      "api": "GPUStart",
+      "domain": "source_original",
+      "original_return_kind": "original_pointer",
+      "before_layout": "Before_GPUStart",
+      "args_wire_mapping": {
+        "heap": "ObjectArg",
+        "output_pointer": "U64"
+      },
+      "result_wire_mapping": {
+        "returned_pointer": "U64",
+        "value": "U64|null"
+      },
+      "result_layout": "Result_GPUStart",
+      "after_layout": "After_GPUStart",
+      "SOURCE_entry": "uint32_t d4vr_osw_enter_v1(uint32_t event_tag, const osw_sourceentryinput_v1 *source_entry, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "before_commit": "uint32_t d4vr_osw_gpustart_before_v1(osw_token_v1 *token, const osw_before_gpustart_v1 *before);",
+      "after": "uint32_t d4vr_osw_gpustart_after_v1(osw_token_v1 *token, const osw_after_gpustart_v1 *after);",
+      "output_layout_applicability": "Only SourceAfterInput fields permitted by frozen field_applicability can be observed; IDs, generations, births and epochs are sink-derived, never source/app input."
+    },
+    {
+      "tag": 17,
+      "api": "CreateSRV",
+      "domain": "COM_original",
+      "original_return_kind": "void",
+      "before_layout": "Before_CreateSRV",
+      "args_wire_mapping": {
+        "device": "ObjectArg",
+        "resource": "ObjectArg|null",
+        "destination": "U64",
+        "description": "SRV|null",
+        "description_pointer": "U64"
+      },
+      "result_wire_mapping": null,
+      "result_layout": "Result_CreateSRV",
+      "after_layout": "After_CreateSRV",
+      "SOURCE_entry": "uint32_t d4vr_osw_enter_v1(uint32_t event_tag, const osw_sourceentryinput_v1 *source_entry, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "before_commit": "uint32_t d4vr_osw_createsrv_before_v1(osw_token_v1 *token, const osw_before_createsrv_v1 *before);",
+      "after": "uint32_t d4vr_osw_createsrv_after_v1(osw_token_v1 *token);",
+      "output_layout_applicability": "Only SourceAfterInput fields permitted by frozen field_applicability can be observed; IDs, generations, births and epochs are sink-derived, never source/app input."
+    },
+    {
+      "tag": 18,
+      "api": "CopySimple",
+      "domain": "COM_original",
+      "original_return_kind": "void",
+      "before_layout": "Before_CopySimple",
+      "args_wire_mapping": {
+        "device": "ObjectArg",
+        "count": "U32",
+        "destination": "U64",
+        "source": "U64",
+        "heap_type": "Enum32"
+      },
+      "result_wire_mapping": null,
+      "result_layout": "Result_CopySimple",
+      "after_layout": "After_CopySimple",
+      "SOURCE_entry": "uint32_t d4vr_osw_enter_v1(uint32_t event_tag, const osw_sourceentryinput_v1 *source_entry, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "before_commit": "uint32_t d4vr_osw_copysimple_before_v1(osw_token_v1 *token, const osw_before_copysimple_v1 *before);",
+      "after": "uint32_t d4vr_osw_copysimple_after_v1(osw_token_v1 *token);",
+      "output_layout_applicability": "Only SourceAfterInput fields permitted by frozen field_applicability can be observed; IDs, generations, births and epochs are sink-derived, never source/app input."
+    },
+    {
+      "tag": 19,
+      "api": "CopyRanges",
+      "domain": "COM_original",
+      "original_return_kind": "void",
+      "before_layout": "Before_CopyRanges",
+      "args_wire_mapping": {
+        "device": "ObjectArg",
+        "destinations": "RangeSide",
+        "sources": "RangeSide",
+        "heap_type": "Enum32"
+      },
+      "result_wire_mapping": null,
+      "result_layout": "Result_CopyRanges",
+      "after_layout": "After_CopyRanges",
+      "SOURCE_entry": "uint32_t d4vr_osw_enter_v1(uint32_t event_tag, const osw_sourceentryinput_v1 *source_entry, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "before_commit": "uint32_t d4vr_osw_copyranges_before_v1(osw_token_v1 *token, const osw_before_copyranges_v1 *before);",
+      "after": "uint32_t d4vr_osw_copyranges_after_v1(osw_token_v1 *token);",
+      "output_layout_applicability": "Only SourceAfterInput fields permitted by frozen field_applicability can be observed; IDs, generations, births and epochs are sink-derived, never source/app input."
+    },
+    {
+      "tag": 20,
+      "api": "Reset",
+      "domain": "COM_original",
+      "original_return_kind": "HRESULT",
+      "before_layout": "Before_Reset",
+      "args_wire_mapping": {
+        "command": "ObjectArg",
+        "allocator": "ObjectArg",
+        "initial_pipeline": "ObjectArg|null"
+      },
+      "result_wire_mapping": {
+        "hresult": "I32"
+      },
+      "result_layout": "Result_Reset",
+      "after_layout": "After_Reset",
+      "SOURCE_entry": "uint32_t d4vr_osw_enter_v1(uint32_t event_tag, const osw_sourceentryinput_v1 *source_entry, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "before_commit": "uint32_t d4vr_osw_reset_before_v1(osw_token_v1 *token, const osw_before_reset_v1 *before);",
+      "after": "uint32_t d4vr_osw_reset_after_v1(osw_token_v1 *token, const osw_after_reset_v1 *after);",
+      "output_layout_applicability": "Only SourceAfterInput fields permitted by frozen field_applicability can be observed; IDs, generations, births and epochs are sink-derived, never source/app input."
+    },
+    {
+      "tag": 21,
+      "api": "Close",
+      "domain": "COM_original",
+      "original_return_kind": "HRESULT",
+      "before_layout": "Before_Close",
+      "args_wire_mapping": {
+        "command": "ObjectArg"
+      },
+      "result_wire_mapping": {
+        "hresult": "I32"
+      },
+      "result_layout": "Result_Close",
+      "after_layout": "After_Close",
+      "SOURCE_entry": "uint32_t d4vr_osw_enter_v1(uint32_t event_tag, const osw_sourceentryinput_v1 *source_entry, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "before_commit": "uint32_t d4vr_osw_close_before_v1(osw_token_v1 *token, const osw_before_close_v1 *before);",
+      "after": "uint32_t d4vr_osw_close_after_v1(osw_token_v1 *token, const osw_after_close_v1 *after);",
+      "output_layout_applicability": "Only SourceAfterInput fields permitted by frozen field_applicability can be observed; IDs, generations, births and epochs are sink-derived, never source/app input."
+    },
+    {
+      "tag": 22,
+      "api": "ClearState",
+      "domain": "COM_original",
+      "original_return_kind": "void",
+      "before_layout": "Before_ClearState",
+      "args_wire_mapping": {
+        "command": "ObjectArg",
+        "pipeline": "ObjectArg|null"
+      },
+      "result_wire_mapping": null,
+      "result_layout": "Result_ClearState",
+      "after_layout": "After_ClearState",
+      "SOURCE_entry": "uint32_t d4vr_osw_enter_v1(uint32_t event_tag, const osw_sourceentryinput_v1 *source_entry, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "before_commit": "uint32_t d4vr_osw_clearstate_before_v1(osw_token_v1 *token, const osw_before_clearstate_v1 *before);",
+      "after": "uint32_t d4vr_osw_clearstate_after_v1(osw_token_v1 *token);",
+      "output_layout_applicability": "Only SourceAfterInput fields permitted by frozen field_applicability can be observed; IDs, generations, births and epochs are sink-derived, never source/app input."
+    },
+    {
+      "tag": 23,
+      "api": "SetPipeline",
+      "domain": "COM_original",
+      "original_return_kind": "void",
+      "before_layout": "Before_SetPipeline",
+      "args_wire_mapping": {
+        "command": "ObjectArg",
+        "pipeline": "ObjectArg"
+      },
+      "result_wire_mapping": null,
+      "result_layout": "Result_SetPipeline",
+      "after_layout": "After_SetPipeline",
+      "SOURCE_entry": "uint32_t d4vr_osw_enter_v1(uint32_t event_tag, const osw_sourceentryinput_v1 *source_entry, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "before_commit": "uint32_t d4vr_osw_setpipeline_before_v1(osw_token_v1 *token, const osw_before_setpipeline_v1 *before);",
+      "after": "uint32_t d4vr_osw_setpipeline_after_v1(osw_token_v1 *token);",
+      "output_layout_applicability": "Only SourceAfterInput fields permitted by frozen field_applicability can be observed; IDs, generations, births and epochs are sink-derived, never source/app input."
+    },
+    {
+      "tag": 24,
+      "api": "SetRoot",
+      "domain": "COM_original",
+      "original_return_kind": "void",
+      "before_layout": "Before_SetRoot",
+      "args_wire_mapping": {
+        "command": "ObjectArg",
+        "root": "ObjectArg|null"
+      },
+      "result_wire_mapping": null,
+      "result_layout": "Result_SetRoot",
+      "after_layout": "After_SetRoot",
+      "SOURCE_entry": "uint32_t d4vr_osw_enter_v1(uint32_t event_tag, const osw_sourceentryinput_v1 *source_entry, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "before_commit": "uint32_t d4vr_osw_setroot_before_v1(osw_token_v1 *token, const osw_before_setroot_v1 *before);",
+      "after": "uint32_t d4vr_osw_setroot_after_v1(osw_token_v1 *token);",
+      "output_layout_applicability": "Only SourceAfterInput fields permitted by frozen field_applicability can be observed; IDs, generations, births and epochs are sink-derived, never source/app input."
+    },
+    {
+      "tag": 25,
+      "api": "SetHeaps",
+      "domain": "COM_original",
+      "original_return_kind": "void",
+      "before_layout": "Before_SetHeaps",
+      "args_wire_mapping": {
+        "command": "ObjectArg",
+        "heaps": "SpanHeaps"
+      },
+      "result_wire_mapping": null,
+      "result_layout": "Result_SetHeaps",
+      "after_layout": "After_SetHeaps",
+      "SOURCE_entry": "uint32_t d4vr_osw_enter_v1(uint32_t event_tag, const osw_sourceentryinput_v1 *source_entry, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "before_commit": "uint32_t d4vr_osw_setheaps_before_v1(osw_token_v1 *token, const osw_before_setheaps_v1 *before);",
+      "after": "uint32_t d4vr_osw_setheaps_after_v1(osw_token_v1 *token);",
+      "output_layout_applicability": "Only SourceAfterInput fields permitted by frozen field_applicability can be observed; IDs, generations, births and epochs are sink-derived, never source/app input."
+    },
+    {
+      "tag": 26,
+      "api": "SetTable",
+      "domain": "COM_original",
+      "original_return_kind": "void",
+      "before_layout": "Before_SetTable",
+      "args_wire_mapping": {
+        "command": "ObjectArg",
+        "parameter": "U32",
+        "gpu_handle": "U64"
+      },
+      "result_wire_mapping": null,
+      "result_layout": "Result_SetTable",
+      "after_layout": "After_SetTable",
+      "SOURCE_entry": "uint32_t d4vr_osw_enter_v1(uint32_t event_tag, const osw_sourceentryinput_v1 *source_entry, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "before_commit": "uint32_t d4vr_osw_settable_before_v1(osw_token_v1 *token, const osw_before_settable_v1 *before);",
+      "after": "uint32_t d4vr_osw_settable_after_v1(osw_token_v1 *token);",
+      "output_layout_applicability": "Only SourceAfterInput fields permitted by frozen field_applicability can be observed; IDs, generations, births and epochs are sink-derived, never source/app input."
+    },
+    {
+      "tag": 27,
+      "api": "Viewports",
+      "domain": "COM_original",
+      "original_return_kind": "void",
+      "before_layout": "Before_Viewports",
+      "args_wire_mapping": {
+        "command": "ObjectArg",
+        "viewports": "SpanViewports"
+      },
+      "result_wire_mapping": null,
+      "result_layout": "Result_Viewports",
+      "after_layout": "After_Viewports",
+      "SOURCE_entry": "uint32_t d4vr_osw_enter_v1(uint32_t event_tag, const osw_sourceentryinput_v1 *source_entry, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "before_commit": "uint32_t d4vr_osw_viewports_before_v1(osw_token_v1 *token, const osw_before_viewports_v1 *before);",
+      "after": "uint32_t d4vr_osw_viewports_after_v1(osw_token_v1 *token);",
+      "output_layout_applicability": "Only SourceAfterInput fields permitted by frozen field_applicability can be observed; IDs, generations, births and epochs are sink-derived, never source/app input."
+    },
+    {
+      "tag": 28,
+      "api": "Scissors",
+      "domain": "COM_original",
+      "original_return_kind": "void",
+      "before_layout": "Before_Scissors",
+      "args_wire_mapping": {
+        "command": "ObjectArg",
+        "rects": "SpanRects"
+      },
+      "result_wire_mapping": null,
+      "result_layout": "Result_Scissors",
+      "after_layout": "After_Scissors",
+      "SOURCE_entry": "uint32_t d4vr_osw_enter_v1(uint32_t event_tag, const osw_sourceentryinput_v1 *source_entry, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "before_commit": "uint32_t d4vr_osw_scissors_before_v1(osw_token_v1 *token, const osw_before_scissors_v1 *before);",
+      "after": "uint32_t d4vr_osw_scissors_after_v1(osw_token_v1 *token);",
+      "output_layout_applicability": "Only SourceAfterInput fields permitted by frozen field_applicability can be observed; IDs, generations, births and epochs are sink-derived, never source/app input."
+    },
+    {
+      "tag": 29,
+      "api": "RTV",
+      "domain": "COM_original",
+      "original_return_kind": "void",
+      "before_layout": "Before_RTV",
+      "args_wire_mapping": {
+        "command": "ObjectArg",
+        "handles": "SpanRTVHandles",
+        "single_range": "I32 (original BOOL, no JSONbool coercion)",
+        "dsv_pointer": "U64"
+      },
+      "result_wire_mapping": null,
+      "result_layout": "Result_RTV",
+      "after_layout": "After_RTV",
+      "SOURCE_entry": "uint32_t d4vr_osw_enter_v1(uint32_t event_tag, const osw_sourceentryinput_v1 *source_entry, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "before_commit": "uint32_t d4vr_osw_rtv_before_v1(osw_token_v1 *token, const osw_before_rtv_v1 *before);",
+      "after": "uint32_t d4vr_osw_rtv_after_v1(osw_token_v1 *token);",
+      "output_layout_applicability": "Only SourceAfterInput fields permitted by frozen field_applicability can be observed; IDs, generations, births and epochs are sink-derived, never source/app input."
+    },
+    {
+      "tag": 30,
+      "api": "Draw",
+      "domain": "COM_original",
+      "original_return_kind": "void",
+      "before_layout": "Before_Draw",
+      "args_wire_mapping": {
+        "command": "ObjectArg",
+        "vertex_count": "U32",
+        "instance_count": "U32",
+        "first_vertex": "U32",
+        "first_instance": "U32"
+      },
+      "result_wire_mapping": null,
+      "result_layout": "Result_Draw",
+      "after_layout": "After_Draw",
+      "SOURCE_entry": "uint32_t d4vr_osw_enter_v1(uint32_t event_tag, const osw_sourceentryinput_v1 *source_entry, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "before_commit": "uint32_t d4vr_osw_draw_before_v1(osw_token_v1 *token, const osw_before_draw_v1 *before);",
+      "after": "uint32_t d4vr_osw_draw_after_v1(osw_token_v1 *token);",
+      "output_layout_applicability": "Only SourceAfterInput fields permitted by frozen field_applicability can be observed; IDs, generations, births and epochs are sink-derived, never source/app input."
+    },
+    {
+      "tag": 31,
+      "api": "BindPipeline",
+      "domain": "Vulkan_original",
+      "original_return_kind": "void",
+      "before_layout": "Before_BindPipeline",
+      "args_wire_mapping": {
+        "vk_command_buffer": "U64",
+        "bind_point": "Enum32",
+        "pipeline": "ObjectArg"
+      },
+      "result_wire_mapping": null,
+      "result_layout": "Result_BindPipeline",
+      "after_layout": "After_BindPipeline",
+      "SOURCE_entry": "uint32_t d4vr_osw_enter_v1(uint32_t event_tag, const osw_sourceentryinput_v1 *source_entry, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "before_commit": "uint32_t d4vr_osw_bindpipeline_before_v1(osw_token_v1 *token, const osw_before_bindpipeline_v1 *before);",
+      "after": "uint32_t d4vr_osw_bindpipeline_after_v1(osw_token_v1 *token);",
+      "output_layout_applicability": "Only SourceAfterInput fields permitted by frozen field_applicability can be observed; IDs, generations, births and epochs are sink-derived, never source/app input."
+    },
+    {
+      "tag": 32,
+      "api": "EmitDraw",
+      "domain": "Vulkan_original",
+      "original_return_kind": "void",
+      "before_layout": "Before_EmitDraw",
+      "args_wire_mapping": {
+        "vk_command_buffer": "U64",
+        "vertex_count": "U32",
+        "instance_count": "U32",
+        "first_vertex": "U32",
+        "first_instance": "U32"
+      },
+      "result_wire_mapping": null,
+      "result_layout": "Result_EmitDraw",
+      "after_layout": "After_EmitDraw",
+      "SOURCE_entry": "uint32_t d4vr_osw_enter_v1(uint32_t event_tag, const osw_sourceentryinput_v1 *source_entry, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "before_commit": "uint32_t d4vr_osw_emitdraw_before_v1(osw_token_v1 *token, const osw_before_emitdraw_v1 *before);",
+      "after": "uint32_t d4vr_osw_emitdraw_after_v1(osw_token_v1 *token);",
+      "output_layout_applicability": "Only SourceAfterInput fields permitted by frozen field_applicability can be observed; IDs, generations, births and epochs are sink-derived, never source/app input."
+    },
+    {
+      "tag": 33,
+      "api": "Execute",
+      "domain": "COM_original",
+      "original_return_kind": "void",
+      "before_layout": "Before_Execute",
+      "args_wire_mapping": {
+        "queue": "ObjectArg",
+        "commands": "SpanCommands"
+      },
+      "result_wire_mapping": null,
+      "result_layout": "Result_Execute",
+      "after_layout": "After_Execute",
+      "SOURCE_entry": "uint32_t d4vr_osw_enter_v1(uint32_t event_tag, const osw_sourceentryinput_v1 *source_entry, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "before_commit": "uint32_t d4vr_osw_execute_before_v1(osw_token_v1 *token, const osw_before_execute_v1 *before);",
+      "after": "uint32_t d4vr_osw_execute_after_v1(osw_token_v1 *token);",
+      "output_layout_applicability": "Only SourceAfterInput fields permitted by frozen field_applicability can be observed; IDs, generations, births and epochs are sink-derived, never source/app input."
+    },
+    {
+      "tag": 34,
+      "api": "Release",
+      "domain": "COM_original",
+      "original_return_kind": "uint32",
+      "before_layout": "Before_Release",
+      "args_wire_mapping": {
+        "object": "ObjectArg"
+      },
+      "result_wire_mapping": {
+        "value": "U32"
+      },
+      "result_layout": "Result_Release",
+      "after_layout": "After_Release",
+      "SOURCE_entry": "uint32_t d4vr_osw_enter_v1(uint32_t event_tag, const osw_sourceentryinput_v1 *source_entry, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "before_commit": "uint32_t d4vr_osw_release_before_v1(osw_token_v1 *token, const osw_before_release_v1 *before);",
+      "after": "uint32_t d4vr_osw_release_after_v1(osw_token_v1 *token, uint32_t actual_ulong);",
+      "output_layout_applicability": "No AfterPOD is accepted for void/Destroy/ScopeGap; Release accepts its exact original ULONG scalar only. Nonapplicable SourceAfterInput fields are unobserved+absent; cannot reread receiver/owners after original."
+    },
+    {
+      "tag": 35,
+      "api": "AllocatorReset",
+      "domain": "COM_original",
+      "original_return_kind": "HRESULT",
+      "before_layout": "Before_AllocatorReset",
+      "args_wire_mapping": {
+        "allocator": "ObjectArg"
+      },
+      "result_wire_mapping": {
+        "hresult": "I32"
+      },
+      "result_layout": "Result_AllocatorReset",
+      "after_layout": "After_AllocatorReset",
+      "SOURCE_entry": "uint32_t d4vr_osw_enter_v1(uint32_t event_tag, const osw_sourceentryinput_v1 *source_entry, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "before_commit": "uint32_t d4vr_osw_allocatorreset_before_v1(osw_token_v1 *token, const osw_before_allocatorreset_v1 *before);",
+      "after": "uint32_t d4vr_osw_allocatorreset_after_v1(osw_token_v1 *token, const osw_after_allocatorreset_v1 *after);",
+      "output_layout_applicability": "Only SourceAfterInput fields permitted by frozen field_applicability can be observed; IDs, generations, births and epochs are sink-derived, never source/app input."
+    },
+    {
+      "tag": 36,
+      "api": "PipelineLookup",
+      "domain": "source_original",
+      "original_return_kind": "VkPipeline",
+      "before_layout": "Before_PipelineLookup",
+      "args_wire_mapping": {
+        "state_pointer": "U64",
+        "dynamic_state_pointer": "U64",
+        "dsv_format_pointer": "U64",
+        "dynamic_flags_output_pointer": "U64"
+      },
+      "result_wire_mapping": {
+        "value": "U64",
+        "dynamic_flags": "U32|null"
+      },
+      "result_layout": "Result_PipelineLookup",
+      "after_layout": "After_PipelineLookup",
+      "SOURCE_entry": "uint32_t d4vr_osw_enter_v1(uint32_t event_tag, const osw_sourceentryinput_v1 *source_entry, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "before_commit": "uint32_t d4vr_osw_pipelinelookup_before_v1(osw_token_v1 *token, const osw_before_pipelinelookup_v1 *before);",
+      "after": "uint32_t d4vr_osw_pipelinelookup_after_v1(osw_token_v1 *token, const osw_after_pipelinelookup_v1 *after);",
+      "output_layout_applicability": "Only SourceAfterInput fields permitted by frozen field_applicability can be observed; IDs, generations, births and epochs are sink-derived, never source/app input."
+    },
+    {
+      "tag": 37,
+      "api": "CreateSampler",
+      "domain": "COM_original",
+      "original_return_kind": "void",
+      "before_layout": "Before_CreateSampler",
+      "args_wire_mapping": {
+        "device": "ObjectArg",
+        "description_pointer": "U64",
+        "description": "SamplerDesc|null",
+        "description_complete": "Bool",
+        "destination": "U64"
+      },
+      "result_wire_mapping": null,
+      "result_layout": "Result_CreateSampler",
+      "after_layout": "After_CreateSampler",
+      "SOURCE_entry": "uint32_t d4vr_osw_enter_v1(uint32_t event_tag, const osw_sourceentryinput_v1 *source_entry, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "before_commit": "uint32_t d4vr_osw_createsampler_before_v1(osw_token_v1 *token, const osw_before_createsampler_v1 *before);",
+      "after": "uint32_t d4vr_osw_createsampler_after_v1(osw_token_v1 *token);",
+      "output_layout_applicability": "Only SourceAfterInput fields permitted by frozen field_applicability can be observed; IDs, generations, births and epochs are sink-derived, never source/app input."
+    },
+    {
+      "tag": 38,
+      "api": "CreateRTV",
+      "domain": "COM_original",
+      "original_return_kind": "void",
+      "before_layout": "Before_CreateRTV",
+      "args_wire_mapping": {
+        "device": "ObjectArg",
+        "resource": "ObjectArg|null",
+        "description_pointer": "U64",
+        "destination": "U64"
+      },
+      "result_wire_mapping": null,
+      "result_layout": "Result_CreateRTV",
+      "after_layout": "After_CreateRTV",
+      "SOURCE_entry": "uint32_t d4vr_osw_enter_v1(uint32_t event_tag, const osw_sourceentryinput_v1 *source_entry, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "before_commit": "uint32_t d4vr_osw_creatertv_before_v1(osw_token_v1 *token, const osw_before_creatertv_v1 *before);",
+      "after": "uint32_t d4vr_osw_creatertv_after_v1(osw_token_v1 *token);",
+      "output_layout_applicability": "Only SourceAfterInput fields permitted by frozen field_applicability can be observed; IDs, generations, births and epochs are sink-derived, never source/app input."
+    },
+    {
+      "tag": 39,
+      "api": "SetConstants",
+      "domain": "COM_original",
+      "original_return_kind": "void",
+      "before_layout": "Before_SetConstants",
+      "args_wire_mapping": {
+        "command": "ObjectArg",
+        "parameter": "U32",
+        "words": "SpanU32Words",
+        "destination_offset": "U32"
+      },
+      "result_wire_mapping": null,
+      "result_layout": "Result_SetConstants",
+      "after_layout": "After_SetConstants",
+      "SOURCE_entry": "uint32_t d4vr_osw_enter_v1(uint32_t event_tag, const osw_sourceentryinput_v1 *source_entry, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "before_commit": "uint32_t d4vr_osw_setconstants_before_v1(osw_token_v1 *token, const osw_before_setconstants_v1 *before);",
+      "after": "uint32_t d4vr_osw_setconstants_after_v1(osw_token_v1 *token);",
+      "output_layout_applicability": "Only SourceAfterInput fields permitted by frozen field_applicability can be observed; IDs, generations, births and epochs are sink-derived, never source/app input."
+    },
+    {
+      "tag": 40,
+      "api": "Topology",
+      "domain": "COM_original",
+      "original_return_kind": "void",
+      "before_layout": "Before_Topology",
+      "args_wire_mapping": {
+        "command": "ObjectArg",
+        "topology": "Enum32"
+      },
+      "result_wire_mapping": null,
+      "result_layout": "Result_Topology",
+      "after_layout": "After_Topology",
+      "SOURCE_entry": "uint32_t d4vr_osw_enter_v1(uint32_t event_tag, const osw_sourceentryinput_v1 *source_entry, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "before_commit": "uint32_t d4vr_osw_topology_before_v1(osw_token_v1 *token, const osw_before_topology_v1 *before);",
+      "after": "uint32_t d4vr_osw_topology_after_v1(osw_token_v1 *token);",
+      "output_layout_applicability": "Only SourceAfterInput fields permitted by frozen field_applicability can be observed; IDs, generations, births and epochs are sink-derived, never source/app input."
+    },
+    {
+      "tag": 41,
+      "api": "ModuleDestroy",
+      "domain": "Vulkan_original",
+      "original_return_kind": "void",
+      "before_layout": "Before_ModuleDestroy",
+      "args_wire_mapping": {
+        "device": "ObjectArg",
+        "object": "ObjectArg of kind module",
+        "allocator_pointer": "U64"
+      },
+      "result_wire_mapping": null,
+      "result_layout": "Result_ModuleDestroy",
+      "after_layout": "After_ModuleDestroy",
+      "SOURCE_entry": "uint32_t d4vr_osw_enter_v1(uint32_t event_tag, const osw_sourceentryinput_v1 *source_entry, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "before_commit": "uint32_t d4vr_osw_moduledestroy_before_v1(osw_token_v1 *token, const osw_before_moduledestroy_v1 *before);",
+      "after": "uint32_t d4vr_osw_moduledestroy_after_v1(osw_token_v1 *token);",
+      "output_layout_applicability": "No AfterPOD is accepted for void/Destroy/ScopeGap; Release accepts its exact original ULONG scalar only. Nonapplicable SourceAfterInput fields are unobserved+absent; cannot reread receiver/owners after original."
+    },
+    {
+      "tag": 42,
+      "api": "PipelineDestroy",
+      "domain": "Vulkan_original",
+      "original_return_kind": "void",
+      "before_layout": "Before_PipelineDestroy",
+      "args_wire_mapping": {
+        "device": "ObjectArg",
+        "object": "ObjectArg of kind pipeline",
+        "allocator_pointer": "U64"
+      },
+      "result_wire_mapping": null,
+      "result_layout": "Result_PipelineDestroy",
+      "after_layout": "After_PipelineDestroy",
+      "SOURCE_entry": "uint32_t d4vr_osw_enter_v1(uint32_t event_tag, const osw_sourceentryinput_v1 *source_entry, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "before_commit": "uint32_t d4vr_osw_pipelinedestroy_before_v1(osw_token_v1 *token, const osw_before_pipelinedestroy_v1 *before);",
+      "after": "uint32_t d4vr_osw_pipelinedestroy_after_v1(osw_token_v1 *token);",
+      "output_layout_applicability": "No AfterPOD is accepted for void/Destroy/ScopeGap; Release accepts its exact original ULONG scalar only. Nonapplicable SourceAfterInput fields are unobserved+absent; cannot reread receiver/owners after original."
+    },
+    {
+      "tag": 43,
+      "api": "PipelineLayoutDestroy",
+      "domain": "Vulkan_original",
+      "original_return_kind": "void",
+      "before_layout": "Before_PipelineLayoutDestroy",
+      "args_wire_mapping": {
+        "device": "ObjectArg",
+        "object": "ObjectArg of kind pipeline_layout",
+        "allocator_pointer": "U64"
+      },
+      "result_wire_mapping": null,
+      "result_layout": "Result_PipelineLayoutDestroy",
+      "after_layout": "After_PipelineLayoutDestroy",
+      "SOURCE_entry": "uint32_t d4vr_osw_enter_v1(uint32_t event_tag, const osw_sourceentryinput_v1 *source_entry, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "before_commit": "uint32_t d4vr_osw_pipelinelayoutdestroy_before_v1(osw_token_v1 *token, const osw_before_pipelinelayoutdestroy_v1 *before);",
+      "after": "uint32_t d4vr_osw_pipelinelayoutdestroy_after_v1(osw_token_v1 *token);",
+      "output_layout_applicability": "No AfterPOD is accepted for void/Destroy/ScopeGap; Release accepts its exact original ULONG scalar only. Nonapplicable SourceAfterInput fields are unobserved+absent; cannot reread receiver/owners after original."
+    },
+    {
+      "tag": 44,
+      "api": "ScopeGap",
+      "domain": "source_observer",
+      "original_return_kind": "observer",
+      "before_layout": "Before_ScopeGap",
+      "args_wire_mapping": {
+        "code": "outside_profile|missing_origin|unsupported_draw_branch|unqualified_native_route|unsupported_root_state|unretained_selected_original|unsafe_projection|quota"
+      },
+      "result_wire_mapping": null,
+      "result_layout": "Result_ScopeGap",
+      "after_layout": "After_ScopeGap",
+      "SOURCE_entry": null,
+      "before_commit": null,
+      "after": null,
+      "observer": "uint32_t d4vr_osw_scopegap_v1(uint32_t code);",
+      "output_layout_applicability": "No AfterPOD is accepted for void/Destroy/ScopeGap; Release accepts its exact original ULONG scalar only. Nonapplicable SourceAfterInput fields are unobserved+absent; cannot reread receiver/owners after original."
+    },
+    {
+      "tag": 45,
+      "api": "VkViewportCount",
+      "domain": "Vulkan_original",
+      "original_return_kind": "void",
+      "before_layout": "Before_VkViewportCount",
+      "args_wire_mapping": {
+        "vk_command_buffer": "U64",
+        "viewports": "SpanViewports"
+      },
+      "result_wire_mapping": null,
+      "result_layout": "Result_VkViewportCount",
+      "after_layout": "After_VkViewportCount",
+      "SOURCE_entry": "uint32_t d4vr_osw_enter_v1(uint32_t event_tag, const osw_sourceentryinput_v1 *source_entry, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "before_commit": "uint32_t d4vr_osw_vkviewportcount_before_v1(osw_token_v1 *token, const osw_before_vkviewportcount_v1 *before);",
+      "after": "uint32_t d4vr_osw_vkviewportcount_after_v1(osw_token_v1 *token);",
+      "output_layout_applicability": "Only SourceAfterInput fields permitted by frozen field_applicability can be observed; IDs, generations, births and epochs are sink-derived, never source/app input."
+    },
+    {
+      "tag": 46,
+      "api": "VkScissorCount",
+      "domain": "Vulkan_original",
+      "original_return_kind": "void",
+      "before_layout": "Before_VkScissorCount",
+      "args_wire_mapping": {
+        "vk_command_buffer": "U64",
+        "rects": "SpanVkRects"
+      },
+      "result_wire_mapping": null,
+      "result_layout": "Result_VkScissorCount",
+      "after_layout": "After_VkScissorCount",
+      "SOURCE_entry": "uint32_t d4vr_osw_enter_v1(uint32_t event_tag, const osw_sourceentryinput_v1 *source_entry, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "before_commit": "uint32_t d4vr_osw_vkscissorcount_before_v1(osw_token_v1 *token, const osw_before_vkscissorcount_v1 *before);",
+      "after": "uint32_t d4vr_osw_vkscissorcount_after_v1(osw_token_v1 *token);",
+      "output_layout_applicability": "Only SourceAfterInput fields permitted by frozen field_applicability can be observed; IDs, generations, births and epochs are sink-derived, never source/app input."
+    }
+  ],
+  "additional_private_protocol": "source-protocol-final-proposed.json"
+}

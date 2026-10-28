@@ -1,0 +1,122 @@
+{
+  "schema_version": 1,
+  "purpose": "owned_source_writer_private_bridge_CPU_creation_checkpoint",
+  "created_utc": "2026-10-28T06:43:59.547635+00:00",
+  "status": "IMPLEMENTED_NEW_CPU_ONLY_CI_PENDING_AT_CREATION",
+  "source_files": [
+    {
+      "path": "native/owned_source_writer_projection/CMakeLists.txt",
+      "bytes": 4870,
+      "sha256": "e97574e037a00729cec36c3220e67930573e87b555cbf1839acc725062b762d4"
+    },
+    {
+      "path": "native/owned_source_writer_projection/owned_source_writer_private_v1.h",
+      "bytes": 4724,
+      "sha256": "342dd01492775b3ae57645bed50e95fb39d686bc960b63af23955ccb7e7da71f"
+    },
+    {
+      "path": "native/owned_source_writer_projection/owned_source_writer_core_embedding_v1.c",
+      "bytes": 30725,
+      "sha256": "49451507359c4899d702e701dcff3985719d9cdbce0ca601f185f9d42c362f82"
+    },
+    {
+      "path": "native/owned_source_writer_projection/owned_source_writer_sha256_v1.h",
+      "bytes": 3914,
+      "sha256": "386a4b735fc6f70cb815ccf5dc4869f21d03efa2b72c367dbae4cb8580f85c30"
+    },
+    {
+      "path": "native/owned_source_writer_projection/owned_source_writer_sha256_v1.c",
+      "bytes": 4778,
+      "sha256": "582354c8fea424138d73e05782ebbd62cc5ac9aa7095c396444de126c41b9b74"
+    },
+    {
+      "path": "native/tests/owned_source_writer_projection_cpu.c",
+      "bytes": 92483,
+      "sha256": "f329f3164774009cd02124e9205c732c1de7b4521b1d4481a2162d3e32898e96"
+    },
+    {
+      "path": "native/tests/owned_source_writer_projection_independent_cpu.c",
+      "bytes": 40260,
+      "sha256": "bd617f207c9999a00de262281795420e75a0f0a84c6d4ebd7f5b50ba305ba06d"
+    },
+    {
+      "path": "native/tests/owned_source_writer_projection_abi.c",
+      "bytes": 5975,
+      "sha256": "c941c4484aeac1a849559f67c7133d483c27595c21c46fcb682be6eeeac4dc4d"
+    },
+    {
+      "path": "native/tests/owned_source_writer_projection_abi.cpp",
+      "bytes": 204,
+      "sha256": "c7b5783bd24a1562be00803eacfb5086fd33ca53db6df63f573f5ef8337c9512"
+    },
+    {
+      "path": "tools/owned_source_writer_projection_wire.py",
+      "bytes": 21783,
+      "sha256": "1ebdbae9ae98761cb5ac3a705a8d8abf52052d3301d19f6bc77106c649190a1b"
+    },
+    {
+      "path": "tests/test_owned_source_writer_projection_wire.py",
+      "bytes": 24891,
+      "sha256": "7fb740cf2ad4bb99834b7337127ac89edaf71365e83557d1dc656104b300f2a4"
+    },
+    {
+      "path": ".github/workflows/checks.yml",
+      "bytes": 27243,
+      "sha256": "9d023a8c47fddc8c6e87c769b2f349a875c76f9d823bcc47e23e27ed0321ca49"
+    },
+    {
+      "path": "docs/OWNED_SOURCE_WRITER_PRIVATE_CPU.md",
+      "bytes": 4610,
+      "sha256": "3d5bbcf29259821b16223a71a3d929fc03657018619202d00d043fad91a04274"
+    }
+  ],
+  "precode": {
+    "public_manifest_sha256": "d3bcf9369a34a78851991c59fb14e081f04792d00691d0b8786a464cd81faaeb",
+    "exact_CPU_transport_precode_sha256": "278cdffb92f3527551f6c32bf8338991c5c03294a58695c4d9ff2cfa78fff175",
+    "reader_body_followed_protocol_review_and_freeze": true
+  },
+  "local_validation": {
+    "new_CTest": 4,
+    "new_independent_Python_methods": 41,
+    "new_full_header_C_CPP_ABI": "object-only positives and six intentional negative type/layout cases; no vendor body execution",
+    "main_original_calls_each": 104,
+    "main_original_returns_each": 104,
+    "modes": [
+      "on",
+      "observer_bypassed",
+      "faulted"
+    ],
+    "same_process_owned_trace_encoding": "owned_roles_and_values_v1",
+    "cross_process_opaque_pointer_identity_claimed": false,
+    "primary_bytes": 53555,
+    "primary_sha256": "537b92b2babde90044e98b450e88e7ff53ca39e03e62df8fc8057e22ae37e95c",
+    "primary_callbacks": 63,
+    "primary_marks": 126,
+    "complete_model_result": "valid supplied input, historical relation unknown, object_origin_unavailable, all17strongerclaims false",
+    "whole_shared_pair_report_sha256": "92ff24c915e6826e1ddf60a623eebc287ea25bbc2d04535994c72d5317969563",
+    "saved_primary_model_calls": 1,
+    "compiled_off_model_calls": 0,
+    "local_ASan_attempted": false
+  },
+  "fixed_before_freeze": [
+    "COM interface association no longer accepts an internal pointer as an alternative domain",
+    "retained ACTIVE/CONSUMED RootCreate markers are checked after pending drain",
+    "reader preserves actual return and bounded errors on worker join failure"
+  ],
+  "attribution": "Bridge and SHA author, mock/ABI author, independent causal/reader tests and parent integration have distinct current files but share earlier foundations. Counts overlap and are not additive; this is not third-party certification of their own producer.",
+  "unchanged_dependencies": {
+    "core": "e2f464bb2a6159ce88eac1c71bf4442c999856f4876a19c3f912dc07e8ea86b7",
+    "header": "564e8955d9b97211e81b10defafc6e1a49b07291f57090e4e821fab454588583",
+    "model": "660623fb5da3cbec1ea7fbe2c6f1513beadd3950c97416a6126a71de119479bf"
+  },
+  "boundary": {
+    "SOURCE_hook_inserted": false,
+    "vendor_built_for_this_component": false,
+    "runtime_executed": false,
+    "game_or_VR_advance": false,
+    "actual_cold_SOURCE_fit_known": false,
+    "native_branch_known": false,
+    "CPU_named_storage_is_total_memory_claim": false
+  },
+  "CI": "Pending for this new code at creation. Earlier CI232 does not validate this tree. Preserve this checkpoint and publish actual CI evidence separately."
+}
