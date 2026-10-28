@@ -285,6 +285,31 @@ jobs:
           cmake --build work/owned-C-source-ci --parallel 2
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           ctest --test-dir work/owned-C-source-ci --output-on-failure
+      - name: Check the private SOURCE bridge and digest CPU protocol on Linux
+        if: runner.os == 'Linux'
+        run: |
+          cmake -S native/owned_source_writer_projection -B work/owned-source-projection-ci
+          cmake --build work/owned-source-projection-ci --parallel 2
+          ctest --test-dir work/owned-source-projection-ci --output-on-failure
+          cmake -S native/owned_source_writer_projection -B work/owned-source-projection-sanitized-ci -DCMAKE_BUILD_TYPE=Debug "-DCMAKE_C_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer" "-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer"
+          cmake --build work/owned-source-projection-sanitized-ci --parallel 2
+          ctest --test-dir work/owned-source-projection-sanitized-ci --output-on-failure
+      - name: Check the private SOURCE bridge on Windows with the explicit GNU driver
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $gcc = (Get-Command gcc -ErrorAction Stop).Source
+          $gnuBin = Split-Path $gcc
+          $gxx = Join-Path $gnuBin 'g++.exe'
+          if (!(Test-Path $gxx)) { throw 'Matching GNU C++ compiler unavailable' }
+          $target = & $gcc -dumpmachine
+          if ($LASTEXITCODE -ne 0 -or $target.Trim() -ne 'x86_64-w64-mingw32') { throw "Unsupported private bridge compiler target: $target" }
+          $env:PATH = "$gnuBin;$env:PATH"
+          cmake -S native/owned_source_writer_projection -B work/owned-source-projection-ci -G Ninja "-DCMAKE_C_COMPILER=$gcc" "-DCMAKE_CXX_COMPILER=$gxx"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cmake --build work/owned-source-projection-ci --parallel 2
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ctest --test-dir work/owned-source-projection-ci --output-on-failure
       - name: Upload Windows probe without vendor or test libraries
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v4
