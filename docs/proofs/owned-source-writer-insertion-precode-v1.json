@@ -1,0 +1,151 @@
+{
+  "schema_version": 1,
+  "purpose": "Verified SOURCE inspection and unresolved insertion precode; documentation only",
+  "created_utc": "2026-10-28T04:49:55.670872+00:00",
+  "status": "REVIEWED_NEGATIVE_PRECODE_CLOSURE_NOT_IMPLEMENTATION_READY",
+  "product": "Research/prototyping; no new Diablo/Quest or immersive rendering result.",
+  "implemented_foundation": {
+    "head": "cafa496581e3ec621918b3db2b9d299712556798",
+    "tree": "f2bdfd006089971bd44b219af02d6458f6683dba",
+    "CPU_final": {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-C-sink-parent-20261028-1/CPU-final-with-CI-proof.json",
+      "bytes": 5591,
+      "sha256": "17f61d755a80a2473e1c0747c83574161c6b213795481551b22b8fcc111b36bc"
+    },
+    "CI232": {
+      "run_id": 40629235196,
+      "actually_tested_merge": "9a812f0d0264bc475a77f0be93ee01204bd1def6",
+      "entire_tree_equal_to_head": true,
+      "new_documentation_commit_tested_by_this_CI": false,
+      "Python_each_platform": 1176,
+      "Windows_existing_skips": 2,
+      "new_CTest": 5,
+      "Linux_normal_and_ASan_UBSan": true,
+      "Windows_normal_mock_CPU": true,
+      "Python_sanitized": false
+    },
+    "do_not_repeat": "No old CPU, ABI, model, reader, vendor or physical control was rerun for this documentation."
+  },
+  "documents": [
+    {
+      "path": "docs/OWNED_SOURCE_WRITER_INSERTION_FINDINGS.md",
+      "bytes": 4119,
+      "sha256": "e166ace5d09fb47a4233318b2dae2f4b0508ab91ed7302e0ec881bcdaebdba08"
+    },
+    {
+      "path": "docs/proposals/owned-source-writer-insertion-v1/build-link-generation-addendum.json",
+      "bytes": 1872,
+      "sha256": "6c2ffbba0983b4ef74526f9240f03f30a1d241b67e46ca9d1366b330b0db5221"
+    },
+    {
+      "path": "docs/proposals/owned-source-writer-insertion-v1/build-link.json",
+      "bytes": 13767,
+      "sha256": "037f768f8742d882fee039c485a58a5f88e6fb078227b33e2640b45be588ee26"
+    },
+    {
+      "path": "docs/proposals/owned-source-writer-insertion-v1/cold-budget.json",
+      "bytes": 42567,
+      "sha256": "1eac5e8750ec790dae1f0d4006e275e89593fa3c8388502da4ca50fdbdbd1f34"
+    },
+    {
+      "path": "docs/proposals/owned-source-writer-insertion-v1/manifest.json",
+      "bytes": 2832,
+      "sha256": "4ace80c71cbd6e88bcd451b488f44ed0987f4af19825536514fa5ce3de4f2aec"
+    },
+    {
+      "path": "docs/proposals/owned-source-writer-insertion-v1/next-precode-resolution-plan.json",
+      "bytes": 7815,
+      "sha256": "6f98ed777ad8b43c2d27373f4d51f2d1877b518034557df91f202e337572e33a"
+    },
+    {
+      "path": "docs/proposals/owned-source-writer-insertion-v1/root-bridge.json",
+      "bytes": 8150,
+      "sha256": "841055b97448bb8e714145b2dd4421b2a81840c29f3836bbea5032fd4cf78924"
+    },
+    {
+      "path": "docs/proposals/owned-source-writer-insertion-v1/sites.json",
+      "bytes": 157527,
+      "sha256": "644357f943e0fa200e09e76b5b77e8aaab6ab64e9c316784cc25b3123b502250"
+    }
+  ],
+  "source_findings": {
+    "catalogue_families": 46,
+    "individual_site_rows": 85,
+    "argument_expressions": 173,
+    "macro_expansions_are_documentary": 5,
+    "nested_setters": "Two actual SetPipelineState(NULL) calls under constructor Reset1 and case Reset2 must be retained. Constructor command birth is pending; the frozen positive model exempts only Reset and rejects NULL pipeline identity. A grammatical diagnostic frame can remain unknown; this alone is not a NO_PAYLOAD claim.",
+    "conditional_budget": "Base52. Ordinary early monolithic63/126 with one VkDevice attempt,64/128 with two. Early pipeline retry64/128 or65/130. Broader correlated branches can exceed event or identity caps. No cartesian combination is presented as a runtime witness.",
+    "actual_SOURCE_capture_or_raw_fit": false,
+    "actual_native_branch_known": false
+  },
+  "remaining_gates": [
+    "G1 pending-Root-only parser admission and exact one-core private access",
+    "G2 GRAPHICS and any required native command/epoch provenance at the actual native entry",
+    "G3 diagnostic-only faithful nested setter policy; no frozen model rewrite or filtered positive",
+    "G4 exact read/local storage and SOURCE raw/node/count fit gates under unchanged caps",
+    "G5 bounded production shader-code SHA256 utility, lifetime and local state"
+  ],
+  "reviews": {
+    "site_author": {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-insertion-precode-20261028-1/sites-author-proof.json",
+      "bytes": 20671,
+      "sha256": "836a36c72788692b67477439aabf0e24f47d0ed15dc3f04cf1975a91f1741c97"
+    },
+    "budget_author": {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-insertion-precode-20261028-1/budget-proof.json",
+      "bytes": 14639,
+      "sha256": "610a9016abf29fb1297e75fb274a4ee3d74727bbf5a161f95e31de6b4d274b4b"
+    },
+    "independent_source": {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-insertion-precode-independent-review-20261028-1/proof.json",
+      "bytes": 14028,
+      "sha256": "d4ab4c1fbcd0e5d6b3a3bb0a4b9d3da4c30ac722b88af78f22e154f978da1e88"
+    },
+    "independent_generated_target_additive": {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-insertion-precode-independent-review-20261028-1/generated-target-additive-review.json",
+      "bytes": 4987,
+      "sha256": "1e59357b5ed56e385913a17566882ff80b8b3ed7630f6853cff310fbd452a5da"
+    },
+    "link_proposal_review": {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-insertion-precode-20261028-1/review-build-link.json",
+      "bytes": 29016,
+      "sha256": "0a3f9be94cba801f85362fddbdfcd89e3f9c0469352a75de38549a8403aa7255"
+    },
+    "link_proposal_additive": {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-insertion-precode-20261028-1/review-build-link-additive-final.json",
+      "bytes": 4050,
+      "sha256": "4268b4979299c42f57176945692762c17255370ef9eb9cc3538637f107212826"
+    },
+    "parent_literal": {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-insertion-precode-20261028-1/parent-literal-review.json",
+      "bytes": 15147,
+      "sha256": "091f34787d18634d59818eb0d852c1cc2f8304dc8a6b6181d215393b0fb38096"
+    },
+    "parent_static_reasoning": {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-insertion-precode-20261028-1/parent-static-findings.json",
+      "bytes": 17201,
+      "sha256": "7a30c62d54bb1bb571179f65aff7a1ee69e6e17f585da1eafa47897d9a6a8605"
+    },
+    "meaning": "Literal source/document comparisons and arithmetic only, not passed CPU tests. Author and reviewer counts overlap and must not be added. Reviewers share prior foundations and authorship of earlier components; not third-party certification of their own producer."
+  },
+  "next_documentary_admission": {
+    "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-insertion-precode-20261028-1/next-precode-documentary-admission.json",
+    "bytes": 2921,
+    "sha256": "68ec6fb00e1b768e3a15a6231a8980729a8e32443f961f4a3f84dd4d8a04d79a"
+  },
+  "no_new_execution": {
+    "model_analyze": true,
+    "CPU_wrapper_tests": true,
+    "ABI_compile": true,
+    "vendor_configure_build": true,
+    "renderer_PE": true,
+    "Wine_GPU_game_headset": true
+  },
+  "implementation_admitted": false,
+  "precode_closed": false,
+  "physical_ready": false,
+  "human_required": false,
+  "claim_limits": "Source inspection and supplied API histories do not attest inputs, sampled/current contents, absence of overwrites, native binding, GPU reads, ownership, backing, global absence, game transforms or VR. The existing17 stronger facets remain false; no old certificate/flag is rewritten.",
+  "publication": "Documentation only, intentional skip CI. Public proposal copies are byte-exact to the reviewed private documents. Read build-link base together with required generation addendum. Actual target names/commands/archive/link/exports remain a future verification gate.",
+  "privacy": "No game shader bytes, indices/push, images, raw game logs or vendor binary included. Source paths/pins are provenance metadata; installed game/NVIDIA files were not modified."
+}

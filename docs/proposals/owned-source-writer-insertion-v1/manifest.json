@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "purpose": "Source insertion precode findings and unresolved proposals, not a normative ready-to-implement ABI",
+  "status": "PRECODE_NOT_CLOSED_NO_IMPLEMENTATION_ADMISSION",
+  "SOURCE_writer_hooks_implemented": false,
+  "new_model_or_CPU_tests_executed": false,
+  "new_vendor_build_or_runtime": false,
+  "foundation": "The frozen C-only sink is implemented separately under prior CI232; these documents do not recertify it or extend its ABI.",
+  "model_policy": "660623fb remains unchanged. Actual nested setters stay in the trace; its complete unknown report remains a calculation on provided facts. No positive, input attestation, current contents, GPU read, game or VR claim is added.",
+  "documents": [
+    {
+      "path": "sites.json",
+      "bytes": 157527,
+      "sha256": "644357f943e0fa200e09e76b5b77e8aaab6ab64e9c316784cc25b3123b502250",
+      "purpose": "46 family and individual source-site table; safe-read/provenance gaps explicitly open"
+    },
+    {
+      "path": "root-bridge.json",
+      "bytes": 8150,
+      "sha256": "841055b97448bb8e714145b2dd4421b2a81840c29f3836bbea5032fd4cf78924",
+      "purpose": "Proposed private parser bridge declarations/cuts with absent eligibility operation explicit"
+    },
+    {
+      "path": "cold-budget.json",
+      "bytes": 42567,
+      "sha256": "1eac5e8750ec790dae1f0d4006e275e89593fa3c8388502da4ca50fdbdbd1f34",
+      "purpose": "Correlated conditional source accounting and unchanged caps; no runtime witness or raw-fit theorem"
+    },
+    {
+      "path": "build-link.json",
+      "bytes": 13767,
+      "sha256": "037f768f8742d882fee039c485a58a5f88e6fb078227b33e2640b45be588ee26",
+      "purpose": "Proposed one-core C11 and transitive shader target replacement; never configured or built"
+    },
+    {
+      "path": "next-precode-resolution-plan.json",
+      "bytes": 7815,
+      "sha256": "6f98ed777ad8b43c2d27373f4d51f2d1877b518034557df91f202e337572e33a",
+      "purpose": "Separate documentation-only resolution plan; every implementation gate stays closed"
+    }
+  ],
+  "read_together": "Use the summary in docs/OWNED_SOURCE_WRITER_INSERTION_FINDINGS.md and the proof in docs/proofs/owned-source-writer-insertion-precode-v1.json. No single candidate file makes this a closed insertion contract.",
+  "future_gate": "Resolve exact private eligibility/source provenance, production digest read and remaining read/storage/budget details, independently review/freeze, then make a separate CPU wrapper implementation decision.",
+  "required_build_link_addendum": {
+    "path": "build-link-generation-addendum.json",
+    "bytes": 1872,
+    "sha256": "6c2ffbba0983b4ef74526f9240f03f30a1d241b67e46ca9d1366b330b0db5221",
+    "reason": "Build-link base alone is insufficient for shared generator ownership; read this required precision with it."
+  }
+}

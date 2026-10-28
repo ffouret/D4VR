@@ -1,0 +1,901 @@
+{
+  "schema_version": 1,
+  "purpose": "SOURCE_ONLY_cold_original_callback_budget_precode",
+  "status": "SOURCE_ACCOUNTING_COMPLETE_CONTRACT_GAP_REQUIRES_SEPARATE_REVIEW_NO_IMPLEMENTATION_ADMISSION",
+  "authority": {
+    "plan": "work/owned-C-sink-to-real-source-next-20261028-1/plan-draft.json ec15ad93",
+    "required_addendum": "dependency-adoption-addendum-v3.json ffe8adc5",
+    "parent_admission": "parent-precode-admission.json ca15406f",
+    "current_core": "e2f464bb2a6159ce88eac1c71bf4442c999856f4876a19c3f912dc07e8ea86b7",
+    "public_wire": "D4VR/docs/schemas/owned-source-writer-v1.json 693021b2"
+  },
+  "method": "Read original pinned SOURCE callsites and unchanged owned695836 program. Counts are source-derived conditional call-tree arithmetic, not a model invocation, harness capture or a reuse of old61/wide witnesses. No source callback producer currently exists.",
+  "limits": {
+    "records": 64,
+    "marks": 128,
+    "pending_shared": 32,
+    "identities_total_no_eviction": 21,
+    "raw_UTF8_bytes": 65536,
+    "JSON_value_container_nodes": 4096,
+    "depth": 20,
+    "string_UTF8_bytes": 256,
+    "typed_context_plus_issuer": 404416
+  },
+  "fixed_selected_frontier": [
+    {
+      "event": "DeviceCreate",
+      "count": 1,
+      "source_anchor": "device.c10870..10967",
+      "meaning": "First actual internal factory before branch; singleton/failure cannot be skipped."
+    },
+    {
+      "event": "VkDeviceCreate",
+      "count": 1,
+      "source_anchor": "device.c3270..3275",
+      "meaning": "Baseline one actual attempt; optional NVX retry adds one failure/success occurrence."
+    },
+    {
+      "event": "ResourceCreate",
+      "count": 6,
+      "source_anchor": "device.c6604..6618,7668..7716,8182..8207",
+      "meaning": "Base boundary only: two SRV textures, two upload buffers, target87, readback. Forwarded Resource1/2 outside membership, no extra births."
+    },
+    {
+      "event": "HeapCreate",
+      "count": 4,
+      "source_anchor": "device.c5572..5586",
+      "meaning": "Two SRV heaps, sampler and RTV."
+    },
+    {
+      "event": "AllocatorCreate",
+      "count": 1,
+      "source_anchor": "device.c4039..4064",
+      "meaning": "Actual base original."
+    },
+    {
+      "event": "QueueCreate",
+      "count": 1,
+      "source_anchor": "device.c4017..4035",
+      "meaning": "Actual base original."
+    },
+    {
+      "event": "CommandCreate",
+      "count": 1,
+      "source_anchor": "device.c4115..4137",
+      "meaning": "Base original only, internal List1 outside membership; genuine nested Reset remains selected."
+    },
+    {
+      "event": "RootCreate",
+      "count": 1,
+      "source_anchor": "device.c5598..5616",
+      "meaning": "Provided original base root, no synthetic private PSO root."
+    },
+    {
+      "event": "RootParse",
+      "count": 1,
+      "source_anchor": "vkd3d_shader_main.c615..629",
+      "meaning": "Only genuine pending RootCreate generic original, preconversion/free."
+    },
+    {
+      "event": "PSOCreate",
+      "count": 1,
+      "source_anchor": "device.c4067..4087,state.c6384..6563",
+      "meaning": "Actual graphics creator; source notes are not extra events."
+    },
+    {
+      "event": "Reset",
+      "count": 2,
+      "source_anchor": "device.c4127..4131,command.c7214..7242",
+      "meaning": "Constructor ordinal1 and case ordinal2."
+    },
+    {
+      "event": "Increment",
+      "count": 2,
+      "source_anchor": "owned.cpp211,215;device.c5589..5596",
+      "meaning": "SRV and sampler originals."
+    },
+    {
+      "event": "CPUStart",
+      "count": 4,
+      "source_anchor": "owned.cpp212..215;resource.c9207",
+      "meaning": "One for each actual heap."
+    },
+    {
+      "event": "GPUStart",
+      "count": 2,
+      "source_anchor": "owned.cpp214..215;resource.c9219",
+      "meaning": "Visible SRV and sampler."
+    },
+    {
+      "event": "CreateSampler",
+      "count": 2,
+      "source_anchor": "owned.cpp216",
+      "meaning": "Two actual original sampler writes; sampler_known remains false."
+    },
+    {
+      "event": "CreateRTV",
+      "count": 1,
+      "source_anchor": "owned.cpp216",
+      "meaning": "Actual NULL desc and target87, no synthetic typed/native view."
+    },
+    {
+      "event": "Close",
+      "count": 2,
+      "source_anchor": "owned.cpp225,255",
+      "meaning": "Setup then case1."
+    },
+    {
+      "event": "Execute",
+      "count": 2,
+      "source_anchor": "owned.cpp225,256/submit;command.c23727..23815",
+      "meaning": "Setup and selected case1; cut before selected original, freeze after its RETURN."
+    },
+    {
+      "event": "AllocatorReset",
+      "count": 1,
+      "source_anchor": "owned.cpp234",
+      "meaning": "First case allocator reset."
+    },
+    {
+      "event": "SetPipeline",
+      "count": 3,
+      "source_anchor": "command.c7157,7202,7239,12951;owned.cpp237",
+      "meaning": "NEW SOURCE correction: one nested NULL call in EACH successful Reset plus explicit PSO call. All are genuine same-vtable originals."
+    },
+    {
+      "event": "CreateSRV",
+      "count": 3,
+      "source_anchor": "owned.cpp227..230,238",
+      "meaning": "A\u2192CPU0, B\u2192CPU1, A\u2192visible0."
+    },
+    {
+      "event": "RTV",
+      "count": 1,
+      "source_anchor": "owned.cpp241",
+      "meaning": "Actual 1handle/singleRangeTRUE/DSVNULL."
+    },
+    {
+      "event": "Viewports",
+      "count": 1,
+      "source_anchor": "owned.cpp242..243",
+      "meaning": "Actual COM sixfloat bit arguments, separate from native WithCount."
+    },
+    {
+      "event": "Scissors",
+      "count": 1,
+      "source_anchor": "owned.cpp242,244",
+      "meaning": "Actual LONG RECT."
+    },
+    {
+      "event": "SetRoot",
+      "count": 1,
+      "source_anchor": "owned.cpp245",
+      "meaning": "Actual root object, unchanged layout/index policy."
+    },
+    {
+      "event": "SetHeaps",
+      "count": 1,
+      "source_anchor": "owned.cpp246",
+      "meaning": "Actual count2/full SRV-visible+sampler array."
+    },
+    {
+      "event": "SetTable",
+      "count": 2,
+      "source_anchor": "owned.cpp247..248",
+      "meaning": "Original SRV param0 and sampler param1."
+    },
+    {
+      "event": "SetConstants",
+      "count": 1,
+      "source_anchor": "owned.cpp249..250",
+      "meaning": "Original param2/count2/raw words/offset0."
+    },
+    {
+      "event": "Topology",
+      "count": 1,
+      "source_anchor": "owned.cpp251",
+      "meaning": "Original trianglelist."
+    },
+    {
+      "event": "Draw",
+      "count": 1,
+      "source_anchor": "owned.cpp252;command.c9092..9133",
+      "meaning": "First attempted direct Draw is fixed before native branch."
+    }
+  ],
+  "fixed_originals_total": 52,
+  "membership": {
+    "base_creators_only": true,
+    "graphics_layout_only": "Exact GRAPHICS callsite under real RootCreate before tick; other layouts execute outside this declared membership.",
+    "ModuleDestroyNULL": "Outside membership before tick; actual nonNULL originals remain selected.",
+    "Reset_internal_SetPipeline": "The same original vtable method as explicit APP SetPipeline; no exclusion/bypass/new core predicate is admitted. Both nested calls must be retained.",
+    "other_originals": "ResourceBarrier, CopyTextureRegion, ClearRT, Map/Unmap/GetDesc/GetCopyableFootprints/fences/QI/addrefs are outside this finite catalog where their source functions differ. They still execute; this is not proof of global absence. A same-family selected nested call cannot be silently put outside membership."
+  },
+  "new_blocker": {
+    "id": "RESET_CALLS_SET_PIPELINE",
+    "source_edges": [
+      "base CreateCommandList \u2192 CreateList1 \u2192 Reset1",
+      "successful Reset \u2192 reset_state \u2192 reset_api_state \u2192 vtable SetPipelineState(initialPSO)",
+      "case Reset2 repeats same SetPipelineState(NULL)"
+    ],
+    "added_originals": 2,
+    "old_B50_not_source_complete": true,
+    "frozen_semantic_issue": "Constructor SetPipeline is before base CommandCreate RETURN. Frozen pending command exception is constructor Reset only; no live command generation is available. This is a separate contract/model eligibility blocker even for a63/126 fitting branch.",
+    "no_workaround": "Do not erase selected nested calls, call unwrapped originals, change original Reset/PSO args, rename epochs or add fake live generation. A future separately reviewed additive contract is necessary if this original branch must become positive."
+  },
+  "branch_arithmetic": [
+    {
+      "name": "regular_early_monolithic_V1",
+      "condition": "Legacy root layout; owned triangle VS/FS, no unsupported flags/chain, both modules created once; successful early monolithic pipeline; two nonNULL retirements then optional NULL destroys outside membership; first Draw gets that pipeline.",
+      "selected_counts": {
+        "fixed_base_including_one_VkDevice_attempt": 52,
+        "VkDevice_attempts": 1,
+        "graphics_layout": 1,
+        "ModuleCreate": 2,
+        "PipelineCreate_attempts": 1,
+        "PipelineLookup": 1,
+        "nonnull_ModuleDestroy": 2,
+        "native_Bind_ViewportWithCount_ScissorWithCount_Emit": 4
+      },
+      "counterfactual_complete_originals": 63,
+      "complete_marks_if_all_retained": 126,
+      "records_marks_fit": true,
+      "successful_identity_slots": 21,
+      "identity_fit": true,
+      "maximum_simultaneous_selected_pending": 3,
+      "semantic_status": "Count fit only. Constructor nested SetPipeline under pending command is NOT admitted by frozen pending-Reset-only model; no positive claim."
+    },
+    {
+      "name": "early_compile_required_retry_V1",
+      "condition": "First create returns VK_PIPELINE_COMPILE_REQUIRED; source late compiler creates remaining modules, second actual attempt succeeds; existing two-stage module total2. get_pipeline then returns early pipeline.",
+      "selected_counts": {
+        "fixed_base_including_one_VkDevice_attempt": 52,
+        "VkDevice_attempts": 1,
+        "graphics_layout": 1,
+        "ModuleCreate": 2,
+        "PipelineCreate_attempts": 2,
+        "PipelineLookup": 1,
+        "nonnull_ModuleDestroy": 2,
+        "native_Bind_ViewportWithCount_ScissorWithCount_Emit": 4
+      },
+      "counterfactual_complete_originals": 64,
+      "complete_marks_if_all_retained": 128,
+      "records_marks_fit": true,
+      "successful_identity_slots": 21,
+      "identity_fit": true,
+      "maximum_simultaneous_selected_pending": 3,
+      "semantic_status": "Conditional native source path; identifier/null module first attempt may independently violate native profile. V2 exceeds hard record/mark caps; not repaired by choosing second attempt."
+    },
+    {
+      "name": "late_only_no_duplicate_modules_V1",
+      "condition": "No early successful pipeline. get_pipeline0 then real get_or_create miss creates one pipeline using two retained live modules; no module duplicate/destruction before cut.",
+      "selected_counts": {
+        "fixed_base_including_one_VkDevice_attempt": 52,
+        "VkDevice_attempts": 1,
+        "graphics_layout": 1,
+        "ModuleCreate": 2,
+        "PipelineCreate_attempts": 1,
+        "PipelineLookup": 2,
+        "nonnull_ModuleDestroy": 0,
+        "native_Bind_ViewportWithCount_ScissorWithCount_Emit": 4
+      },
+      "counterfactual_complete_originals": 62,
+      "complete_marks_if_all_retained": 124,
+      "records_marks_fit": true,
+      "successful_identity_slots": 21,
+      "identity_fit": true,
+      "maximum_simultaneous_selected_pending": 3,
+      "semantic_status": "Diagnostic outside unchanged owned simple early profile; no source route forcing or late cache birth. Constructor SetPipeline gate remains."
+    },
+    {
+      "name": "early_plus_fallback_preserved_modules_V1",
+      "condition": "An early successful pipeline exists but a real mismatch forces fallback; modules remain live, second successful pipeline is genuinely created before cut.",
+      "selected_counts": {
+        "fixed_base_including_one_VkDevice_attempt": 52,
+        "VkDevice_attempts": 1,
+        "graphics_layout": 1,
+        "ModuleCreate": 2,
+        "PipelineCreate_attempts": 2,
+        "PipelineLookup": 2,
+        "nonnull_ModuleDestroy": 0,
+        "native_Bind_ViewportWithCount_ScissorWithCount_Emit": 4
+      },
+      "counterfactual_complete_originals": 63,
+      "complete_marks_if_all_retained": 126,
+      "records_marks_fit": true,
+      "successful_identity_slots": 22,
+      "identity_fit": false,
+      "maximum_simultaneous_selected_pending": 3,
+      "semantic_status": "Even if records fit, second pipeline birth is identity22 and violates hard identity21; unsupported changed/native condition is not a new owned positive."
+    },
+    {
+      "name": "fallback_duplicate_modules_V1",
+      "condition": "Two early module births and one early pipeline; old modules retired while code retained; fallback recreates two temporary modules and another successful pipeline; temporary nonNULL modules destroyed.",
+      "selected_counts": {
+        "fixed_base_including_one_VkDevice_attempt": 52,
+        "VkDevice_attempts": 1,
+        "graphics_layout": 1,
+        "ModuleCreate": 4,
+        "PipelineCreate_attempts": 2,
+        "PipelineLookup": 2,
+        "nonnull_ModuleDestroy": 4,
+        "native_Bind_ViewportWithCount_ScissorWithCount_Emit": 4
+      },
+      "counterfactual_complete_originals": 69,
+      "complete_marks_if_all_retained": 138,
+      "records_marks_fit": false,
+      "successful_identity_slots": 24,
+      "identity_fit": false,
+      "maximum_simultaneous_selected_pending": 3,
+      "semantic_status": "69/70 complete events exceed64 and >=24 success identities exceed21; NO_PAYLOAD at first actual over-cap boundary. Conditional broader source route, not asserted owned runtime witness."
+    },
+    {
+      "name": "regular_early_monolithic_V2",
+      "condition": "Legacy root layout; owned triangle VS/FS, no unsupported flags/chain, both modules created once; successful early monolithic pipeline; two nonNULL retirements then optional NULL destroys outside membership; first Draw gets that pipeline.",
+      "selected_counts": {
+        "fixed_base_including_one_VkDevice_attempt": 52,
+        "VkDevice_attempts": 2,
+        "graphics_layout": 1,
+        "ModuleCreate": 2,
+        "PipelineCreate_attempts": 1,
+        "PipelineLookup": 1,
+        "nonnull_ModuleDestroy": 2,
+        "native_Bind_ViewportWithCount_ScissorWithCount_Emit": 4
+      },
+      "counterfactual_complete_originals": 64,
+      "complete_marks_if_all_retained": 128,
+      "records_marks_fit": true,
+      "successful_identity_slots": 21,
+      "identity_fit": true,
+      "maximum_simultaneous_selected_pending": 3,
+      "semantic_status": "Count fit only. Constructor nested SetPipeline under pending command is NOT admitted by frozen pending-Reset-only model; no positive claim."
+    },
+    {
+      "name": "early_compile_required_retry_V2",
+      "condition": "First create returns VK_PIPELINE_COMPILE_REQUIRED; source late compiler creates remaining modules, second actual attempt succeeds; existing two-stage module total2. get_pipeline then returns early pipeline.",
+      "selected_counts": {
+        "fixed_base_including_one_VkDevice_attempt": 52,
+        "VkDevice_attempts": 2,
+        "graphics_layout": 1,
+        "ModuleCreate": 2,
+        "PipelineCreate_attempts": 2,
+        "PipelineLookup": 1,
+        "nonnull_ModuleDestroy": 2,
+        "native_Bind_ViewportWithCount_ScissorWithCount_Emit": 4
+      },
+      "counterfactual_complete_originals": 65,
+      "complete_marks_if_all_retained": 130,
+      "records_marks_fit": false,
+      "successful_identity_slots": 21,
+      "identity_fit": true,
+      "maximum_simultaneous_selected_pending": 3,
+      "semantic_status": "Conditional native source path; identifier/null module first attempt may independently violate native profile. V2 exceeds hard record/mark caps; not repaired by choosing second attempt."
+    },
+    {
+      "name": "late_only_no_duplicate_modules_V2",
+      "condition": "No early successful pipeline. get_pipeline0 then real get_or_create miss creates one pipeline using two retained live modules; no module duplicate/destruction before cut.",
+      "selected_counts": {
+        "fixed_base_including_one_VkDevice_attempt": 52,
+        "VkDevice_attempts": 2,
+        "graphics_layout": 1,
+        "ModuleCreate": 2,
+        "PipelineCreate_attempts": 1,
+        "PipelineLookup": 2,
+        "nonnull_ModuleDestroy": 0,
+        "native_Bind_ViewportWithCount_ScissorWithCount_Emit": 4
+      },
+      "counterfactual_complete_originals": 63,
+      "complete_marks_if_all_retained": 126,
+      "records_marks_fit": true,
+      "successful_identity_slots": 21,
+      "identity_fit": true,
+      "maximum_simultaneous_selected_pending": 3,
+      "semantic_status": "Diagnostic outside unchanged owned simple early profile; no source route forcing or late cache birth. Constructor SetPipeline gate remains."
+    },
+    {
+      "name": "early_plus_fallback_preserved_modules_V2",
+      "condition": "An early successful pipeline exists but a real mismatch forces fallback; modules remain live, second successful pipeline is genuinely created before cut.",
+      "selected_counts": {
+        "fixed_base_including_one_VkDevice_attempt": 52,
+        "VkDevice_attempts": 2,
+        "graphics_layout": 1,
+        "ModuleCreate": 2,
+        "PipelineCreate_attempts": 2,
+        "PipelineLookup": 2,
+        "nonnull_ModuleDestroy": 0,
+        "native_Bind_ViewportWithCount_ScissorWithCount_Emit": 4
+      },
+      "counterfactual_complete_originals": 64,
+      "complete_marks_if_all_retained": 128,
+      "records_marks_fit": true,
+      "successful_identity_slots": 22,
+      "identity_fit": false,
+      "maximum_simultaneous_selected_pending": 3,
+      "semantic_status": "Even if records fit, second pipeline birth is identity22 and violates hard identity21; unsupported changed/native condition is not a new owned positive."
+    },
+    {
+      "name": "fallback_duplicate_modules_V2",
+      "condition": "Two early module births and one early pipeline; old modules retired while code retained; fallback recreates two temporary modules and another successful pipeline; temporary nonNULL modules destroyed.",
+      "selected_counts": {
+        "fixed_base_including_one_VkDevice_attempt": 52,
+        "VkDevice_attempts": 2,
+        "graphics_layout": 1,
+        "ModuleCreate": 4,
+        "PipelineCreate_attempts": 2,
+        "PipelineLookup": 2,
+        "nonnull_ModuleDestroy": 4,
+        "native_Bind_ViewportWithCount_ScissorWithCount_Emit": 4
+      },
+      "counterfactual_complete_originals": 70,
+      "complete_marks_if_all_retained": 140,
+      "records_marks_fit": false,
+      "successful_identity_slots": 24,
+      "identity_fit": false,
+      "maximum_simultaneous_selected_pending": 3,
+      "semantic_status": "69/70 complete events exceed64 and >=24 success identities exceed21; NO_PAYLOAD at first actual over-cap boundary. Conditional broader source route, not asserted owned runtime witness."
+    },
+    {
+      "name": "late_only_fallback_duplicate_modules_V1",
+      "condition": "No early native pipeline but initial two shader modules created then retired with code retained. Real get0/get_or_create miss recreates two temporary modules, creates one pipeline and destroys the two temporaries.",
+      "selected_counts": {
+        "fixed_base_including_one_VkDevice_attempt": 52,
+        "VkDevice_attempts": 1,
+        "graphics_layout": 1,
+        "ModuleCreate": 4,
+        "PipelineCreate_attempts": 1,
+        "PipelineLookup": 2,
+        "nonnull_ModuleDestroy": 4,
+        "native_Bind_ViewportWithCount_ScissorWithCount_Emit": 4
+      },
+      "counterfactual_complete_originals": 68,
+      "complete_marks_if_all_retained": 136,
+      "records_marks_fit": false,
+      "successful_identity_slots": 23,
+      "identity_fit": false,
+      "maximum_simultaneous_selected_pending": 3,
+      "semantic_status": "Conditional broader source path, not asserted owned runtime. With no early pipeline: base17 + layout1 + initial modules2 =20; third module uses permitted slot21, FOURTH module needs slot22 and first exceeds identity21. Counterfactual final pipeline would need23. No slot reuse after destruction."
+    },
+    {
+      "name": "late_only_fallback_duplicate_modules_V2",
+      "condition": "No early native pipeline but initial two shader modules created then retired with code retained. Real get0/get_or_create miss recreates two temporary modules, creates one pipeline and destroys the two temporaries.",
+      "selected_counts": {
+        "fixed_base_including_one_VkDevice_attempt": 52,
+        "VkDevice_attempts": 2,
+        "graphics_layout": 1,
+        "ModuleCreate": 4,
+        "PipelineCreate_attempts": 1,
+        "PipelineLookup": 2,
+        "nonnull_ModuleDestroy": 4,
+        "native_Bind_ViewportWithCount_ScissorWithCount_Emit": 4
+      },
+      "counterfactual_complete_originals": 69,
+      "complete_marks_if_all_retained": 138,
+      "records_marks_fit": false,
+      "successful_identity_slots": 23,
+      "identity_fit": false,
+      "maximum_simultaneous_selected_pending": 3,
+      "semantic_status": "Conditional broader source path, not asserted owned runtime. With no early pipeline: base17 + layout1 + initial modules2 =20; third module uses permitted slot21, FOURTH module needs slot22 and first exceeds identity21. Counterfactual final pipeline would need23. No slot reuse after destruction."
+    }
+  ],
+  "formula": "N=52+(V-1)+L+M+P+Q+D+E, marks=2*N only when all selected originals returned and no ScopeGap. Count tables after a hard-cap crossing are counterfactual full source schedules, NOT actual retained frames above caps.",
+  "cartesian_warning": "Old P2/Q2/M2/D2 gives65(V1)/66(V2) after the two missing SetPipeline calls, but this product is not a proven coherent source branch. Native conditions correlate P/M/Q/D. The actual early retry branch hasQ1 and already gives65 for NVX V2; duplicate fallback route is separately enumerated.",
+  "raw_nodes_depth": {
+    "status": "NOT_YET_PROVEN_FOR_ACTUAL_PROJECTED_SOURCE_FRAME",
+    "policy": "Strict whole raw65536/nodes4096/depth20/strings256 remain enforced; no mean bytes/row or documentary63934 witness establishes fit. No SOURCE frame is emitted in this task.",
+    "reason": "Original outputs, pointers, pNext branch and exact masks/projection occupancy are not yet produced by a SOURCE projector; constructor semantic blocker also prevents declaring a healthy model-positive closure."
+  },
+  "unsupported_first_candidate": "Singleton/preexisting origins, GPL/descriptor_heap/cache/async/missing births/predication/noemit/internal copy are unknown and never skipped for a second Draw/factory. Overflow yields NO_PAYLOAD at actual source boundary. Missing selected Execute never fabricates freeze; NOT_READY while still observing unless a genuine fault closes it.",
+  "actions": {
+    "model_calls": 0,
+    "test_harness_capture_compile_patch_build_tool_acquisition": 0,
+    "repository_changes": false,
+    "vendor_Wine_GPU_game": false
+  },
+  "remaining_before_final": [
+    "Independent and parent review of this source-only failed-precode-closure conclusion.",
+    "Separate additive contract/plan before any wrapper implementation; no existing caps or inputs changed."
+  ],
+  "native_source_branch_constraints": {
+    "early_compile": "state.c6146..6223 starts create_libraryfalse. Owned original triangle topology/no tessellation, ordinary depth-disabled/null-viewmask/sample1 conditions are compatible with can_compile_pipeline_early; no source execution is asserted. Unknown-DSV/depth-test, undefined topology, tessellation patch dependence or dynamic multiview alter this branch and are not retagged as the unchanged owned profile.",
+    "retry_correlation": "state.c7030 first native create returns before7067 late compilation/module creation and7080 second create. The successful early branch later uses one get_pipeline (Q1). get_or_create(Q2) requires actual firstget0 and may itself be a cache hit with no birth. P/Q/M/D cannot be maximized independently and called a reachable owned trace.",
+    "modules": "state.c5000..5031 creates only actual two non-identifier VS/FS modules for this candidate. Each helper has one vkCreateShaderModule at2721, no hidden retry. A failed module ends that stage/PSO creation path. Late stages3385..3442 or key fallback6975..6991 may create missing/replacement modules; every such original must be retained.",
+    "nonnull_retirements": "state.c6558 and6563 may both call destroy_shader_modules. That helper2780..2783 writes each module NULL after calling original. For two initial nonNULL modules and both sweeps: first two selected nonNULL destroys, second two NULL originals outside membership BEFORE tick. No source invocation is suppressed.",
+    "pipeline_births": "A native creation attempt does not establish birth unless actual VkResult0 and a defined nonNULL output; failed attempts reserve generation but no identity slot. Every successful additional module/pipeline consumes an additional non-evicted identity slot.",
+    "native_bound_output": "Rendering44, flags/pNext and actual module/name/layout/state pointer facts must be genuinely projected. No hardware feature is disabled and no mask/format/cache state is forced to reach a candidate.",
+    "return_interface": "utils.c1171..1194 has exact IID match fast path returning iface without QI/Release. Owned6958 uses matching base IIDs/nonNULL slots for these creators. Mismatched IID or NULL slot takes original QueryInterface/Release branches, which cannot be silently dropped; these are unsupported origin/output variants."
+  },
+  "failure_branches": [
+    {
+      "branch": "first factory singleton/preexisting/NEW init or feature failure",
+      "accounting": "DeviceCreate ENTRY retained first; zero to two actual VkDeviceCreate attempts depending where init failed. Only actual successes create births. No later factory may replace it.",
+      "availability": "No invented selected Execute/windowclose. Missing origins remain unknown; core NOT_READY while observing, or NO_PAYLOAD only on a genuine selected fault/capacity boundary."
+    },
+    {
+      "branch": "VkCreateDevice firstfail without NVX retry, or secondfail",
+      "accounting": "One or two originals and their actual VkResults. Failure outputs unread/absent. No native device birth unless actual success0.",
+      "availability": "Owned setup fails before first writer; do not manufacture the successful remainder of52-base table."
+    },
+    {
+      "branch": "RootParse/RootLayout/Resource/Heap/Allocator/Command/PSO creation failure",
+      "accounting": "Only actual prefix entered/returned and actual source cleanup callbacks count. A failed creator has no birth. Failed constructor Reset returns before reset_api_state, so its nested SetPipeline does NOT exist on that failure branch; baseCommand explicitly calls Release then returns.",
+      "availability": "No success-shaped graph/hydration. Additional cleanup releases may make diagnostic source history but cannot supply missing births or fake Execute."
+    },
+    {
+      "branch": "module stage1/stage2 fails",
+      "accounting": "Helper2721 called once for that failing stage; later stages not entered by successful-loop assumption. Actual nonNULL prior modules are destroyed by failure cleanup6530, NULL destroys remain outside membership.",
+      "availability": "PSO failure and owned intrinsic HRESULT handling prevent promising a firstcase Draw/Execute. No retry invented."
+    },
+    {
+      "branch": "vkCreateGraphicsPipelines compile-required then latecompile failure or second failure",
+      "accounting": "First native attempt plus only actual late ModuleCreate calls and any actual second attempt. Failed outputs unread, no fake zero pipeline birth. Temporary created modules are destroyed according to duplicate mask at7110..7114.",
+      "availability": "Any projected semantic unsupportedness remains unknown. Counts after capacity boundary are never forged; original source flow/cleanup continues."
+    },
+    {
+      "branch": "first Draw predication/noemit/beginRenderPass failure/cache/GPL/descriptor_heap/async",
+      "accounting": "Retain first actual Draw regardless output; only actual Lookup/Bind/WithCount/Emit occurrences are recorded. No convenient later Draw or fabricated direct emitter.",
+      "availability": "If the actual selected Execute later returns, raw may be a valid READY diagnostic with null emission and relation unknown. If no selected Execute, NOT_READY; unsafe fixed facts/cap overflow cause terminal NO_PAYLOAD."
+    },
+    {
+      "branch": "normal64-row branch plus genuine ScopeGap or extra selected original",
+      "accounting": "ScopeGap requires one additional record and one mark (not seen/return). An extra original requires one record plus ENTRY and actual RETURN marks. At record64/mark128 boundary there is no spare capacity.",
+      "availability": "No eviction or healthy-prefix truncation. Attempt65/129 terminates capture; no untracked rejected-token once coverage is promised."
+    }
+  ],
+  "pending_accounting": {
+    "regular_source_selected_stack": [
+      "DeviceCreate > VkDeviceCreate:2",
+      "CommandCreate > constructorReset > actual SetPipeline(NULL):3",
+      "RootCreate > genericRootParse:2; RootCreate > GRAPHICS layout:2",
+      "PSOCreate > ModuleCreate or nativePipelineCreate:2 (native retry leaf returns before late module creation)",
+      "Draw > get_pipeline:2; Draw > get_or_create > ModuleCreate/PipelineCreate/Destroy:3",
+      "Draw > nativeBind/WithCount/Emit:2"
+    ],
+    "conditional_peak": 3,
+    "shared_limit": 32,
+    "qualification": "This is source-family selected nesting for the enumerated synchronous paths, not a bound on vendor C stack frames or arbitrary reentrant original callbacks. Any actual recognized reentry consumes the same32 pending slots; attempt33 terminates unknown, no hidden extra token registry."
+  },
+  "identity_accounting": {
+    "normal_successful_births": {
+      "device": 1,
+      "vk_device": 1,
+      "resource": 6,
+      "heap": 4,
+      "allocator": 1,
+      "queue": 1,
+      "command": 1,
+      "root": 1,
+      "pso": 1,
+      "module": 2,
+      "pipeline_layout": 1,
+      "pipeline": 1
+    },
+    "normal_total": 21,
+    "capacity_exactly_full": true,
+    "Vk_retry": "Failed first native device attempt reserves generation but no identity; final genuine vk_device can have generation2. Nothing is relabeled to1.",
+    "retirements": "Retired records remain in the same identity ledger. ModuleDestroy/Release do not free a slot for a new birth. A second successful pipeline alone needs22, recreated two modules add two more."
+  },
+  "local_owned_storage": {
+    "per_event_exact_POD_layout_bytes": [
+      {
+        "event": "DeviceCreate",
+        "Before_owned_bytes": 32,
+        "After_owned_bytes": 104
+      },
+      {
+        "event": "VkDeviceCreate",
+        "Before_owned_bytes": 40,
+        "After_owned_bytes": 104
+      },
+      {
+        "event": "ResourceCreate",
+        "Before_owned_bytes": 240,
+        "After_owned_bytes": 104
+      },
+      {
+        "event": "HeapCreate",
+        "Before_owned_bytes": 128,
+        "After_owned_bytes": 104
+      },
+      {
+        "event": "AllocatorCreate",
+        "Before_owned_bytes": 80,
+        "After_owned_bytes": 104
+      },
+      {
+        "event": "QueueCreate",
+        "Before_owned_bytes": 80,
+        "After_owned_bytes": 104
+      },
+      {
+        "event": "CommandCreate",
+        "Before_owned_bytes": 176,
+        "After_owned_bytes": 104
+      },
+      {
+        "event": "RootCreate",
+        "Before_owned_bytes": 152,
+        "After_owned_bytes": 104
+      },
+      {
+        "event": "RootParse",
+        "Before_owned_bytes": 104,
+        "After_owned_bytes": 704
+      },
+      {
+        "event": "PSOCreate",
+        "Before_owned_bytes": 312,
+        "After_owned_bytes": 104
+      },
+      {
+        "event": "ModuleCreate",
+        "Before_owned_bytes": 184,
+        "After_owned_bytes": 104
+      },
+      {
+        "event": "PipelineLayoutCreate",
+        "Before_owned_bytes": 304,
+        "After_owned_bytes": 104
+      },
+      {
+        "event": "PipelineCreate",
+        "Before_owned_bytes": 1448,
+        "After_owned_bytes": 104
+      },
+      {
+        "event": "Increment",
+        "Before_owned_bytes": 72,
+        "After_owned_bytes": 96
+      },
+      {
+        "event": "CPUStart",
+        "Before_owned_bytes": 72,
+        "After_owned_bytes": 104
+      },
+      {
+        "event": "GPUStart",
+        "Before_owned_bytes": 72,
+        "After_owned_bytes": 104
+      },
+      {
+        "event": "CreateSRV",
+        "Before_owned_bytes": 168,
+        "After_owned_bytes": 80
+      },
+      {
+        "event": "CopySimple",
+        "Before_owned_bytes": 96,
+        "After_owned_bytes": 80
+      },
+      {
+        "event": "CopyRanges",
+        "Before_owned_bytes": 264,
+        "After_owned_bytes": 80
+      },
+      {
+        "event": "Reset",
+        "Before_owned_bytes": 144,
+        "After_owned_bytes": 96
+      },
+      {
+        "event": "Close",
+        "Before_owned_bytes": 64,
+        "After_owned_bytes": 96
+      },
+      {
+        "event": "ClearState",
+        "Before_owned_bytes": 104,
+        "After_owned_bytes": 80
+      },
+      {
+        "event": "SetPipeline",
+        "Before_owned_bytes": 104,
+        "After_owned_bytes": 80
+      },
+      {
+        "event": "SetRoot",
+        "Before_owned_bytes": 104,
+        "After_owned_bytes": 80
+      },
+      {
+        "event": "SetHeaps",
+        "Before_owned_bytes": 192,
+        "After_owned_bytes": 80
+      },
+      {
+        "event": "SetTable",
+        "Before_owned_bytes": 80,
+        "After_owned_bytes": 80
+      },
+      {
+        "event": "Viewports",
+        "Before_owned_bytes": 152,
+        "After_owned_bytes": 80
+      },
+      {
+        "event": "Scissors",
+        "Before_owned_bytes": 144,
+        "After_owned_bytes": 80
+      },
+      {
+        "event": "RTV",
+        "Before_owned_bytes": 136,
+        "After_owned_bytes": 80
+      },
+      {
+        "event": "Draw",
+        "Before_owned_bytes": 80,
+        "After_owned_bytes": 80
+      },
+      {
+        "event": "BindPipeline",
+        "Before_owned_bytes": 80,
+        "After_owned_bytes": 80
+      },
+      {
+        "event": "EmitDraw",
+        "Before_owned_bytes": 48,
+        "After_owned_bytes": 80
+      },
+      {
+        "event": "Execute",
+        "Before_owned_bytes": 152,
+        "After_owned_bytes": 80
+      },
+      {
+        "event": "Release",
+        "Before_owned_bytes": 64,
+        "After_owned_bytes": 96
+      },
+      {
+        "event": "AllocatorReset",
+        "Before_owned_bytes": 64,
+        "After_owned_bytes": 96
+      },
+      {
+        "event": "PipelineLookup",
+        "Before_owned_bytes": 56,
+        "After_owned_bytes": 104
+      },
+      {
+        "event": "CreateSampler",
+        "Before_owned_bytes": 168,
+        "After_owned_bytes": 80
+      },
+      {
+        "event": "CreateRTV",
+        "Before_owned_bytes": 120,
+        "After_owned_bytes": 80
+      },
+      {
+        "event": "SetConstants",
+        "Before_owned_bytes": 136,
+        "After_owned_bytes": 80
+      },
+      {
+        "event": "Topology",
+        "Before_owned_bytes": 72,
+        "After_owned_bytes": 80
+      },
+      {
+        "event": "ModuleDestroy",
+        "Before_owned_bytes": 112,
+        "After_owned_bytes": 80
+      },
+      {
+        "event": "PipelineDestroy",
+        "Before_owned_bytes": 112,
+        "After_owned_bytes": 80
+      },
+      {
+        "event": "PipelineLayoutDestroy",
+        "Before_owned_bytes": 112,
+        "After_owned_bytes": 80
+      },
+      {
+        "event": "ScopeGap",
+        "Before_owned_bytes": 32,
+        "After_owned_bytes": 80
+      },
+      {
+        "event": "VkViewportCount",
+        "Before_owned_bytes": 120,
+        "After_owned_bytes": 80
+      },
+      {
+        "event": "VkScissorCount",
+        "Before_owned_bytes": 112,
+        "After_owned_bytes": 80
+      }
+    ],
+    "maximum_Before": 1448,
+    "maximum_After": 704,
+    "SourceEntryInput": 56,
+    "callback_token": 48,
+    "admission": 24,
+    "RootParse_bridge_scratch": 24,
+    "digest_scratch": 256,
+    "contract_conditional_32pending_objects_bytes": 4032,
+    "formula": "32*(48+24)+max(1448,704,56)+24+256 =4032. Conditional SOURCE owned objects only. SourceEntry/Before/After share one helper scratch alternative, helpers end before delegate, no retained borrowed pointer. A separate SourceEntry56 or a full Before left live across originals MUST be accounted separately, not hidden.",
+    "enumerated_synchronous_peak_object_formula": "3*(48+24)+max(1448,704,56)+24+256 =1944 under the same scratch/lifetime choice.",
+    "not_stack_measurement": "Compiler frames, vendor source locals/arrays/root parse original description/shader compiler stack and code buffers are additional. No header/code/compile or measured whole stack/CPU RAM claim is made.",
+    "code_read_cap": "Per selected Code digest source projection max1MiB read, zero raw code payload in frame. Unknown/oversize original code uses completefalse/hashnull under exact rules, not current object/shader identity; source pointer is never sink-dereferenced."
+  },
+  "capacity_boundary_policy": {
+    "exact_caps_accepted": "64records,128marks,32pending,21identities accepted if all other facts consistent. First attempt exceeding any cap closes terminal NO_PAYLOAD at an actual source boundary, never at a synthetic seal tick.",
+    "counterfactual_tables": "66/132,69/138 etc are full-source schedule requirements used to prove overflow, not emitted records beyond caps. After the actual boundary, only registered tokens may drain once; frozen counters/pending snapshot do not advance or renumber.",
+    "serializer": "Full raw65536/nodes4096/depth20/strings256 applies to entire exact source wire. A count-fitting branch does not establish raw-byte fit; overflow is complete refusal, never truncated parseable success.",
+    "copy_cut": "Copy source at own ENTRY; visible slot at selected ExecuteENTRY; freeze after that ExecuteRETURN. No read or hydration at Seal."
+  },
+  "source_pins": [
+    {
+      "path": "work/translator-private-source-prep-20261027-1/upstream/libs/vkd3d/device.c",
+      "bytes": 497216,
+      "sha256": "54921e455b3f123476a05bf9c1d2693bb708ef198a33619cb2f5812e7a47d1cd"
+    },
+    {
+      "path": "work/translator-private-source-prep-20261027-1/upstream/libs/vkd3d/command.c",
+      "bytes": 1163073,
+      "sha256": "45829650b34e6cfa5b2ecb4452f429d6489d70951ee6287d358ea5888a7417cb"
+    },
+    {
+      "path": "work/translator-private-source-prep-20261027-1/upstream/libs/vkd3d/state.c",
+      "bytes": 373876,
+      "sha256": "f3b17fc716c6adc013dc49ad25f01f26c18f87bfea74c426dc47dcbdd52b62a5"
+    },
+    {
+      "path": "work/translator-private-source-prep-20261027-1/upstream/libs/vkd3d/vkd3d_private.h",
+      "bytes": 260992,
+      "sha256": "8337d266101cf73498183ecaab397b65dba6242f66a81bee48687a49ee03c807"
+    },
+    {
+      "path": "work/translator-private-source-prep-20261027-1/upstream/libs/vkd3d/utils.c",
+      "bytes": 76540,
+      "sha256": "50b5e178ae800c5b3560dc5f4a45ae72ef3def6eb678a86b841cef39cedb40fd"
+    },
+    {
+      "path": "D4VR/native/tests/private_translator_runtime_owned.cpp",
+      "bytes": 58239,
+      "sha256": "695836203c4821e7d429460ef5b672359d6fb10b77f0132a3a77e323aad7b6f2"
+    },
+    {
+      "path": "D4VR/docs/schemas/owned-source-writer-v1.json",
+      "bytes": 90039,
+      "sha256": "693021b27fbb12ed298b486ee38e3bdd3a5429c7478d47a3640158aa22011143"
+    },
+    {
+      "path": "D4VR/docs/schemas/owned-source-writer-c-abi-v1/contract-final-proposed.json",
+      "bytes": 48606,
+      "sha256": "989224c8388364d5c1c26b08549ca1bfd48cdbc87e61be170472c97e3961f599"
+    },
+    {
+      "path": "D4VR/docs/schemas/owned-source-writer-c-abi-v1/docs-proposals/pod-layouts-final-proposed.json",
+      "bytes": 293648,
+      "sha256": "6efc9f61f9cb66e57abc7c67d10909cb39b4cbe58c5aaa5ce35bf9c3dfbe608c"
+    },
+    {
+      "path": "D4VR/docs/schemas/owned-source-writer-c-abi-v1/docs-proposals/source-callbacks-final-proposed.json",
+      "bytes": 50536,
+      "sha256": "837f20a99202ee73a8cbdaefdabe469ff06069dc17892cc47f387bb60a13582d"
+    },
+    {
+      "path": "D4VR/native/owned_source_writer_source/owned_source_writer_source_v1.c",
+      "bytes": 52825,
+      "sha256": "e2f464bb2a6159ce88eac1c71bf4442c999856f4876a19c3f912dc07e8ea86b7"
+    },
+    {
+      "path": "D4VR/native/owned_source_writer_source/owned_source_writer_source_v1.h",
+      "bytes": 282735,
+      "sha256": "564e8955d9b97211e81b10defafc6e1a49b07291f57090e4e821fab454588583"
+    }
+  ],
+  "precode_closure_result": {
+    "closed": false,
+    "model660_positive_for_complete_original_owned_reset_path": false,
+    "diagnostic_payload_possible": true,
+    "why_diagnostic_is_not_fault_automatic": "ObjectArg.generation=NULL and nullable SOURCE bookkeeping are grammatical when the original receiver exists under a genuinely pending creator but no successful public birth exists yet. The frozen C before_commit can retain these actual arguments. The pure model then returns semantic unknown for identity; no NO_PAYLOAD is automatically caused solely by this constructor SetPipeline gap.",
+    "strict_faults_separate": "Unsafe required original operand, stale pair, projection ABI/mask fault or hard-cap overflow may independently give NO_PAYLOAD. No selected Execute means no invented freeze/return, normally NOT_READY.",
+    "needed_next": "A new separately reviewed additive contract/plan must address the actual nested SetPipeline(NULL) command-constructor ownership and cumulative per-branch caps. It must retain both originals and their real parents/NULL arguments, not edit old model660/coree2/old fixtures or erase/reset clocks. No SOURCE wrapper CPU implementation follows from this document.",
+    "remaining_raw_gate": "Raw-byte/node fit for an actual complete produced source projection remains unproven; this budget does not require or claim universal fit and cannot certify a real source frame."
+  },
+  "independent_literal_correction": "Stage review corrected only the first identity-overflow boundary in late-only duplicate branch: fourth Module, not third. Totals23 and call/mark counts unchanged. In early+fallback branch an existing pipeline already fills21, so the third Module needs22."
+}

@@ -1,0 +1,4481 @@
+{
+ "schema_version": 1,
+ "purpose": "Exact_SOURCE_insertion_site_precode_NOT_IMPLEMENTATION_READY",
+ "status": "CANDIDATE_TABLE_WITH_EXPLICIT_CONTRACTUAL_GATES_NO_CODE_ADMITTED",
+ "authority": {
+  "parent_admission": {
+   "path": "work/owned-C-sink-to-real-source-next-20261028-1/parent-precode-admission.json",
+   "bytes": 2675,
+   "sha256": "ca15406fcde51c27ba66e60a3a6fb859a35c3c53dd340c0300fe410a24477264"
+  },
+  "normative_addendumV3": {
+   "path": "work/owned-C-sink-to-real-source-next-20261028-1/dependency-adoption-addendum-v3.json",
+   "bytes": 7194,
+   "sha256": "ffe8adc5564de7312f6b29e3472bcca0ba236e9e17eedf9632ff8b4f83f6eadb"
+  },
+  "core": {
+   "path": "D4VR/native/owned_source_writer_source/owned_source_writer_source_v1.c",
+   "bytes": 52825,
+   "sha256": "e2f464bb2a6159ce88eac1c71bf4442c999856f4876a19c3f912dc07e8ea86b7"
+  },
+  "header": {
+   "path": "D4VR/native/owned_source_writer_source/owned_source_writer_source_v1.h",
+   "bytes": 282735,
+   "sha256": "564e8955d9b97211e81b10defafc6e1a49b07291f57090e4e821fab454588583"
+  },
+  "field_annex": {
+   "path": "D4VR/docs/schemas/owned-source-writer-c-abi-v1/docs-proposals/source-callback-fields-final-proposed.json",
+   "bytes": 256790,
+   "sha256": "3a76ca68fee98ab892272ecc3b90e1cb28675e9349b3df9fe65fc18ed517443d"
+  },
+  "existing_signature_catalogue54": {
+   "path": "work/owned-source-writer-C-ABI-source-review-20261028-1/candidate3-source-signature-comparison.json",
+   "bytes": 22180,
+   "sha256": "8e4e2d409077e8c4e8e8fc9377b00990166a5e30a3d178c33b36e1116f4b4797"
+  }
+ },
+ "source_base": "Parentselected FUTUREcopy of existing derived tree work/private-translator-derived-source-20261027-1/source; pristineisreferenceanchors only. Parent buildrecipe owns exacttreeproof/link targetproposal. No copy/edit/apply now.",
+ "source_roots": {
+  "pristine": "work/translator-private-source-prep-20261027-1/upstream",
+  "derived": "work/private-translator-derived-source-20261027-1/source"
+ },
+ "scope": "46frozenfamilies and every enumeratedselected dispatchvariant/nativecallsite; unsupported related variants listed separately. Neither54referenceprototypes nor mock61 prove completeactualsourcefit/ABI.",
+ "shared_projection_rules": {
+  "expression_notation": "Documentary C expressions only, not executablehelper declarations. address(x)=(uint64_t)(uintptr_t)(x); COM/VKDEV/VKPIPE/VKLAYOUT/MODULE mean ObjectArg{kind,raw} withgenerationABSENT\u2014the frozen sink derivesgeneration. bits(float) means memcpyexactIEEE32bits, never numericconversion. $ bindings are actual original operands perrow.",
+  "admission": "SOURCE membership scalars/actualreceiver first; d4vr_osw_enter before borrowedreads. Only OK+SELECTED+may_project_before1 permits projection. Entryoutputflag0 is never a readpermission. Freeze Before then releaseallmetadata locks before originaldelegate.",
+  "return": "Actual typed originalreturn captured first. Freshreturn_admit must beOK+SELECTED+may_snapshot_defined_output1; alsoAPI-specific storage-definedconditions mandatory. DRAIN_ONLY=>zerooutput/objectread then drain_return same token once. Originalfailure/unknown fields are notNULL facts. Release/Destroy need onlydetachedtoken/scalarorvoid.",
+  "masks": "Exact compiledheader masks/abi_size/abi_version; present subsetobserved, requiredknownzero uses1/1. True nullableNULL1/0, unread0/0 cannot be coercedNULL: required unreadfixedprojection terminatesNO_PAYLOAD. Allreserved/tail/inactiveunionbyteszero; ObjectArggenerationinput absent.",
+  "arrays": "Preserve exact originalcount/pointer. Capbeforeelementread; copied_count is existingvalues.length, never a newCmember. Spancomplete onlywherefrozenstructhascomplete; otherwise exactcount==length and masksestablishcompletion. NULL rangesizes pointerkeptobservedNULL withsizesabsent; semanticsunit1 ismodelnormalization, notsourceinvented[1].",
+  "caps": {
+   "Codeordinarybytes": 1048576,
+   "RootParameters": 3,
+   "RootRanges_per_table": 1,
+   "CopyRanges_per_side": 3,
+   "SetHeaps": 2,
+   "Viewports": 1,
+   "Scissors": 1,
+   "RTVHandles": 1,
+   "ExecuteCommands": 1,
+   "ConstantsU32": 2,
+   "RTVFormats": 1,
+   "PipelineSetLayouts": 8,
+   "PipelinePushRanges": 1,
+   "PipelineStages": 2,
+   "PipelineNextNodes": 2,
+   "PipelineRenderingColorFormats": 1,
+   "StringUTF8": 256
+  },
+  "Code": "While typed source borrowedbuffer actuallyalive, captureptr/size and boundedSHA256 ordinarybytes<=1MiB tofixedCode. Do not read arbitraryptr because nonNULL; ifsafe-readprecondition unavailable markunsafe. No codepayload inwire. Digestutility binding/256Bstate stillmustbeidentified in implementationprecode, no hiddenallocation. G5OPEN: noexistingSOURCEdigestbinding isadmitted. ExistingfixtureSHA256staticfunctions onlyidentifyapossiblealgorithmreference; codecopy/newutility/stacklayout needsseparateproposal and no checksumDXBC/hashvendor substitution.",
+  "SRV": "Read Format/ViewDimension/Shader4ComponentMapping first; onlyactualTexture2D union admitted, preserveMIP/Plane/rawLODbits. NULLdesc observedNULL distinctly and forwarded; unsupportedunion=>NO_PAYLOAD, neverreinterpret.",
+  "RootDesc": "Read originaldesc.version aftersuccess0; branchonlyv_1_0/v_1_1/v_1_2 realtypedunion. parameter_count/parameters/static_sampler_count/flags fromthat arm. Copymax3typedparameters andmax1range/table withactualparameter_type/shader_visibility. Root1.0rangeflags genuinelyN/A\u2014notinvented0; laterversions flagscaptured. Constants useconstants.{shader_register,register_space,value_count}; rootdescriptor usesdescriptor.{shader_register,register_space,flags whenapplicable}. Unknownversion/arm/count=>NO_PAYLOAD beforeunsupportedread. ActualVKD3Dstructfieldnames are parameter_count/parameters/static_sampler_count/flags; parameters[].parameter_type/shader_visibility; descriptor_table.descriptor_range_count/descriptor_ranges; range.descriptor_count/base_shader_register/register_space/descriptor_table_offset/flagswhenexists.",
+  "pipeline_pNext": "OriginalpNext pointerknownsource-ownedlivechain only. RecognizeRendering/Flags2typednodes, originalorder, max2 andcycle-free, exactsTypes frozen. Rendering fieldsviewMask,colorcount/pointer/formats,depth/stencil actual. Flags2U64actualflags, no truncationtoflagsU32. Unknownprefix/feedback/librarynode orunsafeheader refuses beforefollowing. No genericarbitrarypointerwalker.",
+  "pipeline_stages": "OriginalstageCount/pStages<=2, eachsType/pNext/flags/stage/module/pName/specializationInfo. Copyownedentrypointstring<=256 whilevalid; NULLspecialization andstagenext unsupported unlessexactfrozencatalogued. No fakeVS/FSlabels fromshaderhash.",
+  "native_state": "Ninepipelinefixedstatepointeraddresses only; do notcopy/dereftheirpointees or certifyfullpipeline. OriginalVKraster arrays are exactrawvalues, includingclampedscissors/dummybranch, notderivedfromCOMvalues.",
+  "OFF_and_fault": "CompileOFF no observerfunction/borrowedprojection evaluated; exactoriginalfunctionbody/dispatch variantsremain. ONdisabled/fault/quota stillcallsall originals/cleanup once. Metadata return never usedas originalstatus. No observermutex spans original; invalidapplicationpointers are not universally safened."
+ },
+ "families": [
+  {
+   "api": "DeviceCreate",
+   "tag": 1,
+   "original_return_kind": "HRESULT_internal",
+   "site_rows": [
+    0
+   ],
+   "argument_source_expressions": {
+    "output_pointer": "address(device)"
+   },
+   "argument_mask_bits": {
+    "output_pointer": 0
+   },
+   "borrow_and_copied_count_policy": {
+    "text_rule": "shared_text_16"
+   },
+   "defined_RETURN_rule": {
+    "text_rule": "shared_text_17"
+   },
+   "CABI_before": "uint32_t d4vr_osw_devicecreate_before_v1(osw_token_v1 *token, const osw_before_devicecreate_v1 *before);",
+   "CABI_after": "uint32_t d4vr_osw_devicecreate_after_v1(osw_token_v1 *token, const osw_after_devicecreate_v1 *after);",
+   "local_storage_bytes": {
+    "BeforePOD": 32,
+    "AfterPOD": 104,
+    "Token_across_original": 48,
+    "Admission_across_original": 24,
+    "SourceEntry_helper_only": 56,
+    "digest_state_helper_only_cap": 0
+   },
+   "local_storage_lifetime": {
+    "text_rule": "shared_text_20"
+   },
+   "SOURCE_entry_expressions": {
+    "raw_receiver": "unobserved+absent: device notcreated",
+    "context": "actual firstinternalfactory beforebranch; no owner/currentobject lookup"
+   },
+   "SOURCE_entry_NA_rule": {
+    "text_rule": "shared_text_21"
+   },
+   "allowed_SOURCE_after_expression": "actualdefined*device internal output; interface=(uintptr_t)&(*device)->ID3D12Device_iface onlysuccess andnotdestroyed; genuineNEW/singletonactualbranch; matchesoriginalnote.",
+   "ENTRY_cut": {
+    "text_rule": "shared_text_23"
+   },
+   "OFF_forwarding": {
+    "text_rule": "shared_text_24"
+   }
+  },
+  {
+   "api": "VkDeviceCreate",
+   "tag": 2,
+   "original_return_kind": "VkResult",
+   "site_rows": [
+    55,
+    56
+   ],
+   "argument_source_expressions": {
+    "physical_device_raw": "physical_device",
+    "output_pointer": "address(&vk_device)"
+   },
+   "argument_mask_bits": {
+    "physical_device_raw": 0,
+    "output_pointer": 1
+   },
+   "borrow_and_copied_count_policy": {
+    "text_rule": "shared_text_16"
+   },
+   "defined_RETURN_rule": {
+    "text_rule": "shared_text_17"
+   },
+   "CABI_before": "uint32_t d4vr_osw_vkdevicecreate_before_v1(osw_token_v1 *token, const osw_before_vkdevicecreate_v1 *before);",
+   "CABI_after": "uint32_t d4vr_osw_vkdevicecreate_after_v1(osw_token_v1 *token, const osw_after_vkdevicecreate_v1 *after);",
+   "local_storage_bytes": {
+    "BeforePOD": 40,
+    "AfterPOD": 104,
+    "Token_across_original": 48,
+    "Admission_across_original": 24,
+    "SourceEntry_helper_only": 56,
+    "digest_state_helper_only_cap": 0
+   },
+   "local_storage_lifetime": {
+    "text_rule": "shared_text_20"
+   },
+   "SOURCE_entry_expressions": {
+    "raw_receiver": "(uintptr_t)physical_device",
+    "context": "genuinependingDeviceCreate coreancestor; nativeVkDevice not yetdefined"
+   },
+   "SOURCE_entry_NA_rule": {
+    "text_rule": "shared_text_21"
+   },
+   "allowed_SOURCE_after_expression": {
+    "text_rule": "shared_text_27"
+   },
+   "ENTRY_cut": {
+    "text_rule": "shared_text_23"
+   },
+   "OFF_forwarding": {
+    "text_rule": "shared_text_24"
+   }
+  },
+  {
+   "api": "ResourceCreate",
+   "tag": 3,
+   "original_return_kind": "HRESULT",
+   "site_rows": [
+    1
+   ],
+   "argument_source_expressions": {
+    "device": "COM(iface)",
+    "heap_properties_pointer": "address(heap_properties)",
+    "heap_properties": "heap_properties->{Type,CPUPageProperty,MemoryPoolPreference,CreationNodeMask,VisibleNodeMask}",
+    "heap_flags": "heap_flags",
+    "description_pointer": "address(desc)",
+    "description": "desc->{Dimension,Alignment,Width,Height,DepthOrArraySize,MipLevels,Format,SampleDesc.Count,SampleDesc.Quality,Layout,Flags}",
+    "initial_state": "initial_state",
+    "clear_value_pointer": "address(optimized_clear_value)",
+    "requested_iid": "16 typed bytes of *iid",
+    "output_pointer": "address(resource)"
+   },
+   "argument_mask_bits": {
+    "device": 0,
+    "heap_properties_pointer": 1,
+    "heap_properties": 2,
+    "heap_flags": 3,
+    "description_pointer": 4,
+    "description": 5,
+    "initial_state": 6,
+    "clear_value_pointer": 7,
+    "requested_iid": 8,
+    "output_pointer": 9
+   },
+   "borrow_and_copied_count_policy": {
+    "text_rule": "shared_text_16"
+   },
+   "defined_RETURN_rule": {
+    "text_rule": "shared_text_17"
+   },
+   "CABI_before": "uint32_t d4vr_osw_resourcecreate_before_v1(osw_token_v1 *token, const osw_before_resourcecreate_v1 *before);",
+   "CABI_after": "uint32_t d4vr_osw_resourcecreate_after_v1(osw_token_v1 *token, const osw_after_resourcecreate_v1 *after);",
+   "local_storage_bytes": {
+    "BeforePOD": 240,
+    "AfterPOD": 104,
+    "Token_across_original": 48,
+    "Admission_across_original": 24,
+    "SourceEntry_helper_only": 56,
+    "digest_state_helper_only_cap": 0
+   },
+   "local_storage_lifetime": {
+    "text_rule": "shared_text_20"
+   },
+   "SOURCE_entry_expressions": {
+    "raw_receiver": "(uintptr_t)iface",
+    "context": "actualoriginalCOMdevice receiver"
+   },
+   "SOURCE_entry_NA_rule": {
+    "text_rule": "shared_text_21"
+   },
+   "allowed_SOURCE_after_expression": {
+    "text_rule": "shared_text_27"
+   },
+   "ENTRY_cut": {
+    "text_rule": "shared_text_23"
+   },
+   "OFF_forwarding": {
+    "text_rule": "shared_text_24"
+   }
+  },
+  {
+   "api": "HeapCreate",
+   "tag": 4,
+   "original_return_kind": "HRESULT",
+   "site_rows": [
+    2
+   ],
+   "argument_source_expressions": {
+    "device": "COM(iface)",
+    "description": "desc->{Type,NumDescriptors,Flags,NodeMask}",
+    "output_pointer": "address(descriptor_heap)",
+    "description_pointer": "address(desc)",
+    "requested_iid": "16 typed bytes of *riid"
+   },
+   "argument_mask_bits": {
+    "device": 0,
+    "description": 1,
+    "output_pointer": 2,
+    "description_pointer": 3,
+    "requested_iid": 4
+   },
+   "borrow_and_copied_count_policy": {
+    "text_rule": "shared_text_16"
+   },
+   "defined_RETURN_rule": {
+    "text_rule": "shared_text_17"
+   },
+   "CABI_before": "uint32_t d4vr_osw_heapcreate_before_v1(osw_token_v1 *token, const osw_before_heapcreate_v1 *before);",
+   "CABI_after": "uint32_t d4vr_osw_heapcreate_after_v1(osw_token_v1 *token, const osw_after_heapcreate_v1 *after);",
+   "local_storage_bytes": {
+    "BeforePOD": 128,
+    "AfterPOD": 104,
+    "Token_across_original": 48,
+    "Admission_across_original": 24,
+    "SourceEntry_helper_only": 56,
+    "digest_state_helper_only_cap": 0
+   },
+   "local_storage_lifetime": {
+    "text_rule": "shared_text_20"
+   },
+   "SOURCE_entry_expressions": {
+    "raw_receiver": "(uintptr_t)iface",
+    "context": "actualoriginalCOMdevice receiver"
+   },
+   "SOURCE_entry_NA_rule": {
+    "text_rule": "shared_text_21"
+   },
+   "allowed_SOURCE_after_expression": {
+    "text_rule": "shared_text_27"
+   },
+   "ENTRY_cut": {
+    "text_rule": "shared_text_23"
+   },
+   "OFF_forwarding": {
+    "text_rule": "shared_text_24"
+   }
+  },
+  {
+   "api": "AllocatorCreate",
+   "tag": 5,
+   "original_return_kind": "HRESULT",
+   "site_rows": [
+    3
+   ],
+   "argument_source_expressions": {
+    "device": "COM(iface)",
+    "output_pointer": "address(command_allocator)",
+    "type": "type"
+   },
+   "argument_mask_bits": {
+    "device": 0,
+    "output_pointer": 1,
+    "type": 2
+   },
+   "borrow_and_copied_count_policy": {
+    "text_rule": "shared_text_16"
+   },
+   "defined_RETURN_rule": {
+    "text_rule": "shared_text_17"
+   },
+   "CABI_before": "uint32_t d4vr_osw_allocatorcreate_before_v1(osw_token_v1 *token, const osw_before_allocatorcreate_v1 *before);",
+   "CABI_after": "uint32_t d4vr_osw_allocatorcreate_after_v1(osw_token_v1 *token, const osw_after_allocatorcreate_v1 *after);",
+   "local_storage_bytes": {
+    "BeforePOD": 80,
+    "AfterPOD": 104,
+    "Token_across_original": 48,
+    "Admission_across_original": 24,
+    "SourceEntry_helper_only": 56,
+    "digest_state_helper_only_cap": 0
+   },
+   "local_storage_lifetime": {
+    "text_rule": "shared_text_20"
+   },
+   "SOURCE_entry_expressions": {
+    "raw_receiver": "(uintptr_t)iface",
+    "context": "actualoriginalCOMdevice receiver"
+   },
+   "SOURCE_entry_NA_rule": {
+    "text_rule": "shared_text_21"
+   },
+   "allowed_SOURCE_after_expression": {
+    "text_rule": "shared_text_27"
+   },
+   "ENTRY_cut": {
+    "text_rule": "shared_text_23"
+   },
+   "OFF_forwarding": {
+    "text_rule": "shared_text_24"
+   }
+  },
+  {
+   "api": "QueueCreate",
+   "tag": 6,
+   "original_return_kind": "HRESULT",
+   "site_rows": [
+    4
+   ],
+   "argument_source_expressions": {
+    "device": "COM(iface)",
+    "output_pointer": "address(command_queue)",
+    "type": "desc->Type"
+   },
+   "argument_mask_bits": {
+    "device": 0,
+    "output_pointer": 1,
+    "type": 2
+   },
+   "borrow_and_copied_count_policy": {
+    "text_rule": "shared_text_16"
+   },
+   "defined_RETURN_rule": {
+    "text_rule": "shared_text_17"
+   },
+   "CABI_before": "uint32_t d4vr_osw_queuecreate_before_v1(osw_token_v1 *token, const osw_before_queuecreate_v1 *before);",
+   "CABI_after": "uint32_t d4vr_osw_queuecreate_after_v1(osw_token_v1 *token, const osw_after_queuecreate_v1 *after);",
+   "local_storage_bytes": {
+    "BeforePOD": 80,
+    "AfterPOD": 104,
+    "Token_across_original": 48,
+    "Admission_across_original": 24,
+    "SourceEntry_helper_only": 56,
+    "digest_state_helper_only_cap": 0
+   },
+   "local_storage_lifetime": {
+    "text_rule": "shared_text_20"
+   },
+   "SOURCE_entry_expressions": {
+    "raw_receiver": "(uintptr_t)iface",
+    "context": "actualoriginalCOMdevice receiver"
+   },
+   "SOURCE_entry_NA_rule": {
+    "text_rule": "shared_text_21"
+   },
+   "allowed_SOURCE_after_expression": {
+    "text_rule": "shared_text_27"
+   },
+   "ENTRY_cut": {
+    "text_rule": "shared_text_23"
+   },
+   "OFF_forwarding": {
+    "text_rule": "shared_text_24"
+   }
+  },
+  {
+   "api": "CommandCreate",
+   "tag": 7,
+   "original_return_kind": "HRESULT",
+   "site_rows": [
+    5
+   ],
+   "argument_source_expressions": {
+    "device": "COM(iface)",
+    "allocator": "COM(command_allocator)",
+    "initial_pipeline": "COM(initial_pipeline_state) or observedNULL",
+    "output_pointer": "address(command_list)",
+    "node_mask": "node_mask",
+    "type": "type",
+    "requested_iid": "16 typed bytes of *riid"
+   },
+   "argument_mask_bits": {
+    "device": 0,
+    "allocator": 1,
+    "initial_pipeline": 2,
+    "output_pointer": 3,
+    "node_mask": 4,
+    "type": 5,
+    "requested_iid": 6
+   },
+   "borrow_and_copied_count_policy": {
+    "text_rule": "shared_text_16"
+   },
+   "defined_RETURN_rule": {
+    "text_rule": "shared_text_17"
+   },
+   "CABI_before": "uint32_t d4vr_osw_commandcreate_before_v1(osw_token_v1 *token, const osw_before_commandcreate_v1 *before);",
+   "CABI_after": "uint32_t d4vr_osw_commandcreate_after_v1(osw_token_v1 *token, const osw_after_commandcreate_v1 *after);",
+   "local_storage_bytes": {
+    "BeforePOD": 176,
+    "AfterPOD": 104,
+    "Token_across_original": 48,
+    "Admission_across_original": 24,
+    "SourceEntry_helper_only": 56,
+    "digest_state_helper_only_cap": 0
+   },
+   "local_storage_lifetime": {
+    "text_rule": "shared_text_20"
+   },
+   "SOURCE_entry_expressions": {
+    "raw_receiver": "(uintptr_t)iface",
+    "context": "actualoriginalCOMdevice receiver",
+    "source_site": "OSW_SOURCE_SITE_CREATECOMMANDLIST"
+   },
+   "SOURCE_entry_NA_rule": {
+    "text_rule": "shared_text_21"
+   },
+   "allowed_SOURCE_after_expression": {
+    "text_rule": "shared_text_27"
+   },
+   "ENTRY_cut": {
+    "text_rule": "shared_text_23"
+   },
+   "OFF_forwarding": {
+    "text_rule": "shared_text_24"
+   }
+  },
+  {
+   "api": "RootCreate",
+   "tag": 8,
+   "original_return_kind": "HRESULT",
+   "site_rows": [
+    6
+   ],
+   "argument_source_expressions": {
+    "device": "COM(iface)",
+    "blob": "Code(bytecode,bytecode_length)",
+    "output_pointer": "address(root_signature)",
+    "node_mask": "node_mask"
+   },
+   "argument_mask_bits": {
+    "device": 0,
+    "blob": 1,
+    "output_pointer": 2,
+    "node_mask": 3
+   },
+   "borrow_and_copied_count_policy": {
+    "text_rule": "shared_text_16"
+   },
+   "defined_RETURN_rule": {
+    "text_rule": "shared_text_17"
+   },
+   "CABI_before": "uint32_t d4vr_osw_rootcreate_before_v1(osw_token_v1 *token, const osw_before_rootcreate_v1 *before);",
+   "CABI_after": "uint32_t d4vr_osw_rootcreate_after_v1(osw_token_v1 *token, const osw_after_rootcreate_v1 *after);",
+   "local_storage_bytes": {
+    "BeforePOD": 152,
+    "AfterPOD": 104,
+    "Token_across_original": 48,
+    "Admission_across_original": 24,
+    "SourceEntry_helper_only": 56,
+    "digest_state_helper_only_cap": 256
+   },
+   "local_storage_lifetime": {
+    "text_rule": "shared_text_20"
+   },
+   "SOURCE_entry_expressions": {
+    "raw_receiver": "(uintptr_t)iface",
+    "context": "actualoriginalCOMdevice receiver"
+   },
+   "SOURCE_entry_NA_rule": {
+    "text_rule": "shared_text_21"
+   },
+   "allowed_SOURCE_after_expression": "original local object atsuccessful d3d12_root_signature_create return, capturedasinternalrootassociation; result.output_raw actualcanonicalCOMout, bothmatchnote. Do notcastarbitraryCOMifaceintoobject.",
+   "ENTRY_cut": {
+    "text_rule": "shared_text_23"
+   },
+   "OFF_forwarding": {
+    "text_rule": "shared_text_24"
+   }
+  },
+  {
+   "api": "RootParse",
+   "tag": 9,
+   "original_return_kind": "vkd3d_status",
+   "site_rows": [
+    57
+   ],
+   "argument_source_expressions": {
+    "blob": "Code(dxbc->code,dxbc->size)",
+    "description_output_pointer": "address(&desc)"
+   },
+   "argument_mask_bits": {
+    "blob": 0,
+    "description_output_pointer": 1
+   },
+   "borrow_and_copied_count_policy": {
+    "text_rule": "shared_text_16"
+   },
+   "defined_RETURN_rule": "Originalintstatus captured; success0 plus freshreturnadmit SELECTED+outputflag permits original desc.version/activeunion/arrays BEFORE BOTH*out_desc=desc matchingversiontransfer AND conversion/free. G1 remains open.",
+   "CABI_before": "uint32_t d4vr_osw_rootparse_before_v1(osw_token_v1 *token, const osw_before_rootparse_v1 *before);",
+   "CABI_after": "uint32_t d4vr_osw_rootparse_after_v1(osw_token_v1 *token, const osw_after_rootparse_v1 *after);",
+   "local_storage_bytes": {
+    "BeforePOD": 104,
+    "AfterPOD": 704,
+    "Token_across_original": 48,
+    "Admission_across_original": 24,
+    "SourceEntry_helper_only": 56,
+    "digest_state_helper_only_cap": 256
+   },
+   "local_storage_lifetime": {
+    "text_rule": "shared_text_20"
+   },
+   "SOURCE_entry_expressions": {
+    "raw_receiver": "N/A0 masksabsent",
+    "context": "G1: onlypendingRootCreate; no rootinternalallocatedyet, neverPSOnote"
+   },
+   "SOURCE_entry_NA_rule": {
+    "text_rule": "shared_text_21"
+   },
+   "allowed_SOURCE_after_expression": {
+    "text_rule": "shared_text_27"
+   },
+   "ENTRY_cut": {
+    "text_rule": "shared_text_23"
+   },
+   "OFF_forwarding": {
+    "text_rule": "shared_text_24"
+   }
+  },
+  {
+   "api": "PSOCreate",
+   "tag": 10,
+   "original_return_kind": "HRESULT",
+   "site_rows": [
+    7
+   ],
+   "argument_source_expressions": {
+    "device": "COM(iface)",
+    "root": "COM(desc->pRootSignature)",
+    "vertex_bytecode": "Code(desc->VS.pShaderBytecode,desc->VS.BytecodeLength)",
+    "pixel_bytecode": "Code(desc->PS.pShaderBytecode,desc->PS.BytecodeLength)",
+    "output_pointer": "address(pipeline_state)",
+    "rtv_formats": "count=desc->NumRenderTargets,pointer=&desc->RTVFormats[0],values=desc->RTVFormats[i]",
+    "sample_count": "desc->SampleDesc.Count",
+    "sample_quality": "desc->SampleDesc.Quality"
+   },
+   "argument_mask_bits": {
+    "device": 0,
+    "root": 1,
+    "vertex_bytecode": 2,
+    "pixel_bytecode": 3,
+    "output_pointer": 4,
+    "rtv_formats": 5,
+    "sample_count": 6,
+    "sample_quality": 7
+   },
+   "borrow_and_copied_count_policy": {
+    "text_rule": "shared_text_16"
+   },
+   "defined_RETURN_rule": {
+    "text_rule": "shared_text_17"
+   },
+   "CABI_before": "uint32_t d4vr_osw_psocreate_before_v1(osw_token_v1 *token, const osw_before_psocreate_v1 *before);",
+   "CABI_after": "uint32_t d4vr_osw_psocreate_after_v1(osw_token_v1 *token, const osw_after_psocreate_v1 *after);",
+   "local_storage_bytes": {
+    "BeforePOD": 312,
+    "AfterPOD": 104,
+    "Token_across_original": 48,
+    "Admission_across_original": 24,
+    "SourceEntry_helper_only": 56,
+    "digest_state_helper_only_cap": 256
+   },
+   "local_storage_lifetime": {
+    "text_rule": "shared_text_20"
+   },
+   "SOURCE_entry_expressions": {
+    "raw_receiver": "(uintptr_t)iface",
+    "context": "actualoriginalCOMdevice receiver"
+   },
+   "SOURCE_entry_NA_rule": {
+    "text_rule": "shared_text_21"
+   },
+   "allowed_SOURCE_after_expression": "originalstate.cobject andobject->root_signature associationafterrealrootresolution; onlyactualsuccessandmatchingnote. OriginalCreateGraphicsPipelineState outputCOMiface isseparate.",
+   "ENTRY_cut": {
+    "text_rule": "shared_text_23"
+   },
+   "OFF_forwarding": {
+    "text_rule": "shared_text_24"
+   }
+  },
+  {
+   "api": "ModuleCreate",
+   "tag": 11,
+   "original_return_kind": "VkResult",
+   "site_rows": [
+    58
+   ],
+   "argument_source_expressions": {
+    "device": "VKDEV($DEVICE)",
+    "create_info_pointer": "address($CI)",
+    "s_type": "($CI)->sType",
+    "p_next": "address(($CI)->pNext)",
+    "flags": "($CI)->flags",
+    "code": "Code(($CI)->pCode,($CI)->codeSize)",
+    "allocator_pointer": "address($ALLOC)",
+    "output_pointer": "address($OUT)"
+   },
+   "argument_mask_bits": {
+    "device": 0,
+    "create_info_pointer": 1,
+    "s_type": 2,
+    "p_next": 3,
+    "flags": 4,
+    "code": 5,
+    "allocator_pointer": 6,
+    "output_pointer": 7
+   },
+   "borrow_and_copied_count_policy": {
+    "text_rule": "shared_text_16"
+   },
+   "defined_RETURN_rule": {
+    "text_rule": "shared_text_17"
+   },
+   "CABI_before": "uint32_t d4vr_osw_modulecreate_before_v1(osw_token_v1 *token, const osw_before_modulecreate_v1 *before);",
+   "CABI_after": "uint32_t d4vr_osw_modulecreate_after_v1(osw_token_v1 *token, const osw_after_modulecreate_v1 *after);",
+   "local_storage_bytes": {
+    "BeforePOD": 184,
+    "AfterPOD": 104,
+    "Token_across_original": 48,
+    "Admission_across_original": 24,
+    "SourceEntry_helper_only": 56,
+    "digest_state_helper_only_cap": 256
+   },
+   "local_storage_lifetime": {
+    "text_rule": "shared_text_20"
+   },
+   "SOURCE_entry_expressions": {
+    "raw_receiver": "(uintptr_t)device->vk_device",
+    "context": "helper2721 hastypeddevice/code only. GenuinependingPSOcoreowner_creation_call is enough withoutinventedstate*. ActualparentLookup caninheritcommittedPSO; ifinsideDraw requiredcommand scope stillmustcome fromactualSOURCE andG2remainsconditional, notModulehelperabsencealone."
+   },
+   "SOURCE_entry_NA_rule": {
+    "text_rule": "shared_text_21"
+   },
+   "allowed_SOURCE_after_expression": {
+    "text_rule": "shared_text_27"
+   },
+   "ENTRY_cut": {
+    "text_rule": "shared_text_23"
+   },
+   "OFF_forwarding": {
+    "text_rule": "shared_text_24"
+   }
+  },
+  {
+   "api": "PipelineLayoutCreate",
+   "tag": 12,
+   "original_return_kind": "VkResult",
+   "site_rows": [
+    59
+   ],
+   "argument_source_expressions": {
+    "device": "VKDEV($DEVICE)",
+    "create_info_pointer": "address($CI)",
+    "s_type": "($CI)->sType",
+    "p_next": "address(($CI)->pNext)",
+    "flags": "($CI)->flags",
+    "set_layout_raws": "count=($CI)->setLayoutCount,pointer=($CI)->pSetLayouts,values=($CI)->pSetLayouts[i]",
+    "push_constant_ranges": "count=($CI)->pushConstantRangeCount,pointer=($CI)->pPushConstantRanges,values=($CI)->pPushConstantRanges[i].{stageFlags,offset,size}",
+    "allocator_pointer": "address($ALLOC)",
+    "output_pointer": "address($OUT)"
+   },
+   "argument_mask_bits": {
+    "device": 0,
+    "create_info_pointer": 1,
+    "s_type": 2,
+    "p_next": 3,
+    "flags": 4,
+    "set_layout_raws": 5,
+    "push_constant_ranges": 6,
+    "allocator_pointer": 7,
+    "output_pointer": 8
+   },
+   "borrow_and_copied_count_policy": {
+    "text_rule": "shared_text_16"
+   },
+   "defined_RETURN_rule": {
+    "text_rule": "shared_text_17"
+   },
+   "CABI_before": "uint32_t d4vr_osw_pipelinelayoutcreate_before_v1(osw_token_v1 *token, const osw_before_pipelinelayoutcreate_v1 *before);",
+   "CABI_after": "uint32_t d4vr_osw_pipelinelayoutcreate_after_v1(osw_token_v1 *token, const osw_after_pipelinelayoutcreate_v1 *after);",
+   "local_storage_bytes": {
+    "BeforePOD": 304,
+    "AfterPOD": 104,
+    "Token_across_original": 48,
+    "Admission_across_original": 24,
+    "SourceEntry_helper_only": 56,
+    "digest_state_helper_only_cap": 0
+   },
+   "local_storage_lifetime": {
+    "text_rule": "shared_text_20"
+   },
+   "SOURCE_entry_expressions": {
+    "raw_receiver": "(uintptr_t)device->vk_device",
+    "source_site": "OSW_SOURCE_SITE_ROOT_GRAPHICS_LAYOUT ONLY afteractualcalleroriginestablished; G2currentlyblocked",
+    "context": "corependingRootCreate suppliesrealowner_call but notproofthatthishelperinvocationwasGRAPHICS. No fakeearlierENTRY or firstoutputpointermatch."
+   },
+   "SOURCE_entry_NA_rule": {
+    "text_rule": "shared_text_21"
+   },
+   "allowed_SOURCE_after_expression": {
+    "text_rule": "shared_text_27"
+   },
+   "ENTRY_cut": {
+    "text_rule": "shared_text_23"
+   },
+   "OFF_forwarding": {
+    "text_rule": "shared_text_24"
+   }
+  },
+  {
+   "api": "PipelineCreate",
+   "tag": 13,
+   "original_return_kind": "VkResult",
+   "site_rows": [
+    60,
+    61,
+    62,
+    63,
+    64
+   ],
+   "argument_source_expressions": {
+    "device": "VKDEV($DEVICE)",
+    "cache_raw": "$CACHE",
+    "create_info_count": "$COUNT",
+    "create_info_pointer": "address($CI)",
+    "create_info_complete": "$COUNT==1 and entire selected inline projection copied; nine state pointees NOT dereferenced",
+    "s_type": "($CI)[0].sType",
+    "flags": "($CI)[0].flags",
+    "p_next": "owned_chain(($CI)[0].pNext)",
+    "library_info": "actual known local library_info only; unsupported node=>NO_PAYLOAD, not fabricated monolithic",
+    "layout": "VKLAYOUT(($CI)[0].layout)",
+    "render_pass_raw": "($CI)[0].renderPass",
+    "subpass": "($CI)[0].subpass",
+    "base_pipeline_raw": "($CI)[0].basePipelineHandle",
+    "base_pipeline_index": "($CI)[0].basePipelineIndex",
+    "stages": "count=($CI)[0].stageCount,pointer=($CI)[0].pStages,values=($CI)[0].pStages[i]",
+    "allocator_pointer": "address($ALLOC)",
+    "output_pointer": "address($OUT)",
+    "state_pointers": "($CI)[0].{pVertexInputState,pInputAssemblyState,pTessellationState,pViewportState,pRasterizationState,pMultisampleState,pDepthStencilState,pColorBlendState,pDynamicState} addressesONLY"
+   },
+   "argument_mask_bits": {
+    "device": 0,
+    "cache_raw": 1,
+    "create_info_count": 2,
+    "create_info_pointer": 3,
+    "create_info_complete": 4,
+    "s_type": 5,
+    "flags": 6,
+    "p_next": 7,
+    "library_info": 8,
+    "layout": 9,
+    "render_pass_raw": 10,
+    "subpass": 11,
+    "base_pipeline_raw": 12,
+    "base_pipeline_index": 13,
+    "stages": 14,
+    "allocator_pointer": 15,
+    "output_pointer": 16,
+    "state_pointers": 17
+   },
+   "borrow_and_copied_count_policy": {
+    "text_rule": "shared_text_16"
+   },
+   "defined_RETURN_rule": {
+    "text_rule": "shared_text_17"
+   },
+   "CABI_before": "uint32_t d4vr_osw_pipelinecreate_before_v1(osw_token_v1 *token, const osw_before_pipelinecreate_v1 *before);",
+   "CABI_after": "uint32_t d4vr_osw_pipelinecreate_after_v1(osw_token_v1 *token, const osw_after_pipelinecreate_v1 *after);",
+   "local_storage_bytes": {
+    "BeforePOD": 1448,
+    "AfterPOD": 104,
+    "Token_across_original": 48,
+    "Admission_across_original": 24,
+    "SourceEntry_helper_only": 56,
+    "digest_state_helper_only_cap": 0
+   },
+   "local_storage_lifetime": {
+    "text_rule": "shared_text_20"
+   },
+   "SOURCE_entry_expressions": {
+    "raw_receiver": "(uintptr_t)$DEVICE",
+    "context": "realpendingPSOCreate oractualretainedLookupancestor. UnderpendingPSO command/epoch/psoRefN/A; SourceEntry psointernalnotfabricated. Sitedescriptionbindsactualstatewhenavailable; actualbranchtag notoverriddenbyAPP.",
+    "pipeline_route": "fromactualsourcebranch: descriptor_heap iforiginalbranchusesit; GPL_link forlibrary/linksites; legacy_monolithic onlyactualnonlibrarylegacyvariant; otherotherwise"
+   },
+   "SOURCE_entry_NA_rule": {
+    "text_rule": "shared_text_21"
+   },
+   "allowed_SOURCE_after_expression": {
+    "text_rule": "shared_text_27"
+   },
+   "ENTRY_cut": {
+    "text_rule": "shared_text_23"
+   },
+   "OFF_forwarding": {
+    "text_rule": "shared_text_24"
+   }
+  },
+  {
+   "api": "Increment",
+   "tag": 14,
+   "original_return_kind": "uint32",
+   "site_rows": [
+    8
+   ],
+   "argument_source_expressions": {
+    "device": "COM(iface)",
+    "heap_type": "descriptor_heap_type"
+   },
+   "argument_mask_bits": {
+    "device": 0,
+    "heap_type": 1
+   },
+   "borrow_and_copied_count_policy": {
+    "text_rule": "shared_text_16"
+   },
+   "defined_RETURN_rule": "OriginalUINT by value, no output pointer read; freshreturnadmit for typedAfter and all SourceAfterInput N/A bits0.",
+   "CABI_before": "uint32_t d4vr_osw_increment_before_v1(osw_token_v1 *token, const osw_before_increment_v1 *before);",
+   "CABI_after": "uint32_t d4vr_osw_increment_after_v1(osw_token_v1 *token, const osw_after_increment_v1 *after);",
+   "local_storage_bytes": {
+    "BeforePOD": 72,
+    "AfterPOD": 96,
+    "Token_across_original": 48,
+    "Admission_across_original": 24,
+    "SourceEntry_helper_only": 56,
+    "digest_state_helper_only_cap": 0
+   },
+   "local_storage_lifetime": {
+    "text_rule": "shared_text_20"
+   },
+   "SOURCE_entry_expressions": {
+    "raw_receiver": "(uintptr_t)iface",
+    "context": "actualoriginalCOMdevice receiver"
+   },
+   "SOURCE_entry_NA_rule": {
+    "text_rule": "shared_text_21"
+   },
+   "allowed_SOURCE_after_expression": {
+    "text_rule": "shared_text_27"
+   },
+   "ENTRY_cut": {
+    "text_rule": "shared_text_23"
+   },
+   "OFF_forwarding": {
+    "text_rule": "shared_text_24"
+   }
+  },
+  {
+   "api": "CPUStart",
+   "tag": 15,
+   "original_return_kind": "original_pointer",
+   "site_rows": [
+    9
+   ],
+   "argument_source_expressions": {
+    "heap": "COM(iface)",
+    "output_pointer": "address(descriptor)"
+   },
+   "argument_mask_bits": {
+    "heap": 0,
+    "output_pointer": 1
+   },
+   "borrow_and_copied_count_policy": {
+    "text_rule": "shared_text_16"
+   },
+   "defined_RETURN_rule": "Capture actual returned D3D12_*_DESCRIPTOR_HANDLE* first; after freshreturn_admit SELECTED+outputflag, read saved descriptor->ptr only if returned_pointer==saved_descriptor and saved_descriptor!=NULL. Mismatch/null retains raw return only, no pointee read.",
+   "CABI_before": "uint32_t d4vr_osw_cpustart_before_v1(osw_token_v1 *token, const osw_before_cpustart_v1 *before);",
+   "CABI_after": "uint32_t d4vr_osw_cpustart_after_v1(osw_token_v1 *token, const osw_after_cpustart_v1 *after);",
+   "local_storage_bytes": {
+    "BeforePOD": 72,
+    "AfterPOD": 104,
+    "Token_across_original": 48,
+    "Admission_across_original": 24,
+    "SourceEntry_helper_only": 56,
+    "digest_state_helper_only_cap": 0
+   },
+   "local_storage_lifetime": {
+    "text_rule": "shared_text_20"
+   },
+   "SOURCE_entry_expressions": {
+    "raw_receiver": "(uintptr_t)iface",
+    "context": "COMdescriptorheap receiver; no native/rawdomaincast"
+   },
+   "SOURCE_entry_NA_rule": {
+    "text_rule": "shared_text_21"
+   },
+   "allowed_SOURCE_after_expression": {
+    "text_rule": "shared_text_27"
+   },
+   "ENTRY_cut": {
+    "text_rule": "shared_text_23"
+   },
+   "OFF_forwarding": {
+    "text_rule": "shared_text_24"
+   }
+  },
+  {
+   "api": "GPUStart",
+   "tag": 16,
+   "original_return_kind": "original_pointer",
+   "site_rows": [
+    10
+   ],
+   "argument_source_expressions": {
+    "heap": "COM(iface)",
+    "output_pointer": "address(descriptor)"
+   },
+   "argument_mask_bits": {
+    "heap": 0,
+    "output_pointer": 1
+   },
+   "borrow_and_copied_count_policy": {
+    "text_rule": "shared_text_16"
+   },
+   "defined_RETURN_rule": "Capture actual returned D3D12_*_DESCRIPTOR_HANDLE* first; after freshreturn_admit SELECTED+outputflag, read saved descriptor->ptr only if returned_pointer==saved_descriptor and saved_descriptor!=NULL. Mismatch/null retains raw return only, no pointee read.",
+   "CABI_before": "uint32_t d4vr_osw_gpustart_before_v1(osw_token_v1 *token, const osw_before_gpustart_v1 *before);",
+   "CABI_after": "uint32_t d4vr_osw_gpustart_after_v1(osw_token_v1 *token, const osw_after_gpustart_v1 *after);",
+   "local_storage_bytes": {
+    "BeforePOD": 72,
+    "AfterPOD": 104,
+    "Token_across_original": 48,
+    "Admission_across_original": 24,
+    "SourceEntry_helper_only": 56,
+    "digest_state_helper_only_cap": 0
+   },
+   "local_storage_lifetime": {
+    "text_rule": "shared_text_20"
+   },
+   "SOURCE_entry_expressions": {
+    "raw_receiver": "(uintptr_t)iface",
+    "context": "COMdescriptorheap receiver"
+   },
+   "SOURCE_entry_NA_rule": {
+    "text_rule": "shared_text_21"
+   },
+   "allowed_SOURCE_after_expression": {
+    "text_rule": "shared_text_27"
+   },
+   "ENTRY_cut": {
+    "text_rule": "shared_text_23"
+   },
+   "OFF_forwarding": {
+    "text_rule": "shared_text_24"
+   }
+  },
+  {
+   "api": "CreateSRV",
+   "tag": 17,
+   "original_return_kind": "void",
+   "site_rows": [
+    27,
+    29,
+    31
+   ],
+   "argument_source_expressions": {
+    "device": "COM(iface)",
+    "resource": "COM(resource) or observedNULL",
+    "destination": "descriptor.ptr",
+    "description": "desc->{Format,ViewDimension,Shader4ComponentMapping,Texture2D.MostDetailedMip,Texture2D.MipLevels,Texture2D.PlaneSlice,bits(Texture2D.ResourceMinLODClamp)}",
+    "description_pointer": "address(desc)"
+   },
+   "argument_mask_bits": {
+    "device": 0,
+    "resource": 1,
+    "destination": 2,
+    "description": 3,
+    "description_pointer": 4
+   },
+   "borrow_and_copied_count_policy": {
+    "text_rule": "shared_text_16"
+   },
+   "defined_RETURN_rule": {
+    "text_rule": "shared_text_56"
+   },
+   "CABI_before": "uint32_t d4vr_osw_createsrv_before_v1(osw_token_v1 *token, const osw_before_createsrv_v1 *before);",
+   "CABI_after": "uint32_t d4vr_osw_createsrv_after_v1(osw_token_v1 *token);",
+   "local_storage_bytes": {
+    "BeforePOD": 168,
+    "AfterPOD": 80,
+    "Token_across_original": 48,
+    "Admission_across_original": 24,
+    "SourceEntry_helper_only": 56,
+    "digest_state_helper_only_cap": 0
+   },
+   "local_storage_lifetime": {
+    "text_rule": "shared_text_20"
+   },
+   "SOURCE_entry_expressions": {
+    "raw_receiver": "(uintptr_t)iface",
+    "context": "actualoriginalCOMdevice receiver"
+   },
+   "SOURCE_entry_NA_rule": {
+    "text_rule": "shared_text_21"
+   },
+   "allowed_SOURCE_after_expression": {
+    "text_rule": "shared_text_27"
+   },
+   "ENTRY_cut": {
+    "text_rule": "shared_text_23"
+   },
+   "OFF_forwarding": {
+    "text_rule": "shared_text_24"
+   }
+  },
+  {
+   "api": "CopySimple",
+   "tag": 18,
+   "original_return_kind": "void",
+   "site_rows": [
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40
+   ],
+   "argument_source_expressions": {
+    "device": "COM(iface)",
+    "count": "descriptor_count",
+    "destination": "dst_descriptor_range_offset.ptr",
+    "source": "src_descriptor_range_offset.ptr",
+    "heap_type": "descriptor_heap_type"
+   },
+   "argument_mask_bits": {
+    "device": 0,
+    "count": 1,
+    "destination": 2,
+    "source": 3,
+    "heap_type": 4
+   },
+   "borrow_and_copied_count_policy": {
+    "text_rule": "shared_text_16"
+   },
+   "defined_RETURN_rule": {
+    "text_rule": "shared_text_56"
+   },
+   "CABI_before": "uint32_t d4vr_osw_copysimple_before_v1(osw_token_v1 *token, const osw_before_copysimple_v1 *before);",
+   "CABI_after": "uint32_t d4vr_osw_copysimple_after_v1(osw_token_v1 *token);",
+   "local_storage_bytes": {
+    "BeforePOD": 96,
+    "AfterPOD": 80,
+    "Token_across_original": 48,
+    "Admission_across_original": 24,
+    "SourceEntry_helper_only": 56,
+    "digest_state_helper_only_cap": 0
+   },
+   "local_storage_lifetime": {
+    "text_rule": "shared_text_20"
+   },
+   "SOURCE_entry_expressions": {
+    "raw_receiver": "(uintptr_t)iface",
+    "context": "actualoriginalCOMdevice receiver"
+   },
+   "SOURCE_entry_NA_rule": {
+    "text_rule": "shared_text_21"
+   },
+   "allowed_SOURCE_after_expression": {
+    "text_rule": "shared_text_27"
+   },
+   "ENTRY_cut": {
+    "text_rule": "shared_text_23"
+   },
+   "OFF_forwarding": {
+    "text_rule": "shared_text_24"
+   }
+  },
+  {
+   "api": "CopyRanges",
+   "tag": 19,
+   "original_return_kind": "void",
+   "site_rows": [
+    11
+   ],
+   "argument_source_expressions": {
+    "device": "COM(iface)",
+    "destinations": "count=dst_descriptor_range_count,starts_pointer=dst_descriptor_range_offsets,starts[i]=dst_descriptor_range_offsets[i].ptr,sizes_pointer=dst_descriptor_range_sizes,sizes[i]=dst_descriptor_range_sizes[i] iff nonNULL",
+    "sources": "count=src_descriptor_range_count,starts_pointer=src_descriptor_range_offsets,starts[i]=src_descriptor_range_offsets[i].ptr,sizes_pointer=src_descriptor_range_sizes,sizes[i]=src_descriptor_range_sizes[i] iff nonNULL",
+    "heap_type": "descriptor_heap_type"
+   },
+   "argument_mask_bits": {
+    "device": 0,
+    "destinations": 1,
+    "sources": 2,
+    "heap_type": 3
+   },
+   "borrow_and_copied_count_policy": {
+    "text_rule": "shared_text_16"
+   },
+   "defined_RETURN_rule": {
+    "text_rule": "shared_text_56"
+   },
+   "CABI_before": "uint32_t d4vr_osw_copyranges_before_v1(osw_token_v1 *token, const osw_before_copyranges_v1 *before);",
+   "CABI_after": "uint32_t d4vr_osw_copyranges_after_v1(osw_token_v1 *token);",
+   "local_storage_bytes": {
+    "BeforePOD": 264,
+    "AfterPOD": 80,
+    "Token_across_original": 48,
+    "Admission_across_original": 24,
+    "SourceEntry_helper_only": 56,
+    "digest_state_helper_only_cap": 0
+   },
+   "local_storage_lifetime": {
+    "text_rule": "shared_text_20"
+   },
+   "SOURCE_entry_expressions": {
+    "raw_receiver": "(uintptr_t)iface",
+    "context": "actualoriginalCOMdevice receiver"
+   },
+   "SOURCE_entry_NA_rule": {
+    "text_rule": "shared_text_21"
+   },
+   "allowed_SOURCE_after_expression": {
+    "text_rule": "shared_text_27"
+   },
+   "ENTRY_cut": {
+    "text_rule": "shared_text_23"
+   },
+   "OFF_forwarding": {
+    "text_rule": "shared_text_24"
+   }
+  },
+  {
+   "api": "Reset",
+   "tag": 20,
+   "original_return_kind": "HRESULT",
+   "site_rows": [
+    12
+   ],
+   "argument_source_expressions": {
+    "command": "COM(iface)",
+    "allocator": "COM(allocator)",
+    "initial_pipeline": "COM(initial_pipeline_state) or observedNULL"
+   },
+   "argument_mask_bits": {
+    "command": 0,
+    "allocator": 1,
+    "initial_pipeline": 2
+   },
+   "borrow_and_copied_count_policy": {
+    "text_rule": "shared_text_16"
+   },
+   "defined_RETURN_rule": {
+    "text_rule": "shared_text_61"
+   },
+   "CABI_before": "uint32_t d4vr_osw_reset_before_v1(osw_token_v1 *token, const osw_before_reset_v1 *before);",
+   "CABI_after": "uint32_t d4vr_osw_reset_after_v1(osw_token_v1 *token, const osw_after_reset_v1 *after);",
+   "local_storage_bytes": {
+    "BeforePOD": 144,
+    "AfterPOD": 96,
+    "Token_across_original": 48,
+    "Admission_across_original": 24,
+    "SourceEntry_helper_only": 56,
+    "digest_state_helper_only_cap": 0
+   },
+   "local_storage_lifetime": {
+    "text_rule": "shared_text_20"
+   },
+   "SOURCE_entry_expressions": {
+    "raw_receiver": "(uintptr_t)iface",
+    "context": "actualiface; firstReset pendingexception defined. NativeCB from list->cmd.vk_command_buffer ONLYafteractualsuccessfuloriginalResetfreshadmission.",
+    "source_site": "OSW_SOURCE_SITE_COMMAND_CONSTRUCTOR_RESET ONLYgenuinelynestedfirstReset; subsequentsiteN/A"
+   },
+   "SOURCE_entry_NA_rule": {
+    "text_rule": "shared_text_21"
+   },
+   "allowed_SOURCE_after_expression": "actual list->cmd.vk_command_buffer aftersuccess0 whilelistvalid, matchesconstructor/caseoriginalbody; no commandobjectreadonfailure.",
+   "ENTRY_cut": {
+    "text_rule": "shared_text_23"
+   },
+   "OFF_forwarding": {
+    "text_rule": "shared_text_24"
+   }
+  },
+  {
+   "api": "Close",
+   "tag": 21,
+   "original_return_kind": "HRESULT",
+   "site_rows": [
+    13
+   ],
+   "argument_source_expressions": {
+    "command": "COM(iface)"
+   },
+   "argument_mask_bits": {
+    "command": 0
+   },
+   "borrow_and_copied_count_policy": {
+    "text_rule": "shared_text_16"
+   },
+   "defined_RETURN_rule": {
+    "text_rule": "shared_text_61"
+   },
+   "CABI_before": "uint32_t d4vr_osw_close_before_v1(osw_token_v1 *token, const osw_before_close_v1 *before);",
+   "CABI_after": "uint32_t d4vr_osw_close_after_v1(osw_token_v1 *token, const osw_after_close_v1 *after);",
+   "local_storage_bytes": {
+    "BeforePOD": 64,
+    "AfterPOD": 96,
+    "Token_across_original": 48,
+    "Admission_across_original": 24,
+    "SourceEntry_helper_only": 56,
+    "digest_state_helper_only_cap": 0
+   },
+   "local_storage_lifetime": {
+    "text_rule": "shared_text_20"
+   },
+   "SOURCE_entry_expressions": {
+    "raw_receiver": "(uintptr_t)iface",
+    "context": "actualoriginalCOMcommandlist receiver"
+   },
+   "SOURCE_entry_NA_rule": {
+    "text_rule": "shared_text_21"
+   },
+   "allowed_SOURCE_after_expression": {
+    "text_rule": "shared_text_27"
+   },
+   "ENTRY_cut": {
+    "text_rule": "shared_text_23"
+   },
+   "OFF_forwarding": {
+    "text_rule": "shared_text_24"
+   }
+  },
+  {
+   "api": "ClearState",
+   "tag": 22,
+   "original_return_kind": "void",
+   "site_rows": [
+    14
+   ],
+   "argument_source_expressions": {
+    "command": "COM(iface)",
+    "pipeline": "COM(pipeline_state) or observedNULL"
+   },
+   "argument_mask_bits": {
+    "command": 0,
+    "pipeline": 1
+   },
+   "borrow_and_copied_count_policy": {
+    "text_rule": "shared_text_16"
+   },
+   "defined_RETURN_rule": {
+    "text_rule": "shared_text_56"
+   },
+   "CABI_before": "uint32_t d4vr_osw_clearstate_before_v1(osw_token_v1 *token, const osw_before_clearstate_v1 *before);",
+   "CABI_after": "uint32_t d4vr_osw_clearstate_after_v1(osw_token_v1 *token);",
+   "local_storage_bytes": {
+    "BeforePOD": 104,
+    "AfterPOD": 80,
+    "Token_across_original": 48,
+    "Admission_across_original": 24,
+    "SourceEntry_helper_only": 56,
+    "digest_state_helper_only_cap": 0
+   },
+   "local_storage_lifetime": {
+    "text_rule": "shared_text_20"
+   },
+   "SOURCE_entry_expressions": {
+    "raw_receiver": "(uintptr_t)iface",
+    "context": "actualoriginalCOMcommandlist receiver"
+   },
+   "SOURCE_entry_NA_rule": {
+    "text_rule": "shared_text_21"
+   },
+   "allowed_SOURCE_after_expression": {
+    "text_rule": "shared_text_27"
+   },
+   "ENTRY_cut": {
+    "text_rule": "shared_text_23"
+   },
+   "OFF_forwarding": {
+    "text_rule": "shared_text_24"
+   }
+  },
+  {
+   "api": "SetPipeline",
+   "tag": 23,
+   "original_return_kind": "void",
+   "site_rows": [
+    15,
+    84
+   ],
+   "argument_source_expressions": {
+    "command": "COM(iface)",
+    "pipeline": "COM(pipeline_state)"
+   },
+   "argument_mask_bits": {
+    "command": 0,
+    "pipeline": 1
+   },
+   "borrow_and_copied_count_policy": {
+    "text_rule": "shared_text_16"
+   },
+   "defined_RETURN_rule": {
+    "text_rule": "shared_text_56"
+   },
+   "CABI_before": "uint32_t d4vr_osw_setpipeline_before_v1(osw_token_v1 *token, const osw_before_setpipeline_v1 *before);",
+   "CABI_after": "uint32_t d4vr_osw_setpipeline_after_v1(osw_token_v1 *token);",
+   "local_storage_bytes": {
+    "BeforePOD": 104,
+    "AfterPOD": 80,
+    "Token_across_original": 48,
+    "Admission_across_original": 24,
+    "SourceEntry_helper_only": 56,
+    "digest_state_helper_only_cap": 0
+   },
+   "local_storage_lifetime": {
+    "text_rule": "shared_text_20"
+   },
+   "SOURCE_entry_expressions": {
+    "raw_receiver": "(uintptr_t)iface",
+    "context": "actualoriginalCOMcommandlist receiver"
+   },
+   "SOURCE_entry_NA_rule": {
+    "text_rule": "shared_text_21"
+   },
+   "allowed_SOURCE_after_expression": {
+    "text_rule": "shared_text_27"
+   },
+   "ENTRY_cut": {
+    "text_rule": "shared_text_23"
+   },
+   "OFF_forwarding": {
+    "text_rule": "shared_text_24"
+   }
+  },
+  {
+   "api": "SetRoot",
+   "tag": 24,
+   "original_return_kind": "void",
+   "site_rows": [
+    16
+   ],
+   "argument_source_expressions": {
+    "command": "COM(iface)",
+    "root": "COM(root_signature) or observedNULL"
+   },
+   "argument_mask_bits": {
+    "command": 0,
+    "root": 1
+   },
+   "borrow_and_copied_count_policy": {
+    "text_rule": "shared_text_16"
+   },
+   "defined_RETURN_rule": {
+    "text_rule": "shared_text_56"
+   },
+   "CABI_before": "uint32_t d4vr_osw_setroot_before_v1(osw_token_v1 *token, const osw_before_setroot_v1 *before);",
+   "CABI_after": "uint32_t d4vr_osw_setroot_after_v1(osw_token_v1 *token);",
+   "local_storage_bytes": {
+    "BeforePOD": 104,
+    "AfterPOD": 80,
+    "Token_across_original": 48,
+    "Admission_across_original": 24,
+    "SourceEntry_helper_only": 56,
+    "digest_state_helper_only_cap": 0
+   },
+   "local_storage_lifetime": {
+    "text_rule": "shared_text_20"
+   },
+   "SOURCE_entry_expressions": {
+    "raw_receiver": "(uintptr_t)iface",
+    "context": "actualoriginalCOMcommandlist receiver"
+   },
+   "SOURCE_entry_NA_rule": {
+    "text_rule": "shared_text_21"
+   },
+   "allowed_SOURCE_after_expression": {
+    "text_rule": "shared_text_27"
+   },
+   "ENTRY_cut": {
+    "text_rule": "shared_text_23"
+   },
+   "OFF_forwarding": {
+    "text_rule": "shared_text_24"
+   }
+  },
+  {
+   "api": "SetHeaps",
+   "tag": 25,
+   "original_return_kind": "void",
+   "site_rows": [
+    17
+   ],
+   "argument_source_expressions": {
+    "command": "COM(iface)",
+    "heaps": "count=heap_count,pointer=heaps,values[i]=COM(heaps[i])"
+   },
+   "argument_mask_bits": {
+    "command": 0,
+    "heaps": 1
+   },
+   "borrow_and_copied_count_policy": {
+    "text_rule": "shared_text_16"
+   },
+   "defined_RETURN_rule": {
+    "text_rule": "shared_text_56"
+   },
+   "CABI_before": "uint32_t d4vr_osw_setheaps_before_v1(osw_token_v1 *token, const osw_before_setheaps_v1 *before);",
+   "CABI_after": "uint32_t d4vr_osw_setheaps_after_v1(osw_token_v1 *token);",
+   "local_storage_bytes": {
+    "BeforePOD": 192,
+    "AfterPOD": 80,
+    "Token_across_original": 48,
+    "Admission_across_original": 24,
+    "SourceEntry_helper_only": 56,
+    "digest_state_helper_only_cap": 0
+   },
+   "local_storage_lifetime": {
+    "text_rule": "shared_text_20"
+   },
+   "SOURCE_entry_expressions": {
+    "raw_receiver": "(uintptr_t)iface",
+    "context": "actualoriginalCOMcommandlist receiver"
+   },
+   "SOURCE_entry_NA_rule": {
+    "text_rule": "shared_text_21"
+   },
+   "allowed_SOURCE_after_expression": {
+    "text_rule": "shared_text_27"
+   },
+   "ENTRY_cut": {
+    "text_rule": "shared_text_23"
+   },
+   "OFF_forwarding": {
+    "text_rule": "shared_text_24"
+   }
+  },
+  {
+   "api": "SetTable",
+   "tag": 26,
+   "original_return_kind": "void",
+   "site_rows": [
+    41,
+    42,
+    43,
+    44,
+    45,
+    46
+   ],
+   "argument_source_expressions": {
+    "command": "COM(iface)",
+    "parameter": "root_parameter_index",
+    "gpu_handle": "base_descriptor.ptr"
+   },
+   "argument_mask_bits": {
+    "command": 0,
+    "parameter": 1,
+    "gpu_handle": 2
+   },
+   "borrow_and_copied_count_policy": {
+    "text_rule": "shared_text_16"
+   },
+   "defined_RETURN_rule": {
+    "text_rule": "shared_text_56"
+   },
+   "CABI_before": "uint32_t d4vr_osw_settable_before_v1(osw_token_v1 *token, const osw_before_settable_v1 *before);",
+   "CABI_after": "uint32_t d4vr_osw_settable_after_v1(osw_token_v1 *token);",
+   "local_storage_bytes": {
+    "BeforePOD": 80,
+    "AfterPOD": 80,
+    "Token_across_original": 48,
+    "Admission_across_original": 24,
+    "SourceEntry_helper_only": 56,
+    "digest_state_helper_only_cap": 0
+   },
+   "local_storage_lifetime": {
+    "text_rule": "shared_text_20"
+   },
+   "SOURCE_entry_expressions": {
+    "raw_receiver": "(uintptr_t)iface",
+    "context": "actualoriginalCOMcommandlist receiver",
+    "source_site": "Exactembedded/defaultsymboltag pervariant; do notreaddeviceflags toforcefunctionvariant"
+   },
+   "SOURCE_entry_NA_rule": {
+    "text_rule": "shared_text_21"
+   },
+   "allowed_SOURCE_after_expression": {
+    "text_rule": "shared_text_27"
+   },
+   "ENTRY_cut": {
+    "text_rule": "shared_text_23"
+   },
+   "OFF_forwarding": {
+    "text_rule": "shared_text_24"
+   }
+  },
+  {
+   "api": "Viewports",
+   "tag": 27,
+   "original_return_kind": "void",
+   "site_rows": [
+    18
+   ],
+   "argument_source_expressions": {
+    "command": "COM(iface)",
+    "viewports": "count=viewport_count,pointer=viewports,values[i]=bits(viewports[i].{TopLeftX,TopLeftY,Width,Height,MinDepth,MaxDepth})"
+   },
+   "argument_mask_bits": {
+    "command": 0,
+    "viewports": 1
+   },
+   "borrow_and_copied_count_policy": {
+    "text_rule": "shared_text_16"
+   },
+   "defined_RETURN_rule": {
+    "text_rule": "shared_text_56"
+   },
+   "CABI_before": "uint32_t d4vr_osw_viewports_before_v1(osw_token_v1 *token, const osw_before_viewports_v1 *before);",
+   "CABI_after": "uint32_t d4vr_osw_viewports_after_v1(osw_token_v1 *token);",
+   "local_storage_bytes": {
+    "BeforePOD": 152,
+    "AfterPOD": 80,
+    "Token_across_original": 48,
+    "Admission_across_original": 24,
+    "SourceEntry_helper_only": 56,
+    "digest_state_helper_only_cap": 0
+   },
+   "local_storage_lifetime": {
+    "text_rule": "shared_text_20"
+   },
+   "SOURCE_entry_expressions": {
+    "raw_receiver": "(uintptr_t)iface",
+    "context": "actualoriginalCOMcommandlist receiver"
+   },
+   "SOURCE_entry_NA_rule": {
+    "text_rule": "shared_text_21"
+   },
+   "allowed_SOURCE_after_expression": {
+    "text_rule": "shared_text_27"
+   },
+   "ENTRY_cut": {
+    "text_rule": "shared_text_23"
+   },
+   "OFF_forwarding": {
+    "text_rule": "shared_text_24"
+   }
+  },
+  {
+   "api": "Scissors",
+   "tag": 28,
+   "original_return_kind": "void",
+   "site_rows": [
+    19
+   ],
+   "argument_source_expressions": {
+    "command": "COM(iface)",
+    "rects": "count=rect_count,pointer=rects,values[i]=rects[i].{left,top,right,bottom}"
+   },
+   "argument_mask_bits": {
+    "command": 0,
+    "rects": 1
+   },
+   "borrow_and_copied_count_policy": {
+    "text_rule": "shared_text_16"
+   },
+   "defined_RETURN_rule": {
+    "text_rule": "shared_text_56"
+   },
+   "CABI_before": "uint32_t d4vr_osw_scissors_before_v1(osw_token_v1 *token, const osw_before_scissors_v1 *before);",
+   "CABI_after": "uint32_t d4vr_osw_scissors_after_v1(osw_token_v1 *token);",
+   "local_storage_bytes": {
+    "BeforePOD": 144,
+    "AfterPOD": 80,
+    "Token_across_original": 48,
+    "Admission_across_original": 24,
+    "SourceEntry_helper_only": 56,
+    "digest_state_helper_only_cap": 0
+   },
+   "local_storage_lifetime": {
+    "text_rule": "shared_text_20"
+   },
+   "SOURCE_entry_expressions": {
+    "raw_receiver": "(uintptr_t)iface",
+    "context": "actualoriginalCOMcommandlist receiver"
+   },
+   "SOURCE_entry_NA_rule": {
+    "text_rule": "shared_text_21"
+   },
+   "allowed_SOURCE_after_expression": {
+    "text_rule": "shared_text_27"
+   },
+   "ENTRY_cut": {
+    "text_rule": "shared_text_23"
+   },
+   "OFF_forwarding": {
+    "text_rule": "shared_text_24"
+   }
+  },
+  {
+   "api": "RTV",
+   "tag": 29,
+   "original_return_kind": "void",
+   "site_rows": [
+    20
+   ],
+   "argument_source_expressions": {
+    "command": "COM(iface)",
+    "handles": "count=render_target_descriptor_count,pointer=render_target_descriptors,values[i]=render_target_descriptors[i].ptr",
+    "single_range": "(int32_t)single_descriptor_handle",
+    "dsv_pointer": "address(depth_stencil_descriptor)"
+   },
+   "argument_mask_bits": {
+    "command": 0,
+    "handles": 1,
+    "single_range": 2,
+    "dsv_pointer": 3
+   },
+   "borrow_and_copied_count_policy": {
+    "text_rule": "shared_text_16"
+   },
+   "defined_RETURN_rule": {
+    "text_rule": "shared_text_56"
+   },
+   "CABI_before": "uint32_t d4vr_osw_rtv_before_v1(osw_token_v1 *token, const osw_before_rtv_v1 *before);",
+   "CABI_after": "uint32_t d4vr_osw_rtv_after_v1(osw_token_v1 *token);",
+   "local_storage_bytes": {
+    "BeforePOD": 136,
+    "AfterPOD": 80,
+    "Token_across_original": 48,
+    "Admission_across_original": 24,
+    "SourceEntry_helper_only": 56,
+    "digest_state_helper_only_cap": 0
+   },
+   "local_storage_lifetime": {
+    "text_rule": "shared_text_20"
+   },
+   "SOURCE_entry_expressions": {
+    "raw_receiver": "(uintptr_t)iface",
+    "context": "actualoriginalCOMcommandlist receiver"
+   },
+   "SOURCE_entry_NA_rule": {
+    "text_rule": "shared_text_21"
+   },
+   "allowed_SOURCE_after_expression": {
+    "text_rule": "shared_text_27"
+   },
+   "ENTRY_cut": {
+    "text_rule": "shared_text_23"
+   },
+   "OFF_forwarding": {
+    "text_rule": "shared_text_24"
+   }
+  },
+  {
+   "api": "Draw",
+   "tag": 30,
+   "original_return_kind": "void",
+   "site_rows": [
+    21
+   ],
+   "argument_source_expressions": {
+    "command": "COM(iface)",
+    "vertex_count": "vertex_count_per_instance",
+    "instance_count": "instance_count",
+    "first_vertex": "start_vertex_location",
+    "first_instance": "start_instance_location"
+   },
+   "argument_mask_bits": {
+    "command": 0,
+    "vertex_count": 1,
+    "instance_count": 2,
+    "first_vertex": 3,
+    "first_instance": 4
+   },
+   "borrow_and_copied_count_policy": {
+    "text_rule": "shared_text_16"
+   },
+   "defined_RETURN_rule": {
+    "text_rule": "shared_text_56"
+   },
+   "CABI_before": "uint32_t d4vr_osw_draw_before_v1(osw_token_v1 *token, const osw_before_draw_v1 *before);",
+   "CABI_after": "uint32_t d4vr_osw_draw_after_v1(osw_token_v1 *token);",
+   "local_storage_bytes": {
+    "BeforePOD": 80,
+    "AfterPOD": 80,
+    "Token_across_original": 48,
+    "Admission_across_original": 24,
+    "SourceEntry_helper_only": 56,
+    "digest_state_helper_only_cap": 0
+   },
+   "local_storage_lifetime": {
+    "text_rule": "shared_text_20"
+   },
+   "SOURCE_entry_expressions": {
+    "raw_receiver": "(uintptr_t)iface",
+    "context": "actualoriginalCOMcommandlist receiver"
+   },
+   "SOURCE_entry_NA_rule": {
+    "text_rule": "shared_text_21"
+   },
+   "allowed_SOURCE_after_expression": {
+    "text_rule": "shared_text_27"
+   },
+   "ENTRY_cut": {
+    "text_rule": "shared_text_23"
+   },
+   "OFF_forwarding": {
+    "text_rule": "shared_text_24"
+   }
+  },
+  {
+   "api": "BindPipeline",
+   "tag": 31,
+   "original_return_kind": "void",
+   "site_rows": [
+    67
+   ],
+   "argument_source_expressions": {
+    "vk_command_buffer": "$CB",
+    "bind_point": "$BIND",
+    "pipeline": "VKPIPE($PIPE)"
+   },
+   "argument_mask_bits": {
+    "vk_command_buffer": 0,
+    "bind_point": 1,
+    "pipeline": 2
+   },
+   "borrow_and_copied_count_policy": {
+    "text_rule": "shared_text_16"
+   },
+   "defined_RETURN_rule": {
+    "text_rule": "shared_text_56"
+   },
+   "CABI_before": "uint32_t d4vr_osw_bindpipeline_before_v1(osw_token_v1 *token, const osw_before_bindpipeline_v1 *before);",
+   "CABI_after": "uint32_t d4vr_osw_bindpipeline_after_v1(osw_token_v1 *token);",
+   "local_storage_bytes": {
+    "BeforePOD": 80,
+    "AfterPOD": 80,
+    "Token_across_original": 48,
+    "Admission_across_original": 24,
+    "SourceEntry_helper_only": 56,
+    "digest_state_helper_only_cap": 0
+   },
+   "local_storage_lifetime": {
+    "text_rule": "shared_text_20"
+   },
+   "SOURCE_entry_expressions": {
+    "raw_receiver": "(uintptr_t)list->cmd.vk_command_buffer",
+    "command_interface_pointer": "(uintptr_t)&list->ID3D12GraphicsCommandList_iface",
+    "pso_internal_pointer": "(uintptr_t)list->state",
+    "context": "actualgraphicscommandupdate path liststateoriginalSOURCE"
+   },
+   "SOURCE_entry_NA_rule": {
+    "text_rule": "shared_text_21"
+   },
+   "allowed_SOURCE_after_expression": {
+    "text_rule": "shared_text_27"
+   },
+   "ENTRY_cut": {
+    "text_rule": "shared_text_23"
+   },
+   "OFF_forwarding": {
+    "text_rule": "shared_text_24"
+   }
+  },
+  {
+   "api": "EmitDraw",
+   "tag": 32,
+   "original_return_kind": "void",
+   "site_rows": [
+    68
+   ],
+   "argument_source_expressions": {
+    "vk_command_buffer": "$CB",
+    "vertex_count": "vertex_count_per_instance",
+    "instance_count": "instance_count",
+    "first_vertex": "start_vertex_location",
+    "first_instance": "start_instance_location"
+   },
+   "argument_mask_bits": {
+    "vk_command_buffer": 0,
+    "vertex_count": 1,
+    "instance_count": 2,
+    "first_vertex": 3,
+    "first_instance": 4
+   },
+   "borrow_and_copied_count_policy": {
+    "text_rule": "shared_text_16"
+   },
+   "defined_RETURN_rule": {
+    "text_rule": "shared_text_56"
+   },
+   "CABI_before": "uint32_t d4vr_osw_emitdraw_before_v1(osw_token_v1 *token, const osw_before_emitdraw_v1 *before);",
+   "CABI_after": "uint32_t d4vr_osw_emitdraw_after_v1(osw_token_v1 *token);",
+   "local_storage_bytes": {
+    "BeforePOD": 48,
+    "AfterPOD": 80,
+    "Token_across_original": 48,
+    "Admission_across_original": 24,
+    "SourceEntry_helper_only": 56,
+    "digest_state_helper_only_cap": 0
+   },
+   "local_storage_lifetime": {
+    "text_rule": "shared_text_20"
+   },
+   "SOURCE_entry_expressions": {
+    "raw_receiver": "(uintptr_t)list->cmd.vk_command_buffer",
+    "command_interface_pointer": "(uintptr_t)iface",
+    "pso_internal_pointer": "(uintptr_t)list->state",
+    "source_site": "OSW_SOURCE_SITE_COM_DRAWINSTANCED",
+    "context": "actualCOMDraw functionlocals, directVkcallONLY; beforeDrawbranch selectedfirstCOMDrawalreadyretained"
+   },
+   "SOURCE_entry_NA_rule": {
+    "text_rule": "shared_text_21"
+   },
+   "allowed_SOURCE_after_expression": {
+    "text_rule": "shared_text_27"
+   },
+   "ENTRY_cut": {
+    "text_rule": "shared_text_23"
+   },
+   "OFF_forwarding": {
+    "text_rule": "shared_text_24"
+   }
+  },
+  {
+   "api": "Execute",
+   "tag": 33,
+   "original_return_kind": "void",
+   "site_rows": [
+    22
+   ],
+   "argument_source_expressions": {
+    "queue": "COM(iface)",
+    "commands": "count=command_list_count,pointer=command_lists,values[i]=COM(command_lists[i])"
+   },
+   "argument_mask_bits": {
+    "queue": 0,
+    "commands": 1
+   },
+   "borrow_and_copied_count_policy": {
+    "text_rule": "shared_text_16"
+   },
+   "defined_RETURN_rule": {
+    "text_rule": "shared_text_56"
+   },
+   "CABI_before": "uint32_t d4vr_osw_execute_before_v1(osw_token_v1 *token, const osw_before_execute_v1 *before);",
+   "CABI_after": "uint32_t d4vr_osw_execute_after_v1(osw_token_v1 *token);",
+   "local_storage_bytes": {
+    "BeforePOD": 152,
+    "AfterPOD": 80,
+    "Token_across_original": 48,
+    "Admission_across_original": 24,
+    "SourceEntry_helper_only": 56,
+    "digest_state_helper_only_cap": 0
+   },
+   "local_storage_lifetime": {
+    "text_rule": "shared_text_20"
+   },
+   "SOURCE_entry_expressions": {
+    "raw_receiver": "(uintptr_t)iface",
+    "context": "actualCOMqueue; commandlistarrayoriginalvaluesbeforeoriginal; selecteddescriptorcutENTRY, automaticcloseRETURN"
+   },
+   "SOURCE_entry_NA_rule": {
+    "text_rule": "shared_text_21"
+   },
+   "allowed_SOURCE_after_expression": {
+    "text_rule": "shared_text_27"
+   },
+   "ENTRY_cut": {
+    "text_rule": "shared_text_23"
+   },
+   "OFF_forwarding": {
+    "text_rule": "shared_text_24"
+   }
+  },
+  {
+   "api": "Release",
+   "tag": 34,
+   "original_return_kind": "uint32",
+   "site_rows": [
+    47,
+    48,
+    49,
+    50,
+    51,
+    52,
+    53,
+    54
+   ],
+   "argument_source_expressions": {
+    "object": "COM(iface) with site-specific original class"
+   },
+   "argument_mask_bits": {
+    "object": 0
+   },
+   "borrow_and_copied_count_policy": {
+    "text_rule": "shared_text_16"
+   },
+   "defined_RETURN_rule": "Actual ULONG captured by value; after(token,(uint32_t)actualULONG) only. No reread iface, internalobject, owner or device even on count>0.",
+   "CABI_before": "uint32_t d4vr_osw_release_before_v1(osw_token_v1 *token, const osw_before_release_v1 *before);",
+   "CABI_after": "uint32_t d4vr_osw_release_after_v1(osw_token_v1 *token, uint32_t actual_ulong);",
+   "local_storage_bytes": {
+    "BeforePOD": 64,
+    "AfterPOD": 96,
+    "Token_across_original": 48,
+    "Admission_across_original": 24,
+    "SourceEntry_helper_only": 56,
+    "digest_state_helper_only_cap": 0
+   },
+   "local_storage_lifetime": {
+    "text_rule": "shared_text_20"
+   },
+   "SOURCE_entry_expressions": {
+    "raw_receiver": "(uintptr_t)iface",
+    "context": "site-specificactualCOMclass; identities/ownersdetachedBEFORE actualULONGoriginal, no rawVkobjectreinterpret"
+   },
+   "SOURCE_entry_NA_rule": {
+    "text_rule": "shared_text_21"
+   },
+   "allowed_SOURCE_after_expression": {
+    "text_rule": "shared_text_27"
+   },
+   "ENTRY_cut": {
+    "text_rule": "shared_text_23"
+   },
+   "OFF_forwarding": {
+    "text_rule": "shared_text_24"
+   }
+  },
+  {
+   "api": "AllocatorReset",
+   "tag": 35,
+   "original_return_kind": "HRESULT",
+   "site_rows": [
+    23
+   ],
+   "argument_source_expressions": {
+    "allocator": "COM(iface)"
+   },
+   "argument_mask_bits": {
+    "allocator": 0
+   },
+   "borrow_and_copied_count_policy": {
+    "text_rule": "shared_text_16"
+   },
+   "defined_RETURN_rule": {
+    "text_rule": "shared_text_61"
+   },
+   "CABI_before": "uint32_t d4vr_osw_allocatorreset_before_v1(osw_token_v1 *token, const osw_before_allocatorreset_v1 *before);",
+   "CABI_after": "uint32_t d4vr_osw_allocatorreset_after_v1(osw_token_v1 *token, const osw_after_allocatorreset_v1 *after);",
+   "local_storage_bytes": {
+    "BeforePOD": 64,
+    "AfterPOD": 96,
+    "Token_across_original": 48,
+    "Admission_across_original": 24,
+    "SourceEntry_helper_only": 56,
+    "digest_state_helper_only_cap": 0
+   },
+   "local_storage_lifetime": {
+    "text_rule": "shared_text_20"
+   },
+   "SOURCE_entry_expressions": {
+    "raw_receiver": "(uintptr_t)iface",
+    "context": "actualCOMallocator"
+   },
+   "SOURCE_entry_NA_rule": {
+    "text_rule": "shared_text_21"
+   },
+   "allowed_SOURCE_after_expression": {
+    "text_rule": "shared_text_27"
+   },
+   "ENTRY_cut": {
+    "text_rule": "shared_text_23"
+   },
+   "OFF_forwarding": {
+    "text_rule": "shared_text_24"
+   }
+  },
+  {
+   "api": "PipelineLookup",
+   "tag": 36,
+   "original_return_kind": "VkPipeline",
+   "site_rows": [
+    65,
+    66
+   ],
+   "argument_source_expressions": {
+    "state_pointer": "address(list->state)",
+    "dynamic_state_pointer": "address(&list->dynamic_state)",
+    "dsv_format_pointer": "address(list->dsv.format)",
+    "dynamic_flags_output_pointer": "address(&new_active_flags)"
+   },
+   "argument_mask_bits": {
+    "state_pointer": 0,
+    "dynamic_state_pointer": 1,
+    "dsv_format_pointer": 2,
+    "dynamic_flags_output_pointer": 3
+   },
+   "borrow_and_copied_count_policy": {
+    "text_rule": "shared_text_16"
+   },
+   "defined_RETURN_rule": "Capture originalVkPipeline first. Freshreturn_admit SELECTED+outputflag and returnedpipeline!=VK_NULL_HANDLE and originaldynamic_state_flags outputslot valid are all required before reading new_active_flags. NULLpipeline leaves flags UNOBSERVED; no fake0.",
+   "CABI_before": "uint32_t d4vr_osw_pipelinelookup_before_v1(osw_token_v1 *token, const osw_before_pipelinelookup_v1 *before);",
+   "CABI_after": "uint32_t d4vr_osw_pipelinelookup_after_v1(osw_token_v1 *token, const osw_after_pipelinelookup_v1 *after);",
+   "local_storage_bytes": {
+    "BeforePOD": 56,
+    "AfterPOD": 104,
+    "Token_across_original": 48,
+    "Admission_across_original": 24,
+    "SourceEntry_helper_only": 56,
+    "digest_state_helper_only_cap": 0
+   },
+   "local_storage_lifetime": {
+    "text_rule": "shared_text_20"
+   },
+   "SOURCE_entry_expressions": {
+    "raw_receiver": "(uintptr_t)list->state",
+    "command_interface_pointer": "(uintptr_t)&list->ID3D12GraphicsCommandList_iface",
+    "pso_internal_pointer": "(uintptr_t)list->state",
+    "context": "actualcallsitecommand7596/7599, nothelperbody; live typedlist/state validunderoriginalcall lifetime"
+   },
+   "SOURCE_entry_NA_rule": {
+    "text_rule": "shared_text_21"
+   },
+   "allowed_SOURCE_after_expression": {
+    "text_rule": "shared_text_27"
+   },
+   "ENTRY_cut": {
+    "text_rule": "shared_text_23"
+   },
+   "OFF_forwarding": {
+    "text_rule": "shared_text_24"
+   }
+  },
+  {
+   "api": "CreateSampler",
+   "tag": 37,
+   "original_return_kind": "void",
+   "site_rows": [
+    28,
+    30,
+    32
+   ],
+   "argument_source_expressions": {
+    "device": "COM(iface)",
+    "description_pointer": "address(desc)",
+    "description": "desc->{Filter,AddressU,AddressV,AddressW,bits(MipLODBias),MaxAnisotropy,ComparisonFunc,bits(BorderColor[0..3]),bits(MinLOD),bits(MaxLOD)}",
+    "description_complete": "all sizeof(D3D12_SAMPLER_DESC) semanticfields copied, no padding asserted",
+    "destination": "descriptor.ptr"
+   },
+   "argument_mask_bits": {
+    "device": 0,
+    "description_pointer": 1,
+    "description": 2,
+    "description_complete": 3,
+    "destination": 4
+   },
+   "borrow_and_copied_count_policy": {
+    "text_rule": "shared_text_16"
+   },
+   "defined_RETURN_rule": {
+    "text_rule": "shared_text_56"
+   },
+   "CABI_before": "uint32_t d4vr_osw_createsampler_before_v1(osw_token_v1 *token, const osw_before_createsampler_v1 *before);",
+   "CABI_after": "uint32_t d4vr_osw_createsampler_after_v1(osw_token_v1 *token);",
+   "local_storage_bytes": {
+    "BeforePOD": 168,
+    "AfterPOD": 80,
+    "Token_across_original": 48,
+    "Admission_across_original": 24,
+    "SourceEntry_helper_only": 56,
+    "digest_state_helper_only_cap": 0
+   },
+   "local_storage_lifetime": {
+    "text_rule": "shared_text_20"
+   },
+   "SOURCE_entry_expressions": {
+    "raw_receiver": "(uintptr_t)iface",
+    "context": "actualoriginalCOMdevice receiver"
+   },
+   "SOURCE_entry_NA_rule": {
+    "text_rule": "shared_text_21"
+   },
+   "allowed_SOURCE_after_expression": {
+    "text_rule": "shared_text_27"
+   },
+   "ENTRY_cut": {
+    "text_rule": "shared_text_23"
+   },
+   "OFF_forwarding": {
+    "text_rule": "shared_text_24"
+   }
+  },
+  {
+   "api": "CreateRTV",
+   "tag": 38,
+   "original_return_kind": "void",
+   "site_rows": [
+    24
+   ],
+   "argument_source_expressions": {
+    "device": "COM(iface)",
+    "resource": "COM(resource) or observedNULL",
+    "description_pointer": "address(desc) ONLY",
+    "destination": "descriptor.ptr"
+   },
+   "argument_mask_bits": {
+    "device": 0,
+    "resource": 1,
+    "description_pointer": 2,
+    "destination": 3
+   },
+   "borrow_and_copied_count_policy": {
+    "text_rule": "shared_text_16"
+   },
+   "defined_RETURN_rule": {
+    "text_rule": "shared_text_56"
+   },
+   "CABI_before": "uint32_t d4vr_osw_creatertv_before_v1(osw_token_v1 *token, const osw_before_creatertv_v1 *before);",
+   "CABI_after": "uint32_t d4vr_osw_creatertv_after_v1(osw_token_v1 *token);",
+   "local_storage_bytes": {
+    "BeforePOD": 120,
+    "AfterPOD": 80,
+    "Token_across_original": 48,
+    "Admission_across_original": 24,
+    "SourceEntry_helper_only": 56,
+    "digest_state_helper_only_cap": 0
+   },
+   "local_storage_lifetime": {
+    "text_rule": "shared_text_20"
+   },
+   "SOURCE_entry_expressions": {
+    "raw_receiver": "(uintptr_t)iface",
+    "context": "actualoriginalCOMdevice receiver"
+   },
+   "SOURCE_entry_NA_rule": {
+    "text_rule": "shared_text_21"
+   },
+   "allowed_SOURCE_after_expression": {
+    "text_rule": "shared_text_27"
+   },
+   "ENTRY_cut": {
+    "text_rule": "shared_text_23"
+   },
+   "OFF_forwarding": {
+    "text_rule": "shared_text_24"
+   }
+  },
+  {
+   "api": "SetConstants",
+   "tag": 39,
+   "original_return_kind": "void",
+   "site_rows": [
+    25
+   ],
+   "argument_source_expressions": {
+    "command": "COM(iface)",
+    "parameter": "root_parameter_index",
+    "words": "count=constant_count,pointer=data,values[i]=ordinaryU32 copied from data+i*4 without unalignedtypedload",
+    "destination_offset": "dst_offset"
+   },
+   "argument_mask_bits": {
+    "command": 0,
+    "parameter": 1,
+    "words": 2,
+    "destination_offset": 3
+   },
+   "borrow_and_copied_count_policy": {
+    "text_rule": "shared_text_16"
+   },
+   "defined_RETURN_rule": {
+    "text_rule": "shared_text_56"
+   },
+   "CABI_before": "uint32_t d4vr_osw_setconstants_before_v1(osw_token_v1 *token, const osw_before_setconstants_v1 *before);",
+   "CABI_after": "uint32_t d4vr_osw_setconstants_after_v1(osw_token_v1 *token);",
+   "local_storage_bytes": {
+    "BeforePOD": 136,
+    "AfterPOD": 80,
+    "Token_across_original": 48,
+    "Admission_across_original": 24,
+    "SourceEntry_helper_only": 56,
+    "digest_state_helper_only_cap": 0
+   },
+   "local_storage_lifetime": {
+    "text_rule": "shared_text_20"
+   },
+   "SOURCE_entry_expressions": {
+    "raw_receiver": "(uintptr_t)iface",
+    "context": "actualoriginalCOMcommandlist receiver"
+   },
+   "SOURCE_entry_NA_rule": {
+    "text_rule": "shared_text_21"
+   },
+   "allowed_SOURCE_after_expression": {
+    "text_rule": "shared_text_27"
+   },
+   "ENTRY_cut": {
+    "text_rule": "shared_text_23"
+   },
+   "OFF_forwarding": {
+    "text_rule": "shared_text_24"
+   }
+  },
+  {
+   "api": "Topology",
+   "tag": 40,
+   "original_return_kind": "void",
+   "site_rows": [
+    26
+   ],
+   "argument_source_expressions": {
+    "command": "COM(iface)",
+    "topology": "topology"
+   },
+   "argument_mask_bits": {
+    "command": 0,
+    "topology": 1
+   },
+   "borrow_and_copied_count_policy": {
+    "text_rule": "shared_text_16"
+   },
+   "defined_RETURN_rule": {
+    "text_rule": "shared_text_56"
+   },
+   "CABI_before": "uint32_t d4vr_osw_topology_before_v1(osw_token_v1 *token, const osw_before_topology_v1 *before);",
+   "CABI_after": "uint32_t d4vr_osw_topology_after_v1(osw_token_v1 *token);",
+   "local_storage_bytes": {
+    "BeforePOD": 72,
+    "AfterPOD": 80,
+    "Token_across_original": 48,
+    "Admission_across_original": 24,
+    "SourceEntry_helper_only": 56,
+    "digest_state_helper_only_cap": 0
+   },
+   "local_storage_lifetime": {
+    "text_rule": "shared_text_20"
+   },
+   "SOURCE_entry_expressions": {
+    "raw_receiver": "(uintptr_t)iface",
+    "context": "actualoriginalCOMcommandlist receiver"
+   },
+   "SOURCE_entry_NA_rule": {
+    "text_rule": "shared_text_21"
+   },
+   "allowed_SOURCE_after_expression": {
+    "text_rule": "shared_text_27"
+   },
+   "ENTRY_cut": {
+    "text_rule": "shared_text_23"
+   },
+   "OFF_forwarding": {
+    "text_rule": "shared_text_24"
+   }
+  },
+  {
+   "api": "ModuleDestroy",
+   "tag": 41,
+   "original_return_kind": "void",
+   "site_rows": [
+    73,
+    74
+   ],
+   "argument_source_expressions": {
+    "device": "VKDEV($DEVICE)",
+    "object": "MODULE($OBJECT)",
+    "allocator_pointer": "address($ALLOC)"
+   },
+   "argument_mask_bits": {
+    "device": 0,
+    "object": 1,
+    "allocator_pointer": 2
+   },
+   "borrow_and_copied_count_policy": {
+    "text_rule": "shared_text_16"
+   },
+   "defined_RETURN_rule": {
+    "text_rule": "shared_text_56"
+   },
+   "CABI_before": "uint32_t d4vr_osw_moduledestroy_before_v1(osw_token_v1 *token, const osw_before_moduledestroy_v1 *before);",
+   "CABI_after": "uint32_t d4vr_osw_moduledestroy_after_v1(osw_token_v1 *token);",
+   "local_storage_bytes": {
+    "BeforePOD": 112,
+    "AfterPOD": 80,
+    "Token_across_original": 48,
+    "Admission_across_original": 24,
+    "SourceEntry_helper_only": 56,
+    "digest_state_helper_only_cap": 0
+   },
+   "local_storage_lifetime": {
+    "text_rule": "shared_text_20"
+   },
+   "SOURCE_entry_expressions": {
+    "raw_receiver": "(uintptr_t)$OBJECT",
+    "pso_internal_pointer": "(uintptr_t)state when actualstateparameterinthishelper; missingstate cannotbeinvented",
+    "context": "nativeobjectscalar detachedBEFORE; pendingPSOorrealretainedLookup ownerinheritscorrectly. IfDraw command provenance missing remainsdiagnosticunknown."
+   },
+   "SOURCE_entry_NA_rule": {
+    "text_rule": "shared_text_21"
+   },
+   "allowed_SOURCE_after_expression": {
+    "text_rule": "shared_text_27"
+   },
+   "ENTRY_cut": {
+    "text_rule": "shared_text_23"
+   },
+   "OFF_forwarding": {
+    "text_rule": "shared_text_24"
+   }
+  },
+  {
+   "api": "PipelineDestroy",
+   "tag": 42,
+   "original_return_kind": "void",
+   "site_rows": [
+    75,
+    76,
+    77,
+    78
+   ],
+   "argument_source_expressions": {
+    "device": "VKDEV($DEVICE)",
+    "object": "VKPIPE($OBJECT)",
+    "allocator_pointer": "address($ALLOC)"
+   },
+   "argument_mask_bits": {
+    "device": 0,
+    "object": 1,
+    "allocator_pointer": 2
+   },
+   "borrow_and_copied_count_policy": {
+    "text_rule": "shared_text_16"
+   },
+   "defined_RETURN_rule": {
+    "text_rule": "shared_text_56"
+   },
+   "CABI_before": "uint32_t d4vr_osw_pipelinedestroy_before_v1(osw_token_v1 *token, const osw_before_pipelinedestroy_v1 *before);",
+   "CABI_after": "uint32_t d4vr_osw_pipelinedestroy_after_v1(osw_token_v1 *token);",
+   "local_storage_bytes": {
+    "BeforePOD": 112,
+    "AfterPOD": 80,
+    "Token_across_original": 48,
+    "Admission_across_original": 24,
+    "SourceEntry_helper_only": 56,
+    "digest_state_helper_only_cap": 0
+   },
+   "local_storage_lifetime": {
+    "text_rule": "shared_text_20"
+   },
+   "SOURCE_entry_expressions": {
+    "raw_receiver": "(uintptr_t)$OBJECT",
+    "pso_internal_pointer": "(uintptr_t)state whereoriginalhelperparameter",
+    "context": "actualstate/device beforevoidDestroy; count/sourcebirthmissing=>unknown"
+   },
+   "SOURCE_entry_NA_rule": {
+    "text_rule": "shared_text_21"
+   },
+   "allowed_SOURCE_after_expression": {
+    "text_rule": "shared_text_27"
+   },
+   "ENTRY_cut": {
+    "text_rule": "shared_text_23"
+   },
+   "OFF_forwarding": {
+    "text_rule": "shared_text_24"
+   }
+  },
+  {
+   "api": "PipelineLayoutDestroy",
+   "tag": 43,
+   "original_return_kind": "void",
+   "site_rows": [
+    79,
+    80,
+    81,
+    82
+   ],
+   "argument_source_expressions": {
+    "device": "VKDEV($DEVICE)",
+    "object": "VKLAYOUT($OBJECT)",
+    "allocator_pointer": "address($ALLOC)"
+   },
+   "argument_mask_bits": {
+    "device": 0,
+    "object": 1,
+    "allocator_pointer": 2
+   },
+   "borrow_and_copied_count_policy": {
+    "text_rule": "shared_text_16"
+   },
+   "defined_RETURN_rule": {
+    "text_rule": "shared_text_56"
+   },
+   "CABI_before": "uint32_t d4vr_osw_pipelinelayoutdestroy_before_v1(osw_token_v1 *token, const osw_before_pipelinelayoutdestroy_v1 *before);",
+   "CABI_after": "uint32_t d4vr_osw_pipelinelayoutdestroy_after_v1(osw_token_v1 *token);",
+   "local_storage_bytes": {
+    "BeforePOD": 112,
+    "AfterPOD": 80,
+    "Token_across_original": 48,
+    "Admission_across_original": 24,
+    "SourceEntry_helper_only": 56,
+    "digest_state_helper_only_cap": 0
+   },
+   "local_storage_lifetime": {
+    "text_rule": "shared_text_20"
+   },
+   "SOURCE_entry_expressions": {
+    "raw_receiver": "(uintptr_t)$OBJECT",
+    "root_internal_pointer": "(uintptr_t)root_signature (originalcleanup argument)",
+    "context": "onlyGRAPHICSoriginselected beforetick; othersunselectedbutcalled. No postDestroyread."
+   },
+   "SOURCE_entry_NA_rule": {
+    "text_rule": "shared_text_21"
+   },
+   "allowed_SOURCE_after_expression": {
+    "text_rule": "shared_text_27"
+   },
+   "ENTRY_cut": {
+    "text_rule": "shared_text_23"
+   },
+   "OFF_forwarding": {
+    "text_rule": "shared_text_24"
+   }
+  },
+  {
+   "api": "ScopeGap",
+   "tag": 44,
+   "original_return_kind": "observer",
+   "site_rows": [
+    83
+   ],
+   "argument_source_expressions": {
+    "code": "actual observer refusal code, not originalAPI operand"
+   },
+   "argument_mask_bits": {
+    "code": 0
+   },
+   "borrow_and_copied_count_policy": {
+    "text_rule": "shared_text_16"
+   },
+   "defined_RETURN_rule": "Observer-only scopegap(code), one mark: entry==return. No original delegate/counter-return, no token/Before/After/return_admit. Sets sticky gap; raw resultnull. Frozen function alone implements this protocol.",
+   "CABI_before": null,
+   "CABI_after": null,
+   "local_storage_bytes": {
+    "BeforePOD": 0,
+    "AfterPOD": 0,
+    "Token_across_original": 0,
+    "Admission_across_original": 0,
+    "SourceEntry_helper_only": 0,
+    "digest_state_helper_only_cap": 0
+   },
+   "local_storage_lifetime": {
+    "text_rule": "shared_text_20"
+   },
+   "SOURCE_entry_expressions": {
+    "context": "No originalreceiver/return. Frozenobserverreasononly."
+   },
+   "SOURCE_entry_NA_rule": {
+    "text_rule": "shared_text_21"
+   },
+   "allowed_SOURCE_after_expression": {
+    "text_rule": "shared_text_27"
+   },
+   "ENTRY_cut": "Observer-only actualrefusal point; not original API ENTRY.",
+   "OFF_forwarding": {
+    "text_rule": "shared_text_24"
+   },
+   "CABI_observer_only": "uint32_t d4vr_osw_scopegap_v1(uint32_t code);"
+  },
+  {
+   "api": "VkViewportCount",
+   "tag": 45,
+   "original_return_kind": "void",
+   "site_rows": [
+    69,
+    70
+   ],
+   "argument_source_expressions": {
+    "vk_command_buffer": "list->cmd.vk_command_buffer",
+    "viewports": "count=$COUNT,pointer=$ARRAY,values[i]=bits(($ARRAY)[i].{x,y,width,height,minDepth,maxDepth})"
+   },
+   "argument_mask_bits": {
+    "vk_command_buffer": 0,
+    "viewports": 1
+   },
+   "borrow_and_copied_count_policy": {
+    "text_rule": "shared_text_16"
+   },
+   "defined_RETURN_rule": {
+    "text_rule": "shared_text_56"
+   },
+   "CABI_before": "uint32_t d4vr_osw_vkviewportcount_before_v1(osw_token_v1 *token, const osw_before_vkviewportcount_v1 *before);",
+   "CABI_after": "uint32_t d4vr_osw_vkviewportcount_after_v1(osw_token_v1 *token);",
+   "local_storage_bytes": {
+    "BeforePOD": 120,
+    "AfterPOD": 80,
+    "Token_across_original": 48,
+    "Admission_across_original": 24,
+    "SourceEntry_helper_only": 56,
+    "digest_state_helper_only_cap": 0
+   },
+   "local_storage_lifetime": {
+    "text_rule": "shared_text_20"
+   },
+   "SOURCE_entry_expressions": {
+    "raw_receiver": "(uintptr_t)list->cmd.vk_command_buffer",
+    "command_interface_pointer": "(uintptr_t)&list->ID3D12GraphicsCommandList_iface",
+    "pso_internal_pointer": "(uintptr_t)list->state",
+    "context": "live list at actualupdate_dynamic_state nativecall; neverAPP-derivedclamp"
+   },
+   "SOURCE_entry_NA_rule": {
+    "text_rule": "shared_text_21"
+   },
+   "allowed_SOURCE_after_expression": {
+    "text_rule": "shared_text_27"
+   },
+   "ENTRY_cut": {
+    "text_rule": "shared_text_23"
+   },
+   "OFF_forwarding": {
+    "text_rule": "shared_text_24"
+   }
+  },
+  {
+   "api": "VkScissorCount",
+   "tag": 46,
+   "original_return_kind": "void",
+   "site_rows": [
+    71,
+    72
+   ],
+   "argument_source_expressions": {
+    "vk_command_buffer": "list->cmd.vk_command_buffer",
+    "rects": "count=$COUNT,pointer=$ARRAY,values[i]=($ARRAY)[i].{offset.x,offset.y,extent.width,extent.height}"
+   },
+   "argument_mask_bits": {
+    "vk_command_buffer": 0,
+    "rects": 1
+   },
+   "borrow_and_copied_count_policy": {
+    "text_rule": "shared_text_16"
+   },
+   "defined_RETURN_rule": {
+    "text_rule": "shared_text_56"
+   },
+   "CABI_before": "uint32_t d4vr_osw_vkscissorcount_before_v1(osw_token_v1 *token, const osw_before_vkscissorcount_v1 *before);",
+   "CABI_after": "uint32_t d4vr_osw_vkscissorcount_after_v1(osw_token_v1 *token);",
+   "local_storage_bytes": {
+    "BeforePOD": 112,
+    "AfterPOD": 80,
+    "Token_across_original": 48,
+    "Admission_across_original": 24,
+    "SourceEntry_helper_only": 56,
+    "digest_state_helper_only_cap": 0
+   },
+   "local_storage_lifetime": {
+    "text_rule": "shared_text_20"
+   },
+   "SOURCE_entry_expressions": {
+    "raw_receiver": "(uintptr_t)list->cmd.vk_command_buffer",
+    "command_interface_pointer": "(uintptr_t)&list->ID3D12GraphicsCommandList_iface",
+    "pso_internal_pointer": "(uintptr_t)list->state",
+    "context": "live list at actualupdate_dynamic_state nativecall"
+   },
+   "SOURCE_entry_NA_rule": {
+    "text_rule": "shared_text_21"
+   },
+   "allowed_SOURCE_after_expression": {
+    "text_rule": "shared_text_27"
+   },
+   "ENTRY_cut": {
+    "text_rule": "shared_text_23"
+   },
+   "OFF_forwarding": {
+    "text_rule": "shared_text_24"
+   }
+  }
+ ],
+ "site_rows": [
+  {
+   "family": "DeviceCreate",
+   "site": "d3d12_device_create",
+   "source_file": "libs/vkd3d/device.c",
+   "pristine": {
+    "line": 10870,
+    "prototype": "HRESULT d3d12_device_create(struct vkd3d_instance *instance, const struct vkd3d_device_create_info *create_info, struct d3d12_device **device)"
+   },
+   "derived": {
+    "line": 10875,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "",
+   "bindings": {}
+  },
+  {
+   "family": "ResourceCreate",
+   "site": "d3d12_device_CreateCommittedResource",
+   "source_file": "libs/vkd3d/device.c",
+   "pristine": {
+    "line": 6604,
+    "prototype": "static HRESULT STDMETHODCALLTYPE d3d12_device_CreateCommittedResource(d3d12_device_iface *iface, const D3D12_HEAP_PROPERTIES *heap_properties, D3D12_HEAP_FLAGS heap_flags, const D3D12_RESOURCE_DESC *desc, D3D12_RESOURCE_STATES initial_state, const D3D12_CLEAR_VALUE *optimized_clear_value, REFIID iid, void **resource)"
+   },
+   "derived": {
+    "line": 6604,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "",
+   "bindings": {}
+  },
+  {
+   "family": "HeapCreate",
+   "site": "d3d12_device_CreateDescriptorHeap",
+   "source_file": "libs/vkd3d/device.c",
+   "pristine": {
+    "line": 5572,
+    "prototype": "static HRESULT STDMETHODCALLTYPE d3d12_device_CreateDescriptorHeap(d3d12_device_iface *iface, const D3D12_DESCRIPTOR_HEAP_DESC *desc, REFIID riid, void **descriptor_heap)"
+   },
+   "derived": {
+    "line": 5572,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "",
+   "bindings": {}
+  },
+  {
+   "family": "AllocatorCreate",
+   "site": "d3d12_device_CreateCommandAllocator",
+   "source_file": "libs/vkd3d/device.c",
+   "pristine": {
+    "line": 4039,
+    "prototype": "static HRESULT STDMETHODCALLTYPE d3d12_device_CreateCommandAllocator(d3d12_device_iface *iface, D3D12_COMMAND_LIST_TYPE type, REFIID riid, void **command_allocator)"
+   },
+   "derived": {
+    "line": 4039,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "",
+   "bindings": {}
+  },
+  {
+   "family": "QueueCreate",
+   "site": "d3d12_device_CreateCommandQueue",
+   "source_file": "libs/vkd3d/device.c",
+   "pristine": {
+    "line": 4022,
+    "prototype": "static HRESULT STDMETHODCALLTYPE d3d12_device_CreateCommandQueue(d3d12_device_iface *iface, const D3D12_COMMAND_QUEUE_DESC *desc, REFIID riid, void **command_queue)"
+   },
+   "derived": {
+    "line": 4022,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "",
+   "bindings": {}
+  },
+  {
+   "family": "CommandCreate",
+   "site": "d3d12_device_CreateCommandList",
+   "source_file": "libs/vkd3d/device.c",
+   "pristine": {
+    "line": 4115,
+    "prototype": "static HRESULT STDMETHODCALLTYPE d3d12_device_CreateCommandList(d3d12_device_iface *iface, UINT node_mask, D3D12_COMMAND_LIST_TYPE type, ID3D12CommandAllocator *command_allocator, ID3D12PipelineState *initial_pipeline_state, REFIID riid, void **command_list)"
+   },
+   "derived": {
+    "line": 4115,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "",
+   "bindings": {}
+  },
+  {
+   "family": "RootCreate",
+   "site": "d3d12_device_CreateRootSignature",
+   "source_file": "libs/vkd3d/device.c",
+   "pristine": {
+    "line": 5598,
+    "prototype": "static HRESULT STDMETHODCALLTYPE d3d12_device_CreateRootSignature(d3d12_device_iface *iface, UINT node_mask, const void *bytecode, SIZE_T bytecode_length, REFIID riid, void **root_signature)"
+   },
+   "derived": {
+    "line": 5598,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "",
+   "bindings": {}
+  },
+  {
+   "family": "PSOCreate",
+   "site": "d3d12_device_CreateGraphicsPipelineState",
+   "source_file": "libs/vkd3d/device.c",
+   "pristine": {
+    "line": 4067,
+    "prototype": "static HRESULT STDMETHODCALLTYPE d3d12_device_CreateGraphicsPipelineState(d3d12_device_iface *iface, const D3D12_GRAPHICS_PIPELINE_STATE_DESC *desc, REFIID riid, void **pipeline_state)"
+   },
+   "derived": {
+    "line": 4067,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "",
+   "bindings": {}
+  },
+  {
+   "family": "Increment",
+   "site": "d3d12_device_GetDescriptorHandleIncrementSize",
+   "source_file": "libs/vkd3d/device.c",
+   "pristine": {
+    "line": 5589,
+    "prototype": "static UINT STDMETHODCALLTYPE d3d12_device_GetDescriptorHandleIncrementSize(d3d12_device_iface *iface, D3D12_DESCRIPTOR_HEAP_TYPE descriptor_heap_type)"
+   },
+   "derived": {
+    "line": 5589,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "",
+   "bindings": {}
+  },
+  {
+   "family": "CPUStart",
+   "site": "d3d12_descriptor_heap_GetCPUDescriptorHandleForHeapStart",
+   "source_file": "libs/vkd3d/resource.c",
+   "pristine": {
+    "line": 9207,
+    "prototype": "static D3D12_CPU_DESCRIPTOR_HANDLE * STDMETHODCALLTYPE d3d12_descriptor_heap_GetCPUDescriptorHandleForHeapStart( ID3D12DescriptorHeap *iface, D3D12_CPU_DESCRIPTOR_HANDLE *descriptor)"
+   },
+   "derived": {
+    "line": 9217,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "",
+   "bindings": {}
+  },
+  {
+   "family": "GPUStart",
+   "site": "d3d12_descriptor_heap_GetGPUDescriptorHandleForHeapStart",
+   "source_file": "libs/vkd3d/resource.c",
+   "pristine": {
+    "line": 9219,
+    "prototype": "static D3D12_GPU_DESCRIPTOR_HANDLE * STDMETHODCALLTYPE d3d12_descriptor_heap_GetGPUDescriptorHandleForHeapStart( ID3D12DescriptorHeap *iface, D3D12_GPU_DESCRIPTOR_HANDLE *descriptor)"
+   },
+   "derived": {
+    "line": 9229,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "",
+   "bindings": {}
+  },
+  {
+   "family": "CopyRanges",
+   "site": "d3d12_device_CopyDescriptors",
+   "source_file": "libs/vkd3d/device.c",
+   "pristine": {
+    "line": 5998,
+    "prototype": "static void STDMETHODCALLTYPE d3d12_device_CopyDescriptors(d3d12_device_iface *iface, UINT dst_descriptor_range_count, const D3D12_CPU_DESCRIPTOR_HANDLE *dst_descriptor_range_offsets, const UINT *dst_descriptor_range_sizes, UINT src_descriptor_range_count, const D3D12_CPU_DESCRIPTOR_HANDLE *src_descriptor_range_offsets, const UINT *src_descriptor_range_sizes, D3D12_DESCRIPTOR_HEAP_TYPE descriptor_heap_type)"
+   },
+   "derived": {
+    "line": 5998,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "",
+   "bindings": {}
+  },
+  {
+   "family": "Reset",
+   "site": "d3d12_command_list_Reset",
+   "source_file": "libs/vkd3d/command.c",
+   "pristine": {
+    "line": 7214,
+    "prototype": "static HRESULT STDMETHODCALLTYPE d3d12_command_list_Reset(d3d12_command_list_iface *iface, ID3D12CommandAllocator *allocator, ID3D12PipelineState *initial_pipeline_state)"
+   },
+   "derived": {
+    "line": 7214,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "",
+   "bindings": {}
+  },
+  {
+   "family": "Close",
+   "site": "d3d12_command_list_Close",
+   "source_file": "libs/vkd3d/command.c",
+   "pristine": {
+    "line": 6808,
+    "prototype": "static HRESULT STDMETHODCALLTYPE d3d12_command_list_Close(d3d12_command_list_iface *iface)"
+   },
+   "derived": {
+    "line": 6808,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "",
+   "bindings": {}
+  },
+  {
+   "family": "ClearState",
+   "site": "d3d12_command_list_ClearState",
+   "source_file": "libs/vkd3d/command.c",
+   "pristine": {
+    "line": 7245,
+    "prototype": "static void STDMETHODCALLTYPE d3d12_command_list_ClearState(d3d12_command_list_iface *iface, ID3D12PipelineState *pipeline_state)"
+   },
+   "derived": {
+    "line": 7245,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "",
+   "bindings": {}
+  },
+  {
+   "family": "SetPipeline",
+   "site": "d3d12_command_list_SetPipelineState",
+   "source_file": "libs/vkd3d/command.c",
+   "pristine": {
+    "line": 12951,
+    "prototype": "static void STDMETHODCALLTYPE d3d12_command_list_SetPipelineState(d3d12_command_list_iface *iface, ID3D12PipelineState *pipeline_state)"
+   },
+   "derived": {
+    "line": 12951,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "",
+   "bindings": {}
+  },
+  {
+   "family": "SetRoot",
+   "site": "d3d12_command_list_SetGraphicsRootSignature",
+   "source_file": "libs/vkd3d/command.c",
+   "pristine": {
+    "line": 14497,
+    "prototype": "static void STDMETHODCALLTYPE d3d12_command_list_SetGraphicsRootSignature(d3d12_command_list_iface *iface, ID3D12RootSignature *root_signature)"
+   },
+   "derived": {
+    "line": 14497,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "",
+   "bindings": {}
+  },
+  {
+   "family": "SetHeaps",
+   "site": "d3d12_command_list_SetDescriptorHeaps",
+   "source_file": "libs/vkd3d/command.c",
+   "pristine": {
+    "line": 14441,
+    "prototype": "static void STDMETHODCALLTYPE d3d12_command_list_SetDescriptorHeaps(d3d12_command_list_iface *iface, UINT heap_count, ID3D12DescriptorHeap *const *heaps)"
+   },
+   "derived": {
+    "line": 14441,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "",
+   "bindings": {}
+  },
+  {
+   "family": "Viewports",
+   "site": "d3d12_command_list_RSSetViewports",
+   "source_file": "libs/vkd3d/command.c",
+   "pristine": {
+    "line": 12826,
+    "prototype": "static void STDMETHODCALLTYPE d3d12_command_list_RSSetViewports(d3d12_command_list_iface *iface, UINT viewport_count, const D3D12_VIEWPORT *viewports)"
+   },
+   "derived": {
+    "line": 12826,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "",
+   "bindings": {}
+  },
+  {
+   "family": "Scissors",
+   "site": "d3d12_command_list_RSSetScissorRects",
+   "source_file": "libs/vkd3d/command.c",
+   "pristine": {
+    "line": 12868,
+    "prototype": "static void STDMETHODCALLTYPE d3d12_command_list_RSSetScissorRects(d3d12_command_list_iface *iface, UINT rect_count, const D3D12_RECT *rects)"
+   },
+   "derived": {
+    "line": 12868,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "",
+   "bindings": {}
+  },
+  {
+   "family": "RTV",
+   "site": "d3d12_command_list_OMSetRenderTargets",
+   "source_file": "libs/vkd3d/command.c",
+   "pristine": {
+    "line": 15282,
+    "prototype": "static void STDMETHODCALLTYPE d3d12_command_list_OMSetRenderTargets(d3d12_command_list_iface *iface, UINT render_target_descriptor_count, const D3D12_CPU_DESCRIPTOR_HANDLE *render_target_descriptors, BOOL single_descriptor_handle, const D3D12_CPU_DESCRIPTOR_HANDLE *depth_stencil_descriptor)"
+   },
+   "derived": {
+    "line": 15282,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "",
+   "bindings": {}
+  },
+  {
+   "family": "Draw",
+   "site": "d3d12_command_list_DrawInstanced",
+   "source_file": "libs/vkd3d/command.c",
+   "pristine": {
+    "line": 9092,
+    "prototype": "static void STDMETHODCALLTYPE d3d12_command_list_DrawInstanced(d3d12_command_list_iface *iface, UINT vertex_count_per_instance, UINT instance_count, UINT start_vertex_location, UINT start_instance_location)"
+   },
+   "derived": {
+    "line": 9092,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "",
+   "bindings": {}
+  },
+  {
+   "family": "Execute",
+   "site": "d3d12_command_queue_ExecuteCommandLists",
+   "source_file": "libs/vkd3d/command.c",
+   "pristine": {
+    "line": 23727,
+    "prototype": "VKD3D_METHODENTRY(void) d3d12_command_queue_ExecuteCommandLists(ID3D12CommandQueue *iface, UINT command_list_count, ID3D12CommandList * const *command_lists)"
+   },
+   "derived": {
+    "line": 23727,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "",
+   "bindings": {}
+  },
+  {
+   "family": "AllocatorReset",
+   "site": "d3d12_command_allocator_Reset",
+   "source_file": "libs/vkd3d/command.c",
+   "pristine": {
+    "line": 2939,
+    "prototype": "static HRESULT STDMETHODCALLTYPE d3d12_command_allocator_Reset(ID3D12CommandAllocator *iface)"
+   },
+   "derived": {
+    "line": 2939,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "",
+   "bindings": {}
+  },
+  {
+   "family": "CreateRTV",
+   "site": "d3d12_device_CreateRenderTargetView",
+   "source_file": "libs/vkd3d/device.c",
+   "pristine": {
+    "line": 5820,
+    "prototype": "static void STDMETHODCALLTYPE d3d12_device_CreateRenderTargetView(d3d12_device_iface *iface, ID3D12Resource *resource, const D3D12_RENDER_TARGET_VIEW_DESC *desc, D3D12_CPU_DESCRIPTOR_HANDLE descriptor)"
+   },
+   "derived": {
+    "line": 5820,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "",
+   "bindings": {}
+  },
+  {
+   "family": "SetConstants",
+   "site": "d3d12_command_list_SetGraphicsRoot32BitConstants",
+   "source_file": "libs/vkd3d/command.c",
+   "pristine": {
+    "line": 14736,
+    "prototype": "static void STDMETHODCALLTYPE d3d12_command_list_SetGraphicsRoot32BitConstants(d3d12_command_list_iface *iface, UINT root_parameter_index, UINT constant_count, const void *data, UINT dst_offset)"
+   },
+   "derived": {
+    "line": 14736,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "",
+   "bindings": {}
+  },
+  {
+   "family": "Topology",
+   "site": "d3d12_command_list_IASetPrimitiveTopology",
+   "source_file": "libs/vkd3d/command.c",
+   "pristine": {
+    "line": 12800,
+    "prototype": "static void STDMETHODCALLTYPE d3d12_command_list_IASetPrimitiveTopology(d3d12_command_list_iface *iface, D3D12_PRIMITIVE_TOPOLOGY topology)"
+   },
+   "derived": {
+    "line": 12800,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "",
+   "bindings": {}
+  },
+  {
+   "family": "CreateSRV",
+   "site": "d3d12_device_CreateShaderResourceView_heap",
+   "source_file": "libs/vkd3d/device.c",
+   "pristine": {
+    "line": 5673,
+    "prototype": "static void STDMETHODCALLTYPE d3d12_device_CreateShaderResourceView_heap(d3d12_device_iface *iface, ID3D12Resource *resource, const D3D12_SHADER_RESOURCE_VIEW_DESC *desc, D3D12_CPU_DESCRIPTOR_HANDLE descriptor)"
+   },
+   "derived": {
+    "line": 5673,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "",
+   "bindings": {}
+  },
+  {
+   "family": "CreateSampler",
+   "site": "d3d12_device_CreateSampler_heap",
+   "source_file": "libs/vkd3d/device.c",
+   "pristine": {
+    "line": 5842,
+    "prototype": "static void STDMETHODCALLTYPE d3d12_device_CreateSampler_heap(d3d12_device_iface *iface, const D3D12_SAMPLER_DESC *desc, D3D12_CPU_DESCRIPTOR_HANDLE descriptor)"
+   },
+   "derived": {
+    "line": 5842,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "",
+   "bindings": {}
+  },
+  {
+   "family": "CreateSRV",
+   "site": "d3d12_device_CreateShaderResourceView_embedded",
+   "source_file": "libs/vkd3d/device.c",
+   "pristine": {
+    "line": 5685,
+    "prototype": "static void STDMETHODCALLTYPE d3d12_device_CreateShaderResourceView_embedded(d3d12_device_iface *iface, ID3D12Resource *resource, const D3D12_SHADER_RESOURCE_VIEW_DESC *desc, D3D12_CPU_DESCRIPTOR_HANDLE descriptor)"
+   },
+   "derived": {
+    "line": 5685,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "",
+   "bindings": {}
+  },
+  {
+   "family": "CreateSampler",
+   "site": "d3d12_device_CreateSampler_embedded",
+   "source_file": "libs/vkd3d/device.c",
+   "pristine": {
+    "line": 5855,
+    "prototype": "static void STDMETHODCALLTYPE d3d12_device_CreateSampler_embedded(d3d12_device_iface *iface, const D3D12_SAMPLER_DESC *desc, D3D12_CPU_DESCRIPTOR_HANDLE descriptor)"
+   },
+   "derived": {
+    "line": 5855,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "",
+   "bindings": {}
+  },
+  {
+   "family": "CreateSRV",
+   "site": "d3d12_device_CreateShaderResourceView_default",
+   "source_file": "libs/vkd3d/device.c",
+   "pristine": {
+    "line": 5697,
+    "prototype": "static void STDMETHODCALLTYPE d3d12_device_CreateShaderResourceView_default(d3d12_device_iface *iface, ID3D12Resource *resource, const D3D12_SHADER_RESOURCE_VIEW_DESC *desc, D3D12_CPU_DESCRIPTOR_HANDLE descriptor)"
+   },
+   "derived": {
+    "line": 5697,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "",
+   "bindings": {}
+  },
+  {
+   "family": "CreateSampler",
+   "site": "d3d12_device_CreateSampler_default",
+   "source_file": "libs/vkd3d/device.c",
+   "pristine": {
+    "line": 5868,
+    "prototype": "static void STDMETHODCALLTYPE d3d12_device_CreateSampler_default(d3d12_device_iface *iface, const D3D12_SAMPLER_DESC *desc, D3D12_CPU_DESCRIPTOR_HANDLE descriptor)"
+   },
+   "derived": {
+    "line": 5868,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "",
+   "bindings": {}
+  },
+  {
+   "family": "CopySimple",
+   "site": "d3d12_device_CopyDescriptorsSimple_descriptor_buffer_16_16_4",
+   "source_file": "libs/vkd3d/device.c",
+   "pristine": {
+    "line": 6021,
+    "prototype": "static void STDMETHODCALLTYPE d3d12_device_CopyDescriptorsSimple_descriptor_buffer_16_16_4(d3d12_device_iface *iface, UINT descriptor_count, const D3D12_CPU_DESCRIPTOR_HANDLE dst_descriptor_range_offset, const D3D12_CPU_DESCRIPTOR_HANDLE src_descriptor_range_offset, D3D12_DESCRIPTOR_HEAP_TYPE descriptor_heap_type)"
+   },
+   "derived": {
+    "line": 6021,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "",
+   "bindings": {}
+  },
+  {
+   "family": "CopySimple",
+   "site": "d3d12_device_CopyDescriptorsSimple_descriptor_buffer_64_64_32",
+   "source_file": "libs/vkd3d/device.c",
+   "pristine": {
+    "line": 6126,
+    "prototype": "static void STDMETHODCALLTYPE d3d12_device_CopyDescriptorsSimple_descriptor_buffer_64_64_32(d3d12_device_iface *iface, UINT descriptor_count, const D3D12_CPU_DESCRIPTOR_HANDLE dst_descriptor_range_offset, const D3D12_CPU_DESCRIPTOR_HANDLE src_descriptor_range_offset, D3D12_DESCRIPTOR_HEAP_TYPE descriptor_heap_type)"
+   },
+   "derived": {
+    "line": 6126,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "",
+   "bindings": {}
+  },
+  {
+   "family": "CopySimple",
+   "site": "d3d12_device_CopyDescriptorsSimple_embedded_64_16_packed",
+   "source_file": "libs/vkd3d/device.c",
+   "pristine": {
+    "line": 6230,
+    "prototype": "static void STDMETHODCALLTYPE d3d12_device_CopyDescriptorsSimple_embedded_64_16_packed(d3d12_device_iface *iface, UINT descriptor_count, const D3D12_CPU_DESCRIPTOR_HANDLE dst_descriptor_range_offset, const D3D12_CPU_DESCRIPTOR_HANDLE src_descriptor_range_offset, D3D12_DESCRIPTOR_HEAP_TYPE descriptor_heap_type)"
+   },
+   "derived": {
+    "line": 6230,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "",
+   "bindings": {}
+  },
+  {
+   "family": "CopySimple",
+   "site": "d3d12_device_CopyDescriptorsSimple_embedded_32_16_planar",
+   "source_file": "libs/vkd3d/device.c",
+   "pristine": {
+    "line": 6323,
+    "prototype": "static void STDMETHODCALLTYPE d3d12_device_CopyDescriptorsSimple_embedded_32_16_planar(d3d12_device_iface *iface, UINT descriptor_count, const D3D12_CPU_DESCRIPTOR_HANDLE dst_descriptor_range_offset, const D3D12_CPU_DESCRIPTOR_HANDLE src_descriptor_range_offset, D3D12_DESCRIPTOR_HEAP_TYPE descriptor_heap_type)"
+   },
+   "derived": {
+    "line": 6323,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "",
+   "bindings": {}
+  },
+  {
+   "family": "CopySimple",
+   "site": "d3d12_device_CopyDescriptorsSimple_embedded_32_32_planar",
+   "source_file": "libs/vkd3d/device.c",
+   "pristine": {
+    "line": 6380,
+    "prototype": "static void STDMETHODCALLTYPE d3d12_device_CopyDescriptorsSimple_embedded_32_32_planar(d3d12_device_iface *iface, UINT descriptor_count, const D3D12_CPU_DESCRIPTOR_HANDLE dst_descriptor_range_offset, const D3D12_CPU_DESCRIPTOR_HANDLE src_descriptor_range_offset, D3D12_DESCRIPTOR_HEAP_TYPE descriptor_heap_type)"
+   },
+   "derived": {
+    "line": 6380,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "",
+   "bindings": {}
+  },
+  {
+   "family": "CopySimple",
+   "site": "d3d12_device_CopyDescriptorsSimple_embedded_128_32_planar",
+   "source_file": "libs/vkd3d/device.c",
+   "pristine": {
+    "line": 6420,
+    "prototype": "static void STDMETHODCALLTYPE d3d12_device_CopyDescriptorsSimple_embedded_128_32_planar(d3d12_device_iface *iface, UINT descriptor_count, const D3D12_CPU_DESCRIPTOR_HANDLE dst_descriptor_range_offset, const D3D12_CPU_DESCRIPTOR_HANDLE src_descriptor_range_offset, D3D12_DESCRIPTOR_HEAP_TYPE descriptor_heap_type)"
+   },
+   "derived": {
+    "line": 6420,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "",
+   "bindings": {}
+  },
+  {
+   "family": "CopySimple",
+   "site": "d3d12_device_CopyDescriptorsSimple_embedded_generic",
+   "source_file": "libs/vkd3d/device.c",
+   "pristine": {
+    "line": 6466,
+    "prototype": "static void STDMETHODCALLTYPE d3d12_device_CopyDescriptorsSimple_embedded_generic(d3d12_device_iface *iface, UINT descriptor_count, const D3D12_CPU_DESCRIPTOR_HANDLE dst_descriptor_range_offset, const D3D12_CPU_DESCRIPTOR_HANDLE src_descriptor_range_offset, D3D12_DESCRIPTOR_HEAP_TYPE descriptor_heap_type)"
+   },
+   "derived": {
+    "line": 6466,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "",
+   "bindings": {}
+  },
+  {
+   "family": "CopySimple",
+   "site": "d3d12_device_CopyDescriptorsSimple_default",
+   "source_file": "libs/vkd3d/device.c",
+   "pristine": {
+    "line": 6502,
+    "prototype": "static void STDMETHODCALLTYPE d3d12_device_CopyDescriptorsSimple_default(d3d12_device_iface *iface, UINT descriptor_count, const D3D12_CPU_DESCRIPTOR_HANDLE dst_descriptor_range_offset, const D3D12_CPU_DESCRIPTOR_HANDLE src_descriptor_range_offset, D3D12_DESCRIPTOR_HEAP_TYPE descriptor_heap_type)"
+   },
+   "derived": {
+    "line": 6502,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "",
+   "bindings": {}
+  },
+  {
+   "family": "SetTable",
+   "site": "d3d12_command_list_SetGraphicsRootDescriptorTable_default",
+   "source_file": "libs/vkd3d/command.c",
+   "pristine": {
+    "line": 14663,
+    "prototype": "static void STDMETHODCALLTYPE d3d12_command_list_SetGraphicsRootDescriptorTable_default( d3d12_command_list_iface *iface, UINT root_parameter_index, D3D12_GPU_DESCRIPTOR_HANDLE base_descriptor)"
+   },
+   "derived": {
+    "line": 14663,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "",
+   "bindings": {},
+   "SOURCE_site_enum": "OSW_SOURCE_SITE_DEFAULT"
+  },
+  {
+   "family": "SetTable",
+   "site": "d3d12_command_list_SetGraphicsRootDescriptorTable_embedded_64_16",
+   "source_file": "libs/vkd3d/command.c",
+   "pristine": {
+    "line": 14630,
+    "macro_definition": "DECLARE_ROOT_TABLE_VARIANT",
+    "macro_instantiation": "embedded_64_16",
+    "prototype": "static void STDMETHODCALLTYPE d3d12_command_list_SetGraphicsRootDescriptorTable_embedded_64_16(d3d12_command_list_iface *iface, UINT root_parameter_index, D3D12_GPU_DESCRIPTOR_HANDLE base_descriptor)"
+   },
+   "derived": {
+    "line": 14630,
+    "macro_definition": "DECLARE_ROOT_TABLE_VARIANT",
+    "macro_instantiation": "embedded_64_16"
+   },
+   "membership": "selected",
+   "bindings": {},
+   "note": "Documentary token-paste expansion, NOT a newly preprocessed/compiled signature.",
+   "SOURCE_site_enum": "OSW_SOURCE_SITE_EMBEDDED_64_16"
+  },
+  {
+   "family": "SetTable",
+   "site": "d3d12_command_list_SetGraphicsRootDescriptorTable_embedded_32_16",
+   "source_file": "libs/vkd3d/command.c",
+   "pristine": {
+    "line": 14630,
+    "macro_definition": "DECLARE_ROOT_TABLE_VARIANT",
+    "macro_instantiation": "embedded_32_16",
+    "prototype": "static void STDMETHODCALLTYPE d3d12_command_list_SetGraphicsRootDescriptorTable_embedded_32_16(d3d12_command_list_iface *iface, UINT root_parameter_index, D3D12_GPU_DESCRIPTOR_HANDLE base_descriptor)"
+   },
+   "derived": {
+    "line": 14630,
+    "macro_definition": "DECLARE_ROOT_TABLE_VARIANT",
+    "macro_instantiation": "embedded_32_16"
+   },
+   "membership": "selected",
+   "bindings": {},
+   "note": "Documentary token-paste expansion, NOT a newly preprocessed/compiled signature.",
+   "SOURCE_site_enum": "OSW_SOURCE_SITE_EMBEDDED_32_16"
+  },
+  {
+   "family": "SetTable",
+   "site": "d3d12_command_list_SetGraphicsRootDescriptorTable_embedded_32_32",
+   "source_file": "libs/vkd3d/command.c",
+   "pristine": {
+    "line": 14630,
+    "macro_definition": "DECLARE_ROOT_TABLE_VARIANT",
+    "macro_instantiation": "embedded_32_32",
+    "prototype": "static void STDMETHODCALLTYPE d3d12_command_list_SetGraphicsRootDescriptorTable_embedded_32_32(d3d12_command_list_iface *iface, UINT root_parameter_index, D3D12_GPU_DESCRIPTOR_HANDLE base_descriptor)"
+   },
+   "derived": {
+    "line": 14630,
+    "macro_definition": "DECLARE_ROOT_TABLE_VARIANT",
+    "macro_instantiation": "embedded_32_32"
+   },
+   "membership": "selected",
+   "bindings": {},
+   "note": "Documentary token-paste expansion, NOT a newly preprocessed/compiled signature.",
+   "SOURCE_site_enum": "OSW_SOURCE_SITE_EMBEDDED_32_32"
+  },
+  {
+   "family": "SetTable",
+   "site": "d3d12_command_list_SetGraphicsRootDescriptorTable_embedded_128_32",
+   "source_file": "libs/vkd3d/command.c",
+   "pristine": {
+    "line": 14630,
+    "macro_definition": "DECLARE_ROOT_TABLE_VARIANT",
+    "macro_instantiation": "embedded_128_32",
+    "prototype": "static void STDMETHODCALLTYPE d3d12_command_list_SetGraphicsRootDescriptorTable_embedded_128_32(d3d12_command_list_iface *iface, UINT root_parameter_index, D3D12_GPU_DESCRIPTOR_HANDLE base_descriptor)"
+   },
+   "derived": {
+    "line": 14630,
+    "macro_definition": "DECLARE_ROOT_TABLE_VARIANT",
+    "macro_instantiation": "embedded_128_32"
+   },
+   "membership": "selected",
+   "bindings": {},
+   "note": "Documentary token-paste expansion, NOT a newly preprocessed/compiled signature.",
+   "SOURCE_site_enum": "OSW_SOURCE_SITE_EMBEDDED_128_32"
+  },
+  {
+   "family": "SetTable",
+   "site": "d3d12_command_list_SetGraphicsRootDescriptorTable_embedded_default",
+   "source_file": "libs/vkd3d/command.c",
+   "pristine": {
+    "line": 14630,
+    "macro_definition": "DECLARE_ROOT_TABLE_VARIANT",
+    "macro_instantiation": "embedded_default",
+    "prototype": "static void STDMETHODCALLTYPE d3d12_command_list_SetGraphicsRootDescriptorTable_embedded_default(d3d12_command_list_iface *iface, UINT root_parameter_index, D3D12_GPU_DESCRIPTOR_HANDLE base_descriptor)"
+   },
+   "derived": {
+    "line": 14630,
+    "macro_definition": "DECLARE_ROOT_TABLE_VARIANT",
+    "macro_instantiation": "embedded_default"
+   },
+   "membership": "selected",
+   "bindings": {},
+   "note": "Documentary token-paste expansion, NOT a newly preprocessed/compiled signature.",
+   "SOURCE_site_enum": "OSW_SOURCE_SITE_EMBEDDED_DEFAULT"
+  },
+  {
+   "family": "Release",
+   "site": "d3d12_device_Release",
+   "source_file": "libs/vkd3d/device.c",
+   "pristine": {
+    "line": 3870,
+    "prototype": "static ULONG STDMETHODCALLTYPE d3d12_device_Release(d3d12_device_iface *iface)"
+   },
+   "derived": {
+    "line": 3870,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "Original COM class device; capture raw receiver/owner BEFORE, actual ULONG only AFTER. No saved object reread after delegate.",
+   "bindings": {}
+  },
+  {
+   "family": "Release",
+   "site": "d3d12_resource_Release",
+   "source_file": "libs/vkd3d/resource.c",
+   "pristine": {
+    "line": 2395,
+    "prototype": "static ULONG STDMETHODCALLTYPE d3d12_resource_Release(d3d12_resource_iface *iface)"
+   },
+   "derived": {
+    "line": 2395,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "Original COM class resource; capture raw receiver/owner BEFORE, actual ULONG only AFTER. No saved object reread after delegate.",
+   "bindings": {}
+  },
+  {
+   "family": "Release",
+   "site": "d3d12_descriptor_heap_Release",
+   "source_file": "libs/vkd3d/resource.c",
+   "pristine": {
+    "line": 9137,
+    "prototype": "static ULONG STDMETHODCALLTYPE d3d12_descriptor_heap_Release(ID3D12DescriptorHeap *iface)"
+   },
+   "derived": {
+    "line": 9147,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "Original COM class heap; capture raw receiver/owner BEFORE, actual ULONG only AFTER. No saved object reread after delegate.",
+   "bindings": {}
+  },
+  {
+   "family": "Release",
+   "site": "d3d12_command_allocator_Release",
+   "source_file": "libs/vkd3d/command.c",
+   "pristine": {
+    "line": 2870,
+    "prototype": "static ULONG STDMETHODCALLTYPE d3d12_command_allocator_Release(ID3D12CommandAllocator *iface)"
+   },
+   "derived": {
+    "line": 2870,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "Original COM class allocator; capture raw receiver/owner BEFORE, actual ULONG only AFTER. No saved object reread after delegate.",
+   "bindings": {}
+  },
+  {
+   "family": "Release",
+   "site": "d3d12_command_list_Release",
+   "source_file": "libs/vkd3d/command.c",
+   "pristine": {
+    "line": 6568,
+    "prototype": "ULONG STDMETHODCALLTYPE d3d12_command_list_Release(d3d12_command_list_iface *iface)"
+   },
+   "derived": {
+    "line": 6568,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "Original COM class command; capture raw receiver/owner BEFORE, actual ULONG only AFTER. No saved object reread after delegate.",
+   "bindings": {}
+  },
+  {
+   "family": "Release",
+   "site": "d3d12_command_queue_Release",
+   "source_file": "libs/vkd3d/command.c",
+   "pristine": {
+    "line": 23227,
+    "prototype": "VKD3D_METHODENTRY_NONSTATIC(ULONG) d3d12_command_queue_Release(ID3D12CommandQueue *iface)"
+   },
+   "derived": {
+    "line": 23227,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "Original COM class queue; capture raw receiver/owner BEFORE, actual ULONG only AFTER. No saved object reread after delegate.",
+   "bindings": {}
+  },
+  {
+   "family": "Release",
+   "site": "d3d12_root_signature_Release",
+   "source_file": "libs/vkd3d/state.c",
+   "pristine": {
+    "line": 120,
+    "prototype": "static ULONG STDMETHODCALLTYPE d3d12_root_signature_Release(ID3D12RootSignature *iface)"
+   },
+   "derived": {
+    "line": 120,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "Original COM class root; capture raw receiver/owner BEFORE, actual ULONG only AFTER. No saved object reread after delegate.",
+   "bindings": {}
+  },
+  {
+   "family": "Release",
+   "site": "d3d12_pipeline_state_Release",
+   "source_file": "libs/vkd3d/state.c",
+   "pristine": {
+    "line": 2915,
+    "prototype": "static ULONG STDMETHODCALLTYPE d3d12_pipeline_state_Release(ID3D12PipelineState *iface)"
+   },
+   "derived": {
+    "line": 2915,
+    "prototype_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "note": "Original COM class pso; capture raw receiver/owner BEFORE, actual ULONG only AFTER. No saved object reread after delegate.",
+   "bindings": {}
+  },
+  {
+   "family": "VkDeviceCreate",
+   "site": "libs/vkd3d/device.c:3270:VkDeviceCreate",
+   "source_file": "libs/vkd3d/device.c",
+   "pristine": {
+    "line": 3270,
+    "original_expression_excerpt": "    vr = VK_CALL(vkCreateDevice(physical_device, &device_info, NULL, &vk_device));"
+   },
+   "derived": {
+    "line": 3270,
+    "original_expression_excerpt_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "bindings": {
+    "DEVICE": "physical_device",
+    "OUT": "&vk_device"
+   },
+   "note": "",
+   "original_signature_reference": "PFN_vkCreateDevice inexistingpinnedVulkanHeader; no PFNcast/redefinition"
+  },
+  {
+   "family": "VkDeviceCreate",
+   "site": "libs/vkd3d/device.c:3275:VkDeviceCreate",
+   "source_file": "libs/vkd3d/device.c",
+   "pristine": {
+    "line": 3275,
+    "original_expression_excerpt": "        vr = VK_CALL(vkCreateDevice(physical_device, &device_info, NULL, &vk_device));"
+   },
+   "derived": {
+    "line": 3275,
+    "original_expression_excerpt_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "bindings": {
+    "DEVICE": "physical_device",
+    "OUT": "&vk_device"
+   },
+   "note": "Actual second call after NVX extension mutation; first failure retained, no undefined output read.",
+   "original_signature_reference": "PFN_vkCreateDevice inexistingpinnedVulkanHeader; no PFNcast/redefinition"
+  },
+  {
+   "family": "RootParse",
+   "site": "libs/vkd3d-shader/vkd3d_shader_main.c:615:RootParse",
+   "source_file": "libs/vkd3d-shader/vkd3d_shader_main.c",
+   "pristine": {
+    "line": 615,
+    "original_expression_excerpt": "        if ((ret = vkd3d_shader_parse_root_signature(dxbc, &desc, compatibility_hash)) < 0)\n        {\n            WARN(\"Failed to parse root signature, vkd3d result %d.\\n\", ret);"
+   },
+   "derived": {
+    "line": 615,
+    "original_expression_excerpt_identical_to_pristine": true
+   },
+   "membership": "blocked_by_G1",
+   "bindings": {},
+   "note": "Generic3args/int; G1 private pendingRoot eligibility must close before this callback can be selected ONLY under RootCreate."
+  },
+  {
+   "family": "ModuleCreate",
+   "site": "libs/vkd3d/state.c:2721:ModuleCreate",
+   "source_file": "libs/vkd3d/state.c",
+   "pristine": {
+    "line": 2721,
+    "original_expression_excerpt": "    vr = VK_CALL(vkCreateShaderModule(device->vk_device, &shader_desc, NULL, vk_module));"
+   },
+   "derived": {
+    "line": 2721,
+    "original_expression_excerpt_identical_to_pristine": true
+   },
+   "membership": "conditional_pending_PSO_or_G2",
+   "bindings": {
+    "DEVICE": "device->vk_device",
+    "CI": "&shader_desc",
+    "ALLOC": "NULL",
+    "OUT": "vk_module"
+   },
+   "note": "UnderactualpendingPSOcoreancestry suffices withoutlexicalstate*. FallbackretainedLookup parent can supplyPSOowner; command/epoch insideDraw stillneedsG2sourceprovenance. No newAPI merelyforstatehelperabsence.",
+   "original_signature_reference": "PFN_vkCreateShaderModule inexistingpinnedVulkanHeader; no PFNcast/redefinition"
+  },
+  {
+   "family": "PipelineLayoutCreate",
+   "site": "libs/vkd3d/state.c:353:PipelineLayoutCreate",
+   "source_file": "libs/vkd3d/state.c",
+   "pristine": {
+    "line": 353,
+    "original_expression_excerpt": "    if ((vr = VK_CALL(vkCreatePipelineLayout(device->vk_device,\n            &pipeline_layout_info, NULL, pipeline_layout))) < 0)\n    {\n        WARN(\"Failed to create Vulkan pipeline layout, vr %d.\\n\", vr);"
+   },
+   "derived": {
+    "line": 353,
+    "original_expression_excerpt_identical_to_pristine": true
+   },
+   "membership": "blocked_by_G2",
+   "bindings": {
+    "DEVICE": "device->vk_device",
+    "CI": "&pipeline_layout_info",
+    "ALLOC": "NULL",
+    "OUT": "pipeline_layout"
+   },
+   "note": "Real native ENTRY here; GRAPHICS classification/root source caller1981 is two helper levels up. Do not start native clock at earlier helpercall or assert a source_site without provenance.",
+   "original_signature_reference": "PFN_vkCreatePipelineLayout inexistingpinnedVulkanHeader; no PFNcast/redefinition"
+  },
+  {
+   "family": "PipelineCreate",
+   "site": "libs/vkd3d/state.c:4561:PipelineCreate",
+   "source_file": "libs/vkd3d/state.c",
+   "pristine": {
+    "line": 4561,
+    "original_expression_excerpt": "    if ((vr = VK_CALL(vkCreateGraphicsPipelines(device->vk_device,\n            VK_NULL_HANDLE, 1, &create_info, NULL, &vk_pipeline))))"
+   },
+   "derived": {
+    "line": 4561,
+    "original_expression_excerpt_identical_to_pristine": true
+   },
+   "membership": "selected_if_same_owned_PSO_scope_GPL_unknown",
+   "bindings": {
+    "DEVICE": "device->vk_device",
+    "CACHE": "VK_NULL_HANDLE",
+    "COUNT": "1",
+    "CI": "&create_info",
+    "ALLOC": "NULL",
+    "OUT": "&vk_pipeline"
+   },
+   "note": {
+    "text_rule": "shared_text_148"
+   },
+   "original_signature_reference": "PFN_vkCreateGraphicsPipelines inexistingpinnedVulkanHeader; no PFNcast/redefinition"
+  },
+  {
+   "family": "PipelineCreate",
+   "site": "libs/vkd3d/state.c:4720:PipelineCreate",
+   "source_file": "libs/vkd3d/state.c",
+   "pristine": {
+    "line": 4720,
+    "original_expression_excerpt": "    if ((vr = VK_CALL(vkCreateGraphicsPipelines(device->vk_device,\n            VK_NULL_HANDLE, 1, &create_info, NULL, &vk_pipeline))))"
+   },
+   "derived": {
+    "line": 4720,
+    "original_expression_excerpt_identical_to_pristine": true
+   },
+   "membership": "selected_if_same_owned_PSO_scope_GPL_unknown",
+   "bindings": {
+    "DEVICE": "device->vk_device",
+    "CACHE": "VK_NULL_HANDLE",
+    "COUNT": "1",
+    "CI": "&create_info",
+    "ALLOC": "NULL",
+    "OUT": "&vk_pipeline"
+   },
+   "note": {
+    "text_rule": "shared_text_148"
+   },
+   "original_signature_reference": "PFN_vkCreateGraphicsPipelines inexistingpinnedVulkanHeader; no PFNcast/redefinition"
+  },
+  {
+   "family": "PipelineCreate",
+   "site": "libs/vkd3d/state.c:6815:PipelineCreate",
+   "source_file": "libs/vkd3d/state.c",
+   "pristine": {
+    "line": 6815,
+    "original_expression_excerpt": "    vr = VK_CALL(vkCreateGraphicsPipelines(state->device->vk_device,\n            vk_cache, 1, &create_info, NULL, vk_pipeline));"
+   },
+   "derived": {
+    "line": 6815,
+    "original_expression_excerpt_identical_to_pristine": true
+   },
+   "membership": "selected_GPL_unknown",
+   "bindings": {
+    "DEVICE": "state->device->vk_device",
+    "CACHE": "vk_cache",
+    "COUNT": "1",
+    "CI": "&create_info",
+    "ALLOC": "NULL",
+    "OUT": "vk_pipeline"
+   },
+   "note": {
+    "text_rule": "shared_text_148"
+   },
+   "original_signature_reference": "PFN_vkCreateGraphicsPipelines inexistingpinnedVulkanHeader; no PFNcast/redefinition"
+  },
+  {
+   "family": "PipelineCreate",
+   "site": "libs/vkd3d/state.c:7030:PipelineCreate",
+   "source_file": "libs/vkd3d/state.c",
+   "pristine": {
+    "line": 7030,
+    "original_expression_excerpt": "    vr = VK_CALL(vkCreateGraphicsPipelines(device->vk_device, vk_cache, 1, &pipeline_desc, NULL, &vk_pipeline));"
+   },
+   "derived": {
+    "line": 7030,
+    "original_expression_excerpt_identical_to_pristine": true
+   },
+   "membership": "conditional_monolithic",
+   "bindings": {
+    "DEVICE": "device->vk_device",
+    "CACHE": "vk_cache",
+    "COUNT": "1",
+    "CI": "&pipeline_desc",
+    "ALLOC": "NULL",
+    "OUT": "&vk_pipeline"
+   },
+   "note": {
+    "text_rule": "shared_text_148"
+   },
+   "original_signature_reference": "PFN_vkCreateGraphicsPipelines inexistingpinnedVulkanHeader; no PFNcast/redefinition"
+  },
+  {
+   "family": "PipelineCreate",
+   "site": "libs/vkd3d/state.c:7080:PipelineCreate",
+   "source_file": "libs/vkd3d/state.c",
+   "pristine": {
+    "line": 7080,
+    "original_expression_excerpt": "        vr = VK_CALL(vkCreateGraphicsPipelines(device->vk_device, vk_cache, 1, &pipeline_desc, NULL, &vk_pipeline));"
+   },
+   "derived": {
+    "line": 7080,
+    "original_expression_excerpt_identical_to_pristine": true
+   },
+   "membership": "conditional_retry_monolithic",
+   "bindings": {
+    "DEVICE": "device->vk_device",
+    "CACHE": "vk_cache",
+    "COUNT": "1",
+    "CI": "&pipeline_desc",
+    "ALLOC": "NULL",
+    "OUT": "&vk_pipeline"
+   },
+   "note": {
+    "text_rule": "shared_text_148"
+   },
+   "original_signature_reference": "PFN_vkCreateGraphicsPipelines inexistingpinnedVulkanHeader; no PFNcast/redefinition"
+  },
+  {
+   "family": "PipelineLookup",
+   "site": "libs/vkd3d/command.c:7596:PipelineLookup",
+   "source_file": "libs/vkd3d/command.c",
+   "pristine": {
+    "line": 7596,
+    "original_expression_excerpt": "    if (!(vk_pipeline = d3d12_pipeline_state_get_pipeline(list->state,\n            &list->dynamic_state, list->dsv.format, &new_active_flags)))\n    {\n        if (!(vk_pipeline = d3d12_pipeline_state_get_or_create_pipeline(list->state,\n                &list->dynamic_state, list->dsv.format, &new_active_flags)))"
+   },
+   "derived": {
+    "line": 7596,
+    "original_expression_excerpt_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "bindings": {},
+   "note": "Wrap ACTUAL helper call here with list/state/command locals; helper definition keeps original4args/VkPipeline result and nested originals. Do not hook only functiondefinition lacking list context.",
+   "original_signature_reference": "original4arg VkPipeline helper inexisting54catalogue state7118/7179; sourcecallerlocation isnot itsdefinition"
+  },
+  {
+   "family": "PipelineLookup",
+   "site": "libs/vkd3d/command.c:7599:PipelineLookup",
+   "source_file": "libs/vkd3d/command.c",
+   "pristine": {
+    "line": 7599,
+    "original_expression_excerpt": "        if (!(vk_pipeline = d3d12_pipeline_state_get_or_create_pipeline(list->state,\n                &list->dynamic_state, list->dsv.format, &new_active_flags)))\n            return false;\n    }\n"
+   },
+   "derived": {
+    "line": 7599,
+    "original_expression_excerpt_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "bindings": {},
+   "note": "Wrap ACTUAL helper call here with list/state/command locals; helper definition keeps original4args/VkPipeline result and nested originals. Do not hook only functiondefinition lacking list context.",
+   "original_signature_reference": "original4arg VkPipeline helper inexisting54catalogue state7118/7179; sourcecallerlocation isnot itsdefinition"
+  },
+  {
+   "family": "BindPipeline",
+   "site": "libs/vkd3d/command.c:7639:BindPipeline",
+   "source_file": "libs/vkd3d/command.c",
+   "pristine": {
+    "line": 7639,
+    "original_expression_excerpt": "        VK_CALL(vkCmdBindPipeline(list->cmd.vk_command_buffer,\n                vk_bind_point_from_pipeline_type(list->state->pipeline_type),\n                vk_pipeline));"
+   },
+   "derived": {
+    "line": 7639,
+    "original_expression_excerpt_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "bindings": {
+    "CB": "list->cmd.vk_command_buffer",
+    "BIND": "vk_bind_point_from_pipeline_type(list->state->pipeline_type)",
+    "PIPE": "vk_pipeline"
+   },
+   "note": "Only selected COM graphics update path; preserve original bindpoint expression, not hardcoded graphics label.",
+   "original_signature_reference": "PFN_vkCmdBindPipeline inexistingpinnedVulkanHeader; no PFNcast/redefinition"
+  },
+  {
+   "family": "EmitDraw",
+   "site": "libs/vkd3d/command.c:9128:EmitDraw",
+   "source_file": "libs/vkd3d/command.c",
+   "pristine": {
+    "line": 9128,
+    "original_expression_excerpt": "        VK_CALL(vkCmdDraw(list->cmd.vk_command_buffer, vertex_count_per_instance,\n                instance_count, start_vertex_location, start_instance_location));"
+   },
+   "derived": {
+    "line": 9128,
+    "original_expression_excerpt_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "bindings": {
+    "CB": "list->cmd.vk_command_buffer"
+   },
+   "note": "Only actual direct COMDraw branch; internalCopy/resolve draws are explicitly outside positive route and do not become COMDraw.",
+   "original_signature_reference": "PFN_vkCmdDraw inexistingpinnedVulkanHeader; no PFNcast/redefinition"
+  },
+  {
+   "family": "VkViewportCount",
+   "site": "libs/vkd3d/command.c:8382:VkViewportCount",
+   "source_file": "libs/vkd3d/command.c",
+   "pristine": {
+    "line": 8382,
+    "original_expression_excerpt": "            VK_CALL(vkCmdSetViewportWithCount(list->cmd.vk_command_buffer,\n                    dyn_state->viewport_count, dyn_state->viewports));"
+   },
+   "derived": {
+    "line": 8382,
+    "original_expression_excerpt_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "bindings": {
+    "ARRAY": "dyn_state->viewports",
+    "COUNT": "dyn_state->viewport_count"
+   },
+   "note": {
+    "text_rule": "shared_text_161"
+   },
+   "original_signature_reference": "PFN_vkCmdSetViewportWithCount inexistingpinnedVulkanHeader; no PFNcast/redefinition"
+  },
+  {
+   "family": "VkViewportCount",
+   "site": "libs/vkd3d/command.c:8433:VkViewportCount",
+   "source_file": "libs/vkd3d/command.c",
+   "pristine": {
+    "line": 8433,
+    "original_expression_excerpt": "            VK_CALL(vkCmdSetViewportWithCount(list->cmd.vk_command_buffer, 1, &dummy_vp));"
+   },
+   "derived": {
+    "line": 8433,
+    "original_expression_excerpt_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "bindings": {
+    "ARRAY": "&dummy_vp",
+    "COUNT": "1"
+   },
+   "note": {
+    "text_rule": "shared_text_161"
+   },
+   "original_signature_reference": "PFN_vkCmdSetViewportWithCount inexistingpinnedVulkanHeader; no PFNcast/redefinition"
+  },
+  {
+   "family": "VkScissorCount",
+   "site": "libs/vkd3d/command.c:8421:VkScissorCount",
+   "source_file": "libs/vkd3d/command.c",
+   "pristine": {
+    "line": 8421,
+    "original_expression_excerpt": "            VK_CALL(vkCmdSetScissorWithCount(list->cmd.vk_command_buffer,\n                    dyn_state->viewport_count, clamped_scissors));"
+   },
+   "derived": {
+    "line": 8421,
+    "original_expression_excerpt_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "bindings": {
+    "ARRAY": "clamped_scissors",
+    "COUNT": "dyn_state->viewport_count"
+   },
+   "note": {
+    "text_rule": "shared_text_161"
+   },
+   "original_signature_reference": "PFN_vkCmdSetScissorWithCount inexistingpinnedVulkanHeader; no PFNcast/redefinition"
+  },
+  {
+   "family": "VkScissorCount",
+   "site": "libs/vkd3d/command.c:8435:VkScissorCount",
+   "source_file": "libs/vkd3d/command.c",
+   "pristine": {
+    "line": 8435,
+    "original_expression_excerpt": "            VK_CALL(vkCmdSetScissorWithCount(list->cmd.vk_command_buffer, 1, &dummy_rect));"
+   },
+   "derived": {
+    "line": 8435,
+    "original_expression_excerpt_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "bindings": {
+    "ARRAY": "&dummy_rect",
+    "COUNT": "1"
+   },
+   "note": {
+    "text_rule": "shared_text_161"
+   },
+   "original_signature_reference": "PFN_vkCmdSetScissorWithCount inexistingpinnedVulkanHeader; no PFNcast/redefinition"
+  },
+  {
+   "family": "ModuleDestroy",
+   "site": "libs/vkd3d/state.c:2782:ModuleDestroy",
+   "source_file": "libs/vkd3d/state.c",
+   "pristine": {
+    "line": 2782,
+    "original_expression_excerpt": "            VK_CALL(vkDestroyShaderModule(device->vk_device, state->graphics.stages[i].module, NULL));"
+   },
+   "derived": {
+    "line": 2782,
+    "original_expression_excerpt_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "bindings": {
+    "DEVICE": "device->vk_device",
+    "OBJECT": "state->graphics.stages[i].module",
+    "ALLOC": "NULL"
+   },
+   "note": "PSO helper has actual state; record each nonNULL module; zero is unselected BEFOREtick.",
+   "original_signature_reference": "PFN_vkDestroyShaderModule inexistingpinnedVulkanHeader; no PFNcast/redefinition"
+  },
+  {
+   "family": "ModuleDestroy",
+   "site": "libs/vkd3d/state.c:7112:ModuleDestroy",
+   "source_file": "libs/vkd3d/state.c",
+   "pristine": {
+    "line": 7112,
+    "original_expression_excerpt": "        VK_CALL(vkDestroyShaderModule(device->vk_device, stages[i].module, NULL));"
+   },
+   "derived": {
+    "line": 7112,
+    "original_expression_excerpt_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "bindings": {
+    "DEVICE": "device->vk_device",
+    "OBJECT": "stages[i].module",
+    "ALLOC": "NULL"
+   },
+   "note": "Fallback duplicated modules retire while real state/Lookup ancestor exists; command transportG2 if insideDraw.",
+   "original_signature_reference": "PFN_vkDestroyShaderModule inexistingpinnedVulkanHeader; no PFNcast/redefinition"
+  },
+  {
+   "family": "PipelineDestroy",
+   "site": "libs/vkd3d/state.c:2799:PipelineDestroy",
+   "source_file": "libs/vkd3d/state.c",
+   "pristine": {
+    "line": 2799,
+    "original_expression_excerpt": "        VK_CALL(vkDestroyPipeline(device->vk_device, current->vk_pipeline, NULL));"
+   },
+   "derived": {
+    "line": 2799,
+    "original_expression_excerpt_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "bindings": {
+    "DEVICE": "device->vk_device",
+    "OBJECT": "current->vk_pipeline",
+    "ALLOC": "NULL"
+   },
+   "note": {
+    "text_rule": "shared_text_165"
+   },
+   "original_signature_reference": "PFN_vkDestroyPipeline inexistingpinnedVulkanHeader; no PFNcast/redefinition"
+  },
+  {
+   "family": "PipelineDestroy",
+   "site": "libs/vkd3d/state.c:2803:PipelineDestroy",
+   "source_file": "libs/vkd3d/state.c",
+   "pristine": {
+    "line": 2803,
+    "original_expression_excerpt": "    VK_CALL(vkDestroyPipeline(device->vk_device, graphics->pipeline, NULL));"
+   },
+   "derived": {
+    "line": 2803,
+    "original_expression_excerpt_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "bindings": {
+    "DEVICE": "device->vk_device",
+    "OBJECT": "graphics->pipeline",
+    "ALLOC": "NULL"
+   },
+   "note": {
+    "text_rule": "shared_text_165"
+   },
+   "original_signature_reference": "PFN_vkDestroyPipeline inexistingpinnedVulkanHeader; no PFNcast/redefinition"
+  },
+  {
+   "family": "PipelineDestroy",
+   "site": "libs/vkd3d/state.c:2804:PipelineDestroy",
+   "source_file": "libs/vkd3d/state.c",
+   "pristine": {
+    "line": 2804,
+    "original_expression_excerpt": "    VK_CALL(vkDestroyPipeline(device->vk_device, graphics->library, NULL));"
+   },
+   "derived": {
+    "line": 2804,
+    "original_expression_excerpt_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "bindings": {
+    "DEVICE": "device->vk_device",
+    "OBJECT": "graphics->library",
+    "ALLOC": "NULL"
+   },
+   "note": {
+    "text_rule": "shared_text_165"
+   },
+   "original_signature_reference": "PFN_vkDestroyPipeline inexistingpinnedVulkanHeader; no PFNcast/redefinition"
+  },
+  {
+   "family": "PipelineDestroy",
+   "site": "libs/vkd3d/state.c:7235:PipelineDestroy",
+   "source_file": "libs/vkd3d/state.c",
+   "pristine": {
+    "line": 7235,
+    "original_expression_excerpt": "    VK_CALL(vkDestroyPipeline(device->vk_device, vk_pipeline, NULL));"
+   },
+   "derived": {
+    "line": 7235,
+    "original_expression_excerpt_identical_to_pristine": true
+   },
+   "membership": "selected",
+   "bindings": {
+    "DEVICE": "device->vk_device",
+    "OBJECT": "vk_pipeline",
+    "ALLOC": "NULL"
+   },
+   "note": {
+    "text_rule": "shared_text_165"
+   },
+   "original_signature_reference": "PFN_vkDestroyPipeline inexistingpinnedVulkanHeader; no PFNcast/redefinition"
+  },
+  {
+   "family": "PipelineLayoutDestroy",
+   "site": "libs/vkd3d/state.c:83:PipelineLayoutDestroy",
+   "source_file": "libs/vkd3d/state.c",
+   "pristine": {
+    "line": 83,
+    "original_expression_excerpt": "    VK_CALL(vkDestroyPipelineLayout(device->vk_device, root_signature->graphics.vk_pipeline_layout, NULL));"
+   },
+   "derived": {
+    "line": 83,
+    "original_expression_excerpt_identical_to_pristine": true
+   },
+   "membership": "conditional_graphics_origin_G2",
+   "bindings": {
+    "DEVICE": "device->vk_device",
+    "OBJECT": "root_signature->graphics.vk_pipeline_layout",
+    "ALLOC": "NULL"
+   },
+   "note": {
+    "text_rule": "shared_text_167"
+   },
+   "original_signature_reference": "PFN_vkDestroyPipelineLayout inexistingpinnedVulkanHeader; no PFNcast/redefinition"
+  },
+  {
+   "family": "PipelineLayoutDestroy",
+   "site": "libs/vkd3d/state.c:84:PipelineLayoutDestroy",
+   "source_file": "libs/vkd3d/state.c",
+   "pristine": {
+    "line": 84,
+    "original_expression_excerpt": "    VK_CALL(vkDestroyPipelineLayout(device->vk_device, root_signature->mesh.vk_pipeline_layout, NULL));"
+   },
+   "derived": {
+    "line": 84,
+    "original_expression_excerpt_identical_to_pristine": true
+   },
+   "membership": "outside_graphics_site_membership_before_tick",
+   "bindings": {
+    "DEVICE": "device->vk_device",
+    "OBJECT": "root_signature->mesh.vk_pipeline_layout",
+    "ALLOC": "NULL"
+   },
+   "note": {
+    "text_rule": "shared_text_167"
+   },
+   "original_signature_reference": "PFN_vkDestroyPipelineLayout inexistingpinnedVulkanHeader; no PFNcast/redefinition"
+  },
+  {
+   "family": "PipelineLayoutDestroy",
+   "site": "libs/vkd3d/state.c:85:PipelineLayoutDestroy",
+   "source_file": "libs/vkd3d/state.c",
+   "pristine": {
+    "line": 85,
+    "original_expression_excerpt": "    VK_CALL(vkDestroyPipelineLayout(device->vk_device, root_signature->compute.vk_pipeline_layout, NULL));"
+   },
+   "derived": {
+    "line": 85,
+    "original_expression_excerpt_identical_to_pristine": true
+   },
+   "membership": "outside_graphics_site_membership_before_tick",
+   "bindings": {
+    "DEVICE": "device->vk_device",
+    "OBJECT": "root_signature->compute.vk_pipeline_layout",
+    "ALLOC": "NULL"
+   },
+   "note": {
+    "text_rule": "shared_text_167"
+   },
+   "original_signature_reference": "PFN_vkDestroyPipelineLayout inexistingpinnedVulkanHeader; no PFNcast/redefinition"
+  },
+  {
+   "family": "PipelineLayoutDestroy",
+   "site": "libs/vkd3d/state.c:86:PipelineLayoutDestroy",
+   "source_file": "libs/vkd3d/state.c",
+   "pristine": {
+    "line": 86,
+    "original_expression_excerpt": "    VK_CALL(vkDestroyPipelineLayout(device->vk_device, root_signature->raygen.vk_pipeline_layout, NULL));"
+   },
+   "derived": {
+    "line": 86,
+    "original_expression_excerpt_identical_to_pristine": true
+   },
+   "membership": "outside_graphics_site_membership_before_tick",
+   "bindings": {
+    "DEVICE": "device->vk_device",
+    "OBJECT": "root_signature->raygen.vk_pipeline_layout",
+    "ALLOC": "NULL"
+   },
+   "note": {
+    "text_rule": "shared_text_167"
+   },
+   "original_signature_reference": "PFN_vkDestroyPipelineLayout inexistingpinnedVulkanHeader; no PFNcast/redefinition"
+  },
+  {
+   "family": "ScopeGap",
+   "site": "observer refusal, no original C/API signature",
+   "source_file": null,
+   "pristine": null,
+   "derived": null,
+   "membership": "observer_only",
+   "bindings": {},
+   "note": "Frozen scopegap reason uses actual missing/unsupported observation; not an originaldelegate/return."
+  },
+  {
+   "family": "SetPipeline",
+   "site": "libs/vkd3d/command.c:7156:SetPipeline",
+   "source_file": "libs/vkd3d/command.c",
+   "pristine": {
+    "line": 7157,
+    "original_expression_excerpt": "    ID3D12GraphicsCommandList10_SetPipelineState(iface, initial_pipeline_state);"
+   },
+   "derived": {
+    "line": 7157,
+    "original_expression_excerpt_identical_to_pristine": true
+   },
+   "membership": "selected_blocked_pending_constructor_G3",
+   "bindings": {
+    "iface": "iface",
+    "pipeline_state": "initial_pipeline_state"
+   },
+   "note": "Invoked through actual vtable inside reset_api_state: once under constructorReset1 and once undercaseReset2. First has pendingcommand/genNULL and is not covered by frozen RESET-only exception; never omit either original. Both NULL initial_pipeline_state cases are valid originalclears but currentpositivegrammar SetPipeline.pipeline is nonnullable; serializable generationNULL/raw0 diagnostics are not automaticallyNO_PAYLOAD.",
+   "argument_source_overrides": {
+    "command": "COM(iface)",
+    "pipeline": "COM(initial_pipeline_state) observedoriginalNULL; grammarnonnullablecannotbeextendedhere"
+   }
+  }
+ ],
+ "constructor_notes": [
+  {
+   "kind": "DeviceNEW",
+   "site": "device.c after memset(object,0) before d3d12_device_init",
+   "call": "d4vr_osw_constructor_note_v1(&same_factory_token,1,(uintptr_t)object,(uintptr_t)&object->ID3D12Device_iface,0)",
+   "read": "allocatedalignedtypedobject; observe object/interface ADDRESS only, no initializedvtable assumption. On init/feature failure do not reread after destroy/free.",
+   "after": "successoutput*device internalraw matchesnote; address(&(*device)->ID3D12Device_iface) and genuineNEW facet only."
+  },
+  {
+   "kind": "Root",
+   "site": "state.c create_from_blob after objectcalloc and BEFORE d3d12_root_signature_init",
+   "call": "d4vr_osw_constructor_note_current_v1(2,(uintptr_t)object,(uintptr_t)&object->ID3D12RootSignature_iface,0)",
+   "read": "pending enclosingRootCreate only; RootParse happens earlier, before allocation, so no rootinternal pointer exists at genericparse.",
+   "after": "SourceAfter root_signature_pointer from same allocated object only on actualsuccess; failed/freepath noSourceAfter."
+  },
+  {
+   "kind": "PSO",
+   "site": "state.c d3d12_pipeline_state_create after object->root_signature is set, BEFORE any native shader/pipeline creation",
+   "call": "d4vr_osw_constructor_note_current_v1(3,(uintptr_t)object,(uintptr_t)&object->ID3D12PipelineState_iface,(uintptr_t)object->root_signature)",
+   "read": "real object allocated, rootassociation resolved by original code; no rootlookup atSeal. PSOancestor eligible onlyModule/Pipeline\u2014notRootParse.",
+   "after": "success SourceAfter pso_pointer=object,pso_root_pointer=object->root_signature exactly; aliasesnotinferred."
+  },
+  {
+   "kind": "Command",
+   "site": "device.c baseCreateCommandList immediately after successfulList1return object and BEFORE actual vtableReset",
+   "call": "d4vr_osw_constructor_note_v1(&same_commandcreate_token,4,(uintptr_t)object,(uintptr_t)object,0)",
+   "read": "object is original defined COM interfaceoutput, no new container cast/read required. Pending creator remains unborn.",
+   "after": "base actualsuccessful return_interface output must equal canonical declared commandiface; constructorReset nativeCB/ordinal source facets copied at its own RETURN. Constructor SetPipeline gateG3 remains."
+  }
+ ],
+ "explicit_related_outside_or_unknown": [
+  {
+   "source": "CreateSampler2_{heap,embedded,default}, device5881/5891/5901",
+   "policy": "DifferentoriginalD3D12_SAMPLER_DESC2 signature; outside currentCreateSampler projection. Forwardunchanged; ifrequiredselectedmutationaffectsprofile, unknown/NO_PAYLOAD\u2014not silently reinterpretedSamplerDesc."
+  },
+  {
+   "source": "SetComputeRootDescriptorTable macrovariants anddefault",
+   "policy": "Outsidegraphicsprofile; originalcallsunchanged, notrenamedgraphics."
+  },
+  {
+   "source": "ResourceCreate1/2; CommandList1; actualforwardedresource/commandhelpers",
+   "policy": "Outside BASEbirthmembership; do notmultiplybirths. Genuine nested vtableReset ANDSetPipeline stillselected."
+  },
+  {
+   "source": "nativeinternalCopy/resolve/deferred/predicatedindirect emitters",
+   "policy": "Not fabricatedCOMDraw. FirstCOMunsupported/noemitremainsunknown; never skipto latercompatiblewriter."
+  },
+  {
+   "source": "raw4argRootParse and standalonegeneric parser",
+   "policy": "RootParseONLY pendingRootCreate gateG1, noPSOancestor substitute."
+  }
+ ],
+ "open_gates": [
+  {
+   "id": "G1",
+   "topic": "pendingRootCreateONLY admission unavailable to statelessshaderglue",
+   "finding": "Frozenenter(ROOTPARSE) records an event even without pendingRootCreate; it only attachesowner ifpresent. There is no current read-only private query available outside corestaticcurrent()/owner_call(). Generichelper also serves standalone/deserializer callers.",
+   "effect": "No claim bridgeONLY restriction is already implemented. New private eligibility query/note is a distinct NONADMITTED contractoption; no extraTLS/APPowner/PSOparent allowed.",
+   "owner": "Parent separateaddendum after independentreview"
+  },
+  {
+   "id": "G2",
+   "topic": "SOURCE provenance transport to actualnative PFNhelper",
+   "finding": "GRAPHICSlayout provenance stillmissing athelper353; fornativeModule/Pipeline, genuinependingPSOowner_creation_call oractualLookup.pipeline_owner propagation isalreadyprovided by frozen core and isnotbyitselfa gap. HoweverlazyinsideDraw demands actualcommand/epochscope, and actualSourceEntryhasnolocalcommandin genericmodulehelper; noinventedSOURCEplumbing.",
+   "effect": "Rootgraphicsclassification beforetick and missingnativecommand scope remainblocked without reviewedSOURCE-local transport. EarlierhelperENTRY cannot impersonate actualPFNENTRY; no newTLS/privatepool/originalprototypechange assumed."
+  },
+  {
+   "id": "G3",
+   "topic": "genuine nested SetPipeline duringpendingCommand",
+   "finding": "reset_api_state invokes original vtableSetPipelineState(iface,initial_pipeline_state) duringconstructorReset1 andcaseReset2. Frozenpendingcommand exception appliesResetONLY; firstsetter hasgenerationNULL and is not positive-supported.",
+   "attribution": "PressureSOURCEfinding, parentconfirmed; not claimed as this author discovery.",
+   "effect": "Both originalsetters retained. ActualNULLpipeline andprebirthcommand are unsupportedpositives; raw0/generationNULL mayserializea faithfuldiagnosticunknown, not inherentlyNO_PAYLOAD. No oldcore/model extension admitted."
+  },
+  {
+   "id": "G4",
+   "topic": "finitebudget actualclosure beyondmock61",
+   "finding": "Actualselected sourcebudget isPressure cold-budget.json, notold61/122mock. Itincludesnestedsetters, correlatedrealretry/modules/layout sites. Some firstbranch closures canexceed64/128; no impossible combination countsare claimedasrealwitness here.",
+   "effect": "No implementationready positive claim. Originalforwardingcontinues; capsremainfixed, nohealthytruncation/eviction/retagging or forcebranch."
+  },
+  {
+   "id": "G5",
+   "topic": "SOURCE SHA256utility binding and privatehelperworkspace",
+   "finding": "Code requires ordinarybufferSHA256 atSOURCE ENTRY. FrozenCcore hasnodigestfunction; existingtestfixture contains staticHash/digest code, notalibraryexport or reviewedSOURCEutility. Its Hash,blockschedule,byvaluefinalizer andcompilerframescannotbeassumedtosatisfythedeclared256B SOURCEworkstate.",
+   "effect": "Select/document exactfutureutilitysource, no-heap/ordinaryread<=1MiB, entirestate/schedule/locals andCcallingprofile beforeimplementation. No checksumDXBC/vendorhash substitution and no utilitycodeiscreatedhere.",
+   "existing_reference": {
+    "path": "D4VR/native/tests/owned_source_writer_source_cpu.c",
+    "bytes": 85532,
+    "sha256": "28f6ca5f6ba9175fac87704129e2439a528472995e6e5a54ec7fdd3802de7d6a"
+   },
+   "scope": "Source-reading observation only, not rerun of its digest vector or anyoldmodel."
+  }
+ ],
+ "storage_policy": "LocalPOD sizes are exactfrozenlayout numbers withcompiledheaderassertions aspreviousauthority, NOT newsizeofmeasurements. Before/After/Entry helperlifetimesdisjoint. Only32*(48+24)=2304 trackedwrapperbytes spanoriginals; onehelpermax1448/704 plusCode256state/Root24scratch. Originalvendorstack/extraSOURCEplumbing not silentlyincluded; newTLS/registryforbiddenpendingnewcontract. These2304B coveronly32TRACKEDtoken/admissionpairs, not recursion/untracked originals afterquota, otherthreads or compilerstack. Do not use fixtureSHA256 schedule/state as evidenceof a256B SOURCEutility.",
+ "decision": {
+  "ready_for_independent_precode_review": true,
+  "implementation_ready_for_real_positive": false,
+  "CPU_snippet_code_admitted": false,
+  "vendor_patch_build_runtime_admitted": false,
+  "gates_must_close_in_separate_addendum": [
+   "G1",
+   "G2",
+   "G3",
+   "G4",
+   "G5"
+  ]
+ },
+ "input_pins": [
+  {
+   "path": "work/owned-C-sink-to-real-source-next-20261028-1/plan-draft.json",
+   "bytes": 39524,
+   "sha256": "ec15ad935b823bc1e3352aa14ddc81de5dc22b31e08c74c5a533a6c641941fb1"
+  },
+  {
+   "path": "work/owned-C-sink-to-real-source-next-20261028-1/dependency-adoption-addendum-v3.json",
+   "bytes": 7194,
+   "sha256": "ffe8adc5564de7312f6b29e3472bcca0ba236e9e17eedf9632ff8b4f83f6eadb"
+  },
+  {
+   "path": "work/owned-C-sink-to-real-source-next-20261028-1/parent-precode-admission.json",
+   "bytes": 2675,
+   "sha256": "ca15406fcde51c27ba66e60a3a6fb859a35c3c53dd340c0300fe410a24477264"
+  },
+  {
+   "path": "work/owned-C-sink-to-real-source-independent-review-20261028-1/remaining-precode-work.json",
+   "bytes": 3087,
+   "sha256": "e68b9665810b4063f0293727fe506d9f3bec0ef2d12a45b52498b219b1272ce7"
+  },
+  {
+   "path": "D4VR/native/owned_source_writer_source/owned_source_writer_source_v1.h",
+   "bytes": 282735,
+   "sha256": "564e8955d9b97211e81b10defafc6e1a49b07291f57090e4e821fab454588583"
+  },
+  {
+   "path": "D4VR/native/owned_source_writer_source/owned_source_writer_source_v1.c",
+   "bytes": 52825,
+   "sha256": "e2f464bb2a6159ce88eac1c71bf4442c999856f4876a19c3f912dc07e8ea86b7"
+  },
+  {
+   "path": "D4VR/docs/schemas/owned-source-writer-c-abi-v1/normative-manifest.json",
+   "bytes": 1364,
+   "sha256": "ebee057ce52163760ec9c2ce92bf80d452bd557d002a143731f8988f4ea9268e"
+  },
+  {
+   "path": "D4VR/docs/schemas/owned-source-writer-c-abi-v1/contract-final-proposed.json",
+   "bytes": 48606,
+   "sha256": "989224c8388364d5c1c26b08549ca1bfd48cdbc87e61be170472c97e3961f599"
+  },
+  {
+   "path": "D4VR/docs/schemas/owned-source-writer-c-abi-v1/docs-proposals/source-callback-fields-final-proposed.json",
+   "bytes": 256790,
+   "sha256": "3a76ca68fee98ab892272ecc3b90e1cb28675e9349b3df9fe65fc18ed517443d"
+  },
+  {
+   "path": "D4VR/docs/schemas/owned-source-writer-c-abi-v1/docs-proposals/pod-layouts-final-proposed.json",
+   "bytes": 293648,
+   "sha256": "6efc9f61f9cb66e57abc7c67d10909cb39b4cbe58c5aaa5ce35bf9c3dfbe608c"
+  },
+  {
+   "path": "D4VR/docs/schemas/owned-source-writer-c-abi-v1/docs-proposals/source-callbacks-final-proposed.json",
+   "bytes": 50536,
+   "sha256": "837f20a99202ee73a8cbdaefdabe469ff06069dc17892cc47f387bb60a13582d"
+  },
+  {
+   "path": "work/owned-source-writer-C-ABI-source-review-20261028-1/per-callback-fields-v2.json",
+   "bytes": 256970,
+   "sha256": "18d943d1a501208a391e4ba5dd560d804a798b59edfd4b3a8e968868c4454fe4"
+  },
+  {
+   "path": "work/owned-source-writer-C-ABI-source-review-20261028-1/candidate3-source-signature-comparison.json",
+   "bytes": 22180,
+   "sha256": "8e4e2d409077e8c4e8e8fc9377b00990166a5e30a3d178c33b36e1116f4b4797"
+  },
+  {
+   "path": "work/translator-private-source-prep-20261027-1/upstream/libs/vkd3d/device.c",
+   "bytes": 497216,
+   "sha256": "54921e455b3f123476a05bf9c1d2693bb708ef198a33619cb2f5812e7a47d1cd"
+  },
+  {
+   "path": "work/translator-private-source-prep-20261027-1/upstream/libs/vkd3d/resource.c",
+   "bytes": 476394,
+   "sha256": "40cbf9ef36e0ebde46ee6497abd1be9571a098752d57125fb6979657efb501ac"
+  },
+  {
+   "path": "work/translator-private-source-prep-20261027-1/upstream/libs/vkd3d/command.c",
+   "bytes": 1163073,
+   "sha256": "45829650b34e6cfa5b2ecb4452f429d6489d70951ee6287d358ea5888a7417cb"
+  },
+  {
+   "path": "work/translator-private-source-prep-20261027-1/upstream/libs/vkd3d/state.c",
+   "bytes": 373876,
+   "sha256": "f3b17fc716c6adc013dc49ad25f01f26c18f87bfea74c426dc47dcbdd52b62a5"
+  },
+  {
+   "path": "work/translator-private-source-prep-20261027-1/upstream/libs/vkd3d-shader/vkd3d_shader_main.c",
+   "bytes": 33935,
+   "sha256": "7b32ea2e62aeb452481d80d24a05106c9521725c9b6900d83eb78113f7e97198"
+  },
+  {
+   "path": "work/translator-private-source-prep-20261027-1/upstream/include/vkd3d_shader.h",
+   "bytes": 48922,
+   "sha256": "e330262850a4e470afc65e37a0fa4feda943e929f5d030aa7dcec71fb51acf13"
+  },
+  {
+   "path": "work/private-translator-derived-source-20261027-1/source/libs/vkd3d/device.c",
+   "bytes": 498956,
+   "sha256": "895c66abf9dae7f9648c7063934f908511e38e8d8150ac570d2e25deb3d5231c"
+  },
+  {
+   "path": "work/private-translator-derived-source-20261027-1/source/libs/vkd3d/resource.c",
+   "bytes": 477063,
+   "sha256": "0c6b4aa0f9e598a647f93110d6f9800913d95e159c712b2e6be7b81d9710914f"
+  },
+  {
+   "path": "work/private-translator-derived-source-20261027-1/source/libs/vkd3d/command.c",
+   "bytes": 1163073,
+   "sha256": "45829650b34e6cfa5b2ecb4452f429d6489d70951ee6287d358ea5888a7417cb"
+  },
+  {
+   "path": "work/private-translator-derived-source-20261027-1/source/libs/vkd3d/state.c",
+   "bytes": 373876,
+   "sha256": "f3b17fc716c6adc013dc49ad25f01f26c18f87bfea74c426dc47dcbdd52b62a5"
+  },
+  {
+   "path": "work/private-translator-derived-source-20261027-1/source/libs/vkd3d-shader/vkd3d_shader_main.c",
+   "bytes": 33935,
+   "sha256": "7b32ea2e62aeb452481d80d24a05106c9521725c9b6900d83eb78113f7e97198"
+  },
+  {
+   "path": "work/private-translator-derived-source-20261027-1/source/include/vkd3d_shader.h",
+   "bytes": 48922,
+   "sha256": "e330262850a4e470afc65e37a0fa4feda943e929f5d030aa7dcec71fb51acf13"
+  },
+  {
+   "path": "D4VR/native/tests/owned_source_writer_source_cpu.c",
+   "bytes": 85532,
+   "sha256": "28f6ca5f6ba9175fac87704129e2439a528472995e6e5a54ec7fdd3802de7d6a"
+  },
+  {
+   "path": "work/translator-private-source-prep-20261027-1/upstream/libs/vkd3d/vkd3d_private.h",
+   "bytes": 260992,
+   "sha256": "8337d266101cf73498183ecaab397b65dba6242f66a81bee48687a49ee03c807"
+  },
+  {
+   "path": "work/private-translator-derived-source-20261027-1/source/libs/vkd3d/vkd3d_private.h",
+   "bytes": 260992,
+   "sha256": "8337d266101cf73498183ecaab397b65dba6242f66a81bee48687a49ee03c807"
+  },
+  {
+   "path": "work/translator-private-source-prep-20261027-1/upstream/khronos/Vulkan-Headers/include/vulkan/vulkan_core.h",
+   "bytes": 1362362,
+   "sha256": "a98e440889e790573a0f77c77bbc2d5b3de6fc33d066f879d4b2df2f11cf468b"
+  },
+  {
+   "path": "work/private-translator-derived-source-20261027-1/source/khronos/Vulkan-Headers/include/vulkan/vulkan_core.h",
+   "bytes": 1362362,
+   "sha256": "a98e440889e790573a0f77c77bbc2d5b3de6fc33d066f879d4b2df2f11cf468b"
+  },
+  {
+   "path": "D4VR/docs/schemas/owned-source-writer-c-abi-v1/docs-proposals/source-protocol-final-proposed.json",
+   "bytes": 37201,
+   "sha256": "63c6989bd665204259be34df37f7dc713cc8e304e7b664b180c3122a5b94b720"
+  },
+  {
+   "path": "D4VR/docs/schemas/owned-source-writer-c-abi-v1/lease-counter-addendum-v2.json",
+   "bytes": 4265,
+   "sha256": "b2f033b848f0dd14ef66f492b2544e41c710f0383cb7d849218d17d3b90bf0fe"
+  },
+  {
+   "path": "D4VR/tools/owned_source_writer_validate.py",
+   "bytes": 95467,
+   "sha256": "660623fb5da3cbec1ea7fbe2c6f1513beadd3950c97416a6126a71de119479bf"
+  },
+  {
+   "path": "D4VR/docs/schemas/owned-source-writer-v1.json",
+   "bytes": 90039,
+   "sha256": "693021b27fbb12ed298b486ee38e3bdd3a5429c7478d47a3640158aa22011143"
+  }
+ ],
+ "source_prototype_scope": "Existing54signatures areliteralSOURCEreference. Additionalvariantdefinitionprototypes andmacroexpansionnames inthisdocument aredocumentarytextreads only, no new C preprocessing/ABI. Public/privatehelperskeepsignatures; no forcingvendorCbodyintoC++.",
+ "review_revision": "ConcreteSourceEntry/SourceAfter added andnestedsetter actualcalleroperand clarified; G2 ownerinheritance qualified perStage/Pressure/parent. Allgatesremainopen; no newstate/API isclaimedimplemented.",
+ "shared_text_rules": {
+  "shared_text_16": "See shared_projection_rules; each top-level arg uses its frozen maskbit. Templates$CI/$DEVICE/etc are textually bound by the actual site row, not runtimeAPPinput. Code/Span/Root nested rule is mandatory.",
+  "shared_text_17": "OriginalHRESULT/internalHRESULT/VkResult retained in its own domain. Freshreturn_admit must beOK, modeSELECTED, may_snapshot_defined_output1 AND originalstatus==0 AND originaloutputslot nonNULL/defined for this SOURCEbranch. Only then outputpointee read; canonical requestedIID known at SOURCE for COMcreators, noextraQI. Failure leaves output/sourcefacetsabsent, never read poisonedslot.",
+  "shared_text_20": "Entryhelper56 and Beforehelper/Afterhelper have disjoint lifetimes; Before does not live across original. Only Token48+Admission24 span original; actual original arguments/locals are vendorstorage, not a hidden observerPOD cache. New typed returnedscalar4/8 at RETURN excluded from contextarena, bounded perdeclared returntype. Actual compilerstack/spills are not measured.",
+  "shared_text_21": "AllotherSourceEntryInputfields observed0/present0; no IDs/gens/clocks/births/roles fromAPP. Realreceiverscalar mustmatchBefore receiver; sinkchecksactualpendingnotes/committedassociations.",
+  "shared_text_23": "At original functionENTRY (beforeanywrappedbodyreads/branch) forCOM/sourcefamilies; nativefamilies at exactactualPFNcall expression only. PipelineLookup at original4arghelperCALL withcallerlistavailable. No earlierhelperboundaryretag.",
+  "shared_text_24": "NewoptionOFF: allobservation/projectionargs unevaluated, original signature/body/return unchanged; existinglegacyguards preservedperparentrecipe, ON+oldONerror. Metadataenabledfault/no_payload doesnotfilter anyoriginalreturn/cleanup.",
+  "shared_text_27": "AllSourceAfterInputfields N/Aobserved0/present0. Frozen sink owns allref/generation/parent/reset/bookkeeping; no caller-filledSourceAfter.",
+  "shared_text_56": "Originalvoid; matching token-only AFTER, resultJSONnull, no fabricatedHR/output storage and no SourceAfterinput.",
+  "shared_text_61": "OriginalHRESULT by value. Only exactsuccess0 and admittedfreshoutput permit Reset nativecommand_buffer facet from original live list->cmd.vk_command_buffer; Close/AllocatorReset SourceAfterInput remainsN/A. No output borrow from failure.",
+  "shared_text_148": "Preserve original attempt and result; unsupported native route never omitted for a later match. Exact route/parent from source, not APP.",
+  "shared_text_161": "Capture exact source local/native values; dummy zero-viewport branch stays original and is not replaced with COM raster. list supplies actual command/PSO at ENTRY.",
+  "shared_text_165": "NonNULL owned PSO pipeline; detach state/device/object before void original, no native memory deref. Missing originalbirth/async ownership is unknown, never choose raw match.",
+  "shared_text_167": "Original still executes; only actual GRAPHICS-owned layout belongs to finite selected relation. No native receiver/device reread after return."
+ },
+ "shared_text_resolution": "Objects containing only text_rule refer to exact documentary string inshared_text_rules. No runtimeJSONschema/model transformation isproposed; this is a deduplicated readingtable.",
+ "source_type_aliases": {
+  "d3d12_device_iface": "actual typedef ID3D12Device15 at pristineprivate.h5535",
+  "d3d12_resource_iface": "actual typedef ID3D12Resource2 at pristineprivate.h1176",
+  "meaning": "C-only SOURCE declarations/explicit getterstructpointerret, notC++surrogate/REFIIDrecast. Existing54catalogue+newliteralvariants remainnotcompiledABI."
+ },
+ "separate_next_direction_OPTION_ONLY": {
+  "purpose": "Faithful diagnostic SOURCE route, not changed positivecontract",
+  "parent_proposed_direction": "RetainbothgenuineSetPipeline callbacks andalloriginalsandunsupportedfirstbranchfacts; keepmodel660623unchanged. Ifanactualfutureboundedrawframeexists, preserveitsENTIREunknownreport once. Do notrequireknownTrue orfilter facts/chooseanotherwriter toobtainpositive.",
+  "not_a_current_admission": "Requiresseparatedocumentarydecision/closureG1G2G5andparentcodeadmission. Thisoptiondoesnotclose thosegatesor broadenpendingcommand/NULLpipeline positivegrammar.",
+  "terminal_metadata": "IfNO_PAYLOAD orbounds preventvalidraw, retaintrueboundedstatus/counters; do notfabricatea frame merelytocalculateunknown. Originaldelegate/cleanupalwayscontinue."
+ }
+}

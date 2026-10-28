@@ -1,0 +1,106 @@
+{
+  "schema_version": 1,
+  "purpose": "RootParse_stateless_C_bridge_exact_precode_WITH_G1_OPEN",
+  "status": "PROPOSED_SOURCE_BRIDGE_NOT_IMPLEMENTED_NEW_QUERY_OPTION_NOT_COMPILED_EXISTING_HEADER_FROZEN",
+  "authority": {
+    "site_table": {
+      "path": "work/owned-source-insertion-precode-20261028-1/sites.json",
+      "bytes": 157527,
+      "sha256": "644357f943e0fa200e09e76b5b77e8aaab6ab64e9c316784cc25b3123b502250"
+    },
+    "core": {
+      "path": "D4VR/native/owned_source_writer_source/owned_source_writer_source_v1.c",
+      "bytes": 52825,
+      "sha256": "e2f464bb2a6159ce88eac1c71bf4442c999856f4876a19c3f912dc07e8ea86b7"
+    },
+    "header": {
+      "path": "D4VR/native/owned_source_writer_source/owned_source_writer_source_v1.h",
+      "bytes": 282735,
+      "sha256": "564e8955d9b97211e81b10defafc6e1a49b07291f57090e4e821fab454588583"
+    }
+  },
+  "selected_original": {
+    "prototype": "int vkd3d_shader_parse_root_signature(const struct vkd3d_shader_code *dxbc, struct vkd3d_versioned_root_signature_desc *root_signature, vkd3d_shader_hash_t *compatibility_hash);",
+    "expression": "vkd3d_shader_parse_root_signature(dxbc, &desc, compatibility_hash)",
+    "pristine_and_derived_call": "libs/vkd3d-shader/vkd3d_shader_main.c:615",
+    "untouched_original_arguments": [
+      "dxbc",
+      "&desc",
+      "compatibility_hash"
+    ],
+    "actual_return_type": "int; exactoriginalvalue, success0 only fordefinedAfterdescription",
+    "nonselected": "vkd3d_shader_parse_root_signature_raw(dxbc->code,dxbc->size,&desc,compatibility_hash) at607 has4args; targetv1_2 helperreturn isafterconversion; standalone/deserializerwithoutRootCreate notselected."
+  },
+  "genuine_parent": "ActualsameSOURCEthreadpendingRootCreate only. ItsCallID isderivedcorescope; noAPPtoken/role/hash/rawproximity. Rootdescriptionallocations mayexistbeforeRootobjectallocation; noRootinternalpointerinvented atgenericparse. PSO notes areModule/Pipeline context only.",
+  "exact_existing_C_declarations_from_frozen_header": [
+    "uint32_t d4vr_osw_enter_v1(uint32_t event_tag, const osw_sourceentryinput_v1 *source_entry, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+    "uint32_t d4vr_osw_rootparse_before_v1(osw_token_v1 *token, const osw_before_rootparse_v1 *before);",
+    "uint32_t d4vr_osw_return_admit_v1(const osw_token_v1 *token, osw_admission_v1 *admission_out);",
+    "uint32_t d4vr_osw_rootparse_after_v1(osw_token_v1 *token, const osw_after_rootparse_v1 *after);",
+    "uint32_t d4vr_osw_drain_return_v1(osw_token_v1 *token);"
+  ],
+  "private_eligibility_OPTION_NOT_ADMITTED": {
+    "proposed_documentary_C_signature": "uint32_t d4vr_osw_rootparse_pending_root_eligible_v1(uint32_t *eligible_out);",
+    "not_present_in_current_header_or_core": true,
+    "proposed_semantics": "Readonlycore-local query underexistingcontextlock; fixedU32 output0/1, exactcurrentSOURCEthread and genuinependingRootCreateCOMMITTEDancestor. NoIDs/gens/clock/pending/aliasallocation, nofactinputs/secondcontext. RootParse enter would stillderiveactualparent undercoreownstack. MustnotacceptPSOcurrentnote asRooteligibility. Parentrequires a separatecontractualaddendum; currentfrozencore providesancestrybutnotthisprivateeligibilitysurface.",
+    "unclosed_items": [
+      "Whereandhow this privateglue can access corestaticcurrent/owner_call withouteditingfrozencoreoraddingsecondstate.",
+      "Atomicity/lifetimebetweenreadonlyeligibilityandactualenter underreentry/concurrentfault; no originalcallorprojectionbetweenchecks and no assumptionqueryitselfprovesstoragevalid.",
+      "Exactprivate link/visibility and eventualcontractualadmission."
+    ],
+    "not_a_solution_claim": "This is a named OPTION for the separateaddendum\u2014notanexistingfunction, authority toimplement, or proofthatstatelessbridgeONLYrestrictionalreadyworks."
+  },
+  "ordered_cut_table": [
+    {
+      "step": 1,
+      "cut": "immediatelybeforegeneric615, notbeforeouter1.2helper",
+      "action": "G1eligibility gate first, without typedborrowed reads. Ifoutside/disabled leaveoriginalbranchunchanged and nofakeRootParsefact. Ifselected usefrozenenter(ROOTPARSE) withallN/ASourceEntrybits0; sourceparentderivedfromrealcorestack."
+    },
+    {
+      "step": 2,
+      "cut": "ENTRY afterselectedadmission beforeoriginal",
+      "action": "Beforehelper copiesCode(dxbc->code/size) and&descoutputaddress intoBeforeRootParse104; caps/provenborrow/masks first. SinkcopiesinlinePOD; noborrow persists. compatibility_hash forwardedunchanged andnotrepurposedasidentity."
+    },
+    {
+      "step": 3,
+      "cut": "actualgenericoriginalreturn",
+      "action": "Captureactualint ret beforemetadata. Freshreturn_admitOK+SELECTED+outputflag1 plusret==0 required. DRAIN_ONLY=>zero desc/arrayreads, drainexacttoken andcontinueoriginalflow."
+    },
+    {
+      "step": 4,
+      "cut": "BEFORE if(desc.version==target_version) at621",
+      "action": "Afterhelper copiesoriginaldescversion+activeunion/count/pointer/parameters/ranges intoAfterRootParse704, whilegenericresultstilllive. This precedesBOTH matchingversion*out_desc=desc at623 ANDelseconvert628/free629. No conversion/reparseperformedbyobserver."
+    },
+    {
+      "step": 5,
+      "cut": "originalmatchingtransfer ORconvert/free/return",
+      "action": "OnlycopiedPODremains. Preserveactualconvertfailureandfreeorder; callbackcannotreadstalearrays or transformoriginalret. Laterstate2191freealsoirrelevanttoretainedcopy."
+    }
+  ],
+  "typed_return_projection": {
+    "version": "desc.version exactenumU32; unknown/unread cannot become1.0",
+    "version_1_0": "desc.v_1_0.{parameter_count,parameters,static_sampler_count,flags}; eachparameter.{parameter_type,shader_visibility}; taggeddescriptor_table.{descriptor_range_count,descriptor_ranges[i].range_type,descriptor_count,base_shader_register,register_space,descriptor_table_offset}; constants.{shader_register,register_space,value_count}; descriptor.{shader_register,register_space}. RangeflagsareN/AobservedNULL,notsynthesized0.",
+    "version_1_1": "desc.v_1_1 samecount/pointer; actualtypedroot_parameter1/descriptor_range1 includeoriginalflags. Neverconverted1.2usedasoriginal1.1.",
+    "version_1_2": "desc.v_1_2 typedarm canbeprojectedwhenvalid but currentpositiveprofileconditionsremainfrozen; staticsamplerdata notinvented. Unsupportedfields/arms closeNO_PAYLOAD.",
+    "bounds": "parameters<=3; max1rangepertable; originalcounts/pointers retained, values.lengthcopied_count,completeonlyifallactualelementsvalidcopied; no prefixorNULLcoercion. Originalstatic_sampler_count recorded; unsupportednonzero cannotbehidden.",
+    "lifetimes": "Onlygenericparserdefinedstorage, typedSOURCEowneduntiltransfer/free; pointerNULLauthorizeddoesnotestablishreadablememory, noPOISONsafeclaim."
+  },
+  "storage": {
+    "wrapper_across_original_Token_plus_Admission": 72,
+    "Entry_helper_only": 56,
+    "BeforeRootParse_helper_only": 104,
+    "AfterRootParse_helper_only": 704,
+    "extraRootscalarcap": 24,
+    "digest_helperstatecap": 256,
+    "no_new_TLS_context_or_pools": true,
+    "compilerstackmeasured": false,
+    "limit_qualification": "Onlytracked32Token+Admission pairs have2304B bound. No totalstack/thread/recursiveuntrackedbound;256digeststate is a requirement withG5open, not measuredSOURCEimplementation."
+  },
+  "link_definition_plan": "OneprivateC-onlybridge/sharedfrozenPODheader; shaderlibraryownsnostate. Parentrecipe mustreplaceordinaryshaderarchive transitively inNEWproton/NEWcoreclosure anddefineonesink/coreissuer. DefaultOFF/old+newerror/ordinaryconsumers/exports remain parentrecipegates, no actuallinkperformed.",
+  "remaining_gates": [
+    "G1privateeligibility/access atomicity mustbeadmittedadditively.",
+    "G2 graphics-sourceclassification andlazyDrawcommandtransport (PSOancestorinheritance alone alreadyworks), plusG3 genuineNULLSetPipeline/pendingcommand/budget remainopen. RootParseglue doesnotfix them.",
+    "Noheader/code/patch/apply/build orSOURCEpositiveadmissionfollows fromthisdocument.",
+    "G5 SOURCEdigestutility selection/readcap/completeworkspace mustbefrozen; fixtureSHAfunctions are not linkedSOURCEevidence."
+  ]
+}
