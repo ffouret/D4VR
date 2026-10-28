@@ -1,0 +1,416 @@
+{
+  "schema_version": 1,
+  "purpose": "Separate NEXT CPU implementation scope proposed after R1-R5 precode independent review/freeze; this file admits no implementation",
+  "created_utc": "2026-10-28T05:46:58.616318+00:00",
+  "status": "FINAL_PROPOSED_NEXT_CPU_SCOPE_ONLY_EXACT_SEVEN_BRIDGE_OPERATIONS_PLUS_SHA448_MOCKS_READER_ABI_NO_CODE_ADMISSION",
+  "author_scope": "Pressure authors this plan, the C sink and R4. Blit authors R1/R2 and earlier mock fixtures; Stage authors independent causal tests. Shared components/oracles and overlapping findings must be attributed, never summed as independent certificates.",
+  "input_authorities": [
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-additive-precode-20261028-1/bridge-provenance-contract.json",
+      "bytes": 44064,
+      "sha256": "05071a6a699964c381bef584fd683a077d44227d30db9095ea061b940fb16b33"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-additive-precode-20261028-1/bridge-provenance-addendum.json",
+      "bytes": 9612,
+      "sha256": "3947db0a809db897b32b5a9f3c822c6690bb27bed08941e52c324b9dc69560da"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-additive-precode-20261028-1/diagnostic-read-contract.json",
+      "bytes": 58589,
+      "sha256": "1b13a9073ab1aaaf48705e331f345141832b2b5dcc3977906bfb6e2410f668ac"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-additive-precode-20261028-1/digest-storage-contract-v2.json",
+      "bytes": 34029,
+      "sha256": "0d50ba047a8902a1aeae06d7ff5966cb3b2f83f5bca39860ab34947e0fead9e9"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-insertion-precode-20261028-1/next-precode-resolution-plan.json",
+      "bytes": 7815,
+      "sha256": "6f98ed777ad8b43c2d27373f4d51f2d1877b518034557df91f202e337572e33a"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-insertion-precode-20261028-1/next-precode-documentary-admission.json",
+      "bytes": 2921,
+      "sha256": "68ec6fb00e1b768e3a15a6231a8980729a8e32443f961f4a3f84dd4d8a04d79a"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/native/owned_source_writer_source/owned_source_writer_source_v1.c",
+      "bytes": 52825,
+      "sha256": "e2f464bb2a6159ce88eac1c71bf4442c999856f4876a19c3f912dc07e8ea86b7"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/native/owned_source_writer_source/owned_source_writer_source_v1.h",
+      "bytes": 282735,
+      "sha256": "564e8955d9b97211e81b10defafc6e1a49b07291f57090e4e821fab454588583"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/tools/owned_source_writer_validate.py",
+      "bytes": 95467,
+      "sha256": "660623fb5da3cbec1ea7fbe2c6f1513beadd3950c97416a6126a71de119479bf"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/docs/schemas/owned-source-writer-v1.json",
+      "bytes": 90039,
+      "sha256": "693021b27fbb12ed298b486ee38e3bdd3a5429c7478d47a3640158aa22011143"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-additive-precode-20261028-1/bridge-provenance-count-erratum.json",
+      "bytes": 1637,
+      "sha256": "5bd7894f08e6306814efd7efe469c9c627d7df228bbddb627fedc191a6719e23"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/docs/proposals/owned-source-writer-projection-v1/manifest.json",
+      "bytes": 10605,
+      "sha256": "d3bcf9369a34a78851991c59fb14e081f04792d00691d0b8786a464cd81faaeb"
+    }
+  ],
+  "precedence": "Bridge base0507 MUST be read with addendum3947: module lifetime through PipelineCreateRETURN, CLOSED persistence, helper-specific source bits, deliberate ACTIVE/no-PFN guard refusal, fixed new namespace and invalid structural-output protocol. Diagnostic1b13 and digest0d50 are complementary; no frozen schema/core/model change. Count-erratum5bd7 is required: nine named marker fields =2U32+7U64=64B. Ordered publicmanifestd3bc givesA5newpaths priorityONLY; R4API/layout448 unchanged. Its next_CPU_scope_limit excludesanynewgeneric46builderAPI.",
+  "goal": {
+    "next_useful_CPU_result": "New actual C callbacks with typed owned mock inputs and true mock return scalars produce a faithful bounded raw diagnostic frame through the composite private guards, one embedded frozen core and real ReceiptCopy controls. This tests future SOURCE projector/provenance behavior without claiming to observe the vendor.",
+    "expected_primary_relation": "The faithful full cold original schedule retains BOTH nested SetPipeline(NULL) calls, so the unchanged660 report is expected UNKNOWN. Success means raw and all original facts/unknown reasons remain faithful, not a synthetic model-positive.",
+    "not_goal": [
+      "No real translator hook, DLL pair, sampled input, shader use, image/pixel rerun, game or VR result.",
+      "No new model or relaxation of frozen660; no filtering of calls, invented early birth, clock/epoch retagging or copied documentary SOURCE witness."
+    ]
+  },
+  "hard_admission_boundary": {
+    "current_this_file": "Documentary next-plan only; no source/header body or tests may be started merely because this plan exists.",
+    "before_future_code": [
+      "Independently review exact R1-R5 documents and all required addenda; parent freezes their exact bytes and resolves public bundle-relative references/precedence.",
+      "Parent issues a NEW explicit CPU-only implementation admission naming files/roles, existing tools/profiles and unchanged-dependency pins.",
+      "Firstfuturecheckpoint sharestheprivateheader containingONLYtheexact7bridgeoperations+SHA448types/API andtargetnames beforebodies. No generic46builders or productionprojectorsfiles. ExtraAPI/type/size/cap requiresinquiry/additivereview."
+    ],
+    "still_closed": [
+      "Vendor tree copy or patch",
+      "SOURCE hook insertion",
+      "Meson vendor configure or build",
+      "Generated header/shader regeneration",
+      "Renderer/PE linking or loading (targeted Windows object-only ABI checks are a separately named CPU compile-only subtask)",
+      "Wine/Vulkan/GPU/Diablo/headset",
+      "Tool acquisition, global inventory or old certificate replay"
+    ]
+  },
+  "proposed_disjoint_files": {
+    "production_private_module": [
+      {
+        "path": "native/owned_source_writer_projection/owned_source_writer_private_v1.h",
+        "owner": "core/glue author",
+        "content": "Exact private R1/R2 declarations, guard320 and cookie64 types/assertions; include frozen564 header without editing/copying its layouts. No app-facing parent/generation/role selector."
+      },
+      {
+        "path": "native/owned_source_writer_projection/owned_source_writer_core_embedding_v1.c",
+        "owner": "core/glue author",
+        "content": "Include ../owned_source_writer_source/owned_source_writer_source_v1.c EXACTLY ONCE, then private definitions in same TU. Access frozen static helpers directly under existing lock. Never compile/link the e2 .c separately in this target."
+      },
+      {
+        "path": "native/owned_source_writer_projection/owned_source_writer_sha256_v1.h",
+        "owner": "digest author",
+        "content": "R4 one-shot private signature/workspace448/status declarations; path relocation only from old draft, as A5 requires."
+      },
+      {
+        "path": "native/owned_source_writer_projection/owned_source_writer_sha256_v1.c",
+        "owner": "digest author",
+        "content": "New checked C-only full-span implementation derived from pinned reference; no fixture TU link or label promotion, one utility definition in core closure."
+      },
+      {
+        "path": "native/owned_source_writer_projection/CMakeLists.txt",
+        "owner": "integration author",
+        "content": "New narrow component: one embeddedcore/privateglueTU andoneSHATU; distinctproduction/testinglibraries plusnewtests. NOproductionprojectorimplementationtarget; existingmoduleCMake unchanged."
+      }
+    ],
+    "projector_group_alternative": "No .h/.c or grouped.inc PRODUCTION projector interface/body is in the narrow next CPU scope. Only test-owned original-signature wrappers directly construct existing frozenPODs according to the reviewedsite/fieldtable. Any future insertion split is a separate revieweddecision.",
+    "new_tests_and_reader_only": [
+      {
+        "path": "native/tests/owned_source_writer_projection_cpu.c",
+        "owner": "mock/projector fixture author",
+        "scope": "Fresh C mocks/owned PODs, exact original invocation prototypes/returns and faithful cold+warm schedule, --emit-files NEW_DIR."
+      },
+      {
+        "path": "native/tests/owned_source_writer_projection_independent_cpu.c",
+        "owner": "independent test author",
+        "scope": "Own causal scenarios against C ABI/private composite helpers, independent input construction, no author seed/helper import."
+      },
+      {
+        "path": "native/tests/owned_source_writer_projection_abi.c",
+        "owner": "ABI author/reviewer",
+        "scope": "Portable C layouts plus separate OSW_ENABLE_FULL_VENDOR_ABI object-only profile with pinned real private/COM/Vulkan headers."
+      },
+      {
+        "path": "native/tests/owned_source_writer_projection_abi.cpp",
+        "owner": "ABI author/reviewer",
+        "scope": "C linkage/layouts plus real C++COM/Vulkan prototype compatibility where headers support C++; generic C-only private parser declaration remains checked in C."
+      },
+      {
+        "path": "tools/owned_source_writer_projection_wire.py",
+        "owner": "new reader author",
+        "scope": "New bounded CPU fixture reader/runner, exact raw ReceiptCopy bytes and full frozen660 report once per actual primary only."
+      },
+      {
+        "path": "tests/test_owned_source_writer_projection_wire.py",
+        "owner": "independent Python test author",
+        "scope": "Discovery pure/no child invocation; malicious files/limits/schema/whole-report/one-call reader tests, no repeated old native suites."
+      }
+    ],
+    "ownership_rule": "Parent assigns disjoint concrete file owners in the later admission. No edit to e2,564,660, old fixtures/readers/helpers/schemas/proofs. Parent alone decides minimal top-level integration changes; author does not grant that from this plan.",
+    "closed_future_files": [
+      {
+        "path": "native/owned_source_writer_projection/owned_source_writer_projectors_v1.h",
+        "status": "CLOSED_NOT_IN_NEXT_CPU_ADMISSION",
+        "gate": "Separateexacttyped-builderABIcontract OR reviewedstaticSOURCEinsertiondecision beforethisheader/body. Do notinventgenericfunctions fromthe46-site table."
+      },
+      {
+        "path": "native/owned_source_writer_projection/owned_source_writer_projectors_v1.c",
+        "status": "CLOSED_NOT_IN_NEXT_CPU_ADMISSION",
+        "gate": "Separateexacttyped-builderABIcontract OR reviewedstaticSOURCEinsertiondecision beforethisheader/body. Do notinventgenericfunctions fromthe46-site table."
+      }
+    ]
+  },
+  "one_context_and_storage": {
+    "core_closure": "One embedded e2 text, one production context and issuer, no second standalone core object, test archive or ordinary observed parser in that target. Static shader bridge, when later admitted, is core-only and stateless. This CPU stage does not create or link a vendor shader archive.",
+    "marker": "Exactly adopted reserved bytes[2504,2568) of a real RootCreate record; version/state plus context/epoch/rootCall/slotGeneration/thread/VkDevice/outputslot fields from3947. memcpy owned bytes to aligned local types, no typed overlay. VIRGIN zero; ACTIVE->CONSUMED->CLOSED; CLOSED persists. No current lookup/first-output inference or extra issuer.",
+    "persistent_bytes": "Frozen typedarena404352+issuer64=404416 unchanged; marker reuses existing explicitly adopted64B and is already under private_overlap. Existing production TLS cookie is separate. No new TLS/global annotation array/second registry or APP context.",
+    "conditional_named_local_objects": {
+      "digest_workspace": 448,
+      "guard_envelope": 320,
+      "graphics_cookie_max1": 64,
+      "largest_sum": 4608,
+      "synchronous_peak3_sum": 2520,
+      "meaning": "Conservative named-object sums conditional on helper lifetimes, not measured compiled stack, a recursion guarantee or CPU/process memory total. SourceEntry/Before/After remain disjoint helper alternatives; no guard helper invokes a second guard with another320 envelope. Digest helpers end before originals; one cookie may cross only the corresponding literal graphics outer helper."
+    },
+    "hash_constants": "Immutable288B K/IV rodata separate; outputSHA32 already withinBefore.Code; no second hash-state copy, hex65 or uncounted schedule. Additional source scalar/cookie locals, actual ABI spills and other-thread memory must be explicitly inventoried if implementation changes liveness.",
+    "test_isolation": "Testing target alone may define existing OSW_CPU_TESTING and use its two-context select/recreate guards. Never introduce production Begin-reset/teardown/rearm. Recreate remains refused with pending/owners/serializer conditions; marker history is cleared only by that admitted test protocol. No extra test-only context array outside frozen test mode."
+  },
+  "ordered_future_CPU_work": [
+    {
+      "step": 1,
+      "name": "Header/build boundary",
+      "work": "Pinallinputs/shareheaderwithonly7bridge+1SHAdeclarations andguard320/cookie64/workspace448 assertions. Existing564PODs areconstructeddirectly intest-ownedoriginal-signaturemocks. No genericprojectorheader/body."
+    },
+    {
+      "step": 2,
+      "name": "Core embedding and composite guards",
+      "work": "Compile exact e2 inclusion once and define R1/R2 helpers after it. Respect precheck->unlock->frozenenter->relockpostcheck, nonblocking latch paths and typed-read grants. No lock held across original/hash/POD borrow. Validate every receiver/ancestor/context/epoch/thread/slot state and failure/drain boundary."
+    },
+    {
+      "step": 3,
+      "name": "Digest and existing typedPOD mock integration",
+      "work": "ImplementR4fullspanutility plus test-ownedcallbacks constructingexistingtypedPODs fromactualownedmockstructs. No newproduction46builderAPI. Preserve optionaldigestincomplete versus requiredfixedobservationrefusal; lateroriginalsuccessdoesnotprovereadability."
+    },
+    {
+      "step": 4,
+      "name": "Fresh typed C originals and raw transport",
+      "work": "Owned mocks invoke callbacks in actual nesting with real scalar/struct-return/void mock results, no JSON source seed. Preserve base-only creators, true constructorReset1 and two nested NULL setters, setupClose/Execute, allocatorReset, caseReset2, firstDrawbeforebranch and actual ExecuteRETURN cut. Capture only actual ReceiptCopy bytes."
+    },
+    {
+      "step": 5,
+      "name": "Independent causal/memory/ABI/reader checks",
+      "work": "IndependentownedCmockscenarios; completepinnedoriginaltype/prototypes object-only without vendor.cbodybuild; freshprimaries through newboundedreader preservingfull660unknown onceeach. Archivefailuresbeforefix; noneoldrawreplays."
+    },
+    {
+      "step": 6,
+      "name": "Review and freeze separate from vendor",
+      "work": "Review exact source diff, source-before/after pins, new CPU results and unresolved limitations. Parent freezes only after peer reviews. CPU pass does not admit vendor insertion, configure, linking, gameplay or new stronger claims."
+    }
+  ],
+  "mandatory_causal_designs_for_future_tests": {
+    "R1_rootparse": [
+      "RootCreateENTRY uncommitted vsCOMMITTED: only committed true ancestor grants input; parser before root allocation does NOT requireRootnote.",
+      "Standalone/noRoot orPSO-only does not read parserblob/desc or forgeRootparent. GenuineRootuncommitted/mismatched raises explicit guardfailure, not silenthealthyparse.",
+      "Root/Parse token returned/reused/reverse/cross-context/thread or reentrantfault between eligibility/enter/postcheck/returnadmit denies reads, forwards actualparserthreeargs once, drains realtoken afterRETURN.",
+      "Originalintstatus0 plus fresh compositegrant only then capturesactiveversion/union/arrays before matching-version transfer orconvert/free; failures leave undefinedoutputabsent, no secondparse."
+    ],
+    "R2_graphics": [
+      "Literal GRAPHICS source invocation arms one exact marker before helper; actual lowerPFNENTRY compares trueVkDevice/outslot and genuinependingRootnote. Outerhelperentry never impersonates nativeentry.",
+      "Compute/mesh/raygen normalhelpers forward outside thismembership; activeconflict, duplicateconsume, wrongoutput/device, stale/copy/cookie/reusedroot reject without alternate handle/raw match.",
+      "Legal earlyhelperreturn with ACTIVE/nonnativePFN is deliberate NEWguardeligibilityrefusal reasonUNSAFE_FIXED_PROJECTION5 per3947; do NOT createScopeGap/nativeENTRY/RETURN/count/VkResult orcallitmissingAPI.",
+      "CLOSED fields persist afterRootreturn/pendingdrain/READY/Drop; only operational64B closure may change after freeze, notCall/payload/counters. Aliasoutputs into marker are rejected by existingprivate_overlap."
+    ],
+    "native_lineage": [
+      "Native helper-specific allowed bits0/4/5 do not erase genuine actual state/list locals elsewhere; inlineguard path uses exact site values and same one320Benvelope.",
+      "Draw/Lookup immutableENTRY ancestry with exactcommandgeneration/resetCall/ordinal/nativeCB andPSO/root/deviceassociation must match beforegrant andpostenter. Nestedreset/Release/reuse cannot retaglatestgeneration.",
+      "Constructor children keep genuine owner_creator_call while parentpending, not inventedliveRefs. Preserve canonicalDeviceinternal/COMiface explicitassociation, including lawfulnumericcoincidence, separateVkDevice domain.",
+      "ModuleBirthsuccessfulRETURN precedesPipelineCreateENTRY; anyDestroyENTRYbeforePipelineCreateRETURN invalidatesnativepipelinehistory. DestroyafterCreateRETURNbeforeExecute is allowed historicalfacts; no extendedmodulelifetime orhashidentity.",
+      "GPL/descriptorheap/cache/async/missingorigins/noEmit remainunsupportedunknown/actualguardrefusal percontract, noforceddispatch orskippingfirstDraw."
+    ],
+    "digest": [
+      "Independent known-answer raw32vectors empty/abc/binaryzeros/allbytes and lengths1/55/56/63/64/65/119/120/127/128/1MiB; independent reference notsamefixturehelper.",
+      "NULL0 branch performs zero sourcearithmetic/read; NULLnonzero/checkedwrap/overlaps/cap+1 reject or incompleteCode asappropriate, outputunchanged; fullsuccesshashes everybyte notprefix.",
+      "Knownfixedpointer/count and unavailabledigest =>Codecompletefalse/shaunknown; unreadrequiredoriginalfield neverdefaultsNULL0. No retainedrawcode/hashcache/metadata outputclaim beforefullsuccess.",
+      "OFF/disabled/noentry/drainreadcounts0. Metadatafault or reentry afterselectedENTRY may discard result butcannot suppress original."
+    ],
+    "original_and_counters": [
+      "All46families/selected54prototypes anddispatchvariants keep originaltypes, args, scalarreturns, voidnull, realhidden-sretpointerconditions and definedsuccessoutputs. Failedoutputpoison is not dereferenced or changed.",
+      "Forwarded baseResource variants do notdoublemintbirth; actual constructor nestedReset1 and SetPipeline(NULL) retained before baseCommandRETURN; caseReset2 retainssecondNULLsetter and laterexplicitPSOsetter.",
+      "Each original trackedENTRY/RETURN once, reverseindependentreturns allowed, genuinepending parentrules only. Frozen quotasexact64/128/32/21accepted; attempted65/129/33/22fault+forward withdrain, no rollback/eviction.",
+      "UnknownREADY vsactualNO_PAYLOAD distinct. WarmReset3 cannot reopen/hydrate/rebirth; oldReceiptCopybytes stayidentical. Pending/Release lifetime snapshot takenBEFORE, nonderefreedreceiver atAFTER."
+    ],
+    "receipts_and_locks": [
+      "Use actual sixCexports withrealstatusU32 and outputs, guards16B eachside ofcallerownedcopybuffer, null/small/tail/overlap/crossrun/context/stalealiases/8owners/9thquota and>=80boundedAcquireDropcycles.",
+      "Freeze onlyactualselectedExecuteRETURN; copy-sourceENTRY vsvisibleExecuteENTRY history intact; mutationbetweenExecuteENTRY/RETURN doesnotchangeearlierselectedcut.",
+      "RealnewCPUscenarios exercise contention/reentry/pending/sourceclosure while preserving readyraw; noproductiontesthook/globalreset. DeterministicprivateCPUseams need explicitparentapproval and noadditionalproductionexport/storage."
+    ]
+  },
+  "future_fixture_and_reader_protocol": {
+    "native_CLI": "New CPU fixtures: noargs runnewassertions only; --emit-files NEW_DIR writescreate-only boundedmanifest and exactprimaryrawfiles. Exact case/mode names and schema frozen together with usableheader beforebody implementation. No originalgame or vendor loader CLI.",
+    "manifest": "CPU-only output manifest. BEFORE reader implementation, parent and independent reviewer freeze its exact closed root/row keys, mode/case strings, basename policy and status/output shapes within the stated caps. The schema_version1/purpose owned_source_writer_projection_CPU_fixture and names in this plan are proposals, never a convenience schema inferred after outputs. At most8primaryrecords. Only actual READY ReceiptCopy writes a raw file; NO_PAYLOAD/OFF never invent a file, hash or lease. Controls retain actual U32 statuses and actual written/required/capacity.",
+    "bytes": "Write exactly written bytes returned by actualsuccessful ReceiptCopy from theownedbuffer while alias remainsvalid; compare16Bguards anduntouchedtailnative-side. Repeatcopies comparebytes, no extra analyze call. Never serialize aCode/Callobject to reconstruct receipt orhash nestedreserializedJSON.",
+    "modes": "Newmain fixture exercises observer-enabled, disabled/bypassed and metadata-faulted scheduling against the sameowned World data in oneprocess; originaltypedtracesmustmatch despitemetadatafailures. Separate compiledOFFbinary hasno corelink/helperreferences. Cross-processpointersdiffer: compareliteralcalltypes/schedule/ownedargvalues anddeclaredoccurrence roles, never claimrawtraceSHAequalityacrossprocesses.",
+    "reader_caps": {
+      "primary_files": 8,
+      "each_raw_bytes": 65536,
+      "aggregate_primary_bytes": 524288,
+      "manifest_bytes": 65536,
+      "manifest_JSON_value_nodes": 4096,
+      "manifest_depth": 20,
+      "manifest_string_bytes": 256,
+      "relative_filename_bytes": 64,
+      "child_stdout_bytes": 8192,
+      "child_stderr_bytes": 65536,
+      "each_complete_model_report_bytes": 262144,
+      "aggregate_complete_reader_report_bytes": 4194304,
+      "child_timeout_seconds": 30,
+      "child_drain_seconds": 5,
+      "CTest_whole_fixture_pair_timeout_seconds_at_least": 120
+    },
+    "reader_safety": "Reject duplicate keys, nonfinite numbers, malformed UTF8/surrogates and exceeded caps before copies. Accept only fixed permitted basenames in a fresh real output directory; reject absolute/parent paths, symlinks and nonregular files. Bound child stdout METRICS to8192B and stderr to65536B, with timeout30s and bounded kill/drain. Python discovery tests spawn no children. Exact CPU manifest keys/modes must be reviewed and frozen BEFORE the reader body is implemented.",
+    "one_model_call": "Pin/import frozen660; call analyze on theexactbytes ONCEperactualprimary, preserve itsENTIREfreshreport, retaininput/diagnostics/all17falseflags unchanged and capwholeaggregate serializedreport withouttruncation. Readerretainsincomplete/unknownreports; no positiveexpectation tohideconstructorNULLsetters. No modelcall forOFF/NO_PAYLOADwithoutprimary.",
+    "independence": "Reader expectations derivefromfrozencontracts andindependentliteralcasepolicy, nottrustedmanifest expected_known. Author mocks andStageownmocks aredistinct; reuseofanyauthorraw/seed mustbeexplicitsharedattribution. Do not importdocumentary61/63rows/widewitness oroldpositivefixtures asnewSOURCE facts.",
+    "no_external_runtime_envelope": "This is a boundedCPUfixture manifest/reader proposal only. It doesnotreopen oldruntimeenvelopecontracts, include4full64KiBbefore/afterhexbufferimages inasmallmanifest, orassertproducerinputauthenticity."
+  },
+  "complete_vendor_ABI_compile_only_future_scope": {
+    "inputs": "Onlyalreadygenerated/pinned fullWIDL17headers, upstreamprivateheaders, completeDevice15/Resource2/heap andpinnedVulkanPFNs, exact54SOURCEprototypes/perfieldtable. No regeneration/acquisition/vendor .cbodybuild. Pinactualtransitiveheaders/depsandtoolbeforeobjectcompile.",
+    "positive": "C11andC++17portablelayout/C-linkagechecks; strictWindowsx64GNUdriverobjectchecks assignALLselectedoriginal/functionpointertypes andhidden-sretvariants usingrealheaders. Generic3parser/privateC-onlytypescheckedinC, notforcedthroughC++incompatiblevendorinlines. Mockdefinitionsareexplicitlymockdomain, notactualABIproof.",
+    "negative": "Newtargetedcompilernegativeswrongreturn/BOOLI32vsU32/structreturnpointer/const/parametercount/enumwidth/callingconventionwheremeaningful, eachfailsintendedtypecheck. No warningwaiver/casttomakewrongABIpass.",
+    "limits": "Object-onlydoesnotprovevendorbodyforwarding, staticarchiveclosure, actualPFNdispatch, DLLimports/exportsor runtime. OldABIproofs aredependencies, notrerunresults ornewcoverage."
+  },
+  "future_build_and_review": {
+    "C_standard": "StrictC11required/extensionsOFF fornewCtargets, C++17required/extensionsOFFfornewC++tests; -Wall/-Wextra/-Werror/-pedanticandlockfreeassertion preserved. GNUdriverGCC/Clangprofilesexplicit, MSVC/clang-clnotclaimed. Existingtools/provenanceonly; nobrokenHOSTASanretry.",
+    "CMake_targets_proposed": [
+      "d4vr_owned_source_writer_projection",
+      "d4vr_owned_source_writer_projection_testing",
+      "d4vr_owned_source_writer_projection_cpu",
+      "d4vr_owned_source_writer_projection_off_cpu",
+      "d4vr_owned_source_writer_projection_independent_cpu",
+      "d4vr_owned_source_writer_projection_abi_c",
+      "d4vr_owned_source_writer_projection_abi_cpp"
+    ],
+    "link_assertions": "Main/testingfixtures linkonlyonetestingembedding+digest; productiononecoretargetonlyoneproductionembedding+digest. OFFfixturelinknocore. Inspectnewarchive/objectsymbolsforonecontext/issuer/controlsetandabsenceofpublicprivatehelpers; no vendorlinkmapisclaimed.",
+    "new_CTest_only": "Nativeauthor, compiledOFF, nativeindependent, authorwireCLI, independentwireCLI/readerunitsasnewtests withappropriatetimeouts. Do notbroadenorreplayoldCPU/model/ABI/physicalcontrols merelyforconfidence.",
+    "evidence": "Beforeeveryrelevantcompile/run pinnewsource+frozendependencies+exacttools/argv/cwd/env; persistreturn/stdout/stderrevenfailurebeforeinspection, thenpinsafter. Archiveactualcheckpointbeforefix andattributefindings, notracecurrentfilehashbackontoearlierimport. Eachfreshprimaryparsedonce; finalproofonlyafteractualexecution.",
+    "final_gate": "Parentfreezesnewcode onlyafterauthorproof+independentcausals+boundedreader/fullABI/sourcecode reviews closed. CPUCIaloneisnotSOURCEinsertion/build/launch admission."
+  },
+  "unmet_exact_precode_gates_at_this_draft": [
+    "OrderedR1-R5bundlemanifestd3bc with exact0507/3947/5bd7/1b13/0d50 dependencies still needsfinalindependentreview,parentfreezeandNEWexplicitCPUadmission. Thisplan grantsnone.",
+    "Productionprojectors_v1.h/.c or grouped.inc aredeliberatelyCLOSED: nogeneric46builderCsignatures/ownershiparecontracted. SeparateexactABI orreviewedstaticSOURCEinsertiondecisionneeded; NOTablockerforlaterexplicitadmissionofthe7contractedguards+SHA+ownedPODmocks.",
+    "The CPU manifest exact keys, modes/cases, filenames, output/status fields and malformed-input policy must be independently reviewed and frozen BEFORE reader implementation. Retain stdout metrics8192B, stderr65536B, <=8primaries each<=65536B, timeout30s, each full model report<=262144B and complete reader report<=4MiB. It is not an external runtime attestation envelope.",
+    "ActualSOURCEraw/nodefit/nativebranch/borrowandvendorlink/sourcepatchremainunprovedandoutsideCPUstage; faithfullyfullunknown660 isintended, nottobefilteredintoapositive."
+  ],
+  "actions_and_claims": {
+    "this_document_written_only": true,
+    "new_code_header_test_compiler_or_model_run": false,
+    "vendor_source_patch_or_configure_build": false,
+    "runtime_launch_or_game": false,
+    "frozen_components_modified": false,
+    "CPU_implementation_self_admitted": false,
+    "human_required": false
+  },
+  "revision": {
+    "version": 3,
+    "preserved_checkpoint": {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-additive-precode-20261028-1/next-CPU-implementation-plan-candidate1.json",
+      "bytes": 27666,
+      "sha256": "f22023f7b4476a1887ede9986961437740cda025b40c49b8db0a225772eb8746"
+    },
+    "parent_scope_decision": "Narrow NEXT CPU scope: exact7bridgeoperations +exactSHA448 +ownedoriginal-signature/PODmocks +boundedreader/ABIprobes. NOnewgeneric46builder/projectorAPI.",
+    "code_admission_still_separate": true,
+    "documentary_update_checkpoint": "First finalization stopped on an asserted stale manifest pin (announced5fe784/9685B changed concurrently to d3bcf936/10605B adding next_CPU_scope_limit). Canonical f220 was not written; its byte-exact checkpoint preserved. New manifest scope-limit was then read and explicitly adopted; no code or test was run.",
+    "preserved_candidate2": {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-additive-precode-20261028-1/next-CPU-implementation-plan-candidate2.json",
+      "bytes": 34680,
+      "sha256": "6daf76ada6b79ca145a107993dcc25778627cea09fcc95180555c58e08eca352"
+    },
+    "parent_final_transport_precision": "Keep the inherited CPU stdout metrics bound of8192B; stderr remains65536B. No stdout-cap expansion. All seven exact bridge operations plus the SHA API and closed production-projector exclusion remain as in revision2."
+  },
+  "exact_future_CPU_API_scope": {
+    "bridge_operation_count": 7,
+    "bridge_operations": [
+      "uint32_t d4vr_osw_rootparse_owned_enter_v1(osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "uint32_t d4vr_osw_rootparse_owned_return_admit_v1(const osw_token_v1 *token, osw_admission_v1 *admission_out);",
+      "uint32_t d4vr_osw_graphics_scope_probe_v1(void);",
+      "uint32_t d4vr_osw_graphics_scope_begin_v1(uint64_t actual_root_internal, uint64_t actual_vk_device, uint64_t actual_output_slot, d4vr_osw_graphics_cookie_v1 *cookie_out);",
+      "uint32_t d4vr_osw_graphics_layout_owned_enter_v1(uint64_t actual_vk_device, uint64_t actual_output_slot, osw_token_v1 *token_out, osw_admission_v1 *admission_out);",
+      "uint32_t d4vr_osw_graphics_scope_end_v1(const d4vr_osw_graphics_cookie_v1 *cookie);",
+      "uint32_t d4vr_osw_native_owned_enter_v1(uint32_t event_tag, const osw_sourceentryinput_v1 *actual_site_scalars, osw_token_v1 *token_out, osw_admission_v1 *admission_out);"
+    ],
+    "sha_operation_count": 1,
+    "sha_operation": "uint32_t d4vr_osw_source_sha256_v1(const uint8_t *source, uint64_t source_bytes, d4vr_osw_sha256_workspace_v1 *workspace, osw_sha256_v1 *digest_out);",
+    "existing_interfaces": "Reuse exactfrozen46before/aftercallbackfamilies, SOURCEenter/return_admit/drain/note andsixleaseexports unchanged. CPU mocks constructtheexistingtyped Before/AfterPODs. No newAPPfacts/control or genericprojectionABI.",
+    "closed_production_projector_gap": "Proposed projectors_v1.h/.c filenames carry NO function-signature/ownership contract. They remain future-only/CLOSED pending a separate exactABIcontract OR reviewedstaticSOURCEinsertiondecision. The46-site safe-readtable is authorityfor mocks andlaterinsertion, notnewCdeclarations.",
+    "signature_probe_limit": "The54reviewedoriginalprototypes/variants are checkedagainstpinnedheaders object-only andusedbytypedmocks. This is notvendorbody/dispatch/forwarding evidence."
+  },
+  "documentary_source_pins_after": [
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-additive-precode-20261028-1/bridge-provenance-contract.json",
+      "bytes": 44064,
+      "sha256": "05071a6a699964c381bef584fd683a077d44227d30db9095ea061b940fb16b33"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-additive-precode-20261028-1/bridge-provenance-addendum.json",
+      "bytes": 9612,
+      "sha256": "3947db0a809db897b32b5a9f3c822c6690bb27bed08941e52c324b9dc69560da"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-additive-precode-20261028-1/diagnostic-read-contract.json",
+      "bytes": 58589,
+      "sha256": "1b13a9073ab1aaaf48705e331f345141832b2b5dcc3977906bfb6e2410f668ac"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-additive-precode-20261028-1/digest-storage-contract-v2.json",
+      "bytes": 34029,
+      "sha256": "0d50ba047a8902a1aeae06d7ff5966cb3b2f83f5bca39860ab34947e0fead9e9"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-insertion-precode-20261028-1/next-precode-resolution-plan.json",
+      "bytes": 7815,
+      "sha256": "6f98ed777ad8b43c2d27373f4d51f2d1877b518034557df91f202e337572e33a"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-insertion-precode-20261028-1/next-precode-documentary-admission.json",
+      "bytes": 2921,
+      "sha256": "68ec6fb00e1b768e3a15a6231a8980729a8e32443f961f4a3f84dd4d8a04d79a"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/native/owned_source_writer_source/owned_source_writer_source_v1.c",
+      "bytes": 52825,
+      "sha256": "e2f464bb2a6159ce88eac1c71bf4442c999856f4876a19c3f912dc07e8ea86b7"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/native/owned_source_writer_source/owned_source_writer_source_v1.h",
+      "bytes": 282735,
+      "sha256": "564e8955d9b97211e81b10defafc6e1a49b07291f57090e4e821fab454588583"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/tools/owned_source_writer_validate.py",
+      "bytes": 95467,
+      "sha256": "660623fb5da3cbec1ea7fbe2c6f1513beadd3950c97416a6126a71de119479bf"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/docs/schemas/owned-source-writer-v1.json",
+      "bytes": 90039,
+      "sha256": "693021b27fbb12ed298b486ee38e3bdd3a5429c7478d47a3640158aa22011143"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-additive-precode-20261028-1/bridge-provenance-count-erratum.json",
+      "bytes": 1637,
+      "sha256": "5bd7894f08e6306814efd7efe469c9c627d7df228bbddb627fedc191a6719e23"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/docs/proposals/owned-source-writer-projection-v1/manifest.json",
+      "bytes": 10605,
+      "sha256": "d3bcf9369a34a78851991c59fb14e081f04792d00691d0b8786a464cd81faaeb"
+    }
+  ],
+  "all_input_pins_unchanged": true
+}

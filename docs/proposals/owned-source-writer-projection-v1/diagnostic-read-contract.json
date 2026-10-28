@@ -1,0 +1,1307 @@
+{
+  "schema_version": 1,
+  "purpose": "Additive diagnostic and safe-read PRECODE contract R3/R5; no implementation",
+  "created_utc": "2026-10-28T05:10:59.398346+00:00",
+  "status": "DRAFT_FOR_INDEPENDENT_SOURCE_REVIEW_NOT_CODE_ADMISSION",
+  "precedence": {
+    "base": "Adopt the exact frozen C ABI normative bundle plus current e2 C implementation/564 header/660 pure calculation. Historical proposed/not-implemented status strings in precode bundles remain unchanged; they are not current execution claims.",
+    "wire": "No wire key/type/cap/purpose/schema change. Raw remains exact schema_version2/purpose supplied_SOURCE_owned_first_writer_originals; it is a calculation input and never attests itself.",
+    "private_exception": "Only the separately specified bridge marker may override named unused private record bytes, in the new embedding profile. All other named reserved fields, inline unused tails, inactive unions, enum widths and public C ABI remain exact and zero as required.",
+    "diagnostic": "This document deliberately admits no positive relation for the faithful true nested setter profile. That is an operational capture policy, not a rewrite/relaxation of model660."
+  },
+  "unchanged_components": [
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/native/owned_source_writer_source/owned_source_writer_source_v1.c",
+      "bytes": 52825,
+      "sha256": "e2f464bb2a6159ce88eac1c71bf4442c999856f4876a19c3f912dc07e8ea86b7"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/native/owned_source_writer_source/owned_source_writer_source_v1.h",
+      "bytes": 282735,
+      "sha256": "564e8955d9b97211e81b10defafc6e1a49b07291f57090e4e821fab454588583"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/tools/owned_source_writer_validate.py",
+      "bytes": 95467,
+      "sha256": "660623fb5da3cbec1ea7fbe2c6f1513beadd3950c97416a6126a71de119479bf"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/docs/schemas/owned-source-writer-v1.json",
+      "bytes": 90039,
+      "sha256": "693021b27fbb12ed298b486ee38e3bdd3a5429c7478d47a3640158aa22011143"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/native/tests/private_translator_runtime_owned.cpp",
+      "bytes": 58239,
+      "sha256": "695836203c4821e7d429460ef5b672359d6fb10b77f0132a3a77e323aad7b6f2"
+    }
+  ],
+  "source_projection_authorities": [
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-insertion-precode-20261028-1/sites.json",
+      "bytes": 157527,
+      "sha256": "644357f943e0fa200e09e76b5b77e8aaab6ab64e9c316784cc25b3123b502250"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-insertion-precode-20261028-1/cold-budget.json",
+      "bytes": 42567,
+      "sha256": "1eac5e8750ec790dae1f0d4006e275e89593fa3c8388502da4ca50fdbdbd1f34"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/docs/schemas/owned-source-writer-c-abi-v1/normative-manifest.json",
+      "bytes": 1364,
+      "sha256": "ebee057ce52163760ec9c2ce92bf80d452bd557d002a143731f8988f4ea9268e"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/docs/schemas/owned-source-writer-c-abi-v1/docs-proposals/source-callback-fields-final-proposed.json",
+      "bytes": 256790,
+      "sha256": "3a76ca68fee98ab892272ecc3b90e1cb28675e9349b3df9fe65fc18ed517443d"
+    }
+  ],
+  "selected_boundary": {
+    "window": "Begin before the first genuine source factory and all required cold origins/getters. Freeze only at the actual selected first-case Execute RETURN when closure succeeds; Seal/Retain/Copy/Drop remain lease controls. No GPU completion or readback is joined by this contract.",
+    "first_factory": "Select the first real internal DeviceCreate attempt before singleton/NEW/failed branch. A known singleton is not a new generation; unsupported first attempt never permits a later convenient NEW factory to replace it.",
+    "first_draw": "Select the first genuine candidate direct COM Draw before predication/noEmit/native pipeline branch. Unsupported/noEmit/GPL/descriptor_heap/cache/async/missing origin remains unknown or actual protocol refusal; do not pick a later writer or force the branch.",
+    "epochs": "Actual constructor Reset ordinal1, actual first-case Reset ordinal2; recording_epoch_ref is the actual Reset CallID from the sink. WarmReset3 is outside this one-epoch profile and cannot hydrate origins/getters or retag the old frame.",
+    "cuts": "Copy source logical history is frozen at each original COPY ENTRY, visible destination history at original Execute ENTRY. Only original successful defined RETURN creates a birth. No current lookup during Seal/Copy can rewrite facts.",
+    "membership": "Keep the exact previously declared finite family/variant membership including genuine nested same-vtable setters. Explicitly excluded originals remain forwarded, not claimed absent. ScopeGap is an observer diagnostic, never an API delegate or invented RETURN."
+  },
+  "nested_setter_projections": [
+    {
+      "occurrence": "Constructor Reset1 invokes SetPipelineState(initial_pipeline_state==NULL)",
+      "entry": "Original SetPipeline vtable entry inside the actual original Reset call, itself nested inside pending base CommandCreate.",
+      "args": "command ObjectArg kind=command/raw=actual iface/generation supplied by sink only (not yet born=>null). pipeline ObjectArg kind=pso/raw=observed0/generation supplied by sink only (null). Required kind/raw fields are observed; source never supplies a generation.",
+      "source_scope": "Use the frozen set_scope result: no live command generation, no invented selected epoch or PSO owner. It is NOT the constructor Reset exception and must not borrow that exception or source_site. Call.parent is the real active Reset CallID, not the outer creator relabeled as immediate parent.",
+      "return": "Original void RETURN only; d4vr_osw_setpipeline_after_v1 receives the same token and no fabricated HRESULT or output."
+    },
+    {
+      "occurrence": "First-case Reset2 invokes SetPipelineState(initial_pipeline_state==NULL)",
+      "entry": "True nested setter before that original Reset RETURN. Command birth already exists; the sink may still have the preceding successful Reset ordinal1 until Reset2 actually returns.",
+      "args": "Same actual command iface and observed NULL pipeline. Preserve sink ENTRY generation/ordinal/epoch as they genuinely exist; do not precommit Reset2 or set recording_epoch_ref to its pending call.",
+      "source_scope": "Call.parent is actual Reset2; no typed shader/heap/PSO facts inferred from Reset arguments or later explicit SetPipeline. Sink state changes only at the corresponding original defined RETURN.",
+      "return": "Actual void RETURN, no success HRESULT. The subsequent explicit SetPipeline(PSO) is a distinct original occurrence after Reset2 RETURN and must also remain."
+    }
+  ],
+  "diagnostic_outcomes": [
+    {
+      "condition": "All selected fixed observations legally captured; closure and serialization fit; model660 rejects prebirth/NULL setters or another well-typed unsupported fact",
+      "transport": "READY remains possible with the exact immutable raw frame. The pure model complete unknown result is preserved, including its retained_input and all17 false stronger facets.",
+      "forbidden": "No filtering, clock/ID conversion, prefix renumbering, fabricated early birth, PSO substitution, hash identity, selective later writer or claimed positive."
+    },
+    {
+      "condition": "Actual pending/record/mark/identity/raw/node/depth/string cap, unsafe required fixed projection, invalid ABI/masks or genuine protocol fault",
+      "transport": "Existing sink refusal/NO_PAYLOAD/fault/drain semantics apply. Original call/arguments/output/return/cleanup still run once. No truncated READY certificate, old-frame retag or enlarged cap.",
+      "forbidden": "Do not call a semantic unknown a transport failure unless this condition actually occurs; do not call a quota refusal global absence."
+    },
+    {
+      "condition": "Original fixed pointer/count fields observed but optional hash/pNext/array tail is unavailable within the explicit incomplete representation",
+      "transport": "Preserve actual fixed fields and bounded safe prefix/complete=false or Code.sha256unknown/complete=false as specified. An exact diagnostic frame may remain READY and unknown.",
+      "forbidden": "Never fake an observed NULL, full array, digest of a prefix, missing child birth or unchanged data."
+    }
+  ],
+  "per_site_read_rules": [
+    {
+      "phase": "OFF or unarmed/unselected",
+      "rule": "Compiled OFF calls originals directly with their actual arguments and return type, no new helper reference or borrowed field read. ON enters through the declared static membership/guard using only safe scalar addresses/source-owned identity bookkeeping; if unarmed/closed/unselected it does not evaluate typed descriptor/output/code observations. Scalar NULL comparisons are not readability proofs."
+    },
+    {
+      "phase": "Before projection",
+      "rule": "Require successful selected entry/may_project_before. Zero-init caller-owned PODs; copy actual operands by value once at the original ENTRY cut. Use each reviewed site expression and the normative field annex for lifetime, active union/version and exact widths. Required fixed original fields that cannot be safely observed must not be filled with0."
+    },
+    {
+      "phase": "Borrowed original structs/spans",
+      "rule": "A typed API parameter or nonNULL address is not an observed ownership/readability witness. Every source site needs its exact legitimate valid-input borrow or internal allocated owner/read-lock lifetime; these are explicit preconditions of this prototype, not a universal invalid-pointer recovery guarantee. The future owned CPU controls provide real owned POD/arrays. Arbitrary game pointers and async/cache owners are not automatically admitted. No mprotect/probe/query/scan/exception-swallow mechanism may be invented to pretend readability."
+    },
+    {
+      "phase": "Counts and arithmetic",
+      "rule": "Preserve actual original count and pointer separately from copied_count. Before any source-array access check original width, per-array cap, min(count,cap) multiplication and pointer+extent for U64/uintptr overflow. Arithmetic checks alone do not establish readable memory. Copy only a proven live safe prefix; count>cap/tail unavailable is incomplete, never relabeled full. Prefix must never exceed original count or schema cap."
+    },
+    {
+      "phase": "NULL and N/A",
+      "rule": "Original nullable NULL observed uses observed=1/present=0, not unread observed=0. A nonnullable scalar whose observed value is numeric0 or pointer0 uses both bits1; zero is not missing. Missing required original nullable operand still causes NO_PAYLOAD; it cannot impersonate NULL. Genuine NULL CopyRanges sizes is preserved with unit-size semantics left to frozen model. Version/union-N/A follows the actual tag and never reads inactive storage. Count0 permits an unused NULL or nonNULL array pointer only where its original ABI defines it."
+    },
+    {
+      "phase": "Scalar representation",
+      "rule": "Original BOOL remains exact I32, including noncanonical nonzero values, not JSON Bool or a normalized1. Original D3D heapType is Enum32; Increment return is UINT32. Native/COM handles, internal object pointers and Vk handles keep separate domains. Floating API operands are captured as their exact U32 bit words via owned typed memcpy, never JSON floats or aliasing pointer casts. Derived complete/status flags are true U32 0/1 only."
+    },
+    {
+      "phase": "After original RETURN",
+      "rule": "Capture the real scalar/struct-return/void result in its true type first. Fresh return_admit must be OK+SELECTED+may_snapshot_defined_output before reading an output, and the original API must actually define that output for this exact return. Failed/pending output is unknown/absent, never observed0, caller-storage rewrite or fake success. A getter hidden output pointer must equal its true returned pointer where that ABI defines it; no fake pointer from the observer."
+    },
+    {
+      "phase": "Release/Destroy",
+      "rule": "Detach required typed owner/identity operands BEFORE the original can free them; preserve Release ULONG vs Vulkan destroy void. After Release/Destroy do not reread the freed object, vtable, parent or rawU64. Source own RETURNevidence only closes COM at actual0; it is not GPU destruction or completion."
+    },
+    {
+      "phase": "Fault/drain",
+      "rule": "Metadata failures never suppress/retry/replace an original or hold its metadata lock through delegate/hash/cleanup. Existing pending token/counter/window behavior is retained faithfully. New private guards must specify whether they fail before a selected event/window or after an actual token has been admitted; no invented original ENTRY/RETURN, rollback or extra count. A refused fixed projection with a tracked token must still drain after the actual original returns."
+    },
+    {
+      "phase": "Freeze and later callbacks",
+      "rule": "At actual selected Execute RETURN retain immutable raw; later faults/leases/drain cannot rewrite it. No code, descriptor or object is re-read at Seal or ReceiptCopy. Any source guard operational state lives only in its expressly adopted private reserved span and does not become a wire fact or an alternate history registry."
+    }
+  ],
+  "per_family_resolution": [
+    {
+      "api": "DeviceCreate",
+      "tag": 1,
+      "source_site_rows": [
+        0
+      ],
+      "exact_argument_fields": [
+        "output_pointer"
+      ],
+      "mask_bits": {
+        "output_pointer": 0
+      },
+      "defined_return_rule": {
+        "text_rule": "shared_text_17"
+      },
+      "source_read_authority": "Resolve shared text_rule references through the exact sites.json shared_text_rules/shared_text_resolution and the frozen field annex, not a fabricated default. New bridge provenance and hash utility rules override only their explicitly stated scopes.",
+      "OFF": "No extra projection/borrow/source-note call; forward the original true signature exactly once."
+    },
+    {
+      "api": "VkDeviceCreate",
+      "tag": 2,
+      "source_site_rows": [
+        55,
+        56
+      ],
+      "exact_argument_fields": [
+        "physical_device_raw",
+        "output_pointer"
+      ],
+      "mask_bits": {
+        "physical_device_raw": 0,
+        "output_pointer": 1
+      },
+      "defined_return_rule": {
+        "text_rule": "shared_text_17"
+      },
+      "source_read_authority": "Resolve shared text_rule references through the exact sites.json shared_text_rules/shared_text_resolution and the frozen field annex, not a fabricated default. New bridge provenance and hash utility rules override only their explicitly stated scopes.",
+      "OFF": "No extra projection/borrow/source-note call; forward the original true signature exactly once."
+    },
+    {
+      "api": "ResourceCreate",
+      "tag": 3,
+      "source_site_rows": [
+        1
+      ],
+      "exact_argument_fields": [
+        "device",
+        "heap_properties_pointer",
+        "heap_properties",
+        "heap_flags",
+        "description_pointer",
+        "description",
+        "initial_state",
+        "clear_value_pointer",
+        "requested_iid",
+        "output_pointer"
+      ],
+      "mask_bits": {
+        "device": 0,
+        "heap_properties_pointer": 1,
+        "heap_properties": 2,
+        "heap_flags": 3,
+        "description_pointer": 4,
+        "description": 5,
+        "initial_state": 6,
+        "clear_value_pointer": 7,
+        "requested_iid": 8,
+        "output_pointer": 9
+      },
+      "defined_return_rule": {
+        "text_rule": "shared_text_17"
+      },
+      "source_read_authority": "Resolve shared text_rule references through the exact sites.json shared_text_rules/shared_text_resolution and the frozen field annex, not a fabricated default. New bridge provenance and hash utility rules override only their explicitly stated scopes.",
+      "OFF": "No extra projection/borrow/source-note call; forward the original true signature exactly once."
+    },
+    {
+      "api": "HeapCreate",
+      "tag": 4,
+      "source_site_rows": [
+        2
+      ],
+      "exact_argument_fields": [
+        "device",
+        "description",
+        "output_pointer",
+        "description_pointer",
+        "requested_iid"
+      ],
+      "mask_bits": {
+        "device": 0,
+        "description": 1,
+        "output_pointer": 2,
+        "description_pointer": 3,
+        "requested_iid": 4
+      },
+      "defined_return_rule": {
+        "text_rule": "shared_text_17"
+      },
+      "source_read_authority": "Resolve shared text_rule references through the exact sites.json shared_text_rules/shared_text_resolution and the frozen field annex, not a fabricated default. New bridge provenance and hash utility rules override only their explicitly stated scopes.",
+      "OFF": "No extra projection/borrow/source-note call; forward the original true signature exactly once."
+    },
+    {
+      "api": "AllocatorCreate",
+      "tag": 5,
+      "source_site_rows": [
+        3
+      ],
+      "exact_argument_fields": [
+        "device",
+        "output_pointer",
+        "type"
+      ],
+      "mask_bits": {
+        "device": 0,
+        "output_pointer": 1,
+        "type": 2
+      },
+      "defined_return_rule": {
+        "text_rule": "shared_text_17"
+      },
+      "source_read_authority": "Resolve shared text_rule references through the exact sites.json shared_text_rules/shared_text_resolution and the frozen field annex, not a fabricated default. New bridge provenance and hash utility rules override only their explicitly stated scopes.",
+      "OFF": "No extra projection/borrow/source-note call; forward the original true signature exactly once."
+    },
+    {
+      "api": "QueueCreate",
+      "tag": 6,
+      "source_site_rows": [
+        4
+      ],
+      "exact_argument_fields": [
+        "device",
+        "output_pointer",
+        "type"
+      ],
+      "mask_bits": {
+        "device": 0,
+        "output_pointer": 1,
+        "type": 2
+      },
+      "defined_return_rule": {
+        "text_rule": "shared_text_17"
+      },
+      "source_read_authority": "Resolve shared text_rule references through the exact sites.json shared_text_rules/shared_text_resolution and the frozen field annex, not a fabricated default. New bridge provenance and hash utility rules override only their explicitly stated scopes.",
+      "OFF": "No extra projection/borrow/source-note call; forward the original true signature exactly once."
+    },
+    {
+      "api": "CommandCreate",
+      "tag": 7,
+      "source_site_rows": [
+        5
+      ],
+      "exact_argument_fields": [
+        "device",
+        "allocator",
+        "initial_pipeline",
+        "output_pointer",
+        "node_mask",
+        "type",
+        "requested_iid"
+      ],
+      "mask_bits": {
+        "device": 0,
+        "allocator": 1,
+        "initial_pipeline": 2,
+        "output_pointer": 3,
+        "node_mask": 4,
+        "type": 5,
+        "requested_iid": 6
+      },
+      "defined_return_rule": {
+        "text_rule": "shared_text_17"
+      },
+      "source_read_authority": "Resolve shared text_rule references through the exact sites.json shared_text_rules/shared_text_resolution and the frozen field annex, not a fabricated default. New bridge provenance and hash utility rules override only their explicitly stated scopes.",
+      "OFF": "No extra projection/borrow/source-note call; forward the original true signature exactly once."
+    },
+    {
+      "api": "RootCreate",
+      "tag": 8,
+      "source_site_rows": [
+        6
+      ],
+      "exact_argument_fields": [
+        "device",
+        "blob",
+        "output_pointer",
+        "node_mask"
+      ],
+      "mask_bits": {
+        "device": 0,
+        "blob": 1,
+        "output_pointer": 2,
+        "node_mask": 3
+      },
+      "defined_return_rule": {
+        "text_rule": "shared_text_17"
+      },
+      "source_read_authority": "Resolve shared text_rule references through the exact sites.json shared_text_rules/shared_text_resolution and the frozen field annex, not a fabricated default. New bridge provenance and hash utility rules override only their explicitly stated scopes.",
+      "OFF": "No extra projection/borrow/source-note call; forward the original true signature exactly once."
+    },
+    {
+      "api": "RootParse",
+      "tag": 9,
+      "source_site_rows": [
+        57
+      ],
+      "exact_argument_fields": [
+        "blob",
+        "description_output_pointer"
+      ],
+      "mask_bits": {
+        "blob": 0,
+        "description_output_pointer": 1
+      },
+      "defined_return_rule": "Originalintstatus captured; success0 plus freshreturnadmit SELECTED+outputflag permits original desc.version/activeunion/arrays BEFORE BOTH*out_desc=desc matchingversiontransfer AND conversion/free. G1 remains open.",
+      "source_read_authority": "Resolve shared text_rule references through the exact sites.json shared_text_rules/shared_text_resolution and the frozen field annex, not a fabricated default. New bridge provenance and hash utility rules override only their explicitly stated scopes.",
+      "OFF": "No extra projection/borrow/source-note call; forward the original true signature exactly once."
+    },
+    {
+      "api": "PSOCreate",
+      "tag": 10,
+      "source_site_rows": [
+        7
+      ],
+      "exact_argument_fields": [
+        "device",
+        "root",
+        "vertex_bytecode",
+        "pixel_bytecode",
+        "output_pointer",
+        "rtv_formats",
+        "sample_count",
+        "sample_quality"
+      ],
+      "mask_bits": {
+        "device": 0,
+        "root": 1,
+        "vertex_bytecode": 2,
+        "pixel_bytecode": 3,
+        "output_pointer": 4,
+        "rtv_formats": 5,
+        "sample_count": 6,
+        "sample_quality": 7
+      },
+      "defined_return_rule": {
+        "text_rule": "shared_text_17"
+      },
+      "source_read_authority": "Resolve shared text_rule references through the exact sites.json shared_text_rules/shared_text_resolution and the frozen field annex, not a fabricated default. New bridge provenance and hash utility rules override only their explicitly stated scopes.",
+      "OFF": "No extra projection/borrow/source-note call; forward the original true signature exactly once."
+    },
+    {
+      "api": "ModuleCreate",
+      "tag": 11,
+      "source_site_rows": [
+        58
+      ],
+      "exact_argument_fields": [
+        "device",
+        "create_info_pointer",
+        "s_type",
+        "p_next",
+        "flags",
+        "code",
+        "allocator_pointer",
+        "output_pointer"
+      ],
+      "mask_bits": {
+        "device": 0,
+        "create_info_pointer": 1,
+        "s_type": 2,
+        "p_next": 3,
+        "flags": 4,
+        "code": 5,
+        "allocator_pointer": 6,
+        "output_pointer": 7
+      },
+      "defined_return_rule": {
+        "text_rule": "shared_text_17"
+      },
+      "source_read_authority": "Resolve shared text_rule references through the exact sites.json shared_text_rules/shared_text_resolution and the frozen field annex, not a fabricated default. New bridge provenance and hash utility rules override only their explicitly stated scopes.",
+      "OFF": "No extra projection/borrow/source-note call; forward the original true signature exactly once."
+    },
+    {
+      "api": "PipelineLayoutCreate",
+      "tag": 12,
+      "source_site_rows": [
+        59
+      ],
+      "exact_argument_fields": [
+        "device",
+        "create_info_pointer",
+        "s_type",
+        "p_next",
+        "flags",
+        "set_layout_raws",
+        "push_constant_ranges",
+        "allocator_pointer",
+        "output_pointer"
+      ],
+      "mask_bits": {
+        "device": 0,
+        "create_info_pointer": 1,
+        "s_type": 2,
+        "p_next": 3,
+        "flags": 4,
+        "set_layout_raws": 5,
+        "push_constant_ranges": 6,
+        "allocator_pointer": 7,
+        "output_pointer": 8
+      },
+      "defined_return_rule": {
+        "text_rule": "shared_text_17"
+      },
+      "source_read_authority": "Resolve shared text_rule references through the exact sites.json shared_text_rules/shared_text_resolution and the frozen field annex, not a fabricated default. New bridge provenance and hash utility rules override only their explicitly stated scopes.",
+      "OFF": "No extra projection/borrow/source-note call; forward the original true signature exactly once."
+    },
+    {
+      "api": "PipelineCreate",
+      "tag": 13,
+      "source_site_rows": [
+        60,
+        61,
+        62,
+        63,
+        64
+      ],
+      "exact_argument_fields": [
+        "device",
+        "cache_raw",
+        "create_info_count",
+        "create_info_pointer",
+        "create_info_complete",
+        "s_type",
+        "flags",
+        "p_next",
+        "library_info",
+        "layout",
+        "render_pass_raw",
+        "subpass",
+        "base_pipeline_raw",
+        "base_pipeline_index",
+        "stages",
+        "allocator_pointer",
+        "output_pointer",
+        "state_pointers"
+      ],
+      "mask_bits": {
+        "device": 0,
+        "cache_raw": 1,
+        "create_info_count": 2,
+        "create_info_pointer": 3,
+        "create_info_complete": 4,
+        "s_type": 5,
+        "flags": 6,
+        "p_next": 7,
+        "library_info": 8,
+        "layout": 9,
+        "render_pass_raw": 10,
+        "subpass": 11,
+        "base_pipeline_raw": 12,
+        "base_pipeline_index": 13,
+        "stages": 14,
+        "allocator_pointer": 15,
+        "output_pointer": 16,
+        "state_pointers": 17
+      },
+      "defined_return_rule": {
+        "text_rule": "shared_text_17"
+      },
+      "source_read_authority": "Resolve shared text_rule references through the exact sites.json shared_text_rules/shared_text_resolution and the frozen field annex, not a fabricated default. New bridge provenance and hash utility rules override only their explicitly stated scopes.",
+      "OFF": "No extra projection/borrow/source-note call; forward the original true signature exactly once."
+    },
+    {
+      "api": "Increment",
+      "tag": 14,
+      "source_site_rows": [
+        8
+      ],
+      "exact_argument_fields": [
+        "device",
+        "heap_type"
+      ],
+      "mask_bits": {
+        "device": 0,
+        "heap_type": 1
+      },
+      "defined_return_rule": "OriginalUINT by value, no output pointer read; freshreturnadmit for typedAfter and all SourceAfterInput N/A bits0.",
+      "source_read_authority": "Resolve shared text_rule references through the exact sites.json shared_text_rules/shared_text_resolution and the frozen field annex, not a fabricated default. New bridge provenance and hash utility rules override only their explicitly stated scopes.",
+      "OFF": "No extra projection/borrow/source-note call; forward the original true signature exactly once."
+    },
+    {
+      "api": "CPUStart",
+      "tag": 15,
+      "source_site_rows": [
+        9
+      ],
+      "exact_argument_fields": [
+        "heap",
+        "output_pointer"
+      ],
+      "mask_bits": {
+        "heap": 0,
+        "output_pointer": 1
+      },
+      "defined_return_rule": "Capture actual returned D3D12_*_DESCRIPTOR_HANDLE* first; after freshreturn_admit SELECTED+outputflag, read saved descriptor->ptr only if returned_pointer==saved_descriptor and saved_descriptor!=NULL. Mismatch/null retains raw return only, no pointee read.",
+      "source_read_authority": "Resolve shared text_rule references through the exact sites.json shared_text_rules/shared_text_resolution and the frozen field annex, not a fabricated default. New bridge provenance and hash utility rules override only their explicitly stated scopes.",
+      "OFF": "No extra projection/borrow/source-note call; forward the original true signature exactly once."
+    },
+    {
+      "api": "GPUStart",
+      "tag": 16,
+      "source_site_rows": [
+        10
+      ],
+      "exact_argument_fields": [
+        "heap",
+        "output_pointer"
+      ],
+      "mask_bits": {
+        "heap": 0,
+        "output_pointer": 1
+      },
+      "defined_return_rule": "Capture actual returned D3D12_*_DESCRIPTOR_HANDLE* first; after freshreturn_admit SELECTED+outputflag, read saved descriptor->ptr only if returned_pointer==saved_descriptor and saved_descriptor!=NULL. Mismatch/null retains raw return only, no pointee read.",
+      "source_read_authority": "Resolve shared text_rule references through the exact sites.json shared_text_rules/shared_text_resolution and the frozen field annex, not a fabricated default. New bridge provenance and hash utility rules override only their explicitly stated scopes.",
+      "OFF": "No extra projection/borrow/source-note call; forward the original true signature exactly once."
+    },
+    {
+      "api": "CreateSRV",
+      "tag": 17,
+      "source_site_rows": [
+        27,
+        29,
+        31
+      ],
+      "exact_argument_fields": [
+        "device",
+        "resource",
+        "destination",
+        "description",
+        "description_pointer"
+      ],
+      "mask_bits": {
+        "device": 0,
+        "resource": 1,
+        "destination": 2,
+        "description": 3,
+        "description_pointer": 4
+      },
+      "defined_return_rule": {
+        "text_rule": "shared_text_56"
+      },
+      "source_read_authority": "Resolve shared text_rule references through the exact sites.json shared_text_rules/shared_text_resolution and the frozen field annex, not a fabricated default. New bridge provenance and hash utility rules override only their explicitly stated scopes.",
+      "OFF": "No extra projection/borrow/source-note call; forward the original true signature exactly once."
+    },
+    {
+      "api": "CopySimple",
+      "tag": 18,
+      "source_site_rows": [
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40
+      ],
+      "exact_argument_fields": [
+        "device",
+        "count",
+        "destination",
+        "source",
+        "heap_type"
+      ],
+      "mask_bits": {
+        "device": 0,
+        "count": 1,
+        "destination": 2,
+        "source": 3,
+        "heap_type": 4
+      },
+      "defined_return_rule": {
+        "text_rule": "shared_text_56"
+      },
+      "source_read_authority": "Resolve shared text_rule references through the exact sites.json shared_text_rules/shared_text_resolution and the frozen field annex, not a fabricated default. New bridge provenance and hash utility rules override only their explicitly stated scopes.",
+      "OFF": "No extra projection/borrow/source-note call; forward the original true signature exactly once."
+    },
+    {
+      "api": "CopyRanges",
+      "tag": 19,
+      "source_site_rows": [
+        11
+      ],
+      "exact_argument_fields": [
+        "device",
+        "destinations",
+        "sources",
+        "heap_type"
+      ],
+      "mask_bits": {
+        "device": 0,
+        "destinations": 1,
+        "sources": 2,
+        "heap_type": 3
+      },
+      "defined_return_rule": {
+        "text_rule": "shared_text_56"
+      },
+      "source_read_authority": "Resolve shared text_rule references through the exact sites.json shared_text_rules/shared_text_resolution and the frozen field annex, not a fabricated default. New bridge provenance and hash utility rules override only their explicitly stated scopes.",
+      "OFF": "No extra projection/borrow/source-note call; forward the original true signature exactly once."
+    },
+    {
+      "api": "Reset",
+      "tag": 20,
+      "source_site_rows": [
+        12
+      ],
+      "exact_argument_fields": [
+        "command",
+        "allocator",
+        "initial_pipeline"
+      ],
+      "mask_bits": {
+        "command": 0,
+        "allocator": 1,
+        "initial_pipeline": 2
+      },
+      "defined_return_rule": {
+        "text_rule": "shared_text_61"
+      },
+      "source_read_authority": "Resolve shared text_rule references through the exact sites.json shared_text_rules/shared_text_resolution and the frozen field annex, not a fabricated default. New bridge provenance and hash utility rules override only their explicitly stated scopes.",
+      "OFF": "No extra projection/borrow/source-note call; forward the original true signature exactly once."
+    },
+    {
+      "api": "Close",
+      "tag": 21,
+      "source_site_rows": [
+        13
+      ],
+      "exact_argument_fields": [
+        "command"
+      ],
+      "mask_bits": {
+        "command": 0
+      },
+      "defined_return_rule": {
+        "text_rule": "shared_text_61"
+      },
+      "source_read_authority": "Resolve shared text_rule references through the exact sites.json shared_text_rules/shared_text_resolution and the frozen field annex, not a fabricated default. New bridge provenance and hash utility rules override only their explicitly stated scopes.",
+      "OFF": "No extra projection/borrow/source-note call; forward the original true signature exactly once."
+    },
+    {
+      "api": "ClearState",
+      "tag": 22,
+      "source_site_rows": [
+        14
+      ],
+      "exact_argument_fields": [
+        "command",
+        "pipeline"
+      ],
+      "mask_bits": {
+        "command": 0,
+        "pipeline": 1
+      },
+      "defined_return_rule": {
+        "text_rule": "shared_text_56"
+      },
+      "source_read_authority": "Resolve shared text_rule references through the exact sites.json shared_text_rules/shared_text_resolution and the frozen field annex, not a fabricated default. New bridge provenance and hash utility rules override only their explicitly stated scopes.",
+      "OFF": "No extra projection/borrow/source-note call; forward the original true signature exactly once."
+    },
+    {
+      "api": "SetPipeline",
+      "tag": 23,
+      "source_site_rows": [
+        15,
+        84
+      ],
+      "exact_argument_fields": [
+        "command",
+        "pipeline"
+      ],
+      "mask_bits": {
+        "command": 0,
+        "pipeline": 1
+      },
+      "defined_return_rule": {
+        "text_rule": "shared_text_56"
+      },
+      "source_read_authority": "Resolve shared text_rule references through the exact sites.json shared_text_rules/shared_text_resolution and the frozen field annex, not a fabricated default. New bridge provenance and hash utility rules override only their explicitly stated scopes.",
+      "OFF": "No extra projection/borrow/source-note call; forward the original true signature exactly once."
+    },
+    {
+      "api": "SetRoot",
+      "tag": 24,
+      "source_site_rows": [
+        16
+      ],
+      "exact_argument_fields": [
+        "command",
+        "root"
+      ],
+      "mask_bits": {
+        "command": 0,
+        "root": 1
+      },
+      "defined_return_rule": {
+        "text_rule": "shared_text_56"
+      },
+      "source_read_authority": "Resolve shared text_rule references through the exact sites.json shared_text_rules/shared_text_resolution and the frozen field annex, not a fabricated default. New bridge provenance and hash utility rules override only their explicitly stated scopes.",
+      "OFF": "No extra projection/borrow/source-note call; forward the original true signature exactly once."
+    },
+    {
+      "api": "SetHeaps",
+      "tag": 25,
+      "source_site_rows": [
+        17
+      ],
+      "exact_argument_fields": [
+        "command",
+        "heaps"
+      ],
+      "mask_bits": {
+        "command": 0,
+        "heaps": 1
+      },
+      "defined_return_rule": {
+        "text_rule": "shared_text_56"
+      },
+      "source_read_authority": "Resolve shared text_rule references through the exact sites.json shared_text_rules/shared_text_resolution and the frozen field annex, not a fabricated default. New bridge provenance and hash utility rules override only their explicitly stated scopes.",
+      "OFF": "No extra projection/borrow/source-note call; forward the original true signature exactly once."
+    },
+    {
+      "api": "SetTable",
+      "tag": 26,
+      "source_site_rows": [
+        41,
+        42,
+        43,
+        44,
+        45,
+        46
+      ],
+      "exact_argument_fields": [
+        "command",
+        "parameter",
+        "gpu_handle"
+      ],
+      "mask_bits": {
+        "command": 0,
+        "parameter": 1,
+        "gpu_handle": 2
+      },
+      "defined_return_rule": {
+        "text_rule": "shared_text_56"
+      },
+      "source_read_authority": "Resolve shared text_rule references through the exact sites.json shared_text_rules/shared_text_resolution and the frozen field annex, not a fabricated default. New bridge provenance and hash utility rules override only their explicitly stated scopes.",
+      "OFF": "No extra projection/borrow/source-note call; forward the original true signature exactly once."
+    },
+    {
+      "api": "Viewports",
+      "tag": 27,
+      "source_site_rows": [
+        18
+      ],
+      "exact_argument_fields": [
+        "command",
+        "viewports"
+      ],
+      "mask_bits": {
+        "command": 0,
+        "viewports": 1
+      },
+      "defined_return_rule": {
+        "text_rule": "shared_text_56"
+      },
+      "source_read_authority": "Resolve shared text_rule references through the exact sites.json shared_text_rules/shared_text_resolution and the frozen field annex, not a fabricated default. New bridge provenance and hash utility rules override only their explicitly stated scopes.",
+      "OFF": "No extra projection/borrow/source-note call; forward the original true signature exactly once."
+    },
+    {
+      "api": "Scissors",
+      "tag": 28,
+      "source_site_rows": [
+        19
+      ],
+      "exact_argument_fields": [
+        "command",
+        "rects"
+      ],
+      "mask_bits": {
+        "command": 0,
+        "rects": 1
+      },
+      "defined_return_rule": {
+        "text_rule": "shared_text_56"
+      },
+      "source_read_authority": "Resolve shared text_rule references through the exact sites.json shared_text_rules/shared_text_resolution and the frozen field annex, not a fabricated default. New bridge provenance and hash utility rules override only their explicitly stated scopes.",
+      "OFF": "No extra projection/borrow/source-note call; forward the original true signature exactly once."
+    },
+    {
+      "api": "RTV",
+      "tag": 29,
+      "source_site_rows": [
+        20
+      ],
+      "exact_argument_fields": [
+        "command",
+        "handles",
+        "single_range",
+        "dsv_pointer"
+      ],
+      "mask_bits": {
+        "command": 0,
+        "handles": 1,
+        "single_range": 2,
+        "dsv_pointer": 3
+      },
+      "defined_return_rule": {
+        "text_rule": "shared_text_56"
+      },
+      "source_read_authority": "Resolve shared text_rule references through the exact sites.json shared_text_rules/shared_text_resolution and the frozen field annex, not a fabricated default. New bridge provenance and hash utility rules override only their explicitly stated scopes.",
+      "OFF": "No extra projection/borrow/source-note call; forward the original true signature exactly once."
+    },
+    {
+      "api": "Draw",
+      "tag": 30,
+      "source_site_rows": [
+        21
+      ],
+      "exact_argument_fields": [
+        "command",
+        "vertex_count",
+        "instance_count",
+        "first_vertex",
+        "first_instance"
+      ],
+      "mask_bits": {
+        "command": 0,
+        "vertex_count": 1,
+        "instance_count": 2,
+        "first_vertex": 3,
+        "first_instance": 4
+      },
+      "defined_return_rule": {
+        "text_rule": "shared_text_56"
+      },
+      "source_read_authority": "Resolve shared text_rule references through the exact sites.json shared_text_rules/shared_text_resolution and the frozen field annex, not a fabricated default. New bridge provenance and hash utility rules override only their explicitly stated scopes.",
+      "OFF": "No extra projection/borrow/source-note call; forward the original true signature exactly once."
+    },
+    {
+      "api": "BindPipeline",
+      "tag": 31,
+      "source_site_rows": [
+        67
+      ],
+      "exact_argument_fields": [
+        "vk_command_buffer",
+        "bind_point",
+        "pipeline"
+      ],
+      "mask_bits": {
+        "vk_command_buffer": 0,
+        "bind_point": 1,
+        "pipeline": 2
+      },
+      "defined_return_rule": {
+        "text_rule": "shared_text_56"
+      },
+      "source_read_authority": "Resolve shared text_rule references through the exact sites.json shared_text_rules/shared_text_resolution and the frozen field annex, not a fabricated default. New bridge provenance and hash utility rules override only their explicitly stated scopes.",
+      "OFF": "No extra projection/borrow/source-note call; forward the original true signature exactly once."
+    },
+    {
+      "api": "EmitDraw",
+      "tag": 32,
+      "source_site_rows": [
+        68
+      ],
+      "exact_argument_fields": [
+        "vk_command_buffer",
+        "vertex_count",
+        "instance_count",
+        "first_vertex",
+        "first_instance"
+      ],
+      "mask_bits": {
+        "vk_command_buffer": 0,
+        "vertex_count": 1,
+        "instance_count": 2,
+        "first_vertex": 3,
+        "first_instance": 4
+      },
+      "defined_return_rule": {
+        "text_rule": "shared_text_56"
+      },
+      "source_read_authority": "Resolve shared text_rule references through the exact sites.json shared_text_rules/shared_text_resolution and the frozen field annex, not a fabricated default. New bridge provenance and hash utility rules override only their explicitly stated scopes.",
+      "OFF": "No extra projection/borrow/source-note call; forward the original true signature exactly once."
+    },
+    {
+      "api": "Execute",
+      "tag": 33,
+      "source_site_rows": [
+        22
+      ],
+      "exact_argument_fields": [
+        "queue",
+        "commands"
+      ],
+      "mask_bits": {
+        "queue": 0,
+        "commands": 1
+      },
+      "defined_return_rule": {
+        "text_rule": "shared_text_56"
+      },
+      "source_read_authority": "Resolve shared text_rule references through the exact sites.json shared_text_rules/shared_text_resolution and the frozen field annex, not a fabricated default. New bridge provenance and hash utility rules override only their explicitly stated scopes.",
+      "OFF": "No extra projection/borrow/source-note call; forward the original true signature exactly once."
+    },
+    {
+      "api": "Release",
+      "tag": 34,
+      "source_site_rows": [
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54
+      ],
+      "exact_argument_fields": [
+        "object"
+      ],
+      "mask_bits": {
+        "object": 0
+      },
+      "defined_return_rule": "Actual ULONG captured by value; after(token,(uint32_t)actualULONG) only. No reread iface, internalobject, owner or device even on count>0.",
+      "source_read_authority": "Resolve shared text_rule references through the exact sites.json shared_text_rules/shared_text_resolution and the frozen field annex, not a fabricated default. New bridge provenance and hash utility rules override only their explicitly stated scopes.",
+      "OFF": "No extra projection/borrow/source-note call; forward the original true signature exactly once."
+    },
+    {
+      "api": "AllocatorReset",
+      "tag": 35,
+      "source_site_rows": [
+        23
+      ],
+      "exact_argument_fields": [
+        "allocator"
+      ],
+      "mask_bits": {
+        "allocator": 0
+      },
+      "defined_return_rule": {
+        "text_rule": "shared_text_61"
+      },
+      "source_read_authority": "Resolve shared text_rule references through the exact sites.json shared_text_rules/shared_text_resolution and the frozen field annex, not a fabricated default. New bridge provenance and hash utility rules override only their explicitly stated scopes.",
+      "OFF": "No extra projection/borrow/source-note call; forward the original true signature exactly once."
+    },
+    {
+      "api": "PipelineLookup",
+      "tag": 36,
+      "source_site_rows": [
+        65,
+        66
+      ],
+      "exact_argument_fields": [
+        "state_pointer",
+        "dynamic_state_pointer",
+        "dsv_format_pointer",
+        "dynamic_flags_output_pointer"
+      ],
+      "mask_bits": {
+        "state_pointer": 0,
+        "dynamic_state_pointer": 1,
+        "dsv_format_pointer": 2,
+        "dynamic_flags_output_pointer": 3
+      },
+      "defined_return_rule": "Capture originalVkPipeline first. Freshreturn_admit SELECTED+outputflag and returnedpipeline!=VK_NULL_HANDLE and originaldynamic_state_flags outputslot valid are all required before reading new_active_flags. NULLpipeline leaves flags UNOBSERVED; no fake0.",
+      "source_read_authority": "Resolve shared text_rule references through the exact sites.json shared_text_rules/shared_text_resolution and the frozen field annex, not a fabricated default. New bridge provenance and hash utility rules override only their explicitly stated scopes.",
+      "OFF": "No extra projection/borrow/source-note call; forward the original true signature exactly once."
+    },
+    {
+      "api": "CreateSampler",
+      "tag": 37,
+      "source_site_rows": [
+        28,
+        30,
+        32
+      ],
+      "exact_argument_fields": [
+        "device",
+        "description_pointer",
+        "description",
+        "description_complete",
+        "destination"
+      ],
+      "mask_bits": {
+        "device": 0,
+        "description_pointer": 1,
+        "description": 2,
+        "description_complete": 3,
+        "destination": 4
+      },
+      "defined_return_rule": {
+        "text_rule": "shared_text_56"
+      },
+      "source_read_authority": "Resolve shared text_rule references through the exact sites.json shared_text_rules/shared_text_resolution and the frozen field annex, not a fabricated default. New bridge provenance and hash utility rules override only their explicitly stated scopes.",
+      "OFF": "No extra projection/borrow/source-note call; forward the original true signature exactly once."
+    },
+    {
+      "api": "CreateRTV",
+      "tag": 38,
+      "source_site_rows": [
+        24
+      ],
+      "exact_argument_fields": [
+        "device",
+        "resource",
+        "description_pointer",
+        "destination"
+      ],
+      "mask_bits": {
+        "device": 0,
+        "resource": 1,
+        "description_pointer": 2,
+        "destination": 3
+      },
+      "defined_return_rule": {
+        "text_rule": "shared_text_56"
+      },
+      "source_read_authority": "Resolve shared text_rule references through the exact sites.json shared_text_rules/shared_text_resolution and the frozen field annex, not a fabricated default. New bridge provenance and hash utility rules override only their explicitly stated scopes.",
+      "OFF": "No extra projection/borrow/source-note call; forward the original true signature exactly once."
+    },
+    {
+      "api": "SetConstants",
+      "tag": 39,
+      "source_site_rows": [
+        25
+      ],
+      "exact_argument_fields": [
+        "command",
+        "parameter",
+        "words",
+        "destination_offset"
+      ],
+      "mask_bits": {
+        "command": 0,
+        "parameter": 1,
+        "words": 2,
+        "destination_offset": 3
+      },
+      "defined_return_rule": {
+        "text_rule": "shared_text_56"
+      },
+      "source_read_authority": "Resolve shared text_rule references through the exact sites.json shared_text_rules/shared_text_resolution and the frozen field annex, not a fabricated default. New bridge provenance and hash utility rules override only their explicitly stated scopes.",
+      "OFF": "No extra projection/borrow/source-note call; forward the original true signature exactly once."
+    },
+    {
+      "api": "Topology",
+      "tag": 40,
+      "source_site_rows": [
+        26
+      ],
+      "exact_argument_fields": [
+        "command",
+        "topology"
+      ],
+      "mask_bits": {
+        "command": 0,
+        "topology": 1
+      },
+      "defined_return_rule": {
+        "text_rule": "shared_text_56"
+      },
+      "source_read_authority": "Resolve shared text_rule references through the exact sites.json shared_text_rules/shared_text_resolution and the frozen field annex, not a fabricated default. New bridge provenance and hash utility rules override only their explicitly stated scopes.",
+      "OFF": "No extra projection/borrow/source-note call; forward the original true signature exactly once."
+    },
+    {
+      "api": "ModuleDestroy",
+      "tag": 41,
+      "source_site_rows": [
+        73,
+        74
+      ],
+      "exact_argument_fields": [
+        "device",
+        "object",
+        "allocator_pointer"
+      ],
+      "mask_bits": {
+        "device": 0,
+        "object": 1,
+        "allocator_pointer": 2
+      },
+      "defined_return_rule": {
+        "text_rule": "shared_text_56"
+      },
+      "source_read_authority": "Resolve shared text_rule references through the exact sites.json shared_text_rules/shared_text_resolution and the frozen field annex, not a fabricated default. New bridge provenance and hash utility rules override only their explicitly stated scopes.",
+      "OFF": "No extra projection/borrow/source-note call; forward the original true signature exactly once."
+    },
+    {
+      "api": "PipelineDestroy",
+      "tag": 42,
+      "source_site_rows": [
+        75,
+        76,
+        77,
+        78
+      ],
+      "exact_argument_fields": [
+        "device",
+        "object",
+        "allocator_pointer"
+      ],
+      "mask_bits": {
+        "device": 0,
+        "object": 1,
+        "allocator_pointer": 2
+      },
+      "defined_return_rule": {
+        "text_rule": "shared_text_56"
+      },
+      "source_read_authority": "Resolve shared text_rule references through the exact sites.json shared_text_rules/shared_text_resolution and the frozen field annex, not a fabricated default. New bridge provenance and hash utility rules override only their explicitly stated scopes.",
+      "OFF": "No extra projection/borrow/source-note call; forward the original true signature exactly once."
+    },
+    {
+      "api": "PipelineLayoutDestroy",
+      "tag": 43,
+      "source_site_rows": [
+        79,
+        80,
+        81,
+        82
+      ],
+      "exact_argument_fields": [
+        "device",
+        "object",
+        "allocator_pointer"
+      ],
+      "mask_bits": {
+        "device": 0,
+        "object": 1,
+        "allocator_pointer": 2
+      },
+      "defined_return_rule": {
+        "text_rule": "shared_text_56"
+      },
+      "source_read_authority": "Resolve shared text_rule references through the exact sites.json shared_text_rules/shared_text_resolution and the frozen field annex, not a fabricated default. New bridge provenance and hash utility rules override only their explicitly stated scopes.",
+      "OFF": "No extra projection/borrow/source-note call; forward the original true signature exactly once."
+    },
+    {
+      "api": "ScopeGap",
+      "tag": 44,
+      "source_site_rows": [
+        83
+      ],
+      "exact_argument_fields": [
+        "code"
+      ],
+      "mask_bits": {
+        "code": 0
+      },
+      "defined_return_rule": "Observer-only scopegap(code), one mark: entry==return. No original delegate/counter-return, no token/Before/After/return_admit. Sets sticky gap; raw resultnull. Frozen function alone implements this protocol.",
+      "source_read_authority": "Resolve shared text_rule references through the exact sites.json shared_text_rules/shared_text_resolution and the frozen field annex, not a fabricated default. New bridge provenance and hash utility rules override only their explicitly stated scopes.",
+      "OFF": "No original delegate exists; observer diagnostic only, disabled without capture."
+    },
+    {
+      "api": "VkViewportCount",
+      "tag": 45,
+      "source_site_rows": [
+        69,
+        70
+      ],
+      "exact_argument_fields": [
+        "vk_command_buffer",
+        "viewports"
+      ],
+      "mask_bits": {
+        "vk_command_buffer": 0,
+        "viewports": 1
+      },
+      "defined_return_rule": {
+        "text_rule": "shared_text_56"
+      },
+      "source_read_authority": "Resolve shared text_rule references through the exact sites.json shared_text_rules/shared_text_resolution and the frozen field annex, not a fabricated default. New bridge provenance and hash utility rules override only their explicitly stated scopes.",
+      "OFF": "No extra projection/borrow/source-note call; forward the original true signature exactly once."
+    },
+    {
+      "api": "VkScissorCount",
+      "tag": 46,
+      "source_site_rows": [
+        71,
+        72
+      ],
+      "exact_argument_fields": [
+        "vk_command_buffer",
+        "rects"
+      ],
+      "mask_bits": {
+        "vk_command_buffer": 0,
+        "rects": 1
+      },
+      "defined_return_rule": {
+        "text_rule": "shared_text_56"
+      },
+      "source_read_authority": "Resolve shared text_rule references through the exact sites.json shared_text_rules/shared_text_resolution and the frozen field annex, not a fabricated default. New bridge provenance and hash utility rules override only their explicitly stated scopes.",
+      "OFF": "No extra projection/borrow/source-note call; forward the original true signature exactly once."
+    }
+  ],
+  "budget_and_output": {
+    "limits": {
+      "raw_bytes": 65536,
+      "JSON_value_nodes": 4096,
+      "depth": 20,
+      "string_bytes": 256,
+      "records": 64,
+      "marks": 128,
+      "pending": 32,
+      "object_occurrences": 21,
+      "tickets": 1,
+      "retained_epochs": 1,
+      "complete_model_report_bytes": 262144
+    },
+    "conditional_source_schedule": "Use the exact source-correlated cold-budget authority, not the61 mocked calls: base52, ordinary63/64, early retry64/65, broader correlated fallback may exceed event/identity caps. Those are conditional arithmetic, never an actual runtime witness or actual branch identification.",
+    "raw_fit": "Accept raw/node fit only at the actual bounded serializer result. No universal fit theorem or selected-profile success is claimed by this contract. No truncation, eviction, replay hydration, data dropping to fit or raised cap.",
+    "storage": "Old sink context404352+issuer64=404416 B plus existing TLS is unchanged in size. New marker reuses explicitly specified reserved bytes; automatic projection locals and digest448 are additional object sums, not a measured compiler stack or total CPU memory. Final exact inventory requires R1/R2 and R4 documents together.",
+    "model_use": "A future new CPU source-wrapper reader may consume each actual primary raw frame exactly once with frozen analyze660 and retain its ENTIRE report; unknown is the expected faithful nested-setter outcome. Copies/rechecks compare immutable bytes, not duplicate positive counts. Existing readers/fixtures/test expectations remain byte-exact and are not relabeled as new SOURCE integration.",
+    "no_runtime_envelope": "This document admits no external runtime envelope or attestation flag flip. Current raw purpose and old CPU prototype flags keep their meanings even if code is later linked into a vendor; future actual execution needs separate evidence."
+  },
+  "build_policy": {
+    "base_and_required_addendum": [
+      {
+        "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-insertion-precode-20261028-1/build-link.json",
+        "bytes": 13767,
+        "sha256": "037f768f8742d882fee039c485a58a5f88e6fb078227b33e2640b45be588ee26"
+      },
+      {
+        "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-insertion-precode-20261028-1/build-link-generation-addendum.json",
+        "bytes": 1872,
+        "sha256": "6c2ffbba0983b4ef74526f9240f03f30a1d241b67e46ca9d1366b330b0db5221"
+      }
+    ],
+    "update_needed_after_bridge_freeze": "New sink target must compile the embedding C TU exactly once, not frozen core.c separately plus the embedding. Production digest gets its own C utility TU and immutable constants. No OSW_CPU_TESTING/context selector, new public export or C++ observer dependency.",
+    "generated_ownership": "One explicit shared CustomTarget owner per generated shader header; passing a shared GeneratedList variable to two proton variants is insufficient. Exact future names/commands/outputs/includes/deps must be pinned before a separately admitted configure/build. Source variants replace transitive shader dependency, not double-link both parsers.",
+    "default_and_exclusion": "DefaultOFF; old observer ON plus new observer ON is configure error before new targets. Forwarder contains no sink/control state. Strict-C subproject isolates vendor C90 style warnings without weakening -Wall/-Wextra/-Werror/-pedantic. No new target has been configured or linked."
+  },
+  "validation_designs_not_executed": [
+    "Faithful constructor and case nested SetPipeline(NULL), old660 remains unknown; off/on/faulted original signatures/arguments/returns/cleanup equal.",
+    "RootParse no parent/PSOonly/pendingbutuncommitted/foreignthread/latefault; no descriptor/code read before grant.",
+    "GRAPHICS annotation one-shot/foreign/reentry/output-slot mismatch/staleparent/Release-reuse/reset changing generation or epoch; no current-state retag.",
+    "KnownNULLsizes vs unreadnullable; active/inactive unions, scalar BOOLI32, actual void and hidden-return pointer.",
+    "Optional digest unavailable vs required fixed field unavailable; fullbytes/no prefix/NULL0/size overflow/1MiB threshold.",
+    "Partial original arrays and all fixed caps; unknownREADY versus actual NO_PAYLOAD with originals preserved.",
+    "Retain/copies/80quota/churn do not change prior bytes; silent overwrite twins keep identical API history and strongerfacetsfalse."
+  ],
+  "admission": {
+    "new_header_or_code": false,
+    "CPU_wrapper_implementation": false,
+    "vendor_patch_or_build": false,
+    "runtime_GPU_game_headset": false,
+    "human_required": false
+  },
+  "independence": "Parent integrates the frozen components and author proposals. This is documentary contract reasoning, not third-party certification or passed CPU/ABI tests."
+}

@@ -1,0 +1,86 @@
+{
+  "schema_version": 1,
+  "purpose": "R1_R2_documentary_review_addendum_to_exact_draft05071a6a",
+  "created_utc": "2026-10-28T05:37:58.446133+00:00",
+  "status": "PROPOSED_FINAL_DOCUMENTARY_BUNDLE_REQUIRES_PARENT_AND_INDEPENDENT_REVIEW_NO_CODE",
+  "base_contract": {
+    "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-source-additive-precode-20261028-1/bridge-provenance-contract.json",
+    "bytes": 44064,
+    "sha256": "05071a6a699964c381bef584fd683a077d44227d30db9095ea061b940fb16b33"
+  },
+  "precedence": "Read together with base0507. Only the explicit replacements/clarifications below override it; all other fields/declarations/cuts/caps remain. The base is an intact historical first draft, not silently rewritten.",
+  "changes": [
+    {
+      "id": "A1_module_lifetime",
+      "at": "R2_native_command_and_epoch_provenance.pre_and_post_validation[5] last sentence",
+      "old": "Module lifetime is required at PipelineCreate ENTRY, not falsely extended to Execute.",
+      "replacement": "For the declared native pipeline relation, each referenced ModuleCreate must actually return successfully before the original PipelineCreate ENTRY, and no ModuleDestroy ENTRY may occur before that original PipelineCreate RETURN. Destroy overlapping the create is excluded, even when its RETURN follows. The module need not remain alive through Execute. Preserve all genuine create/destroy occurrences and source cuts; the unchanged model computes the complete historical result. No current lookup or extended lifetime is fabricated.",
+      "attribution": "Stage identified the too-short draft sentence against schema6930 native_pipeline_origin.module_lifetime_exact; author agrees. No core/model change."
+    },
+    {
+      "id": "A2_CLOSED_persistence",
+      "at": "precedence[1]; R2_graphics_marker representation/protection/end_and_terminal_cleanup",
+      "replacement": "The exact reserved-zero exception covers ACTIVE and CONSUMED during an original helper, then CLOSED persistent bytes with version1, state3 and the unchanged eight identity/operand fields for the rest of this one-epoch context. VIRGIN is allzero. CLOSED is operational provenance metadata, not a public Call/wire or extra identity. It may survive after pending drain, READY, alias Drop and failed metadata; it never reactivates. The remaining1528 reserved bytes and other tags remain0. Existing serializer ignores this span. Only existing context recreation in a separately authorized testing profile may zero a historical slot; production provides no recreate/rearm. This expressly supersedes old all-reserved-zero rules for this64B span, including CLOSED persistence, without retagging old proofs.",
+      "attribution": "Stage clarification of the word transient versus retained CLOSED fields; parent requires explicit exception."
+    },
+    {
+      "id": "A3_native_helper_specific_bits",
+      "at": "private_declarations_documentary_only[6]; R2_native_command_and_epoch_provenance membership/allowed_input",
+      "replacement": "The new native_owned_enter helper with caller input bits0/4/5 is the narrow solution for reviewed lower PFN sites where no genuine lexical command/PSO state operand is available and ancestry must supply it. It does NOT prohibit preserving actual SOURCE locals at other reviewed sites. Where a real state* or typed list exists, the source projector keeps its exact original-local expression through frozen enter, with the same pre-entry/post-entry identity/generation/reset/epoch/owner/latch validation before granting projection. That inline guard path shares the one320B guard envelope and does not call a second private guard API while it is live. Actual source-site/route fields remain faithful. No available state is deliberately replaced by N/A for size/eligibility, no raw Vk value is relabeled as a COM pointer, and no new prototype/PFN argument is added.",
+      "attribution": "Author clarification sent before review; Stage requested explicit helper-specific scope."
+    },
+    {
+      "id": "A4_GRAPHICS_unconsumed_policy",
+      "at": "R2_graphics_marker.end_and_terminal_cleanup[1]",
+      "replacement": "This new private guard profile deliberately requires an armed GRAPHICS scope to consume its expected actual native invocation. If it is still ACTIVE at outer helper RETURN, close the marker and refuse this observation to NO_PAYLOAD under the existing terminal metadata protocol. This is an explicit NEW local eligibility limit of this guard, not a missing-original finding. The legal helper E_INVALIDARG path in state.c330..345 contains ZERO vkCreatePipelineLayout calls: no native ENTRY/RETURN, ScopeGap row, calls_seen/original_returns increment, source mark, Vulkan result or native birth may be manufactured. Preserve the real helper HRESULT and its cleanup/control flow exactly. No helper HRESULT is converted into an observed VkResult. Existing terminal fault/coverage-latch bits report this guard refusal, not an invented source API gap; no new terminal enum value is introduced. This narrow voluntary refusal is distinct from R3 ordinary well-typed semantic-unknown/READY histories and must not become a general rule semanticunknown=>NO_PAYLOAD.",
+      "operational_mapping": "Use the existing UNSAFE_FIXED_PROJECTION terminal-reason5 for this new closed eligibility guard refusal; that reason denotes declined observer projection in this profile, not proof of unreadable original memory or illegal E_INVALIDARG. Existing fault() bookkeeping is retained; add no diagnostic ScopeGap occurrence/counter. After READY, only operational marker closure/fault semantics are allowed and immutable old payload stays unchanged.",
+      "attribution": "Stage Q1 and parent explicit policy decision; alternative absence-native diagnostic policy was considered but is NOT chosen for this new profile."
+    },
+    {
+      "id": "A5_namespace_and_inclusion",
+      "at": "embedding_and_link.proposed_future_path and private declarations ownership",
+      "replacement": "The proposed new private source directory is native/owned_source_writer_projection/. Its private declaration header is owned_source_writer_private_v1.h; embedding TU is owned_source_writer_core_embedding_v1.c. The TU includes the frozen core via the relative source relationship ../owned_source_writer_source/owned_source_writer_source_v1.c once, followed by its private definitions. Do not copy/edit/rename the frozen core, generated public header or original SOURCE prototypes. Never compile the frozen .c separately in that target. No public export for these new private declarations.",
+      "coordinated_other_future_names": [
+        "native/owned_source_writer_projection/owned_source_writer_projectors_v1.h",
+        "native/owned_source_writer_projection/owned_source_writer_projectors_v1.c",
+        "native/owned_source_writer_projection/owned_source_writer_sha256_v1.h",
+        "native/owned_source_writer_projection/owned_source_writer_sha256_v1.c"
+      ],
+      "other_owner_boundary": "These latter filenames align the parent future target proposal only. R4-v2 remains authority for digest algorithm/API448B; parent build/link addendum owns actual file-copy/target/generation recipe. No future file exists or is admitted by this declaration.",
+      "attribution": "Parent namespace choice, documentary path alignment only."
+    },
+    {
+      "id": "A6_structural_invalid_output",
+      "at": "metadata_return_and_output_protocol.output_rules and guard_failure_accounting",
+      "replacement": "If a new private helper detects an invalid structural ABI/POD/output span while the selected observation is OBSERVING, do not write the invalid span or grant typed reads. Under the same context lock, merge latch and explicitly fault existing PROJECTION_ABI_OR_MASK10 (or frozen contention path if lock unavailable); do not quietly leave a selected healthy observation after refusing its required guard. No original row/mark/token is manufactured before actual enter. An already admitted token is retained for drain only after the real original returns. Outside an observing window no helper reopens/rearms state. These checks assume actual owned live C objects and do not promise recovery from inaccessible or poisoned memory. This is not a new public raw-pointer probing API.",
+      "attribution": "Author narrow closure review; parent/Stage notified before final proof."
+    }
+  ],
+  "object_storage_unchanged": {
+    "new_mutable_static_or_TLS_bytes": 0,
+    "marker_adopted_inside_existing_context": 64,
+    "cookie_live_C_objects_max_conditional": 1,
+    "cookie_bytes": 64,
+    "guard_envelopes_live_on_owner_thread_max": 1,
+    "guard_bytes": 320,
+    "existing_conditional_named_object_sum": 4224,
+    "new_conservative_sum": 4608,
+    "existing_peak3": 2136,
+    "new_peak3_sum": 2520,
+    "not_measured_stack": "Cookie preflight block lifetime rules and absence of original/callback/hash inside private helpers are conditions of these object sums, not measured compiler stack or universal process RAM."
+  },
+  "unchanged": {
+    "base_field_layouts_and_private_declarations_except_namespace": true,
+    "original54_prototypes_PFNs": true,
+    "frozen_e2_564_660_bytes": true,
+    "wire_schema6930_types_caps_claims": true,
+    "no_new_cookie_ID_issuer_context_TLS_registry": true
+  },
+  "admission": {
+    "documentary_contract_only": true,
+    "header_or_function_body_or_SOURCE_patch_admitted": false,
+    "new_test_compile_analyze_admitted": false,
+    "implementation_ready_or_vendor_build_ready": false,
+    "runtime_launch_ready": false
+  }
+}
