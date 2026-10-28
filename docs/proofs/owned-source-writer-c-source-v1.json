@@ -1,0 +1,228 @@
+{
+  "schema_version": 1,
+  "purpose": "owned_source_writer_C_CPU_implementation",
+  "status": "CPU_IMPLEMENTED_TESTED_REVIEWED_NOT_SOURCE_HOOKED",
+  "created_utc": "2026-10-28T02:52:34.097282+00:00",
+  "precode_commit": "67652d0deb5a0859923d88091f89912805ff4595",
+  "normative_manifest": {
+    "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/docs/schemas/owned-source-writer-c-abi-v1/normative-manifest.json",
+    "bytes": 1364,
+    "sha256": "ebee057ce52163760ec9c2ce92bf80d452bd557d002a143731f8988f4ea9268e"
+  },
+  "source_files": [
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/.github/workflows/checks.yml",
+      "bytes": 25390,
+      "sha256": "19f7e7285d274c87d287266defa1fca5518b0715c85f9814c323970a046377cc"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/docs/OWNED_SOURCE_WRITER_C_SOURCE.md",
+      "bytes": 6884,
+      "sha256": "41478cbf942a11b792ed407afecbb091ec1a5262250883d462d46711115a4d94"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/native/owned_source_writer_source/CMakeLists.txt",
+      "bytes": 4444,
+      "sha256": "db822b88ed91fc185767f5b8f13bae1e0ca07c9e979c1bd1218baad0f2302293"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/native/owned_source_writer_source/generate_owned_source_writer.py",
+      "bytes": 9770,
+      "sha256": "90fcddded3a69449241afcd049dfb9dc8f303004a14a690a94fe76954666fa6c"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/native/owned_source_writer_source/owned_source_writer_callbacks.inc",
+      "bytes": 12247,
+      "sha256": "162d2bf4400761c2b33ed041ef3448e953ba47ab78709d9102d23681d07d8f21"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/native/owned_source_writer_source/owned_source_writer_metadata.inc",
+      "bytes": 53938,
+      "sha256": "1de6473d69de45593641db08a1256643fb3ce831664e9a0dad2282a1d1b08539"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/native/owned_source_writer_source/owned_source_writer_private.inc",
+      "bytes": 11517,
+      "sha256": "d685202439744c77bcc9c52292570ddd424bd2b2c27ff8459679bae5b50cceec"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/native/owned_source_writer_source/owned_source_writer_source_v1.c",
+      "bytes": 52672,
+      "sha256": "7492355569e50ec74f4bd4c8cd3187f4cb45b7457b6a923c1c113381feef9ab4"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/native/owned_source_writer_source/owned_source_writer_source_v1.h",
+      "bytes": 282735,
+      "sha256": "564e8955d9b97211e81b10defafc6e1a49b07291f57090e4e821fab454588583"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/native/tests/owned_source_writer_source_abi.c",
+      "bytes": 241827,
+      "sha256": "f6743765590cc4ffba9f5303dc320bb8ea75a7da520ebd773eab48f60ad7ba92"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/native/tests/owned_source_writer_source_abi.cpp",
+      "bytes": 200,
+      "sha256": "33fbd29db6896a01e93d3403a87ccebdde837840da10d7a8d58625d141051fe0"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/native/tests/owned_source_writer_source_cpu.c",
+      "bytes": 85405,
+      "sha256": "4918b01b42d7d9b51e09e5b855dbf34537fab7a18c536b247d85e211f2395212"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/native/tests/owned_source_writer_source_independent_cpu.c",
+      "bytes": 28926,
+      "sha256": "f79ed03c61dfbd08dec95da1684ee8539516e37968c6c5726aa704b846f211bc"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/native/tests/owned_source_writer_source_independent_profile.h",
+      "bytes": 40115,
+      "sha256": "607ee8cfd9806af660f9f95ba4fffb805af8bb0fe20d70a2ac98844a84f6fe4e"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/tests/test_owned_source_writer_source.py",
+      "bytes": 19524,
+      "sha256": "1916caf7a57b05542958a8eae8574e97a4bb222e30510ee808cfe7f922dd9518"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/tools/owned_source_writer_source_independent_wire.py",
+      "bytes": 3570,
+      "sha256": "050c5775e378ead9c55dd4d19c93598fc8177a7d8be376c2e5ae9001236a2a8e"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/tools/owned_source_writer_source_native_wire.py",
+      "bytes": 17843,
+      "sha256": "eb9dc240e197e61656644e0592d3190aca1c075612a94ebb1796060a4b773db7"
+    }
+  ],
+  "frozen_model_dependency": {
+    "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/D4VR/tools/owned_source_writer_validate.py",
+    "bytes": 95467,
+    "sha256": "660623fb5da3cbec1ea7fbe2c6f1513beadd3950c97416a6126a71de119479bf"
+  },
+  "evidence": [
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-C-sink-author-20261028-1/proof.json",
+      "bytes": 10032,
+      "sha256": "dcfce9f96d20f79f39155634ac6d891453b1e6b2e9e478f374bf4984ed873303"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-C-sink-wrapper-20261028-1/proof.json",
+      "bytes": 21615,
+      "sha256": "0b88efaf6258e59a158b96560cd5adaf2db6f18d712dc2e1fee63ab9dc16aca8"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-C-sink-independent-20261028-1/proof.json",
+      "bytes": 20631,
+      "sha256": "90c478a4d6c1c5153fc3302bfad36b138228f8574a368e933311ef5e868836b9"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-C-sink-source-review-20261028-1/proof.json",
+      "bytes": 6045,
+      "sha256": "35210c59502a1b35a13d608357e921bea51a6f41b7784fe445fcfb80870a7bfd"
+    }
+  ],
+  "parent_complete_reports": {
+    "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-C-sink-parent-20261028-1/parent-complete-CPU-audit.json",
+    "bytes": 277137,
+    "sha256": "356bcf1acbaaa0b8441b4e07e24dbad805d371bf5704b1ccd47b825a29c476d3"
+  },
+  "actual_final_primary_files": [
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-C-sink-parent-20261028-1/integration-1/build/d4vr-owned-C-CPU-nl1czdu7/main/cold_on.wire.json",
+      "bytes": 52237,
+      "sha256": "a0bb552db22a00e3bf48095129c9b690c53ac6c63425383cf50011548c143211"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-C-sink-parent-20261028-1/integration-1/build/d4vr-independent-C-2km2vohz/frames/direct_a.wire.json",
+      "bytes": 52192,
+      "sha256": "7dfda58b4e1b932c25a0c2070529a8e8f7b22455d41e8622686e96dc8812c377"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-C-sink-parent-20261028-1/integration-1/build/d4vr-independent-C-2km2vohz/frames/late_b_copy_entry.wire.json",
+      "bytes": 53829,
+      "sha256": "538a171c39108322b74bdf125c7b31a7d7a8ee41d534032d83ddd109b18e1670"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-C-sink-parent-20261028-1/integration-1/build/d4vr-independent-C-2km2vohz/frames/pending_cut.wire.json",
+      "bytes": 52782,
+      "sha256": "c54b92de42aea8b48ab8d7493d966f82e1d1080c417477df11ae22540ccdf491"
+    },
+    {
+      "path": "/home/fabien/Documents/Codex/2026-10-24/je-viens-de-te-connecter-mon/work/owned-C-sink-parent-20261028-1/integration-1/build/d4vr-independent-C-2km2vohz/frames/first_noemit.wire.json",
+      "bytes": 52890,
+      "sha256": "26e2b2cdbcbb8087ecc7a4f1430fcd3027eb052578f493d5c4ffa43ff16bb067"
+    }
+  ],
+  "local_checks": {
+    "new_CTest_group": 5,
+    "configure_build_ctest_returns": [
+      0,
+      0,
+      0
+    ],
+    "CLI_only_rechecks_after_reader_changes": 2,
+    "new_Python_transport_methods": 32,
+    "Python_targeted_return": 0,
+    "no_old_Python_or_native_suite_rerun_locally": true,
+    "C_forwarding_original_mocks_per_main_mode": [
+      101,
+      101,
+      101
+    ],
+    "compiled_OFF_original_mocks": 101,
+    "compiled_OFF_links_sink": false,
+    "final_parent_analyze_invocations_in_child_helpers": 5,
+    "parent_aggregation_analyze_invocations": 0,
+    "known_results": {
+      "cold_on": true,
+      "direct_a": true,
+      "late_b_copy_entry": true,
+      "pending_cut": false,
+      "first_noemit": false
+    },
+    "full_reports_retained": true,
+    "discriminating_ABI_compile_failures": 8,
+    "new_core_Windows_object_compile_only": true,
+    "ABI_compile_only_positive_total": 4,
+    "ABI_compile_only_portable_positive": 2,
+    "ABI_compile_only_complete_vendor_headers_positive": 2
+  },
+  "facets": {
+    "prototype_CPU_only": true,
+    "new_SOURCE_callsites_inserted": false,
+    "new_vendor_build": false,
+    "new_renderer_PE": false,
+    "new_Wine_or_GPU_game_headset": false,
+    "input_facts_attested": false,
+    "actual_contents_or_GPU_read": false,
+    "Diablo_VR_usable": false
+  },
+  "storage": {
+    "production_context_bytes": 404352,
+    "core_issuer_bytes": 64,
+    "two_context_test_plus_issuer_bytes": 808768,
+    "production_thread_cookie_bytes_per_thread": 8,
+    "test_thread_selector_extra_bytes": 4,
+    "total_CPU_memory_limit_claimed": false
+  },
+  "bounds": {
+    "raw_frame_bytes": 65536,
+    "raw_files_per_bridge": 8,
+    "metrics_bytes": 8192,
+    "stderr_bytes": 65536,
+    "child_timeout_seconds": 30,
+    "model_report_bytes": 262144,
+    "bridge_aggregate_bytes": 4194304
+  },
+  "independence": "Sink, independent C causals and forwarding mocks have distinct authors. Reviewers share older models/foundations; no third-party certification of their own producer or runtime. Counts overlap, never add author/independent assertions. ABI object probes are separate from mock callback signatures.",
+  "checkpoints": "All earlier failed probes, draft outputs and CI-pending proofs remain immutable. Earlier model/fixtures/shaders/helpers/vendor/private DLL pairs remain unchanged. The final reader has create-only output persistence, setup-failure child wait and nonblocking regular-file rejection; source/transport inquiries are private additive evidence.",
+  "CI": {
+    "status": "PENDING_AT_CREATION",
+    "new_source_checks_added": true,
+    "Python_sanitized": false,
+    "vendor_runtime_executed_by_CI": false
+  },
+  "next_gate": "Separate parent decision for actual C SOURCE wrappers, cold-budget/source ownership/RootParse static-shader bridge and ABI/defaultOFF/exclusion/link review before any vendor patch or build. No renderer/Wine/GPU/game admitted by this CPU proof."
+}

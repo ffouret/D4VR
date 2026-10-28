@@ -259,6 +259,31 @@ jobs:
           cmake -S native/owned_source_writer_diagnostic -B work/owned-source-writer-ci
           cmake --build work/owned-source-writer-ci --config Release
           ctest --test-dir work/owned-source-writer-ci -C Release --output-on-failure
+      - name: Check the new C SOURCE sink and bounded CPU wire on Linux
+        if: runner.os == 'Linux'
+        run: |
+          cmake -S native/owned_source_writer_source -B work/owned-C-source-ci -DOSW_BUILD_CPU_TEST_SUPPORT=ON
+          cmake --build work/owned-C-source-ci --parallel 2
+          ctest --test-dir work/owned-C-source-ci --output-on-failure
+          cmake -S native/owned_source_writer_source -B work/owned-C-source-sanitized-ci -DOSW_BUILD_CPU_TEST_SUPPORT=ON -DCMAKE_BUILD_TYPE=Debug "-DCMAKE_C_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer" "-DCMAKE_CXX_FLAGS=-fsanitize=address,undefined -fno-omit-frame-pointer"
+          cmake --build work/owned-C-source-sanitized-ci --parallel 2
+          ctest --test-dir work/owned-C-source-sanitized-ci --output-on-failure
+      - name: Check the new C SOURCE sink on Windows with the explicit GNU driver
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $gcc = (Get-Command gcc -ErrorAction Stop).Source
+          $gnuBin = Split-Path $gcc
+          $gxx = Join-Path $gnuBin 'g++.exe'
+          if (!(Test-Path $gxx)) { throw 'Matching GNU C++ compiler unavailable' }
+          $target = & $gcc -dumpmachine
+          if ($LASTEXITCODE -ne 0 -or $target.Trim() -ne 'x86_64-w64-mingw32') { throw "Unsupported new C sink compiler target: $target" }
+          $env:PATH = "$gnuBin;$env:PATH"
+          cmake -S native/owned_source_writer_source -B work/owned-C-source-ci -G Ninja -DOSW_BUILD_CPU_TEST_SUPPORT=ON "-DCMAKE_C_COMPILER=$gcc" "-DCMAKE_CXX_COMPILER=$gxx"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cmake --build work/owned-C-source-ci --parallel 2
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ctest --test-dir work/owned-C-source-ci --output-on-failure
       - name: Upload Windows probe without vendor or test libraries
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v4
