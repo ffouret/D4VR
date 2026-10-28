@@ -984,7 +984,7 @@ typedef struct {const char *name;uint64_t calls,assertions;char trace[65];} Metr
 static uint8_t cold[65536],recheck[65536];static uint32_t cold_bytes;
 static int exercise(const char *mode,Metrics *m){World *w=&world;uint64_t start=checks;uint8_t trace[32];int observe=strcmp(mode,"observer_bypassed")!=0&&strcmp(mode,"compiled_off")!=0;int fault=strcmp(mode,"faulted")==0;int metadata_ok=1;
 #if !OSW_SOURCE_FIXTURE_COMPILED_OFF
- uint64_t owner=0,alias=0;uint32_t bytes=0,written=0,required=0,status;osw_status_v1 state;static const uint8_t nonce[32]="0123456789abcdef0123456789abcdef";
+ uint64_t owner=0,alias=0;uint32_t bytes=0,written=0,required=0,status;osw_status_v1 state;static const uint8_t nonce[32]={0x30,0x31,0x32,0x33,0x34,0x35,0x36,0x37,0x38,0x39,0x61,0x62,0x63,0x64,0x65,0x66,0x30,0x31,0x32,0x33,0x34,0x35,0x36,0x37,0x38,0x39,0x61,0x62,0x63,0x64,0x65,0x66};
  if(observe){check(d4vr_osw_test_select_context_v1(0)==OSW_OK,"test context selection");check(d4vr_osw_test_recreate_context_v1(0)==OSW_OK,"fresh test context");}
 #endif
  initialise(w,observe,fault);
